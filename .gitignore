@@ -1,0 +1,41 @@
+# ------------------------------------------------------------------
+# 1️⃣  Virtual Environment (venv)
+# ------------------------------------------------------------------
+# The folder name can be anything – here we assume `.venv`
+.venv/
+venv/
+ENV/
+env/
+# If your virtual environment lives elsewhere, just add its path
+
+# ------------------------------------------------------------------
+# 2️⃣  Python byte‑code caches
+# ------------------------------------------------------------------
+__pycache__/
+*.py[cod]          # .pyc, .pyo, .pyd
+*$py.class         # (Java‑style, rarely used in CPython)
+
+# ------------------------------------------------------------------
+# 3️⃣  Compiled libraries / build artifacts (optional but handy)
+# ------------------------------------------------------------------
+build/
+dist/
+*.egg-info/
+
+# ------------------------------------------------------------------
+# 4️⃣  IDE/Editor files (common for VS Code, PyCharm, etc.)
+# ------------------------------------------------------------------
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# ------------------------------------------------------------------
+# 5️⃣  Miscellaneous system or OS specific files
+# ------------------------------------------------------------------
+.DS_Store          # macOS Finder metadata
+Thumbs.db           # Windows thumbnail cache
+
+# ------------------------------------------------------------------
+# End of file
+# ------------------------------------------------------------------
