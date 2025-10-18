@@ -7,89 +7,79 @@ from step4_chapter_writer import generate_chapter_text
 
 MAX_VALIDATION_ATTEMPTS = 3
 
-def generate_full_book_stream(plot, num_chapters):
-    """Full pipeline with live streaming for all 4 steps."""
+
+def generate_book_outline_stream(plot, num_chapters):
+    """Pipeline streaming: yields updates after each stage."""
     if not plot.strip():
-        yield "Please enter a plot description.", "", "", "⚠️ No input provided."
+        yield "Please enter a plot description.", "", [], "", "⚠️ No input provided."
         return
 
     status_log = []
-    expanded_plot, chapters, full_chapter_texts = "", "", {}
 
-    # STEP 1 - Expand Plot
+    # STEP 1
     status_log.append("📝 Step 1: Expanding plot...")
-    yield "", "", "", "\n".join(status_log)
+    yield "", "", [], "", "\n".join(status_log)
     expanded_plot = expand_plot(plot)
     status_log.append("✅ Plot expanded.")
-    yield expanded_plot, "", "", "\n".join(status_log)
+    yield expanded_plot, "", [], "", "\n".join(status_log)
 
-    # STEP 2 - Generate Chapters
-    status_log.append("📘 Step 2: Generating chapter list...")
-    yield expanded_plot, "", "", "\n".join(status_log)
-    chapters = generate_chapters(expanded_plot, num_chapters)
+    # STEP 2
+    status_log.append("📘 Step 2: Generating chapter overview...")
+    yield expanded_plot, "", [], "", "\n".join(status_log)
+    chapters_overview = generate_chapters(expanded_plot, num_chapters)
     status_log.append("✅ Chapters overview generated.")
-    yield expanded_plot, chapters, "", "\n".join(status_log)
+    yield expanded_plot, chapters_overview, [], "", "\n".join(status_log)
 
-    # STEP 3 - Validate Chapters
+    # STEP 3 - validation loop
     validation_round = 0
     while validation_round < MAX_VALIDATION_ATTEMPTS:
         validation_round += 1
         status_log.append(f"🔍 Step 3: Validating chapters (attempt {validation_round})...")
-        yield expanded_plot, chapters, "", "\n".join(status_log)
+        yield expanded_plot, chapters_overview, [], "", "\n".join(status_log)
 
-        result, feedback = validate_chapters(expanded_plot, chapters, iteration=validation_round)
+        result, feedback = validate_chapters(expanded_plot, chapters_overview, iteration=validation_round)
 
         if result == "OK":
             status_log.append("✅ Validation passed.")
-            yield expanded_plot, chapters, "", "\n".join(status_log)
+            yield expanded_plot, chapters_overview, [], "", "\n".join(status_log)
             break
         elif result == "NOT OK":
-            status_log.append(f"⚠️ Validation found issues: {feedback[:200]}...")
-            status_log.append("♻️ Regenerating chapters with feedback...")
-            yield expanded_plot, chapters, "", "\n".join(status_log)
-            chapters = generate_chapters(expanded_plot, num_chapters, feedback)
-            status_log.append("🔄 New version of chapters generated.")
-            yield expanded_plot, chapters, "", "\n".join(status_log)
+            status_log.append(f"⚠️ Issues found: {feedback[:200]}...")
+            status_log.append("♻️ Regenerating overview with feedback...")
+            yield expanded_plot, chapters_overview, [], "", "\n".join(status_log)
+            chapters_overview = generate_chapters(expanded_plot, num_chapters, feedback)
+            status_log.append("🔄 New version of chapter overview generated.")
+            yield expanded_plot, chapters_overview, [], "", "\n".join(status_log)
         else:
             status_log.append(f"❌ Validation error: {feedback}")
-            yield expanded_plot, chapters, "", "\n".join(status_log)
+            yield expanded_plot, chapters_overview, [], "", "\n".join(status_log)
             break
 
-    if validation_round >= MAX_VALIDATION_ATTEMPTS:
-        status_log.append("⚠️ Max validation attempts reached, using latest chapters.")
-        yield expanded_plot, chapters, "", "\n".join(status_log)
+    # STEP 4 - generate full chapters
+    chapters_full = []
+    status_log.append("🚀 Step 4: Writing full chapters iteratively...")
+    yield expanded_plot, chapters_overview, [], "", "\n".join(status_log)
 
-    # STEP 4 - Generate Chapters Iteratively
-    status_log.append("📖 Step 4: Generating full chapter texts...")
-    yield expanded_plot, chapters, "", "\n".join(status_log)
+    for i in range(num_chapters):
+        current_index = i + 1
+        status_log.append(f"✍️ Generating Chapter {current_index}/{num_chapters}...")
+        yield expanded_plot, chapters_overview, chapters_full, "", "\n".join(status_log)
 
-    for i in range(1, int(num_chapters) + 1):
-        chapter_title = f"Chapter {i}"
-        status_log.append(f"🪶 Writing {chapter_title}...")
-        yield expanded_plot, chapters, "\n".join(
-            [f"{k}\n{v}\n" for k, v in full_chapter_texts.items()]
-        ), "\n".join(status_log)
+        chapter_text = generate_chapter_text(expanded_plot, chapters_overview, current_index, chapters_full)
+        chapters_full.append(f"Chapter {current_index}: {chapter_text[:10000]}")
 
-        # generate one chapter
-        chapter_text = generate_chapter_text(expanded_plot, chapters, i)
-        full_chapter_texts[chapter_title] = chapter_text
-
-        status_log.append(f"✅ {chapter_title} completed.")
-        yield expanded_plot, chapters, "\n".join(
-            [f"{k}\n{v}\n" for k, v in full_chapter_texts.items()]
-        ), "\n".join(status_log)
+        status_log.append(f"✅ Chapter {current_index} generated.")
+        yield expanded_plot, chapters_overview, chapters_full, chapters_full[-1], "\n".join(status_log)
 
     status_log.append("🎉 All chapters generated successfully!")
-    yield expanded_plot, chapters, "\n".join(
-        [f"{k}\n{v}\n" for k, v in full_chapter_texts.items()]
-    ), "\n".join(status_log)
+    yield expanded_plot, chapters_overview, chapters_full, chapters_full[-1], "\n".join(status_log)
 
 
 # ---------- UI ------------
-with gr.Blocks(title="BookKing - AI Story Creator") as demo:
+with gr.Blocks(title="BookKing - Live AI Story Planner") as demo:
     gr.Markdown("""
-    # 📚 BookKing - Live AI Story Creator  
-    _Automatically generate, validate, and expand your novel in real time._
+    # 📖 BookKing - Live Story Planner  
+    _Generate, validate, and refine your novel outline interactively._
     """)
 
     with gr.Row():
@@ -98,26 +88,61 @@ with gr.Blocks(title="BookKing - AI Story Creator") as demo:
             lines=3,
             placeholder="Ex: A young girl discovers a portal to another world..."
         )
-        chapters_input = gr.Number(
-            label="Number of Chapters",
-            value=10,
-            precision=0
+        chapters_input = gr.Number(label="Number of Chapters", value=5, precision=0)
+
+    generate_btn = gr.Button("🚀 Generate Book (Live)")
+
+    with gr.Row():
+        expanded_output = gr.Textbox(label="📝 Expanded Plot (Step 1)", lines=15)
+        chapters_output = gr.Textbox(label="📘 Chapters Overview (Step 2)", lines=15)
+
+    with gr.Row():
+        with gr.Column(scale=1):
+            chapter_selector = gr.Dropdown(
+                label="📖 Select Chapter",
+                choices=[],
+                interactive=True
+            )
+            chapter_counter = gr.Markdown("_No chapters yet_")
+        with gr.Column(scale=3):
+            current_chapter_output = gr.Textbox(label="📚 Current Chapter", lines=25)
+
+    status_output = gr.Textbox(label="🧩 Process Log", lines=15)
+
+    def update_chapter_selection(chapters):
+        """Updates dropdown list when chapters are generated."""
+        if not chapters:
+            return gr.Dropdown(choices=[], value=None), gr.Markdown("_No chapters yet_")
+        choices = [f"Chapter {i+1}" for i in range(len(chapters))]
+        return gr.Dropdown(choices=choices, value=choices[-1]), gr.Markdown(
+            f"📘 Viewing chapter {len(chapters)} of {len(chapters)}"
         )
 
-    generate_btn = gr.Button("🚀 Generate Full Book (Live)")
+    def display_selected_chapter(chapter_name, chapters):
+        """Displays the selected chapter text."""
+        if not chapters or not chapter_name:
+            return ""
+        idx = int(chapter_name.split(" ")[1]) - 1
+        if 0 <= idx < len(chapters):
+            return chapters[idx]
+        return ""
 
-    with gr.Row():
-        expanded_output = gr.Textbox(label="📝 Expanded Plot (Step 1)", lines=12)
-        chapters_output = gr.Textbox(label="📘 Chapters Overview (Step 2-3)", lines=12)
-
-    with gr.Row():
-        full_book_output = gr.Textbox(label="📖 Generated Chapters (Step 4)", lines=20)
-        status_output = gr.Textbox(label="🧩 Process Log", lines=20)
-
-    generate_btn.click(
-        fn=generate_full_book_stream,
+    book_generator = generate_btn.click(
+        fn=generate_book_outline_stream,
         inputs=[plot_input, chapters_input],
-        outputs=[expanded_output, chapters_output, full_book_output, status_output]
+        outputs=[expanded_output, chapters_output, chapter_selector, current_chapter_output, status_output]
+    )
+
+    book_generator.then(
+        fn=update_chapter_selection,
+        inputs=[chapter_selector],
+        outputs=[chapter_selector, chapter_counter]
+    )
+
+    chapter_selector.change(
+        fn=display_selected_chapter,
+        inputs=[chapter_selector, chapter_selector],
+        outputs=[current_chapter_output]
     )
 
 demo.launch(server_name="0.0.0.0", server_port=7860)
