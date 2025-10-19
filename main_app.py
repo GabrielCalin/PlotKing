@@ -11,68 +11,78 @@ MAX_VALIDATION_ATTEMPTS = 3
 def generate_book_outline_stream(plot, num_chapters):
     """Pipeline streaming: yields updates after each stage."""
     if not plot.strip():
-        yield "Please enter a plot description.", "", [], "", "⚠️ No input provided."
+        yield "Please enter a plot description.", "", [], "", "", "", "⚠️ No input provided."
         return
 
     status_log = []
+    chapters_full = []
+
+    def chapter_ui(chapters):
+        """Return dropdown + counter updated live."""
+        if not chapters:
+            return gr.Dropdown(choices=[], value=None), gr.Markdown("_No chapters yet_")
+        choices = [f"Chapter {i+1}" for i in range(len(chapters))]
+        return gr.Dropdown(choices=choices, value=choices[-1]), gr.Markdown(
+            f"📘 Viewing chapter {len(chapters)} of {len(chapters)}"
+        )
 
     # STEP 1
     status_log.append("📝 Step 1: Expanding plot...")
-    yield "", "", [], "", "\n".join(status_log)
+    yield "", "", [], "", "", "", "\n".join(status_log)
     expanded_plot = expand_plot(plot)
     status_log.append("✅ Plot expanded.")
-    yield expanded_plot, "", [], "", "\n".join(status_log)
+    dropdown, counter = chapter_ui(chapters_full)
+    yield expanded_plot, "", chapters_full, "", dropdown, counter, "\n".join(status_log)
 
     # STEP 2
     status_log.append("📘 Step 2: Generating chapter overview...")
-    yield expanded_plot, "", [], "", "\n".join(status_log)
+    yield expanded_plot, "", chapters_full, "", dropdown, counter, "\n".join(status_log)
     chapters_overview = generate_chapters(expanded_plot, num_chapters)
     status_log.append("✅ Chapters overview generated.")
-    yield expanded_plot, chapters_overview, [], "", "\n".join(status_log)
+    dropdown, counter = chapter_ui(chapters_full)
+    yield expanded_plot, chapters_overview, chapters_full, "", dropdown, counter, "\n".join(status_log)
 
-    # STEP 3 - validation loop
+    # STEP 3 - validation
     validation_round = 0
     while validation_round < MAX_VALIDATION_ATTEMPTS:
         validation_round += 1
         status_log.append(f"🔍 Step 3: Validating chapters (attempt {validation_round})...")
-        yield expanded_plot, chapters_overview, [], "", "\n".join(status_log)
+        yield expanded_plot, chapters_overview, chapters_full, "", dropdown, counter, "\n".join(status_log)
 
         result, feedback = validate_chapters(expanded_plot, chapters_overview, iteration=validation_round)
 
         if result == "OK":
             status_log.append("✅ Validation passed.")
-            yield expanded_plot, chapters_overview, [], "", "\n".join(status_log)
             break
         elif result == "NOT OK":
             status_log.append(f"⚠️ Issues found: {feedback[:200]}...")
             status_log.append("♻️ Regenerating overview with feedback...")
-            yield expanded_plot, chapters_overview, [], "", "\n".join(status_log)
+            yield expanded_plot, chapters_overview, chapters_full, "", dropdown, counter, "\n".join(status_log)
             chapters_overview = generate_chapters(expanded_plot, num_chapters, feedback)
             status_log.append("🔄 New version of chapter overview generated.")
-            yield expanded_plot, chapters_overview, [], "", "\n".join(status_log)
         else:
             status_log.append(f"❌ Validation error: {feedback}")
-            yield expanded_plot, chapters_overview, [], "", "\n".join(status_log)
             break
 
-    # STEP 4 - generate full chapters
-    chapters_full = []
+    # STEP 4
     status_log.append("🚀 Step 4: Writing full chapters iteratively...")
-    yield expanded_plot, chapters_overview, [], "", "\n".join(status_log)
+    yield expanded_plot, chapters_overview, chapters_full, "", dropdown, counter, "\n".join(status_log)
 
     for i in range(num_chapters):
         current_index = i + 1
         status_log.append(f"✍️ Generating Chapter {current_index}/{num_chapters}...")
-        yield expanded_plot, chapters_overview, chapters_full, "", "\n".join(status_log)
+        yield expanded_plot, chapters_overview, chapters_full, "", dropdown, counter, "\n".join(status_log)
 
         chapter_text = generate_chapter_text(expanded_plot, chapters_overview, current_index, chapters_full)
         chapters_full.append(f"Chapter {current_index}: {chapter_text[:10000]}")
 
+        dropdown, counter = chapter_ui(chapters_full)
         status_log.append(f"✅ Chapter {current_index} generated.")
-        yield expanded_plot, chapters_overview, chapters_full, chapters_full[-1], "\n".join(status_log)
+        yield expanded_plot, chapters_overview, chapters_full, chapters_full[-1], dropdown, counter, "\n".join(status_log)
 
     status_log.append("🎉 All chapters generated successfully!")
-    yield expanded_plot, chapters_overview, chapters_full, chapters_full[-1], "\n".join(status_log)
+    dropdown, counter = chapter_ui(chapters_full)
+    yield expanded_plot, chapters_overview, chapters_full, chapters_full[-1], dropdown, counter, "\n".join(status_log)
 
 
 # ---------- UI ------------
@@ -98,32 +108,16 @@ with gr.Blocks(title="BookKing - Live AI Story Planner") as demo:
 
     with gr.Row():
         with gr.Column(scale=1):
-            chapter_selector = gr.Dropdown(
-                label="📖 Select Chapter",
-                choices=[],
-                interactive=True
-            )
+            chapter_selector = gr.Dropdown(label="📖 Select Chapter", choices=[], interactive=True)
             chapter_counter = gr.Markdown("_No chapters yet_")
         with gr.Column(scale=3):
             current_chapter_output = gr.Textbox(label="📚 Current Chapter", lines=25)
 
     status_output = gr.Textbox(label="🧩 Process Log", lines=15)
 
-    # 🧠 State to store generated chapters list
     chapters_state = gr.State([])
 
-    # --- Helper functions ---
-    def update_chapter_selection(chapters):
-        """Updates dropdown list when chapters are generated."""
-        if not chapters:
-            return gr.Dropdown(choices=[], value=None), gr.Markdown("_No chapters yet_")
-        choices = [f"Chapter {i+1}" for i in range(len(chapters))]
-        return gr.Dropdown(choices=choices, value=choices[-1]), gr.Markdown(
-            f"📘 Viewing chapter {len(chapters)} of {len(chapters)}"
-        )
-
     def display_selected_chapter(chapter_name, chapters):
-        """Displays the selected chapter text."""
         if not chapters or not chapter_name:
             return ""
         idx = int(chapter_name.split(" ")[1]) - 1
@@ -131,17 +125,19 @@ with gr.Blocks(title="BookKing - Live AI Story Planner") as demo:
             return chapters[idx]
         return ""
 
-    # --- Wiring logic ---
+    # --- Wiring ---
     book_generator = generate_btn.click(
         fn=generate_book_outline_stream,
         inputs=[plot_input, chapters_input],
-        outputs=[expanded_output, chapters_output, chapters_state, current_chapter_output, status_output]
-    )
-
-    book_generator.then(
-        fn=update_chapter_selection,
-        inputs=[chapters_state],
-        outputs=[chapter_selector, chapter_counter]
+        outputs=[
+            expanded_output,
+            chapters_output,
+            chapters_state,
+            current_chapter_output,
+            chapter_selector,
+            chapter_counter,
+            status_output,
+        ]
     )
 
     chapter_selector.change(
