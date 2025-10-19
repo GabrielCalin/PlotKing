@@ -16,14 +16,20 @@ def generate_book_outline_stream(plot, num_chapters):
 
     status_log = []
     chapters_full = []
+    first_chapter_shown = False
 
-    def chapter_ui(chapters):
+    def chapter_ui(chapters, lock_selection=False):
         """Return dropdown + counter updated live."""
         if not chapters:
             return gr.Dropdown(choices=[], value=None), gr.Markdown("_No chapters yet_")
         choices = [f"Chapter {i+1}" for i in range(len(chapters))]
+        # dacă e blocat, nu schimbăm value (evităm declanșarea .change)
+        if lock_selection:
+            return gr.Dropdown(choices=choices, value=gr.update()), gr.Markdown(
+                f"📘 {len(chapters)} chapter(s) generated so far"
+            )
         return gr.Dropdown(choices=choices, value=choices[-1]), gr.Markdown(
-            f"📘 Viewing chapter {len(chapters)} of {len(chapters)}"
+            f"📘 {len(chapters)} chapter(s) generated so far"
         )
 
     # STEP 1
@@ -64,7 +70,7 @@ def generate_book_outline_stream(plot, num_chapters):
             status_log.append(f"❌ Validation error: {feedback}")
             break
 
-    # STEP 4
+    # STEP 4 - generare capitole
     status_log.append("🚀 Step 4: Writing full chapters iteratively...")
     yield expanded_plot, chapters_overview, chapters_full, "", dropdown, counter, "\n".join(status_log)
 
@@ -76,13 +82,36 @@ def generate_book_outline_stream(plot, num_chapters):
         chapter_text = generate_chapter_text(expanded_plot, chapters_overview, current_index, chapters_full)
         chapters_full.append(f"Chapter {current_index}: {chapter_text[:10000]}")
 
-        dropdown, counter = chapter_ui(chapters_full)
         status_log.append(f"✅ Chapter {current_index} generated.")
-        yield expanded_plot, chapters_overview, chapters_full, chapters_full[-1], dropdown, counter, "\n".join(status_log)
 
+        # 🔧 generăm lista de capitole actualizată
+        choices = [f"Chapter {j+1}" for j in range(len(chapters_full))]
+        counter = gr.Markdown(f"📘 {len(chapters_full)} chapter(s) generated so far")
+
+        if not first_chapter_shown:
+            first_chapter_shown = True
+            dropdown = gr.update(choices=choices, value="Chapter 1")  # primul selectat
+            current_output = chapters_full[0]  # afișăm primul capitol
+        else:
+            dropdown = gr.update(choices=choices, value=None)  # doar actualizăm lista
+            current_output = gr.update()  # nu modificăm conținutul
+
+        yield (
+            expanded_plot,
+            chapters_overview,
+            chapters_full,
+            current_output,
+            dropdown,
+            counter,
+            "\n".join(status_log),
+        )
+
+    # la final
     status_log.append("🎉 All chapters generated successfully!")
-    dropdown, counter = chapter_ui(chapters_full)
-    yield expanded_plot, chapters_overview, chapters_full, chapters_full[-1], dropdown, counter, "\n".join(status_log)
+    final_choices = [f"Chapter {i+1}" for i in range(len(chapters_full))]
+    dropdown = gr.update(choices=final_choices, value="Chapter 1")  # rămâne pe primul
+    counter = gr.Markdown(f"✅ All {len(chapters_full)} chapters generated!")
+    yield expanded_plot, chapters_overview, chapters_full, gr.update(), dropdown, counter, "\n".join(status_log)
 
 
 # ---------- UI ------------
