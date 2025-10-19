@@ -17,6 +17,7 @@ def generate_book_outline_stream(plot, num_chapters):
     status_log = []
     chapters_full = []
     first_chapter_text = ""
+    current_dropdown_value = None  # value sigur
 
     # STEP 1
     status_log.append("📝 Step 1: Expanding plot...")
@@ -53,25 +54,32 @@ def generate_book_outline_stream(plot, num_chapters):
     for i in range(num_chapters):
         current_index = i + 1
         status_log.append(f"✍️ Generating Chapter {current_index}/{num_chapters}...")
-        yield expanded_plot, chapters_overview, chapters_full, first_chapter_text, gr.update(choices=[f"Chapter {j+1}" for j in range(len(chapters_full))], value="Chapter 1"), f"Generating chapter {current_index}...", "\n".join(status_log)
 
+        # Înainte de a fi generat capitolul — lista existentă
+        dropdown_update = gr.update(
+            choices=[f"Chapter {j+1}" for j in range(len(chapters_full))],
+            value=current_dropdown_value
+        )
+        yield expanded_plot, chapters_overview, chapters_full, first_chapter_text, dropdown_update, f"Generating chapter {current_index}...", "\n".join(status_log)
+
+        # După ce am generat capitolul:
         chapter_text = generate_chapter_text(expanded_plot, chapters_overview, current_index, chapters_full)
         chapters_full.append(f"Chapter {current_index}: {chapter_text[:10000]}")
 
         if current_index == 1:
             first_chapter_text = chapters_full[0]
+            current_dropdown_value = "Chapter 1"  # setăm doar acum
 
-        # 🔁 Actualizează choices, dar păstrează valoarea selectată „Chapter 1”
         choices = [f"Chapter {j+1}" for j in range(len(chapters_full))]
-        dropdown_update = gr.update(choices=choices, value="Chapter 1")
+        dropdown_update = gr.update(choices=choices, value=current_dropdown_value)
         counter_value = f"📘 {len(chapters_full)} chapter(s) generated so far"
 
         yield (
             expanded_plot,
             chapters_overview,
             chapters_full,
-            first_chapter_text,     # 🔒 rămâne textul capitolului 1
-            dropdown_update,        # 🔒 rămâne selectat Chapter 1
+            first_chapter_text,
+            dropdown_update,
             counter_value,
             "\n".join(status_log),
         )
@@ -79,7 +87,9 @@ def generate_book_outline_stream(plot, num_chapters):
     # FINAL
     status_log.append("🎉 All chapters generated successfully!")
     final_choices = [f"Chapter {i+1}" for i in range(len(chapters_full))]
-    yield expanded_plot, chapters_overview, chapters_full, first_chapter_text, gr.update(choices=final_choices, value="Chapter 1"), f"✅ All {len(chapters_full)} chapters generated!", "\n".join(status_log)
+    dropdown_final = gr.update(choices=final_choices, value="Chapter 1")
+    counter_final = f"✅ All {len(chapters_full)} chapters generated!"
+    yield expanded_plot, chapters_overview, chapters_full, first_chapter_text, dropdown_final, counter_final, "\n".join(status_log)
 
 
 # ---------- UI ------------
