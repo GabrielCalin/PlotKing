@@ -109,6 +109,10 @@ with gr.Blocks(title="BookKing - Live AI Story Planner") as demo:
 
     status_output = gr.Textbox(label="🧩 Process Log", lines=15)
 
+    # 🧠 State to store generated chapters list
+    chapters_state = gr.State([])
+
+    # --- Helper functions ---
     def update_chapter_selection(chapters):
         """Updates dropdown list when chapters are generated."""
         if not chapters:
@@ -127,21 +131,22 @@ with gr.Blocks(title="BookKing - Live AI Story Planner") as demo:
             return chapters[idx]
         return ""
 
+    # --- Wiring logic ---
     book_generator = generate_btn.click(
         fn=generate_book_outline_stream,
         inputs=[plot_input, chapters_input],
-        outputs=[expanded_output, chapters_output, chapter_selector, current_chapter_output, status_output]
+        outputs=[expanded_output, chapters_output, chapters_state, current_chapter_output, status_output]
     )
 
     book_generator.then(
         fn=update_chapter_selection,
-        inputs=[chapter_selector],
+        inputs=[chapters_state],
         outputs=[chapter_selector, chapter_counter]
     )
 
     chapter_selector.change(
         fn=display_selected_chapter,
-        inputs=[chapter_selector, chapter_selector],
+        inputs=[chapter_selector, chapters_state],
         outputs=[current_chapter_output]
     )
 
