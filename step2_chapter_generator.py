@@ -24,6 +24,6 @@ def generate_chapters(expanded_plot: str, num_chapters: int, model="mistral", ap
         "temperature": 0.6,
     }
 
-    response = requests.post(api_url, json=payload)
+    response = requests.post(api_url, json=payload, timeout=300)
     response.raise_for_status()
     return response.json()["choices"][0]["message"]["content"]

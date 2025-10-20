@@ -96,7 +96,7 @@ def validate_chapter(expanded_plot, chapters_overview, previous_chapters, curren
     }
 
     try:
-        resp = requests.post(url, json=payload, timeout=120)
+        resp = requests.post(url, json=payload, timeout=300)
         resp.raise_for_status()
         data = resp.json()
         content = (

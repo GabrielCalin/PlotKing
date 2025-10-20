@@ -114,7 +114,7 @@ def generate_chapter_text(expanded_plot: str,
     }
 
     try:
-        r = requests.post(url, json=payload, timeout=600)
+        r = requests.post(url, json=payload, timeout=3600)
         r.raise_for_status()
         data = r.json()
 

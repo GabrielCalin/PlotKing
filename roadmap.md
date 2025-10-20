@@ -8,6 +8,8 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 1. **Update README**  
    - Update main documentation.
+   - Also, increase read timeout.
+   - Remove newline in validation feedback for first line.
 
 ---
 

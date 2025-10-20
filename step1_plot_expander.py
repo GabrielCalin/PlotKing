@@ -29,6 +29,6 @@ def expand_plot(user_plot: str, model="mistral", api_url="http://localhost:1234/
         "temperature": 0.7,
     }
 
-    response = requests.post(api_url, json=payload)
+    response = requests.post(api_url, json=payload, timeout=300)
     response.raise_for_status()
     return response.json()["choices"][0]["message"]["content"]
