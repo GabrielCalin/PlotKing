@@ -90,58 +90,64 @@ def generate_book_outline_stream(plot, num_chapters):
         chapters_full.append(f"Chapter {current_index}: {chapter_text[:10000]}")
         status_log.append(f"✅ Chapter {current_index} generated.")
 
-        # --- Step 5: Validate the generated chapter ---
-        status_log.append(f"🧩 Step 5: Validating Chapter {current_index}...")
-        choices = [f"Chapter {j+1}" for j in range(len(chapters_full))]
+        validation_attempts = 0
+        while validation_attempts < MAX_VALIDATION_ATTEMPTS:
+            # --- Step 5: Validate the generated chapter ---
+            status_log.append(f"🧩 Step 5: Validating Chapter {current_index}...")
+            choices = [f"Chapter {j+1}" for j in range(len(chapters_full))]
 
-        yield (
-            expanded_plot,
-            chapters_overview,
-            chapters_full,
-            gr.update(),
-            gr.update(choices=choices),
-            f"Validating chapter {current_index}...",
-            "\n".join(status_log),
-            validation_text,
-        )
-
-        result, feedback = validate_chapter(
-            expanded_plot,
-            chapters_overview,
-            chapters_full[:-1],
-            chapter_text,
-            current_index
-        )
-
-        if result == "OK":
-            status_log.append(f"✅ Chapter {current_index} passed validation.")
-            validation_text += f"\n\n✅ Chapter {current_index} Validation: PASSED"
-        elif result == "NOT OK":
-            status_log.append(f"⚠️ Chapter {current_index} failed validation — regenerating.")
-            validation_text += f"\n\n⚠️ Chapter {current_index} Validation Feedback:\n{feedback}"
             yield (
                 expanded_plot,
                 chapters_overview,
                 chapters_full,
                 gr.update(),
                 gr.update(choices=choices),
-                f"Regenerating chapter {current_index}...",
+                f"Validating chapter {current_index}...",
                 "\n".join(status_log),
                 validation_text,
             )
-            # regenerate with feedback
-            chapter_text = generate_chapter_text(
+
+            result, feedback = validate_chapter(
                 expanded_plot,
                 chapters_overview,
-                current_index,
                 chapters_full[:-1],
-                feedback=feedback
+                chapter_text,
+                current_index
             )
-            chapters_full[-1] = f"Chapter {current_index}: {chapter_text[:10000]}"
-            status_log.append(f"✅ Chapter {current_index} regenerated successfully.")
-        else:
-            status_log.append(f"❌ Validation error or unknown result for Chapter {current_index}.")
-            validation_text += f"\n\n❌ Chapter {current_index} Validation Error:\n{feedback}"
+
+            if result == "OK":
+                status_log.append(f"✅ Chapter {current_index} passed validation.")
+                validation_text += f"\n\n✅ Chapter {current_index} Validation: PASSED"
+                break
+            elif result == "NOT OK":
+                status_log.append(f"⚠️ Chapter {current_index} failed validation — regenerating.")
+                validation_text += f"\n\n⚠️ Chapter {current_index} Validation Feedback:\n{feedback}"
+                yield (
+                    expanded_plot,
+                    chapters_overview,
+                    chapters_full,
+                    gr.update(),
+                    gr.update(choices=choices),
+                    f"Regenerating chapter {current_index}...",
+                    "\n".join(status_log),
+                    validation_text,
+                )
+                # regenerate with feedback
+                chapter_text = generate_chapter_text(
+                    expanded_plot,
+                    chapters_overview,
+                    current_index,
+                    chapters_full[:-1],
+                    feedback=feedback
+                )
+                chapters_full[-1] = f"Chapter {current_index}: {chapter_text[:10000]}"
+                status_log.append(f"✅ Chapter {current_index} regenerated successfully.")
+            else:
+                status_log.append(f"❌ Validation error or unknown result for Chapter {current_index}.")
+                validation_text += f"\n\n❌ Chapter {current_index} Validation Error:\n{feedback}"
+                break
+
+            validation_attempts += 1
 
         # after validation: update dropdown + display
         choices = [f"Chapter {j+1}" for j in range(len(chapters_full))]
