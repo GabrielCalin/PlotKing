@@ -8,10 +8,11 @@ BookKing is an interactive AI-powered application that helps writers generate, v
 - **Chapter Generation**: Automatically create chapter titles and descriptions based on the expanded plot
 - **Validation & Refinement**: Analyze and improve chapter coherence with AI feedback
 - **Interactive UI**: Monitor the generation process in real-time through a Gradio interface
+- **Chapter Verification System** 🆕: After each chapter is generated, an AI model validates it against the original plot and previous chapters. If validation fails, the system automatically regenerates the chapter until it passes (up to a set number of attempts).
 
 ## Architecture
 
-The application follows a three-step pipeline architecture:
+The application follows a three-step pipeline architecture (plus an iterative validation loop for full chapters):
 
 ### Step 1: Plot Expander (`step1_plot_expander.py`)
 - Takes a user's short plot description as input
@@ -31,6 +32,16 @@ The application follows a three-step pipeline architecture:
 - Provides feedback for improvements if necessary
 - Supports an iterative refinement process (up to 3 validation attempts)
 
+### Step 4: Chapter Writer & Iterative Validator 🆕 (`step4_chapter_writer.py`)
+- Generates full text for each chapter based on:
+  - The expanded plot
+  - The list of all chapter overviews
+  - The current chapter index
+- After generation, each chapter is validated by an AI model to ensure:
+  - Alignment with its plot description
+  - Logical continuity with previous chapters
+- If the validation fails, the same chapter is regenerated using feedback from the validator, repeating until success or maximum retries reached.
+
 ## Workflow
 
 1. User enters a short plot description and desired number of chapters
@@ -39,7 +50,8 @@ The application follows a three-step pipeline architecture:
 4. The Validator checks the coherence between the plot and chapters
 5. If validation fails, the system regenerates chapters with feedback
 6. This process repeats until validation passes or max attempts are reached
-7. The final output is a complete, validated novel outline
+7. The Chapter Writer then generates each chapter and validates it iteratively until it meets quality and continuity criteria
+8. The final output is a complete, validated novel outline with full chapters
 
 ## Requirements
 
