@@ -50,16 +50,16 @@ def generate_book_outline_stream(plot, num_chapters):
         result, feedback = validate_chapters(expanded_plot, chapters_overview, iteration=validation_round)
         if result == "OK":
             status_log.append("✅ Overview validation passed.")
-            validation_text = "✅ Chapters Overview Validation: PASSED"
+            validation_text += "\n\n✅ Chapters Overview Validation: PASSED"
             break
         elif result == "NOT OK":
             status_log.append(f"⚠️ Overview validation issues found.")
-            validation_text = f"⚠️ Chapters Overview Validation Feedback (attempt {validation_round}):\n{feedback}"
+            validation_text += f"\n\n⚠️ Chapters Overview Validation Feedback (attempt {validation_round}):\n{feedback}"
             chapters_overview = generate_chapters(expanded_plot, num_chapters, feedback)
             status_log.append("🔄 Regenerated overview with feedback.")
         else:
             status_log.append(f"❌ Overview validation error: {feedback}")
-            validation_text = f"❌ Validation Error:\n{feedback}"
+            validation_text += f"\n\n❌ Validation Error:\n{feedback}"
             break
 
         yield expanded_plot, chapters_overview, [], "", gr.update(choices=[], value=None), "_Validating overview..._", "\n".join(status_log), validation_text
@@ -115,10 +115,10 @@ def generate_book_outline_stream(plot, num_chapters):
 
         if result == "OK":
             status_log.append(f"✅ Chapter {current_index} passed validation.")
-            validation_text = f"✅ Chapter {current_index} Validation: PASSED"
+            validation_text += f"\n\n✅ Chapter {current_index} Validation: PASSED"
         elif result == "NOT OK":
             status_log.append(f"⚠️ Chapter {current_index} failed validation — regenerating.")
-            validation_text = f"⚠️ Chapter {current_index} Validation Feedback:\n{feedback}"
+            validation_text += f"\n\n⚠️ Chapter {current_index} Validation Feedback:\n{feedback}"
             yield (
                 expanded_plot,
                 chapters_overview,
@@ -141,7 +141,7 @@ def generate_book_outline_stream(plot, num_chapters):
             status_log.append(f"✅ Chapter {current_index} regenerated successfully.")
         else:
             status_log.append(f"❌ Validation error or unknown result for Chapter {current_index}.")
-            validation_text = f"❌ Chapter {current_index} Validation Error:\n{feedback}"
+            validation_text += f"\n\n❌ Chapter {current_index} Validation Error:\n{feedback}"
 
         # after validation: update dropdown + display
         choices = [f"Chapter {j+1}" for j in range(len(chapters_full))]
@@ -172,7 +172,7 @@ def generate_book_outline_stream(plot, num_chapters):
     final_choices = [f"Chapter {i+1}" for i in range(len(chapters_full))]
     dropdown_final = gr.update(choices=final_choices)
     counter_final = f"✅ All {len(chapters_full)} chapters generated!"
-    validation_text = "🎯 All validations passed successfully."
+    validation_text += "\n\n🎯 All validations passed successfully."
     yield expanded_plot, chapters_overview, chapters_full, gr.update(), dropdown_final, counter_final, "\n".join(status_log), validation_text
 
 
