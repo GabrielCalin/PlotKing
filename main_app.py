@@ -208,7 +208,7 @@ with gr.Blocks(title="BookKing - Live AI Story Planner") as demo:
             chapter_selector = gr.Dropdown(label="📖 Select Chapter", choices=[], value=None, interactive=True)
             chapter_counter = gr.Markdown("_No chapters yet_")
         with gr.Column(scale=3):
-            current_chapter_output = gr.Textbox(label="📚 Current Chapter", lines=20)
+            current_chapter_output = gr.Textbox(label="📚 Current Chapter", lines=20, max_lines=9999)
 
     validation_feedback = gr.Textbox(label="🧩 Validation Feedback (Steps 3 & 5)", lines=8)
 
