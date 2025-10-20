@@ -63,7 +63,7 @@ def _build_previous_summary(previous_texts, max_chars=1000):
     return "\n".join(parts)
 
 
-def generate_chapter_text(expanded_plot: str, chapters_overview: str, chapter_index: int, previous_chapters=None, local_api_url=None, model_name=None):
+def generate_chapter_text(expanded_plot: str, chapters_overview: str, chapter_index: int, previous_chapters=None, local_api_url=None, model_name=None, feedback=None):
     """
     Generate the full text for chapter `chapter_index` (1-based index).
     - expanded_plot: the two-page plot summary (string)
@@ -120,13 +120,17 @@ def generate_chapter_text(expanded_plot: str, chapters_overview: str, chapter_in
 
     previous_summary = _build_previous_summary(previous_chapters or [], max_chars=1200)
 
+    feedback_section = ""
+    if feedback:
+        feedback_section = f"\n\nAdditional reviewer feedback to address:\n\"\"\"{feedback}\"\"\"\n"
+
     prompt = CHAPTER_PROMPT_TEMPLATE.format(
         expanded_plot=expanded_plot,
         chapters_overview=chapters_overview,
         previous_chapters_summary=previous_summary,
         chapter_number=chapter_index,
         chapter_title=chapter_title_found
-    )
+    ) + feedback_section
 
     # Build payload in OpenAI chat-completions style (LM Studio compatible)
     payload = {

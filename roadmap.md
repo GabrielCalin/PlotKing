@@ -10,7 +10,7 @@ This document outlines the planned development milestones for the **AI Story Gen
    - After each chapter is generated, a validation LLM checks:
      - Whether the chapter aligns with the **initial plot outline** for that chapter.
      - Whether it maintains **logical consistency** with previous chapters.
-   - **LLM Inputs:** full plot, chapter list, previous chapters, and the current chapter (the one being validated).
+   - **LLM Inputs:** expanded plot, chapters overview, previous chapters, and the current chapter (the one being validated).
    - **LLM Output:** validation result (`OK` / `NOT OK`) + improvement suggestions.
    - If the chapter receives an **OK**, the next chapter is generated.
    - Otherwise, the same chapter is **regenerated** based on the feedback from the validator LLM.
@@ -32,14 +32,19 @@ This document outlines the planned development milestones for the **AI Story Gen
 4. **Prompt Optimization**
    - Refine prompts used in each generation stage (plot expansion, chapter generation, validation) for higher quality and coherence.
 
+5. **Saving Project State**
+   - Implement project state saving functionality to allow users to save and resume their work.
+   - Save generated chapters, plot outlines, and validation results.
+   - Enable multiple project management with separate save files.
+
 ---
 
 ## ✍️ Phase 3 — Creative Control
 
-5. **Manual Chapter Editing**
+6. **Manual Chapter Editing**
    - Let users manually edit chapters within the interface.
 
-6. **AI Chat per Chapter**
+7. **AI Chat per Chapter**
    - Add an interactive chat system where users can discuss or request edits for a specific chapter.
    - A supervising LLM will analyze whether requested changes affect **subsequent chapters** and, if necessary, **update them iteratively**.
 
@@ -47,26 +52,26 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## 🎨 Phase 4 — Presentation and Distribution
 
-7. **Generate EPUB Cover Image**
+8. **Generate EPUB Cover Image**
    - Automatically create an AI-generated book cover (based on story theme or user input).
    - Potential integration with **ComfyUI** for image workflows.
 
-7b. **Make the Repository Public**
+8b. **Make the Repository Public**
    - Publish the GitHub repository and prepare documentation for open collaboration.
 
 ---
 
 ## 🧠 Phase 5 — Advanced AI Features
 
-8. **Book Comparison System**
+9. **Book Comparison System**
    - Enable users to compare multiple books using pre-defined or custom criteria.
    - Comparison will be performed **pairwise in a tournament-style bracket**:
      - 4 books → 2 semifinals → 1 final round → overall winner suggested by the LLM.
 
-9. **Graphic Story Generation**
+10. **Graphic Story Generation**
    - Generate illustrated or visualized stories by adding AI-generated images throughout the chapters.
 
-10. **Model Selection per Task**
+11. **Model Selection per Task**
     - Allow choosing different LLMs for specific tasks (e.g., chapter generation, validation, editing).
     - Integrate with **OpenAI** and potentially other model providers.
 
@@ -81,6 +86,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 | Genre Selection in UI | ⏳ Planned |
 | Export to EPUB | ⏳ Planned |
 | Prompt Optimization | ⏳ Planned |
+| Saving Project State | ⏳ Planned |
 | Manual Chapter Editing | ⏳ Planned |
 | AI Chat per Chapter | 🔜 Future |
 | EPUB Cover Generation | 🔜 Future |

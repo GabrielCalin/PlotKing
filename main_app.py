@@ -4,15 +4,16 @@ from step1_plot_expander import expand_plot
 from step2_chapter_generator import generate_chapters
 from step3_validator import validate_chapters
 from step4_chapter_writer import generate_chapter_text
+from step5_chapter_validator import validate_chapter
 
 MAX_VALIDATION_ATTEMPTS = 3
 
 
 def generate_book_outline_stream(plot, num_chapters):
     """
-    Streaming stabil:
-    - Dropdown: setez value="Chapter 1" doar la primul capitol, apoi doar choices (nu mai resetez selecția).
-    - Current Chapter: setez textul DOAR când apare capitolul 1; ulterior NU mai rescriu (gr.update()).
+    Stable streaming pipeline:
+    - Dropdown: sets value="Chapter 1" only for the first chapter.
+    - Current Chapter: updates only once (when Chapter 1 is generated).
     """
     if not plot.strip():
         yield "Please enter a plot description.", "", [], "", gr.update(choices=[], value=None), "_No chapters yet_", "⚠️ No input provided."
@@ -21,7 +22,7 @@ def generate_book_outline_stream(plot, num_chapters):
     status_log = []
     chapters_full = []
     first_chapter_text = ""
-    first_display_done = False  # <-- important: setăm Current Chapter o singură dată, la capitolul 1
+    first_display_done = False
 
     # --- STEP 1 ---
     status_log.append("📝 Step 1: Expanding plot...")
@@ -63,45 +64,94 @@ def generate_book_outline_stream(plot, num_chapters):
         current_index = i + 1
         status_log.append(f"✍️ Generating Chapter {current_index}/{num_chapters}...")
 
-        # PRE-yield: înainte de generarea capitolului curent NU mai atingem Current Chapter (ca să nu suprascriem selecția userului)
-        pre_choices = [f"Chapter {j+1}" for j in range(len(chapters_full))]
+        # always define choices before any yield
+        choices = [f"Chapter {j+1}" for j in range(len(chapters_full))]
+
+        # PRE-yield: before generation
         yield (
             expanded_plot,
             chapters_overview,
             chapters_full,
-            gr.update(),                 # <-- nu schimbăm textbox-ul
-            gr.update(choices=pre_choices),  # <-- doar choices, fără value
+            gr.update(),
+            gr.update(choices=choices),
             f"Generating chapter {current_index}...",
             "\n".join(status_log),
         )
 
-        # generăm capitolul
+        # generate chapter
         chapter_text = generate_chapter_text(expanded_plot, chapters_overview, current_index, chapters_full)
         chapters_full.append(f"Chapter {current_index}: {chapter_text[:10000]}")
         status_log.append(f"✅ Chapter {current_index} generated.")
 
-        # după generare: actualizăm lista
+        # --- Step 5: Validate the generated chapter ---
+        status_log.append(f"🧩 Step 5: Validating Chapter {current_index}...")
+
+        # define choices again (now includes the new chapter)
         choices = [f"Chapter {j+1}" for j in range(len(chapters_full))]
 
-        if current_index == 1:
-            # prima și singura dată când forțăm selecția și textul
+        yield (
+            expanded_plot,
+            chapters_overview,
+            chapters_full,
+            gr.update(),
+            gr.update(choices=choices),
+            f"Validating chapter {current_index}...",
+            "\n".join(status_log),
+        )
+
+        result, feedback = validate_chapter(
+            expanded_plot,
+            chapters_overview,
+            chapters_full[:-1],
+            chapter_text,
+            current_index
+        )
+
+        if result == "OK":
+            status_log.append(f"✅ Chapter {current_index} passed validation.")
+        elif result == "NOT OK":
+            status_log.append(f"⚠️ Chapter {current_index} failed validation — regenerating.")
+            yield (
+                expanded_plot,
+                chapters_overview,
+                chapters_full,
+                gr.update(),
+                gr.update(choices=choices),
+                f"Regenerating chapter {current_index}...",
+                "\n".join(status_log),
+            )
+            # regenerate with feedback
+            chapter_text = generate_chapter_text(
+                expanded_plot,
+                chapters_overview,
+                current_index,
+                chapters_full[:-1],
+                feedback=feedback
+            )
+            chapters_full[-1] = f"Chapter {current_index}: {chapter_text[:10000]}"
+            status_log.append(f"✅ Chapter {current_index} regenerated successfully.")
+        else:
+            status_log.append(f"❌ Validation error or unknown result for Chapter {current_index}.")
+
+        # after validation: update dropdown + display
+        choices = [f"Chapter {j+1}" for j in range(len(chapters_full))]
+
+        if current_index == 1 and not first_display_done:
             first_chapter_text = chapters_full[0]
             dropdown_update = gr.update(choices=choices, value="Chapter 1")
             current_text_update = first_chapter_text
             first_display_done = True
         else:
-            # ulterior: NU atingem value (păstrăm selecția userului) și NU rescriem Current Chapter
             dropdown_update = gr.update(choices=choices)
             current_text_update = gr.update()
 
         counter_value = f"📘 {len(chapters_full)} chapter(s) generated so far"
-
         yield (
             expanded_plot,
             chapters_overview,
             chapters_full,
-            current_text_update,   # <-- doar la primul capitol trimitem text; altfel gr.update()
-            dropdown_update,       # <-- doar choices după primul capitol
+            current_text_update,
+            dropdown_update,
             counter_value,
             "\n".join(status_log),
         )
@@ -109,7 +159,6 @@ def generate_book_outline_stream(plot, num_chapters):
     # --- FINAL ---
     status_log.append("🎉 All chapters generated successfully!")
     final_choices = [f"Chapter {i+1}" for i in range(len(chapters_full))]
-    # la final, păstrăm selecția actuală a userului -> nu trimitem 'value', doar choices
     dropdown_final = gr.update(choices=final_choices)
     counter_final = f"✅ All {len(chapters_full)} chapters generated!"
     yield expanded_plot, chapters_overview, chapters_full, gr.update(), dropdown_final, counter_final, "\n".join(status_log)
@@ -158,7 +207,7 @@ with gr.Blocks(title="BookKing - Live AI Story Planner") as demo:
         return ""
 
     # --- Wiring ---
-    book_generator = generate_btn.click(
+    generate_btn.click(
         fn=generate_book_outline_stream,
         inputs=[plot_input, chapters_input],
         outputs=[
@@ -172,7 +221,7 @@ with gr.Blocks(title="BookKing - Live AI Story Planner") as demo:
         ]
     )
 
-    # User change: afișăm textul capitolului selectat manual; stream-ul NU mai rescrie după capitolul 1
+    # User selection handler
     chapter_selector.change(
         fn=display_selected_chapter,
         inputs=[chapter_selector, chapters_state],
