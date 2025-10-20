@@ -19,40 +19,46 @@ GEN_PARAMS = {
 }
 
 VALIDATION_PROMPT = textwrap.dedent("""
-You are a critical but balanced literary editor.
-Task: Evaluate the newly written chapter against the global story plan.
+You are a balanced and analytical literary editor.
+
+Task:
+Evaluate whether the **Current Chapter** aligns with its intended description inside the **Chapters Overview**, and whether it remains logically consistent with the story so far.
 
 Inputs:
-- Expanded Plot (the 2-page summary that defines the entire story):
+- Global Plot Summary (overall context of the story):
 \"\"\"{expanded_plot}\"\"\"
 
-- Chapters Overview (titles + short descriptions):
+- Chapters Overview (contains all chapter titles and descriptions, including the target one):
 \"\"\"{chapters_overview}\"\"\"
 
-- Previous Chapters (if any):
+- Previous Chapters (if any, may be empty):
 \"\"\"{previous_chapters_summary}\"\"\"
 
 - Current Chapter (to validate):
 \"\"\"{current_chapter}\"\"\"
 
-Your task:
-1. Check if the current chapter fits the global plot and its designated description.
-2. Check for logical consistency with earlier chapters (characters, tone, events, timeline).
-3. Be fair: minor stylistic or pacing differences are acceptable.
-4. If everything fits reasonably well, respond with:
+Your job:
+1. Locate in the chapters overview the description corresponding to this chapter (match by its number or title).
+2. Evaluate if the current chapter **matches that description** in tone, structure, and main events.
+3. Check for **logical continuity** with previous chapters (characters, world state, timeline).  
+   - If no previous chapters exist, skip this check.
+4. Small stylistic or pacing deviations are acceptable.
+5. Respond exactly in one of the following formats:
+
+If everything fits reasonably well:
 
 RESULT: OK
-REASONING: short explanation.
+REASONING: brief explanation.
 
-Otherwise, respond with:
+Otherwise:
 
 RESULT: NOT OK
-SUGGESTIONS: bullet-point improvements or corrections that should be applied when regenerating the chapter.
+SUGGESTIONS:
+- bullet-point list of improvements or adjustments needed for better alignment.
 
-Keep the format strictly like this:
-RESULT: <OK / NOT OK>
-<REASONING or SUGGESTIONS...>
+Keep your answer concise and strictly formatted as above.
 """).strip()
+
 
 
 def _summarize_previous(previous_texts, max_chars=1200):
