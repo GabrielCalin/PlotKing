@@ -22,7 +22,7 @@ VALIDATION_PROMPT = textwrap.dedent("""
 You are a balanced and analytical literary editor.
 
 Task:
-Evaluate whether the **Current Chapter** aligns with its intended description inside the **Chapters Overview**, and whether it remains logically consistent with the story so far.
+Evaluate whether the **current chapter (Chapter {chapter_number})** aligns with its own description inside the **Chapters Overview**, and whether it remains logically consistent with the story so far.
 
 Inputs:
 - Global Plot Summary (overall context of the story):
@@ -38,26 +38,27 @@ Inputs:
 \"\"\"{current_chapter}\"\"\"
 
 Your job:
-1. Locate in the chapters overview the description corresponding to this chapter (match by its number or title).
-2. Evaluate if the current chapter **matches that description** in tone, structure, and main events.
-3. Check for **logical continuity** with previous chapters (characters, world state, timeline).  
+1. In the "Chapters Overview", **find the description that corresponds to Chapter {chapter_number}**.
+2. Evaluate if the current chapter **matches that description** in tone, events, structure, and purpose.
+3. Check for **logical continuity** with earlier chapters (characters, motivations, timeline).  
    - If no previous chapters exist, skip this check.
-4. Small stylistic or pacing deviations are acceptable.
-5. Respond exactly in one of the following formats:
+4. Be fair: small stylistic or pacing differences are acceptable.
+5. Respond in one of the following strict formats:
 
 If everything fits reasonably well:
 
-RESULT: OK
-REASONING: brief explanation.
+RESULT: OK  
+REASONING: short explanation.
 
 Otherwise:
 
-RESULT: NOT OK
-SUGGESTIONS:
-- bullet-point list of improvements or adjustments needed for better alignment.
+RESULT: NOT OK  
+SUGGESTIONS:  
+- bullet-point list of what to fix or adjust to better align with the overview and prior context.
 
-Keep your answer concise and strictly formatted as above.
+Keep the response concise and formatted exactly like shown above.
 """).strip()
+
 
 
 
@@ -82,12 +83,13 @@ def validate_chapter(expanded_plot, chapters_overview, previous_chapters, curren
         chapters_overview=chapters_overview,
         previous_chapters_summary=previous_summary,
         current_chapter=current_chapter,
+        chapter_number=current_index,
     )
 
     payload = {
         "model": MODEL_NAME,
         "messages": [
-            {"role": "system", "content": "You are a story structure and consistency validator."},
+            {"role": "system", "content": "You are a balanced story structure and continuity validator."},
             {"role": "user", "content": prompt},
         ],
         **GEN_PARAMS,
