@@ -2,11 +2,14 @@
 """
 step4_chapter_writer.py
 
-Provides generate_chapter_text(expanded_plot, chapters_overview, chapter_index)
-which returns the full text of the requested chapter as a single string.
+Generates the full text for a specific chapter based on:
+- Expanded Plot
+- Chapters Overview
+- Previously written chapters (if any)
+- Current Chapter Number
 
-This implementation assumes LM Studio (OpenAI-compatible) at LOCAL_API_URL.
-Adjust MODEL_NAME and LOCAL_API_URL via environment variables if needed.
+The model will identify the correct chapter description from the overview
+based on the chapter number, and write that chapter only.
 """
 
 import os
@@ -16,44 +19,49 @@ import requests
 LOCAL_API_URL = os.getenv("LMSTUDIO_API_URL", "http://127.0.0.1:1234/v1/chat/completions")
 MODEL_NAME = os.getenv("LMSTUDIO_MODEL", "phi-3-mini-4k-instruct")
 
-# Generation params - adjust if your local model needs different keys
 GEN_PARAMS = {
     "temperature": 0.8,
     "top_p": 0.95,
-    "max_tokens": 4000,   # may need tuning per model; corresponds roughly to desired length
+    "max_tokens": 4000,
 }
 
 
 CHAPTER_PROMPT_TEMPLATE = textwrap.dedent("""
-You are an expert long-form fiction writer tasked with producing one complete chapter.
-
-Context:
-- Expanded story summary (the authoritative plot):
-\"\"\"{expanded_plot}\"\"\"
-
-- Chapter list / overview (titles + short descriptions):
-\"\"\"{chapters_overview}\"\"\"
-
-- Chapters already written (if any, truncated):
-\"\"\"{previous_chapters_summary}\"\"\"
+You are an expert long-form fiction writer.
 
 Task:
-Write the complete text for Chapter {chapter_number}: "{chapter_title}".
-Requirements:
-- Write in a neutral, clear narrative style (avoid ornate metaphors and extended lyrical passages).
-- The chapter must logically follow the provided plot and previously written chapters.
-- Target length: long-form (approx. 2500–5000 words). If your model cannot produce that many tokens in one call, produce the maximum coherent text possible that completes a clear chapter arc.
-- Finish the chapter with a natural chapter ending (not mid-sentence or mid-scene).
-- Do not include section headers or meta commentary — only story text.
+Write **only** Chapter {chapter_number} of the story, using the following materials.
 
-Begin writing the chapter text now.
-""").lstrip()
+Inputs:
+- Global Story Summary (the authoritative plot):
+\"\"\"{expanded_plot}\"\"\"
+
+- Chapters Overview (titles + short descriptions of all chapters):
+\"\"\"{chapters_overview}\"\"\"
+
+- Previously Written Chapters (if any, may be empty):
+\"\"\"{previous_chapters_summary}\"\"\"
+
+Your job:
+1. Locate in the chapters overview the description that corresponds to **Chapter {chapter_number}**.
+2. Write the **complete text** for that chapter, following its description exactly in tone, purpose, and key events.
+3. Ensure logical continuity with previous chapters (characters, timeline, motivations).  
+   - If there are no previous chapters, start naturally from the story’s beginning.
+4. Maintain a clear and structured prose style, but allow natural dialogue and occasional expressive language where it enhances the scene.
+5. Target length: long-form (approx. 2500–5000 words). If the model cannot produce that many tokens, create the most coherent chapter possible within limits.
+6. End with a natural chapter conclusion (not mid-scene or mid-sentence).
+7. Do not include chapter headers, outlines, or meta commentary — only the story text itself.
+
+{feedback_section}
+
+Begin writing Chapter {chapter_number} now.
+""").strip()
 
 
 def _build_previous_summary(previous_texts, max_chars=1000):
+    """Creates a compact context summary from previous chapters."""
     if not previous_texts:
         return "None"
-    # Provide a short context summary: titles + first ~300 chars of each existing chapter
     parts = []
     for idx, txt in enumerate(previous_texts):
         snippet = txt[:300].replace("\n", " ").strip()
@@ -63,63 +71,25 @@ def _build_previous_summary(previous_texts, max_chars=1000):
     return "\n".join(parts)
 
 
-def generate_chapter_text(expanded_plot: str, chapters_overview: str, chapter_index: int, previous_chapters=None, local_api_url=None, model_name=None, feedback=None):
+def generate_chapter_text(expanded_plot: str,
+                          chapters_overview: str,
+                          chapter_index: int,
+                          previous_chapters=None,
+                          local_api_url=None,
+                          model_name=None,
+                          feedback=None):
     """
-    Generate the full text for chapter `chapter_index` (1-based index).
-    - expanded_plot: the two-page plot summary (string)
-    - chapters_overview: the chapters list string (as returned by step2)
-    - chapter_index: integer (1-based)
-    - previous_chapters: optional list of full chapter texts already generated (strings)
-    Returns: str (chapter text) or an error message starting with "Error:"
+    Generates the full text for chapter `chapter_index` (1-based index).
+    - expanded_plot: the full 2-page story summary
+    - chapters_overview: chapter titles + descriptions
+    - chapter_index: integer index (1-based)
+    - previous_chapters: list of strings (optional)
+    - feedback: optional feedback string to guide regeneration
     """
-    try:
-        chapter_idx_zero_based = int(chapter_index) - 1
-        if chapter_idx_zero_based < 0:
-            return "Error: chapter_index must be >= 1"
-    except Exception:
-        return "Error: invalid chapter_index"
-
-    # Resolve endpoints / model
     url = local_api_url or LOCAL_API_URL
     model = model_name or MODEL_NAME
 
-    # Extract chapter title from overview:
-    # Try to find the line corresponding to the requested chapter.
-    lines = [ln.strip() for ln in chapters_overview.splitlines() if ln.strip()]
-    # naive heuristic: look for "Chapter N:" or the N-th item in a numbered list
-    title = f"Chapter {chapter_index}"
-    chapter_title_found = None
-    # First search for a line starting with "Chapter {N}:" or "Chapter {N} -"
-    for ln in lines:
-        low = ln.lower()
-        if low.startswith(f"chapter {chapter_index}:") or low.startswith(f"chapter {chapter_index} -") or low.startswith(f"{chapter_index}. "):
-            # parse after colon or dash
-            if ":" in ln:
-                chapter_title_found = ln.split(":", 1)[1].strip()
-            elif "-" in ln:
-                chapter_title_found = ln.split("-", 1)[1].strip()
-            else:
-                chapter_title_found = ln.split(maxsplit=1)[1].strip() if len(ln.split())>1 else ln
-            break
-    # fallback: if there's a numbered list where titles are every other line, try nth chunk
-    if chapter_title_found is None:
-        # try grouping by numbered headings "Chapter 1:" etc
-        for ln in lines:
-            if ln.lower().startswith("chapter"):
-                parts = ln.split(":", 1)
-                if len(parts) == 2:
-                    # collect titles in order
-                    pass
-        # last fallback: use the first 6-8 words of the Nth non-empty line
-        if chapter_idx_zero_based < len(lines):
-            candidate = lines[chapter_idx_zero_based]
-            # keep up to 8 words
-            chapter_title_found = " ".join(candidate.split()[:8])
-        else:
-            chapter_title_found = title
-
     previous_summary = _build_previous_summary(previous_chapters or [], max_chars=1200)
-
     feedback_section = ""
     if feedback:
         feedback_section = f"\n\nAdditional reviewer feedback to address:\n\"\"\"{feedback}\"\"\"\n"
@@ -129,14 +99,13 @@ def generate_chapter_text(expanded_plot: str, chapters_overview: str, chapter_in
         chapters_overview=chapters_overview,
         previous_chapters_summary=previous_summary,
         chapter_number=chapter_index,
-        chapter_title=chapter_title_found
-    ) + feedback_section
+        feedback_section=feedback_section
+    )
 
-    # Build payload in OpenAI chat-completions style (LM Studio compatible)
     payload = {
         "model": model,
         "messages": [
-            {"role": "system", "content": "You are an expert long-form fiction generator that writes coherent novel chapters."},
+            {"role": "system", "content": "You are a professional fiction ghostwriter creating coherent novel chapters."},
             {"role": "user", "content": prompt}
         ],
         "temperature": GEN_PARAMS.get("temperature", 0.8),
@@ -148,13 +117,15 @@ def generate_chapter_text(expanded_plot: str, chapters_overview: str, chapter_in
         r = requests.post(url, json=payload, timeout=600)
         r.raise_for_status()
         data = r.json()
-        # standard OpenAI-like parsing
+
         if "choices" in data and data["choices"]:
-            content = data["choices"][0].get("message", {}).get("content") or data["choices"][0].get("text")
-            if content is None:
+            content = (
+                data["choices"][0].get("message", {}).get("content")
+                or data["choices"][0].get("text")
+            )
+            if not content:
                 return "Error: model returned empty content"
             return content.strip()
-        # fallback
         return str(data)
     except Exception as e:
         return f"Error during chapter generation: {e}"
