@@ -58,17 +58,14 @@ Begin writing Chapter {chapter_number} now.
 """).strip()
 
 
-def _build_previous_summary(previous_texts, max_chars=1000):
-    """Creates a compact context summary from previous chapters."""
+def _join_previous_chapters(previous_texts):
+    """Concatenate all previous chapters in full for model context."""
     if not previous_texts:
         return "None"
-    parts = []
+    joined = []
     for idx, txt in enumerate(previous_texts):
-        snippet = txt[:300].replace("\n", " ").strip()
-        parts.append(f"Chapter {idx+1} excerpt: {snippet}...")
-        if sum(len(p) for p in parts) > max_chars:
-            break
-    return "\n".join(parts)
+        joined.append(f"Chapter {idx+1}:\n{txt.strip()}\n")
+    return "\n\n".join(joined)
 
 
 def generate_chapter_text(expanded_plot: str,
@@ -89,7 +86,7 @@ def generate_chapter_text(expanded_plot: str,
     url = local_api_url or LOCAL_API_URL
     model = model_name or MODEL_NAME
 
-    previous_summary = _build_previous_summary(previous_chapters or [], max_chars=1200)
+    previous_joined = _join_previous_chapters(previous_chapters or [])
     feedback_section = ""
     if feedback:
         feedback_section = f"\n\nAdditional reviewer feedback to address:\n\"\"\"{feedback}\"\"\"\n"
@@ -97,7 +94,7 @@ def generate_chapter_text(expanded_plot: str,
     prompt = CHAPTER_PROMPT_TEMPLATE.format(
         expanded_plot=expanded_plot,
         chapters_overview=chapters_overview,
-        previous_chapters_summary=previous_summary,
+        previous_chapters_summary=previous_joined,
         chapter_number=chapter_index,
         feedback_section=feedback_section
     )
