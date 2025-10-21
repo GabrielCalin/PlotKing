@@ -87,7 +87,7 @@ def generate_book_outline_stream(plot, num_chapters):
 
         # generate chapter
         chapter_text = generate_chapter_text(expanded_plot, chapters_overview, current_index, chapters_full)
-        chapters_full.append(f"Chapter {current_index}: {chapter_text[:10000]}")
+        chapters_full.append(f"Chapter {current_index}: {chapter_text}")
         status_log.append(f"✅ Chapter {current_index} generated.")
 
         validation_attempts = 0
@@ -140,7 +140,7 @@ def generate_book_outline_stream(plot, num_chapters):
                     chapters_full[:-1],
                     feedback=feedback
                 )
-                chapters_full[-1] = f"Chapter {current_index}: {chapter_text[:10000]}"
+                chapters_full[-1] = f"Chapter {current_index}: {chapter_text}"
                 status_log.append(f"✅ Chapter {current_index} regenerated successfully.")
             else:
                 status_log.append(f"❌ Validation error or unknown result for Chapter {current_index}.")
@@ -208,7 +208,7 @@ with gr.Blocks(title="BookKing - Live AI Story Planner") as demo:
             chapter_selector = gr.Dropdown(label="📖 Select Chapter", choices=[], value=None, interactive=True)
             chapter_counter = gr.Markdown("_No chapters yet_")
         with gr.Column(scale=3):
-            current_chapter_output = gr.Textbox(label="📚 Current Chapter", lines=20, max_lines=9999)
+            current_chapter_output = gr.Textbox(label="📚 Current Chapter", lines=20)
 
     validation_feedback = gr.Textbox(label="🧩 Validation Feedback (Steps 3 & 5)", lines=8)
 
