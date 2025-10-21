@@ -8,8 +8,6 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 1. **QOL updates**  
    - Update main documentation.
-   - Fix missing content in chapter output.
-   - Remove Chapter x prefix in chapter output.
    - Remove newline in validation feedback for first line and change order with process log.
    - Fix chapter writer to always receive the full text of previous chapters.
 

@@ -50,16 +50,22 @@ def generate_book_outline_stream(plot, num_chapters):
         result, feedback = validate_chapters(expanded_plot, chapters_overview, iteration=validation_round)
         if result == "OK":
             status_log.append("✅ Overview validation passed.")
-            validation_text += "\n\n✅ Chapters Overview Validation: PASSED"
+            validation_text += "✅ Chapters Overview Validation: PASSED"
             break
         elif result == "NOT OK":
             status_log.append(f"⚠️ Overview validation issues found.")
-            validation_text += f"\n\n⚠️ Chapters Overview Validation Feedback (attempt {validation_round}):\n{feedback}"
+            if validation_text:
+                validation_text += f"\n\n⚠️ Chapters Overview Validation Feedback (attempt {validation_round}):\n{feedback}"
+            else:
+                validation_text += f"⚠️ Chapters Overview Validation Feedback (attempt {validation_round}):\n{feedback}"
             chapters_overview = generate_chapters(expanded_plot, num_chapters, feedback)
             status_log.append("🔄 Regenerated overview with feedback.")
         else:
             status_log.append(f"❌ Overview validation error: {feedback}")
-            validation_text += f"\n\n❌ Validation Error:\n{feedback}"
+            if validation_text:
+                validation_text += f"\n\n❌ Validation Error:\n{feedback}"
+            else:
+                validation_text += f"❌ Validation Error:\n{feedback}"
             break
 
         yield expanded_plot, chapters_overview, [], "", gr.update(choices=[], value=None), "_Validating overview..._", "\n".join(status_log), validation_text
@@ -87,7 +93,7 @@ def generate_book_outline_stream(plot, num_chapters):
 
         # generate chapter
         chapter_text = generate_chapter_text(expanded_plot, chapters_overview, current_index, chapters_full)
-        chapters_full.append(f"Chapter {current_index}: {chapter_text}")
+        chapters_full.append(chapter_text)
         status_log.append(f"✅ Chapter {current_index} generated.")
 
         validation_attempts = 0
@@ -140,7 +146,7 @@ def generate_book_outline_stream(plot, num_chapters):
                     chapters_full[:-1],
                     feedback=feedback
                 )
-                chapters_full[-1] = f"Chapter {current_index}: {chapter_text}"
+                chapters_full[-1] = chapter_text
                 status_log.append(f"✅ Chapter {current_index} regenerated successfully.")
             else:
                 status_log.append(f"❌ Validation error or unknown result for Chapter {current_index}.")
@@ -210,9 +216,9 @@ with gr.Blocks(title="BookKing - Live AI Story Planner") as demo:
         with gr.Column(scale=3):
             current_chapter_output = gr.Textbox(label="📚 Current Chapter", lines=20)
 
+    status_output = gr.Textbox(label="🧠 Process Log", lines=15)
     validation_feedback = gr.Textbox(label="🧩 Validation Feedback (Steps 3 & 5)", lines=8)
 
-    status_output = gr.Textbox(label="🧠 Process Log", lines=15)
     chapters_state = gr.State([])
 
     def display_selected_chapter(chapter_name, chapters):
