@@ -123,44 +123,29 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 | Feature | Status |
 |----------|--------|
-| Update README | ✅ Done |
-| Book Genre Selection in UI | ⏳ Planned |
-| Generate Plot Idea | ⏳ Planned |
-| Prompt Optimization | ⏳ Planned |
-| Saving Project State | ⏳ Planned |
-| Manual Chapter Editing | ⏳ Planned |
-| Add Empty Chapters | ⏳ Planned |
-| Infill Chapters | 🔜 Future |
-| Outfill Chapters | 🔜 Future |
-| Character & Object Modification | 🔜 Future |
-| AI Chat per Chapter | 🔜 Future |
-| Advanced Cross-Chapter Chat | 🔜 Future |
-| AI Editing on Selected Text | 🔜 Future |
-| Settings Tab | 🔜 Future |
-| Model Selection per Task | 🔜 Future |
-| Export to EPUB | 🔜 Future |
-| EPUB Cover Generation | 🔜 Future |
-| Public GitHub Repository | 🔜 Future |
-| Book Comparison System | 🔜 Future |
-| Graphic Story Generation | 🔜 Future |
-| Embedded LLMs / Research Non-Fiction | 🔜 Future |
+| **QOL updates** | ⏳ In Progress |
+| **Book Genre Selection in UI** | ⏳ Planned |
+| **Generate Plot Idea** | ⏳ Planned |
+| **Prompt Optimization** | ⏳ Planned |
+| **Saving Project State** | ⏳ Planned |
+| **Manual Chapter Editing** | ⏳ Planned |
+| **AI Editing on Selected Text** | ⏳ Planned |
+| **AI Chat per Chapter** | ⏳ Planned |
+| **Add Empty Chapters (Writer Assist Mode)** | ⏳ Planned |
+| **Export to EPUB** | 🔜 Future |
+| **Generate EPUB Cover Image** | 🔜 Future |
+| **Public GitHub Repository** | 🔜 Future |
+| **Infill Chapters** | 🔜 Future |
+| **Outfill Chapters** | 🔜 Future |
+| **Advanced Cross-Chapter Chat** | 🔜 Future |
+| **Character & Object Modification** | 🔜 Future |
+| **Settings Tab** | 🔜 Future |
+| **Model Selection per Task** | 🔜 Future |
+| **Book Comparison System** | 🔬 Experimental |
+| **Graphic Story Generation** | 🔬 Experimental |
+| **Embedded LLMs / Research Non-Fiction Mode** | 🔬 Experimental |
 
 ---
 
 **Last updated:** October 2025  
 **Maintained by:** Gabriel C.
-
----
-
-### 🔧 Priority rationale (new items)
-| Feature | Recommended Phase | Rationale |
-|----------|------------------|------------|
-| Book Genre Selection | 1 | Key QOL feature that influences tone and structure early in the process |
-| Generate Plot Idea | 1 | Essential for quick, guided story starts |
-| Add Empty Chapters | 2 | Supports writers using AI as co-author, not full generator |
-| Infill / Outfill | 3 | Expands flexibility for iterative story creation |
-| Character & Object Changes | 3 | Keeps narrative coherent as stories evolve |
-| AI Editing on Selected Text | 4 | Boosts usability for precise inline corrections |
-| Advanced Cross-Chapter Chat | 4 | Needed for large-scale story adjustments |
-| Settings Tab | 5 | Increases control and stability for power users |
-| Embedded LLMs / Research Mode | 7 | Complex feature, low impact initially, high future value |
