@@ -35,61 +35,61 @@ This document outlines the planned development milestones for the **AI Story Gen
    - Allow users to edit any generated chapter directly within the interface.
    - Trigger regenerations if plot changes. 
 
-13. **AI Editing on Selected Text**  
+7. **AI Editing on Selected Text**  
     - Enable users to **select a portion of text** and apply quick AI edits (rewrite, expand, simplify, etc.).
 
-11. **AI Chat per Chapter**  
+8. **AI Chat per Chapter**  
     - Add an interactive chat panel to discuss or request changes for a specific chapter.  
     - A supervising LLM ensures narrative consistency and, when necessary, re-writes dependent chapters.
 
-7. **Add Empty Chapters (Writer Assist Mode)**  
+9. **Add Empty Chapters (Writer Assist Mode)**  
    - Let users insert blank chapters manually.  
    - Intended to help writers start or continue their own text with AI assistance.
 
 ---
 
-## 🎨 Phase 6 — Presentation and Export
+## 🎨 Phase 3 — Presentation and Export
 
-16. **Export to EPUB**  
+10. **Export to EPUB**  
     - Export full books as `.epub` files with metadata and optional AI-generated cover.  
 
-17. **Generate EPUB Cover Image**  
+11. **Generate EPUB Cover Image**  
     - Automatically create covers based on title, genre, and plot.  
     - Optional integration with **ComfyUI** or external image workflows.
 
-18. **Public GitHub Repository**  
+12. **Public GitHub Repository**  
     - Make the project public and document setup, dependencies, and contribution flow.
 
 ---
 
-## ✍️ Phase 3 — Story Growth and Structure Control
+## ✍️ Phase 4 — Story Growth and Structure Control
 
-8. **Infill Chapters**  
+13. **Infill Chapters**  
    - Add the ability to insert a new chapter **between existing ones** to fill narrative gaps.  
    - Automatically update chapter numbering and summary references.
 
-9. **Outfill Chapters**  
+14. **Outfill Chapters**  
    - Continue an existing book with **new chapters** beyond the planned structure.  
    - Preserve continuity by referencing the final chapters.
 
 ---
 
-## 💬 Phase 4 — Advanced Interaction & Collaboration
+## 💬 Phase 5 — Advanced Interaction & Collaboration
 
-12. **Advanced Cross-Chapter Chat**  
+15. **Advanced Cross-Chapter Chat**  
     - A global AI chat that can handle **multi-chapter edits** and **story-level refactoring**.  
     - Allows broader transformations such as tone adjustment, pacing changes, or multi-arc restructuring.
 
-10. **Character & Object Modification**  
+16. **Character & Object Modification**  
     - Provide an interface to modify a character’s **personality, appearance, relationships, or role**.  
     - Extendable to modify **key objects** or **locations** across chapters.  
     - System ensures consistency by updating references in future (and optionally past) chapters.
 
 ---
 
-## ⚙️ Phase 5 — Configuration & Customization
+## ⚙️ Phase 6 — Configuration & Customization
 
-14. **Settings Tab**  
+17. **Settings Tab**  
     - Add a settings section for advanced parameters:  
       - Model selection per task.  
       - Max tokens per chapter.  
@@ -97,7 +97,7 @@ This document outlines the planned development milestones for the **AI Story Gen
       - Context window behavior (summaries vs full chapter inclusion).  
       - Temperature, top-p, and verbosity controls.
 
-15. **Model Selection per Task**  
+18. **Model Selection per Task**  
     - Choose separate models for each step (e.g., validation vs writing).  
     - Integration with **OpenAI**, **LM Studio**, or **local LLMs**.
 
