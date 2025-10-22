@@ -8,6 +8,8 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 1. **QOL updates**    
    - Update main documentation and README.
+   - Feed user input to chapters generation too.
+   - Refactor: folders for images and steps.
 
 2. **Book Genre Selection in UI**  
    - Add a genre text bo input in the interface.  
