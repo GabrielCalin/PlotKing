@@ -22,7 +22,7 @@ MODEL_NAME = os.getenv("LMSTUDIO_MODEL", "phi-3-mini-4k-instruct")
 GEN_PARAMS = {
     "temperature": 0.8,
     "top_p": 0.95,
-    "max_tokens": 4000,
+    "max_tokens": 8000,
 }
 
 

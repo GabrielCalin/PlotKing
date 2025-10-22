@@ -9,7 +9,7 @@ LOCAL_API_URL = os.environ.get("LMSTUDIO_API_URL", "http://127.0.0.1:1234/v1/cha
 DEFAULT_PARAMS = {
     "temperature": 0.6,
     "top_p": 0.9,
-    "max_tokens": 800,
+    "max_tokens": 1000,
 }
 
 PROMPT_TEMPLATE = textwrap.dedent("""

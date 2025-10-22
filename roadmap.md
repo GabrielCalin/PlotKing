@@ -6,9 +6,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## ✅ Phase 1 — Core Validation & Quality of Life
 
-1. **QOL updates**  
-   - Add timestamp prefix to Process Log.  
-   - Increase max token limit for the chapter writer.  
+1. **QOL updates**    
    - Update main documentation and README.
 
 2. **Book Genre Selection in UI**  
