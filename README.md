@@ -36,3 +36,41 @@ The application requires:
 1. Install dependencies: `pip install -r requirements.txt`
 2. Run the application: `python main_app.py` or `./run.bat` on Windows.
 3. Access the UI through your browser at `http://localhost:7860`
+
+## Running a Local LLM with LM Studio
+
+BookKing is designed to work seamlessly with **local LLM deployments**, and **[LM Studio](https://lmstudio.ai/)** provides an easy way to run models locally without internet dependency.
+
+### 🔹 Step 1: Install LM Studio
+1. Download and install LM Studio for your operating system:  
+   👉 [https://lmstudio.ai/](https://lmstudio.ai/)
+2. Launch LM Studio after installation.
+
+### 🔹 Step 2: Load a Local Model
+1. Open the **Models** tab in LM Studio.  
+2. Search for and download a model suitable for long context and creative writing. For local development, I'm using `gpt-oss 20b`.
+3. Once downloaded, load the model in memory.
+
+> 💡 *Tip:* For long-form book generation, prefer models that support **at least 128K context windows**.
+
+### 🔹 Step 3: Enable the Local Server API
+1. In LM Studio, open the **Developer** tab (top-right gear icon).  
+2. Toggle **“Start Server”**.  
+3. Make sure the server runs on the default address: http://127.0.0.1:1234/v1/chat/completions 
+
+### 🔹 Step 4: Enable FlashAttention (Optional, for Faster Generation)
+
+If your GPU supports it (NVIDIA RTX 30xx, 40xx, or newer), you can enable **FlashAttention** for significant performance improvements, especially when working with long context windows.
+
+In **LM Studio** while the model is loaded:
+
+1. Open the model's **Settings**, the gear on the left of the loaded model.  
+2. Enable **“FlashAttention”**  
+3. Restart the model to apply changes.
+
+## Future Work
+
+BookKing is an evolving project.  
+Upcoming features, experimental ideas, and long-term development milestones are documented in the [Roadmap](./roadmap.md).
+
+Check it out to see what’s planned next — from interactive editing tools and story infill/outfill features to multi-model support and visual story generation.
