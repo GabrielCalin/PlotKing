@@ -52,7 +52,7 @@ Your job:
    - If there are no previous chapters, start naturally from the story’s beginning.
 4. Maintain a clear and structured prose style, but allow natural dialogue and expressive language where it enhances the scene.
 5. Adapt style, pacing, and atmosphere to fit the GENRE described above.
-6. Target length: long-form (approx. 2500–5000 words). If the model cannot produce that many tokens, create the most coherent chapter possible within limits.
+6. Target length: {word_target_note}
 7. End with a natural chapter conclusion (not mid-scene or mid-sentence).
 8. Do not include chapter headers, outlines, or meta commentary — only the story text itself.
 
@@ -63,7 +63,6 @@ Begin writing Chapter {chapter_number} now.
 
 
 def _join_previous_chapters(previous_texts):
-    """Concatenate all previous chapters in full for model context."""
     if not previous_texts:
         return "None"
     joined = []
@@ -77,18 +76,10 @@ def generate_chapter_text(expanded_plot: str,
                           chapter_index: int,
                           previous_chapters=None,
                           genre: str = None,
+                          anpc: int = None,
                           local_api_url=None,
                           model_name=None,
                           feedback=None):
-    """
-    Generates the full text for chapter `chapter_index` (1-based index).
-    - expanded_plot: the full 2-page story summary
-    - chapters_overview: chapter titles + descriptions
-    - chapter_index: integer index (1-based)
-    - previous_chapters: list of strings (optional)
-    - genre: story genre or style descriptor
-    - feedback: optional feedback string to guide regeneration
-    """
     url = local_api_url or LOCAL_API_URL
     model = model_name or MODEL_NAME
 
@@ -97,12 +88,21 @@ def generate_chapter_text(expanded_plot: str,
     if feedback:
         feedback_section = f"\n\nAdditional reviewer feedback to address:\n\"\"\"{feedback}\"\"\"\n"
 
+    if anpc and anpc > 0:
+        avg_words = anpc * 500
+        min_words = int(avg_words * 0.75)
+        max_words = int(avg_words * 1.25)
+        word_target_note = f"approximately {min_words}–{max_words} words"
+    else:
+        word_target_note = "approximately 2500–3500 words"
+
     prompt = CHAPTER_PROMPT_TEMPLATE.format(
         expanded_plot=expanded_plot,
         chapters_overview=chapters_overview,
         previous_chapters_summary=previous_joined,
         genre=genre or "unspecified",
         chapter_number=chapter_index,
+        word_target_note=word_target_note,
         feedback_section=feedback_section
     )
 

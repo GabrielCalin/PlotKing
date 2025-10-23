@@ -15,7 +15,7 @@ def ts_prefix(message: str) -> str:
     return f"[{timestamp}] {message}"
 
 
-def generate_book_outline_stream(plot, num_chapters, genre):
+def generate_book_outline_stream(plot, num_chapters, genre, anpc):
     """
     Stable streaming pipeline:
     - Dropdown: sets value="Chapter 1" only for the first chapter.
@@ -98,7 +98,7 @@ def generate_book_outline_stream(plot, num_chapters, genre):
         )
 
         # generate chapter
-        chapter_text = generate_chapter_text(expanded_plot, chapters_overview, current_index, chapters_full, genre)
+        chapter_text = generate_chapter_text(expanded_plot, chapters_overview, current_index, chapters_full, genre, anpc)
         chapters_full.append(chapter_text)
         status_log.append(ts_prefix(f"✅ Chapter {current_index} generated."))
 
@@ -152,6 +152,7 @@ def generate_book_outline_stream(plot, num_chapters, genre):
                     current_index,
                     chapters_full[:-1],
                     genre,
+                    anpc,
                     feedback=feedback
                 )
                 chapters_full[-1] = chapter_text
@@ -269,7 +270,7 @@ with gr.Blocks(
     # --- Wiring ---
     generate_btn.click(
         fn=generate_book_outline_stream,
-        inputs=[plot_input, chapters_input, genre_input],
+        inputs=[plot_input, chapters_input, genre_input, anpc_input],
         outputs=[
             expanded_output,
             chapters_output,
