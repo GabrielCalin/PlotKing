@@ -44,7 +44,7 @@ def generate_book_outline_stream(plot, num_chapters):
     status_log.append(ts_prefix("📘 Step 2: Generating chapter overview..."))
     yield expanded_plot, "", [], "", gr.update(choices=[], value=None), "_Generating overview..._", "\n".join(status_log), validation_text
 
-    chapters_overview = generate_chapters(expanded_plot, num_chapters)
+    chapters_overview = generate_chapters(plot, expanded_plot, num_chapters)
     status_log.append(ts_prefix("✅ Chapters overview generated."))
     yield expanded_plot, chapters_overview, [], "", gr.update(choices=[], value=None), "_Overview ready_", "\n".join(status_log), validation_text
 
@@ -64,7 +64,7 @@ def generate_book_outline_stream(plot, num_chapters):
                 validation_text += f"\n\n⚠️ Chapters Overview Validation Feedback (attempt {validation_round}):\n{feedback}"
             else:
                 validation_text += f"⚠️ Chapters Overview Validation Feedback (attempt {validation_round}):\n{feedback}"
-            chapters_overview = generate_chapters(expanded_plot, num_chapters, feedback)
+            chapters_overview = generate_chapters(plot, expanded_plot, num_chapters, feedback)
             status_log.append(ts_prefix("🔄 Regenerated overview with feedback."))
         else:
             status_log.append(ts_prefix(f"❌ Overview validation error: {feedback}"))

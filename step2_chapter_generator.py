@@ -1,20 +1,29 @@
+# -*- coding: utf-8 -*-
 # step2_chapter_generator.py
 import requests
 import textwrap
 
-def generate_chapters(expanded_plot: str, num_chapters: int, model="mistral", api_url="http://localhost:1234/v1/chat/completions"):
+def generate_chapters(initial_requirements: str, expanded_plot: str, num_chapters: int, model="mistral", api_url="http://localhost:1234/v1/chat/completions"):
     PROMPT_TEMPLATE = textwrap.dedent(f"""
     You are a professional book structure designer.
 
-    Based on the following story summary, create exactly {num_chapters} chapter titles and medium-length descriptions.
-    Each description should summarize what happens in that chapter, focusing on key events or turning points.
-    Keep the tone neutral and factual (not artistic or emotional).
-    Output as a numbered list in the format:
+    The user originally provided the following brief concept or requirements for the story:
+    \"\"\"{initial_requirements}\"\"\"
+
+    This idea has been expanded into a detailed and authoritative story summary below.
+    Use the expanded summary as the **main reference** for your work, but also keep in mind
+    the intent and themes suggested in the initial requirements.
+
+    Your task:
+    - Create exactly {num_chapters} chapter titles and medium-length descriptions.
+    - Each description should summarize what happens in that chapter, focusing on key events or turning points.
+    - Keep the tone neutral and factual (not artistic or emotional).
+    - Output as a numbered list in the following format:
 
     Chapter 1: <Title>
     Description: <10-15 sentences>
 
-    STORY SUMMARY:
+    EXPANDED STORY SUMMARY:
     \"\"\"{expanded_plot}\"\"\"
     """)
 
