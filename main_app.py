@@ -207,12 +207,25 @@ with gr.Blocks(title="BookKing - AI Story Builder") as demo:
         with gr.Column(scale=3):
             plot_input = gr.Textbox(
                 label="Plot Description",
-                lines=6,  # creștem puțin ca să umple vizual zona
+                lines=4,
                 placeholder="Ex: A young girl discovers a portal to another world..."
             )
+            genre_input = gr.Textbox(
+                label="Genre",
+                placeholder="Ex: fantasy, science fiction",
+                lines=2
+            )
         with gr.Column(scale=1):
-            chapters_input = gr.Number(label="Number of Chapters", value=5, precision=0)
-            genre_input = gr.Textbox(label="Genre", placeholder="Ex: fantasy, science fiction", lines=2)
+            chapters_input = gr.Number(
+                label="Number of Chapters",
+                value=5,
+                precision=0
+            )
+            anpc_input = gr.Number(
+                label="Average Number of Pages per Chapter",
+                value=10,
+                precision=0
+            )
 
     generate_btn = gr.Button("🚀 Generate Book")
 
