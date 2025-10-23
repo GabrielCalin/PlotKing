@@ -6,9 +6,8 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## ✅ Phase 1 — Core Validation & Quality of Life
 
-2. **Book Genre Selection in UI**  
-   - Add a genre text bo input in the interface.  
-   - The selected genre will influence the tone, writing style, and narrative focus of generated plots and chapters.
+2. **Average Number Of Pages Per Chapter in UI**
+   - Add the number of pages per chapter in UI.
 
 3. **Generate Plot Idea**  
    - Generate **similar plot ideas** based on user input.  

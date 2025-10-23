@@ -203,16 +203,16 @@ with gr.Blocks(title="BookKing - AI Story Builder") as demo:
     _Generate, validate, and refine your novels interactively._
     """)
 
-    with gr.Row():
-        plot_input = gr.Textbox(
-            label="Plot Description",
-            lines=3,
-            placeholder="Ex: A young girl discovers a portal to another world..."
-        )
-
-    with gr.Row():
-        chapters_input = gr.Number(label="Number of Chapters", value=5, precision=0)
-        genre_input = gr.Textbox(label="Genre", placeholder="Ex: fantasy, science fiction")
+    with gr.Row(equal_height=True):
+        with gr.Column(scale=3):
+            plot_input = gr.Textbox(
+                label="Plot Description",
+                lines=6,  # creștem puțin ca să umple vizual zona
+                placeholder="Ex: A young girl discovers a portal to another world..."
+            )
+        with gr.Column(scale=1):
+            chapters_input = gr.Number(label="Number of Chapters", value=5, precision=0)
+            genre_input = gr.Textbox(label="Genre", placeholder="Ex: fantasy, science fiction", lines=2)
 
     generate_btn = gr.Button("🚀 Generate Book")
 
