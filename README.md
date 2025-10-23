@@ -2,7 +2,7 @@
 
 BookKing is an interactive AI-powered application that helps writers generate, validate, and refine novel outlines. The application takes a short plot description and transforms it into a complete book using local LLM deployments.
 
-![alt text](image.png)
+![alt text](images/image.png)
 
 ## Features
 

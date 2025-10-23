@@ -7,7 +7,6 @@ This document outlines the planned development milestones for the **AI Story Gen
 ## ✅ Phase 1 — Core Validation & Quality of Life
 
 1. **QOL updates**    
-   - Feed user input to chapters generation too.
    - Refactor: folders for images and steps.
 
 2. **Book Genre Selection in UI**  
