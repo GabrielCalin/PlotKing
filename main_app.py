@@ -53,7 +53,7 @@ def generate_book_outline_stream(plot, num_chapters):
     feedback = ""
     while validation_round < MAX_VALIDATION_ATTEMPTS:
         validation_round += 1
-        result, feedback = validate_chapters(expanded_plot, chapters_overview, iteration=validation_round)
+        result, feedback = validate_chapters(plot, expanded_plot, chapters_overview, iteration=validation_round)
         if result == "OK":
             status_log.append(ts_prefix("✅ Overview validation passed."))
             validation_text += "✅ Chapters Overview Validation: PASSED"

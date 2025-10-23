@@ -13,28 +13,40 @@ DEFAULT_PARAMS = {
 }
 
 PROMPT_TEMPLATE = textwrap.dedent("""
-You are a story structure analyst. 
-Your task is to verify if a list of proposed chapters is coherent and consistent with the story described below. 
+You are a story structure analyst.
+Your task is to verify if a list of proposed chapters is coherent and consistent with the story described below.
+
 Be moderately critical: ignore minor inconsistencies in style or small overlaps, but identify clear contradictions or missing logic.
 
 Instructions:
-1. Compare the provided "Plot Summary" and "Chapters Proposal".
-2. If the chapters align well with the plot, simply answer: "OK".
-3. If there are issues, answer:
-   "NOT OK" 
-   and provide a short list of corrections or high-level suggestions (maximum 5 sentences) focused ONLY on improving the chapters (not the plot summary).
+1. Compare both the "Initial Story Requirements" and the "Expanded Plot Summary" with the proposed chapters.
+2. Prioritize consistency with the Expanded Plot, but also ensure that the Initial Requirements are not contradicted.
+3. If the chapters align well with the story, answer exactly: "OK".
+4. If there are issues, answer:
+   "NOT OK"
+   and provide a concise list of high-level corrections or suggestions (max 5 sentences) focused ONLY on improving the chapters (not rewriting the plot).
 
 ---
 
-PLOT SUMMARY:
-\"\"\"{plot}\"\"\"
+INITIAL STORY REQUIREMENTS:
+\"\"\"{initial_plot}\"\"\"
+
+EXPANDED PLOT SUMMARY:
+\"\"\"{expanded_plot}\"\"\"
 
 CHAPTERS PROPOSAL:
 \"\"\"{chapters}\"\"\"
 """)
 
-def validate_chapters(plot, chapters, iteration=1, local_api_url=None, params=None):
-    """Validate if chapters fit the plot; return ('OK', None) or ('NOT OK', suggestions)."""
+def validate_chapters(initial_plot, expanded_plot, chapters, iteration=1, local_api_url=None, params=None):
+    """
+    Validate if the proposed chapters fit the expanded plot (main source)
+    and are still aligned with the user's initial story idea.
+    Returns:
+        ("OK", None) if valid,
+        ("NOT OK", suggestions) otherwise,
+        ("ERROR", msg) on request failure.
+    """
     params = params or DEFAULT_PARAMS
     url = local_api_url or LOCAL_API_URL
 
@@ -42,9 +54,16 @@ def validate_chapters(plot, chapters, iteration=1, local_api_url=None, params=No
         "model": "phi-3-mini-4k-instruct",
         "messages": [
             {"role": "system", "content": "You are a logical story structure validator."},
-            {"role": "user", "content": PROMPT_TEMPLATE.format(plot=plot, chapters=chapters)}
+            {
+                "role": "user",
+                "content": PROMPT_TEMPLATE.format(
+                    initial_plot=initial_plot,
+                    expanded_plot=expanded_plot,
+                    chapters=chapters
+                ),
+            },
         ],
-        **params
+        **params,
     }
 
     try:
@@ -58,7 +77,6 @@ def validate_chapters(plot, chapters, iteration=1, local_api_url=None, params=No
     if content.upper().startswith("OK"):
         return ("OK", None)
     elif content.upper().startswith("NOT OK"):
-        # Extract suggestions (everything after the "NOT OK" line)
         suggestions = content.split("\n", 1)[1].strip() if "\n" in content else "(no details provided)"
         return ("NOT OK", suggestions)
     else:
