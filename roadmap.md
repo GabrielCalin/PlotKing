@@ -6,9 +6,6 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## ✅ Phase 1 — Core Validation & Quality of Life
 
-1. **QOL updates**    
-   - Refactor: folders for images and steps.
-
 2. **Book Genre Selection in UI**  
    - Add a genre text bo input in the interface.  
    - The selected genre will influence the tone, writing style, and narrative focus of generated plots and chapters.
@@ -129,8 +126,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 | Feature | Status |
 |----------|--------|
-| **QOL updates** | ⏳ In Progress |
-| **Book Genre Selection in UI** | ⏳ Planned |
+| **Book Genre Selection in UI** | ⏳ In Progress |
 | **Generate Plot Idea** | ⏳ Planned |
 | **Pipeline Control & Execution Flow** | ⏳ Planned |
 | **Prompt Optimization** | ⏳ Planned |

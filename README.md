@@ -1,6 +1,8 @@
+**The code in this repository is proudly and entirely written using AI**
+
 # BookKing - AI Story Builder
 
-BookKing is an interactive AI-powered application that helps writers generate, validate, and refine novel outlines. The application takes a short plot description and transforms it into a complete book using local LLM deployments.
+BookKing is an interactive AI-powered application that helps writers generate, validate, and refine novels. The application takes a short plot description and transforms it into a complete book using local LLM deployments.
 
 ![alt text](images/image.png)
 

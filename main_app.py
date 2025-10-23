@@ -195,25 +195,25 @@ def generate_book_outline_stream(plot, num_chapters):
 
 
 # ---------- UI ------------
-with gr.Blocks(title="BookKing - Live AI Story Planner") as demo:
+with gr.Blocks(title="BookKing - AI Story Builder") as demo:
     gr.Markdown("""
-    # 📖 BookKing - Live Story Planner  
-    _Generate, validate, and refine your novel outline interactively._
+    # 📖 BookKing - AI Story Builder  
+    _Generate, validate, and refine your novels interactively._
     """)
 
     with gr.Row():
         plot_input = gr.Textbox(
-            label="Short Plot Description",
+            label="Plot Description",
             lines=3,
             placeholder="Ex: A young girl discovers a portal to another world..."
         )
         chapters_input = gr.Number(label="Number of Chapters", value=5, precision=0)
 
-    generate_btn = gr.Button("🚀 Generate Book (Live)")
+    generate_btn = gr.Button("🚀 Generate Book")
 
     with gr.Row():
-        expanded_output = gr.Textbox(label="📝 Expanded Plot (Step 1)", lines=15)
-        chapters_output = gr.Textbox(label="📘 Chapters Overview (Step 2)", lines=15)
+        expanded_output = gr.Textbox(label="📝 Expanded Plot", lines=15)
+        chapters_output = gr.Textbox(label="📘 Chapters Overview", lines=15)
 
     with gr.Row():
         with gr.Column(scale=1):
@@ -223,7 +223,7 @@ with gr.Blocks(title="BookKing - Live AI Story Planner") as demo:
             current_chapter_output = gr.Textbox(label="📚 Current Chapter", lines=20)
 
     status_output = gr.Textbox(label="🧠 Process Log", lines=15)
-    validation_feedback = gr.Textbox(label="🧩 Validation Feedback (Steps 3 & 5)", lines=8)
+    validation_feedback = gr.Textbox(label="🧩 Validation Feedback", lines=8)
 
     chapters_state = gr.State([])
 
