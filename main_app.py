@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import gradio as gr
 from datetime import datetime
-from step1_plot_expander import expand_plot
-from step2_chapter_generator import generate_chapters
-from step3_validator import validate_chapters
-from step4_chapter_writer import generate_chapter_text
-from step5_chapter_validator import validate_chapter
+from pipeline.step1_plot_expander import expand_plot
+from pipeline.step2_chapter_generator import generate_chapters
+from pipeline.step3_validator import validate_chapters
+from pipeline.step4_chapter_writer import generate_chapter_text
+from pipeline.step5_chapter_validator import validate_chapter
 
 MAX_VALIDATION_ATTEMPTS = 3
 
