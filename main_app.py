@@ -197,7 +197,14 @@ def generate_book_outline_stream(plot, num_chapters, genre):
 
 
 # ---------- UI ------------
-with gr.Blocks(title="BookKing - AI Story Builder") as demo:
+with gr.Blocks(
+    title="BookKing - AI Story Builder",
+    css="""
+    .tight-group > *:not(:last-child) {
+        margin-bottom: 4px !important;  /* spațiu mic între Number și ANPC */
+    }
+    """
+) as demo:
     gr.Markdown("""
     # 📖 BookKing - AI Story Builder  
     _Generate, validate, and refine your novels interactively._
@@ -207,7 +214,7 @@ with gr.Blocks(title="BookKing - AI Story Builder") as demo:
         with gr.Column(scale=3):
             plot_input = gr.Textbox(
                 label="Plot Description",
-                lines=4,
+                lines=3,
                 placeholder="Ex: A young girl discovers a portal to another world..."
             )
             genre_input = gr.Textbox(
@@ -216,16 +223,19 @@ with gr.Blocks(title="BookKing - AI Story Builder") as demo:
                 lines=2
             )
         with gr.Column(scale=1):
-            chapters_input = gr.Number(
-                label="Number of Chapters",
-                value=5,
-                precision=0
-            )
-            anpc_input = gr.Number(
-                label="Average Number of Pages per Chapter",
-                value=10,
-                precision=0
-            )
+            with gr.Group(elem_classes=["tight-group"]):
+                chapters_input = gr.Number(
+                    label="Number of Chapters",
+                    value=5,
+                    precision=0
+                )
+                anpc_input = gr.Number(
+                    label="Average Number of Pages per Chapter",
+                    value=5,
+                    precision=0,
+                    interactive=True
+                )
+            gr.Markdown("")  # mic spațiu jos pentru echilibru vizual
 
     generate_btn = gr.Button("🚀 Generate Book")
 
