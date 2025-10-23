@@ -16,6 +16,7 @@ based on the chapter number, and write that chapter only.
 import os
 import textwrap
 import requests
+import random
 
 LOCAL_API_URL = os.getenv("LMSTUDIO_API_URL", "http://127.0.0.1:1234/v1/chat/completions")
 MODEL_NAME = os.getenv("LMSTUDIO_MODEL", "phi-3-mini-4k-instruct")
@@ -52,7 +53,7 @@ Your job:
    - If there are no previous chapters, start naturally from the story’s beginning.
 4. Maintain a clear and structured prose style, but allow natural dialogue and expressive language where it enhances the scene.
 5. Adapt style, pacing, and atmosphere to fit the GENRE described above.
-6. Target length: {word_target_note}
+6. Target length: around {word_target} words.
 7. End with a natural chapter conclusion (not mid-scene or mid-sentence).
 8. Do not include chapter headers, outlines, or meta commentary — only the story text itself.
 
@@ -89,12 +90,10 @@ def generate_chapter_text(expanded_plot: str,
         feedback_section = f"\n\nAdditional reviewer feedback to address:\n\"\"\"{feedback}\"\"\"\n"
 
     if anpc and anpc > 0:
-        avg_words = anpc * 500
-        min_words = int(avg_words * 0.75)
-        max_words = int(avg_words * 1.25)
-        word_target_note = f"approximately {min_words}–{max_words} words"
+        base_words = anpc * 500
+        word_target = int(random.uniform(base_words * 0.75, base_words * 1.25))
     else:
-        word_target_note = "approximately 2500–3500 words"
+        word_target = random.randint(2500, 3500)
 
     prompt = CHAPTER_PROMPT_TEMPLATE.format(
         expanded_plot=expanded_plot,
@@ -102,7 +101,7 @@ def generate_chapter_text(expanded_plot: str,
         previous_chapters_summary=previous_joined,
         genre=genre or "unspecified",
         chapter_number=chapter_index,
-        word_target_note=word_target_note,
+        word_target=word_target,
         feedback_section=feedback_section
     )
 
