@@ -2,7 +2,7 @@
 """
 step5_chapter_validator.py
 
-Validates each generated chapter against the expanded plot and previous chapters.
+Validates each generated chapter against the expanded plot, previous chapters, and the specified genre.
 """
 
 import os
@@ -37,13 +37,17 @@ Inputs:
 - Current Chapter (to validate):
 \"\"\"{current_chapter}\"\"\"
 
+- GENRE (to guide tone, pacing, and atmosphere):
+\"\"\"{genre}\"\"\"
+
 Your job:
 1. In the "Chapters Overview", **find the description that corresponds to Chapter {chapter_number}**.
 2. Evaluate if the current chapter **matches that description** in tone, events, structure, and purpose.
 3. Check for **logical continuity** with earlier chapters (characters, motivations, timeline).  
    - If no previous chapters exist, skip this check.
-4. Be fair: small stylistic or pacing differences are acceptable.
-5. Respond in one of the following strict formats:
+4. Consider the GENRE when judging consistency of tone, pacing, and atmosphere.
+5. Be fair: small stylistic or pacing differences are acceptable.
+6. Respond in one of the following strict formats:
 
 If everything fits reasonably well:
 
@@ -54,12 +58,10 @@ Otherwise:
 
 RESULT: NOT OK  
 SUGGESTIONS:  
-- bullet-point list of what to fix or adjust to better align with the overview and prior context.
+- bullet-point list of what to fix or adjust to better align with the overview, prior context, and genre.
 
 Keep the response concise and formatted exactly like shown above.
 """).strip()
-
-
 
 
 def _summarize_previous(previous_texts, max_chars=1200):
@@ -74,7 +76,17 @@ def _summarize_previous(previous_texts, max_chars=1200):
     return "\n".join(snippets)
 
 
-def validate_chapter(expanded_plot, chapters_overview, previous_chapters, current_chapter, current_index, local_api_url=None):
+def validate_chapter(expanded_plot,
+                     chapters_overview,
+                     previous_chapters,
+                     current_chapter,
+                     current_index,
+                     genre,
+                     local_api_url=None):
+    """
+    Validate the current chapter against its overview, the expanded plot, and prior context,
+    taking into account the intended genre.
+    """
     url = local_api_url or LOCAL_API_URL
     previous_summary = _summarize_previous(previous_chapters or [])
 
@@ -84,6 +96,7 @@ def validate_chapter(expanded_plot, chapters_overview, previous_chapters, curren
         previous_chapters_summary=previous_summary,
         current_chapter=current_chapter,
         chapter_number=current_index,
+        genre=genre or "unspecified",
     )
 
     payload = {

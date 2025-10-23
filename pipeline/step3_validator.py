@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 import textwrap
-import json
 import requests
 
 LOCAL_API_URL = os.environ.get("LMSTUDIO_API_URL", "http://127.0.0.1:1234/v1/chat/completions")
@@ -21,8 +20,9 @@ Be moderately critical: ignore minor inconsistencies in style or small overlaps,
 Instructions:
 1. Compare both the "Initial Story Requirements" and the "Expanded Plot Summary" with the proposed chapters.
 2. Prioritize consistency with the Expanded Plot, but also ensure that the Initial Requirements are not contradicted.
-3. If the chapters align well with the story, answer exactly: "OK".
-4. If there are issues, answer:
+3. Consider the GENRE described below when judging tone, pacing, and structure.
+4. If the chapters align well with the story, answer exactly: "OK".
+5. If there are issues, answer:
    "NOT OK"
    and provide a concise list of high-level corrections or suggestions (max 5 sentences) focused ONLY on improving the chapters (not rewriting the plot).
 
@@ -34,14 +34,17 @@ INITIAL STORY REQUIREMENTS:
 EXPANDED PLOT SUMMARY:
 \"\"\"{expanded_plot}\"\"\"
 
+GENRE:
+\"\"\"{genre}\"\"\"
+
 CHAPTERS PROPOSAL:
 \"\"\"{chapters}\"\"\"
 """)
 
-def validate_chapters(initial_plot, expanded_plot, chapters, iteration=1, local_api_url=None, params=None):
+def validate_chapters(initial_plot, expanded_plot, chapters, genre, local_api_url=None, params=None):
     """
     Validate if the proposed chapters fit the expanded plot (main source)
-    and are still aligned with the user's initial story idea.
+    and are still aligned with the user's initial story idea, considering the given genre.
     Returns:
         ("OK", None) if valid,
         ("NOT OK", suggestions) otherwise,
@@ -59,7 +62,8 @@ def validate_chapters(initial_plot, expanded_plot, chapters, iteration=1, local_
                 "content": PROMPT_TEMPLATE.format(
                     initial_plot=initial_plot,
                     expanded_plot=expanded_plot,
-                    chapters=chapters
+                    chapters=chapters,
+                    genre=genre
                 ),
             },
         ],

@@ -7,6 +7,7 @@ import textwrap
 def generate_chapters(initial_requirements: str,
                       expanded_plot: str,
                       num_chapters: int,
+                      genre: str,
                       feedback: str = None,
                       model="mistral",
                       api_url="http://localhost:1234/v1/chat/completions"):
@@ -17,6 +18,7 @@ def generate_chapters(initial_requirements: str,
     - initial_requirements: the original user story idea
     - expanded_plot: the authoritative expanded plot
     - num_chapters: number of chapters to generate
+    - genre: story genre or style descriptor
     - feedback: optional reviewer feedback from validation
     """
 
@@ -38,6 +40,7 @@ def generate_chapters(initial_requirements: str,
     - Create exactly {num_chapters} chapter titles and medium-length descriptions.
     - Each description should summarize what happens in that chapter, focusing on key events or turning points.
     - Keep the tone neutral and factual (not artistic or emotional).
+    - Adapt chapter structure, pacing, and tone to match the GENRE described below.
     - Output as a numbered list in the following format:
 
     Chapter 1: <Title>
@@ -45,6 +48,9 @@ def generate_chapters(initial_requirements: str,
 
     EXPANDED STORY SUMMARY:
     \"\"\"{expanded_plot}\"\"\"
+
+    GENRE:
+    \"\"\"{genre}\"\"\"
     {feedback_section}
     """)
 

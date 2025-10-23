@@ -3,7 +3,7 @@ import requests
 import textwrap
 import os
 
-def expand_plot(user_plot: str, model="mistral", api_url="http://localhost:1234/v1/chat/completions"):
+def expand_plot(user_plot: str, genre: str, model="mistral", api_url="http://localhost:1234/v1/chat/completions"):
     PROMPT_TEMPLATE = textwrap.dedent(f"""
     You are an expert story planner and narrative designer.
 
@@ -18,9 +18,13 @@ def expand_plot(user_plot: str, model="mistral", api_url="http://localhost:1234/
     - Use impersonal, descriptive tone.
     - Each scene should explain what happens, where, and why it matters.
     - End with the final outcome of the story. No meta commentary.
+    - Adapt structure, pacing, and tone to match the GENRE described below.
 
     USER PLOT:
     \"\"\"{user_plot}\"\"\"
+
+    GENRE:
+    \"\"\"{genre}\"\"\"
     """)
 
     payload = {

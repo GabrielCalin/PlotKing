@@ -7,6 +7,7 @@ Generates the full text for a specific chapter based on:
 - Chapters Overview
 - Previously written chapters (if any)
 - Current Chapter Number
+- Genre (influences style, tone, and pacing)
 
 The model will identify the correct chapter description from the overview
 based on the chapter number, and write that chapter only.
@@ -25,7 +26,6 @@ GEN_PARAMS = {
     "max_tokens": 8000,
 }
 
-
 CHAPTER_PROMPT_TEMPLATE = textwrap.dedent("""
 You are an expert long-form fiction writer.
 
@@ -42,15 +42,19 @@ Inputs:
 - Previously Written Chapters (if any, may be empty):
 \"\"\"{previous_chapters_summary}\"\"\"
 
+- GENRE (to guide tone, pacing, and atmosphere):
+\"\"\"{genre}\"\"\"
+
 Your job:
 1. Locate in the chapters overview the description that corresponds to **Chapter {chapter_number}**.
 2. Write the **complete text** for that chapter, following its description exactly in tone, purpose, and key events.
 3. Ensure logical continuity with previous chapters (characters, timeline, motivations).  
    - If there are no previous chapters, start naturally from the story’s beginning.
-4. Maintain a clear and structured prose style, but allow natural dialogue and occasional expressive language where it enhances the scene.
-5. Target length: long-form (approx. 2500–5000 words). If the model cannot produce that many tokens, create the most coherent chapter possible within limits.
-6. End with a natural chapter conclusion (not mid-scene or mid-sentence).
-7. Do not include chapter headers, outlines, or meta commentary — only the story text itself.
+4. Maintain a clear and structured prose style, but allow natural dialogue and expressive language where it enhances the scene.
+5. Adapt style, pacing, and atmosphere to fit the GENRE described above.
+6. Target length: long-form (approx. 2500–5000 words). If the model cannot produce that many tokens, create the most coherent chapter possible within limits.
+7. End with a natural chapter conclusion (not mid-scene or mid-sentence).
+8. Do not include chapter headers, outlines, or meta commentary — only the story text itself.
 
 {feedback_section}
 
@@ -72,6 +76,7 @@ def generate_chapter_text(expanded_plot: str,
                           chapters_overview: str,
                           chapter_index: int,
                           previous_chapters=None,
+                          genre: str = None,
                           local_api_url=None,
                           model_name=None,
                           feedback=None):
@@ -81,6 +86,7 @@ def generate_chapter_text(expanded_plot: str,
     - chapters_overview: chapter titles + descriptions
     - chapter_index: integer index (1-based)
     - previous_chapters: list of strings (optional)
+    - genre: story genre or style descriptor
     - feedback: optional feedback string to guide regeneration
     """
     url = local_api_url or LOCAL_API_URL
@@ -95,6 +101,7 @@ def generate_chapter_text(expanded_plot: str,
         expanded_plot=expanded_plot,
         chapters_overview=chapters_overview,
         previous_chapters_summary=previous_joined,
+        genre=genre or "unspecified",
         chapter_number=chapter_index,
         feedback_section=feedback_section
     )

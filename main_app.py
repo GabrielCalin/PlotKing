@@ -15,7 +15,7 @@ def ts_prefix(message: str) -> str:
     return f"[{timestamp}] {message}"
 
 
-def generate_book_outline_stream(plot, num_chapters):
+def generate_book_outline_stream(plot, num_chapters, genre):
     """
     Stable streaming pipeline:
     - Dropdown: sets value="Chapter 1" only for the first chapter.
@@ -36,7 +36,7 @@ def generate_book_outline_stream(plot, num_chapters):
     status_log.append(ts_prefix("📝 Step 1: Expanding plot..."))
     yield "", "", [], "", gr.update(choices=[], value=None), "_No chapters yet_", "\n".join(status_log), validation_text
 
-    expanded_plot = expand_plot(plot)
+    expanded_plot = expand_plot(plot, genre)
     status_log.append(ts_prefix("✅ Plot expanded."))
     yield expanded_plot, "", [], "", gr.update(choices=[], value=None), "_Ready for chapters..._", "\n".join(status_log), validation_text
 
@@ -44,7 +44,7 @@ def generate_book_outline_stream(plot, num_chapters):
     status_log.append(ts_prefix("📘 Step 2: Generating chapter overview..."))
     yield expanded_plot, "", [], "", gr.update(choices=[], value=None), "_Generating overview..._", "\n".join(status_log), validation_text
 
-    chapters_overview = generate_chapters(plot, expanded_plot, num_chapters)
+    chapters_overview = generate_chapters(plot, expanded_plot, num_chapters, genre)
     status_log.append(ts_prefix("✅ Chapters overview generated."))
     yield expanded_plot, chapters_overview, [], "", gr.update(choices=[], value=None), "_Overview ready_", "\n".join(status_log), validation_text
 
@@ -53,7 +53,7 @@ def generate_book_outline_stream(plot, num_chapters):
     feedback = ""
     while validation_round < MAX_VALIDATION_ATTEMPTS:
         validation_round += 1
-        result, feedback = validate_chapters(plot, expanded_plot, chapters_overview, iteration=validation_round)
+        result, feedback = validate_chapters(plot, expanded_plot, chapters_overview, genre)
         if result == "OK":
             status_log.append(ts_prefix("✅ Overview validation passed."))
             validation_text += "✅ Chapters Overview Validation: PASSED"
@@ -64,7 +64,7 @@ def generate_book_outline_stream(plot, num_chapters):
                 validation_text += f"\n\n⚠️ Chapters Overview Validation Feedback (attempt {validation_round}):\n{feedback}"
             else:
                 validation_text += f"⚠️ Chapters Overview Validation Feedback (attempt {validation_round}):\n{feedback}"
-            chapters_overview = generate_chapters(plot, expanded_plot, num_chapters, feedback)
+            chapters_overview = generate_chapters(plot, expanded_plot, num_chapters, genre, feedback)
             status_log.append(ts_prefix("🔄 Regenerated overview with feedback."))
         else:
             status_log.append(ts_prefix(f"❌ Overview validation error: {feedback}"))
@@ -98,7 +98,7 @@ def generate_book_outline_stream(plot, num_chapters):
         )
 
         # generate chapter
-        chapter_text = generate_chapter_text(expanded_plot, chapters_overview, current_index, chapters_full)
+        chapter_text = generate_chapter_text(expanded_plot, chapters_overview, current_index, chapters_full, genre)
         chapters_full.append(chapter_text)
         status_log.append(ts_prefix(f"✅ Chapter {current_index} generated."))
 
@@ -124,7 +124,8 @@ def generate_book_outline_stream(plot, num_chapters):
                 chapters_overview,
                 chapters_full[:-1],
                 chapter_text,
-                current_index
+                current_index,
+                genre
             )
 
             if result == "OK":
@@ -150,6 +151,7 @@ def generate_book_outline_stream(plot, num_chapters):
                     chapters_overview,
                     current_index,
                     chapters_full[:-1],
+                    genre,
                     feedback=feedback
                 )
                 chapters_full[-1] = chapter_text
@@ -207,7 +209,10 @@ with gr.Blocks(title="BookKing - AI Story Builder") as demo:
             lines=3,
             placeholder="Ex: A young girl discovers a portal to another world..."
         )
+
+    with gr.Row():
         chapters_input = gr.Number(label="Number of Chapters", value=5, precision=0)
+        genre_input = gr.Textbox(label="Genre", placeholder="Ex: fantasy, science fiction")
 
     generate_btn = gr.Button("🚀 Generate Book")
 
@@ -241,7 +246,7 @@ with gr.Blocks(title="BookKing - AI Story Builder") as demo:
     # --- Wiring ---
     generate_btn.click(
         fn=generate_book_outline_stream,
-        inputs=[plot_input, chapters_input],
+        inputs=[plot_input, chapters_input, genre_input],
         outputs=[
             expanded_output,
             chapters_output,
