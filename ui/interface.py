@@ -85,9 +85,9 @@ def create_interface(pipeline_fn, refine_fn=None):
                     with gr.Row(elem_classes=["plot-header"]):
                         gr.Markdown("Plot Description", elem_id="plot-title")
                         with gr.Row(elem_classes=["plot-buttons"]):
-                            show_original_btn = gr.Button("🟦", size="sm")
-                            show_refined_btn = gr.Button("🟩", size="sm")
-                            refine_btn = gr.Button("⚙️", size="sm")
+                            show_original_btn = gr.Button("O", size="sm")
+                            show_refined_btn = gr.Button("R", size="sm")
+                            refine_btn = gr.Button("🪄", size="sm")
 
                     plot_input = gr.Textbox(
                         label="Original",
