@@ -196,5 +196,11 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc):
 
 # ---------- Launch UI ----------
 if __name__ == "__main__":
-    demo = create_interface(generate_book_outline_stream)
+    from ui.interface import create_interface
+
+    def refine_plot(current_text):
+        # momentan doar returnăm textul rafinat dummy
+        return current_text + "\n\n[Refined version generated here.]"
+
+    demo = create_interface(generate_book_outline_stream, refine_plot)
     demo.launch(server_name="0.0.0.0", server_port=7860)

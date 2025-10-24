@@ -16,68 +16,30 @@ def display_selected_chapter(chapter_name, chapters):
 
 def create_interface(pipeline_fn, refine_fn=None):
     def toggle_plot_label(is_refined):
-        if is_refined:
-            return gr.update(label="Refined")
-        else:
-            return gr.update(label="Original")
+        return gr.update(label="Refined" if is_refined else "Original")
 
     with gr.Blocks(
         title="BookKing - AI Story Builder",
         css="""
-        .tight-group > *:not(:last-child) {
-            margin-bottom: 4px !important;
-        }
-
-        .plot-wrapper {
-            border: 1px solid var(--block-border-color);
-            border-radius: var(--block-radius);
-            overflow: hidden;
-        }
-
-        .plot-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: var(--block-label-background-fill);
-            padding: 4px 8px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            border-bottom: 1px solid var(--block-border-color);
-        }
-
-        .plot-buttons {
-            display: flex;
-            gap: 3px;
-        }
-
-        .plot-buttons button {
-            background: none !important;
-            border: none !important;
-            box-shadow: none !important;
-            padding: 0 4px !important;
-            min-width: auto !important;
-            height: auto !important;
-            font-size: 0.9rem !important;
-            opacity: 0.65;
-            transition: opacity 0.15s;
-        }
-
-        .plot-buttons button:hover {
-            opacity: 1;
-        }
-
-        .plot-textbox textarea {
-            border: none !important;
-            border-radius: 0 !important;
-            box-shadow: none !important;
-            resize: vertical !important;
-        }
+        .tight-group > *:not(:last-child) { margin-bottom: 4px !important; }
+        .plot-wrapper { border: 1px solid var(--block-border-color); border-radius: var(--block-radius); overflow: hidden; }
+        .plot-header { display: flex; justify-content: space-between; align-items: center; background-color: var(--block-label-background-fill);
+                       padding: 4px 8px; font-weight: 600; font-size: 0.9rem; border-bottom: 1px solid var(--block-border-color); }
+        .plot-buttons { display: flex; gap: 3px; }
+        .plot-buttons button { background: none !important; border: none !important; box-shadow: none !important; padding: 0 4px !important;
+                               min-width: auto !important; height: auto !important; font-size: 0.9rem !important; opacity: 0.65; transition: opacity 0.15s; }
+        .plot-buttons button:hover { opacity: 1; }
+        .plot-textbox textarea { border: none !important; border-radius: 0 !important; box-shadow: none !important; resize: vertical !important; }
         """
     ) as demo:
         gr.Markdown("""
         # 📖 BookKing - AI Story Builder  
         _Generate, validate, and refine your novels interactively._
         """)
+
+        plot_state = gr.State("")
+        refined_plot_state = gr.State("")
+        current_mode = gr.State("original")
 
         with gr.Row(equal_height=True):
             with gr.Column(scale=3):
@@ -104,17 +66,8 @@ def create_interface(pipeline_fn, refine_fn=None):
 
             with gr.Column(scale=1):
                 with gr.Group(elem_classes=["tight-group"]):
-                    chapters_input = gr.Number(
-                        label="Number of Chapters",
-                        value=5,
-                        precision=0
-                    )
-                    anpc_input = gr.Number(
-                        label="Average Number of Pages per Chapter",
-                        value=5,
-                        precision=0,
-                        interactive=True
-                    )
+                    chapters_input = gr.Number(label="Number of Chapters", value=5, precision=0)
+                    anpc_input = gr.Number(label="Average Number of Pages per Chapter", value=5, precision=0, interactive=True)
                 gr.Markdown("")
 
         generate_btn = gr.Button("🚀 Generate Book")
@@ -135,34 +88,54 @@ def create_interface(pipeline_fn, refine_fn=None):
 
         chapters_state = gr.State([])
 
+        # --- PIPELINE main button ---
         generate_btn.click(
             fn=pipeline_fn,
             inputs=[plot_input, chapters_input, genre_input, anpc_input],
             outputs=[
-                expanded_output,
-                chapters_output,
-                chapters_state,
-                current_chapter_output,
-                chapter_selector,
-                chapter_counter,
-                status_output,
-                validation_feedback,
+                expanded_output, chapters_output, chapters_state, current_chapter_output,
+                chapter_selector, chapter_counter, status_output, validation_feedback,
             ]
         )
 
+        # --- Display selected chapter ---
         chapter_selector.change(
             fn=display_selected_chapter,
             inputs=[chapter_selector, chapters_state],
             outputs=[current_chapter_output]
         )
 
-        show_original_btn.click(fn=lambda: toggle_plot_label(False), outputs=[plot_input])
-        show_refined_btn.click(fn=lambda: toggle_plot_label(True), outputs=[plot_input])
+        # --- BUTTONS: Original / Refined ---
+        def show_original(plot, refined_plot):
+            return gr.update(value=plot, label="Original"), "original"
 
-        refine_btn.click(
-            fn=lambda text: gr.update(value="Generating Refined Plot...", label="Refined"),
-            inputs=[plot_input],
-            outputs=[plot_input]
-        )
+        def show_refined(plot, refined_plot):
+            return gr.update(value=refined_plot, label="Refined"), "refined"
+
+        show_original_btn.click(fn=show_original, inputs=[plot_state, refined_plot_state],
+                                outputs=[plot_input, current_mode])
+        show_refined_btn.click(fn=show_refined, inputs=[plot_state, refined_plot_state],
+                               outputs=[plot_input, current_mode])
+
+        # --- REFINE button (generate refined plot) ---
+        def refine_action(plot, refined_plot):
+            if refine_fn:
+                new_refined = refine_fn(plot)
+            else:
+                new_refined = plot + "\n\n[Refined plot generated here.]"
+            return gr.update(value=new_refined, label="Refined"), new_refined, "refined"
+
+        refine_btn.click(fn=refine_action, inputs=[plot_state, refined_plot_state],
+                         outputs=[plot_input, refined_plot_state, current_mode])
+
+        # --- When user edits the textbox ---
+        def sync_textbox(text, mode):
+            if mode == "refined":
+                return gr.update(), text
+            else:
+                return text, gr.update()
+
+        plot_input.change(fn=sync_textbox, inputs=[plot_input, current_mode],
+                          outputs=[plot_state, refined_plot_state])
 
     return demo
