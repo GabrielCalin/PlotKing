@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import gradio as gr
 from datetime import datetime
+from pipeline.step0_refine_plot import refine_plot
 from pipeline.step1_plot_expander import expand_plot
 from pipeline.step2_chapter_generator import generate_chapters
 from pipeline.step3_validator import validate_chapters
@@ -15,15 +16,6 @@ def ts_prefix(message: str) -> str:
     """Return message prefixed with current datetime up to milliseconds."""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
     return f"[{timestamp}] {message}"
-
-def refine_plot(text: str) -> str:
-    """
-    Creates a refined version of the plot.
-    Currently, this is a placeholder that simply marks refinement.
-    """
-    if not text.strip():
-        return "[No content to refine]"
-    return text.strip() + "\n\n[Refined version generated here.]"
 
 def generate_book_outline_stream(plot, num_chapters, genre, anpc):
     """

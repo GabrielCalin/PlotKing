@@ -13,13 +13,7 @@ def display_selected_chapter(chapter_name, chapters):
         return chapters[idx]
     return ""
 
-
-def simple_refine_plot(text):
-    return text + "\n\n[Refined version generated here.]"
-
-
-def create_interface(pipeline_fn, refine_fn=None):
-    refine_fn = refine_fn or simple_refine_plot
+def create_interface(pipeline_fn, refine_fn):
 
     def toggle_plot_label(is_refined):
         return gr.update(label="Refined" if is_refined else "Original")
@@ -146,18 +140,22 @@ def create_interface(pipeline_fn, refine_fn=None):
             outputs=[plot_input, current_mode, refine_btn]
         )
 
-        # --- REFINE / CLEAR logic ---
-        def refine_or_clear(plot, refined, mode):
+        def refine_or_clear(plot, refined, mode, genre):
             if mode == "refined":
                 # clear refined plot
                 return gr.update(value=plot, label="Original", interactive=True), "", "original", gr.update(value="🪄")
             else:
-                new_refined = refine_fn(plot)
-                return gr.update(value=new_refined, label="Refined", interactive=False), new_refined, "refined", gr.update(value="🧹")
+                new_refined = refine_fn(plot, genre)
+                return gr.update(
+                    value=new_refined,
+                    label="Refined",
+                    interactive=False,
+                    placeholder="This refined version will be used for generation (if present)."
+                ), new_refined, "refined", gr.update(value="🧹")
 
         refine_btn.click(
             fn=refine_or_clear,
-            inputs=[plot_state, refined_plot_state, current_mode],
+            inputs=[plot_state, refined_plot_state, current_mode, genre_input],
             outputs=[plot_input, refined_plot_state, current_mode, refine_btn]
         )
 
