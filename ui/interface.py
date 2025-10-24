@@ -118,7 +118,12 @@ def create_interface(pipeline_fn, refine_fn=None):
 
         # --- ORIGINAL view ---
         def show_original(plot, refined):
-            return gr.update(value=plot, label="Original", interactive=True), "original", gr.update(value="🪄")
+            return gr.update(
+                value=plot,
+                label="Original",
+                interactive=True,
+                placeholder="Ex: A young girl discovers a portal to another world..."
+            ), "original", gr.update(value="🪄")
 
         show_original_btn.click(
             fn=show_original,
@@ -128,7 +133,12 @@ def create_interface(pipeline_fn, refine_fn=None):
 
         # --- REFINED view ---
         def show_refined(plot, refined):
-            return gr.update(value=refined, label="Refined", interactive=False), "refined", gr.update(value="🧹")
+            return gr.update(
+                value=refined,
+                label="Refined",
+                interactive=False,
+                placeholder="This refined version will be used for generation (if present)."
+            ), "refined", gr.update(value="🧹")
 
         show_refined_btn.click(
             fn=show_refined,

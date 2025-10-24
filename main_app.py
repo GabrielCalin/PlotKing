@@ -16,6 +16,14 @@ def ts_prefix(message: str) -> str:
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
     return f"[{timestamp}] {message}"
 
+def refine_plot(text: str) -> str:
+    """
+    Creates a refined version of the plot.
+    Currently, this is a placeholder that simply marks refinement.
+    """
+    if not text.strip():
+        return "[No content to refine]"
+    return text.strip() + "\n\n[Refined version generated here.]"
 
 def generate_book_outline_stream(plot, num_chapters, genre, anpc):
     """
@@ -196,11 +204,5 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc):
 
 # ---------- Launch UI ----------
 if __name__ == "__main__":
-    from ui.interface import create_interface
-
-    def refine_plot(current_text):
-        # momentan doar returnăm textul rafinat dummy
-        return current_text + "\n\n[Refined version generated here.]"
-
     demo = create_interface(generate_book_outline_stream, refine_plot)
     demo.launch(server_name="0.0.0.0", server_port=7860)
