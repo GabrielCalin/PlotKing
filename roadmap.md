@@ -6,9 +6,6 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## ✅ Phase 1 — Core Validation & Quality of Life
 
-2. **Average Number Of Pages Per Chapter in UI**
-   - Add the number of pages per chapter in UI.
-
 3. **Generate Plot Idea**  
    - Generate **similar plot ideas** based on user input.  
    - Serves as the starting point for the book generation pipeline.
@@ -125,8 +122,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 | Feature | Status |
 |----------|--------|
-| **Book Genre Selection in UI** | ⏳ In Progress |
-| **Generate Plot Idea** | ⏳ Planned |
+| **Generate Plot Idea** | ⏳ In Progress |
 | **Pipeline Control & Execution Flow** | ⏳ Planned |
 | **Prompt Optimization** | ⏳ Planned |
 | **Saving Project State** | ⏳ Planned |
