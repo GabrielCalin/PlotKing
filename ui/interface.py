@@ -159,11 +159,10 @@ def create_interface(pipeline_fn, refine_fn=None):
         show_original_btn.click(fn=lambda: toggle_plot_label(False), outputs=[plot_input])
         show_refined_btn.click(fn=lambda: toggle_plot_label(True), outputs=[plot_input])
 
-        if refine_fn:
-            refine_btn.click(
-                fn=lambda text: (refine_fn(text), gr.update(label="Refined")),
-                inputs=[plot_input],
-                outputs=[plot_input]
-            )
+        refine_btn.click(
+            fn=lambda text: gr.update(value="Generating Refined Plot...", label="Refined"),
+            inputs=[plot_input],
+            outputs=[plot_input]
+        )
 
     return demo
