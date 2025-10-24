@@ -14,12 +14,63 @@ def display_selected_chapter(chapter_name, chapters):
     return ""
 
 
-def create_interface(pipeline_fn):
+def create_interface(pipeline_fn, refine_fn=None):
+    def toggle_plot_label(is_refined):
+        if is_refined:
+            return gr.update(label="Refined")
+        else:
+            return gr.update(label="Original")
+
     with gr.Blocks(
         title="BookKing - AI Story Builder",
         css="""
         .tight-group > *:not(:last-child) {
             margin-bottom: 4px !important;
+        }
+
+        .plot-wrapper {
+            border: 1px solid var(--block-border-color);
+            border-radius: var(--block-radius);
+            overflow: hidden;
+        }
+
+        .plot-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--block-label-background-fill);
+            padding: 4px 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border-bottom: 1px solid var(--block-border-color);
+        }
+
+        .plot-buttons {
+            display: flex;
+            gap: 3px;
+        }
+
+        .plot-buttons button {
+            background: none !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 4px !important;
+            min-width: auto !important;
+            height: auto !important;
+            font-size: 0.9rem !important;
+            opacity: 0.65;
+            transition: opacity 0.15s;
+        }
+
+        .plot-buttons button:hover {
+            opacity: 1;
+        }
+
+        .plot-textbox textarea {
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            resize: vertical !important;
         }
         """
     ) as demo:
@@ -30,16 +81,27 @@ def create_interface(pipeline_fn):
 
         with gr.Row(equal_height=True):
             with gr.Column(scale=3):
-                plot_input = gr.Textbox(
-                    label="Plot Description",
-                    lines=3,
-                    placeholder="Ex: A young girl discovers a portal to another world..."
-                )
+                with gr.Column(elem_classes=["plot-wrapper"]):
+                    with gr.Row(elem_classes=["plot-header"]):
+                        gr.Markdown("Plot Description", elem_id="plot-title")
+                        with gr.Row(elem_classes=["plot-buttons"]):
+                            show_original_btn = gr.Button("🟦", size="sm")
+                            show_refined_btn = gr.Button("🟩", size="sm")
+                            refine_btn = gr.Button("⚙️", size="sm")
+
+                    plot_input = gr.Textbox(
+                        label="Original",
+                        lines=3,
+                        elem_classes=["plot-textbox"],
+                        placeholder="Ex: A young girl discovers a portal to another world..."
+                    )
+
                 genre_input = gr.Textbox(
                     label="Genre",
                     placeholder="Ex: fantasy, science fiction",
                     lines=2
                 )
+
             with gr.Column(scale=1):
                 with gr.Group(elem_classes=["tight-group"]):
                     chapters_input = gr.Number(
@@ -93,5 +155,15 @@ def create_interface(pipeline_fn):
             inputs=[chapter_selector, chapters_state],
             outputs=[current_chapter_output]
         )
+
+        show_original_btn.click(fn=lambda: toggle_plot_label(False), outputs=[plot_input])
+        show_refined_btn.click(fn=lambda: toggle_plot_label(True), outputs=[plot_input])
+
+        if refine_fn:
+            refine_btn.click(
+                fn=lambda text: (refine_fn(text), gr.update(label="Refined")),
+                inputs=[plot_input],
+                outputs=[plot_input]
+            )
 
     return demo
