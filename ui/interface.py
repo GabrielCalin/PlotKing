@@ -14,7 +14,13 @@ def display_selected_chapter(chapter_name, chapters):
     return ""
 
 
+def simple_refine_plot(text):
+    return text + "\n\n[Refined version generated here.]"
+
+
 def create_interface(pipeline_fn, refine_fn=None):
+    refine_fn = refine_fn or simple_refine_plot
+
     def toggle_plot_label(is_refined):
         return gr.update(label="Refined" if is_refined else "Original")
 
@@ -55,7 +61,8 @@ def create_interface(pipeline_fn, refine_fn=None):
                         label="Original",
                         lines=3,
                         elem_classes=["plot-textbox"],
-                        placeholder="Ex: A young girl discovers a portal to another world..."
+                        placeholder="Ex: A young girl discovers a portal to another world...",
+                        interactive=True
                     )
 
                 genre_input = gr.Textbox(
@@ -88,47 +95,63 @@ def create_interface(pipeline_fn, refine_fn=None):
 
         chapters_state = gr.State([])
 
-        # --- PIPELINE main button ---
+        # --- main generation button ---
+        def choose_plot_for_pipeline(plot, refined):
+            return refined if refined.strip() else plot
+
         generate_btn.click(
             fn=pipeline_fn,
-            inputs=[plot_input, chapters_input, genre_input, anpc_input],
+            inputs=[gr.State(choose_plot_for_pipeline(plot_state.value if hasattr(plot_state, "value") else "", 
+                                                      refined_plot_state.value if hasattr(refined_plot_state, "value") else "")),
+                    chapters_input, genre_input, anpc_input],
             outputs=[
                 expanded_output, chapters_output, chapters_state, current_chapter_output,
                 chapter_selector, chapter_counter, status_output, validation_feedback,
             ]
         )
 
-        # --- Display selected chapter ---
         chapter_selector.change(
             fn=display_selected_chapter,
             inputs=[chapter_selector, chapters_state],
             outputs=[current_chapter_output]
         )
 
-        # --- BUTTONS: Original / Refined ---
-        def show_original(plot, refined_plot):
-            return gr.update(value=plot, label="Original"), "original"
+        # --- ORIGINAL view ---
+        def show_original(plot, refined):
+            return gr.update(value=plot, label="Original", interactive=True), "original", gr.update(value="🪄")
 
-        def show_refined(plot, refined_plot):
-            return gr.update(value=refined_plot, label="Refined"), "refined"
+        show_original_btn.click(
+            fn=show_original,
+            inputs=[plot_state, refined_plot_state],
+            outputs=[plot_input, current_mode, refine_btn]
+        )
 
-        show_original_btn.click(fn=show_original, inputs=[plot_state, refined_plot_state],
-                                outputs=[plot_input, current_mode])
-        show_refined_btn.click(fn=show_refined, inputs=[plot_state, refined_plot_state],
-                               outputs=[plot_input, current_mode])
+        # --- REFINED view ---
+        def show_refined(plot, refined):
+            return gr.update(value=refined, label="Refined", interactive=False), "refined", gr.update(value="🧹")
 
-        # --- REFINE button (generate refined plot) ---
-        def refine_action(plot, refined_plot):
-            if refine_fn:
-                new_refined = refine_fn(plot)
+        show_refined_btn.click(
+            fn=show_refined,
+            inputs=[plot_state, refined_plot_state],
+            outputs=[plot_input, current_mode, refine_btn]
+        )
+
+        # --- REFINE / CLEAR logic ---
+        def refine_or_clear(plot, refined, mode):
+            if mode == "refined":
+                # clear refined plot
+                return gr.update(value=plot, label="Original", interactive=True), "", "original", gr.update(value="🪄")
             else:
-                new_refined = plot + "\n\n[Refined plot generated here.]"
-            return gr.update(value=new_refined, label="Refined"), new_refined, "refined"
+                new_refined = refine_fn(plot)
+                return gr.update(value=new_refined, label="Refined", interactive=False), new_refined, "refined", gr.update(value="🧹")
 
-        refine_btn.click(fn=refine_action, inputs=[plot_state, refined_plot_state],
-                         outputs=[plot_input, refined_plot_state, current_mode])
+        refine_btn.click(
+            fn=refine_or_clear,
+            inputs=[plot_state, refined_plot_state, current_mode],
+            outputs=[plot_input, refined_plot_state, current_mode, refine_btn]
+        )
 
-        # --- When user edits the textbox ---
+        # --- sync user edits ---
         def sync_textbox(text, mode):
             if mode == "refined":
                 return gr.update(), text
