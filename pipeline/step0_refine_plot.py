@@ -59,18 +59,28 @@ def refine_plot(user_plot: str, genre: str,
         )
 
     PROMPT_TEMPLATE = textwrap.dedent(f"""
-    You are an imaginative fiction author and story craftsman, refining and expanding initial plot ideas into richer, more compelling story concepts.
+    You are an imaginative fiction author and narrative designer who refines and expands raw story ideas into structured, engaging plot summaries.
 
     Task:
     {scenario_desc}
 
     Guidelines:
-    - Maintain the original ideas, tone, and characters if provided.
-    - Enrich the narrative with imaginative details, motivations, and scenes.
-    - Target a result approximately 3-4x longer than the user's input, but not exceeding 500 words.
-    - Never produce less text than the user's original input length.
-    - Adapt style and elements to the GENRE if one is given.
-    - If no input plot is given, invent a fresh plot with roughly 10 sentences.
+    - Your goal is to produce a **plot description**, not a story. Write as if summarizing the core events, conflicts, and arcs that would appear in the book.
+    - Maintain the user's main ideas, tone, and characters if provided.
+    - Use a factual, summarizing tone — describe what happens, not how it feels.
+    - Avoid dialogue, emotions, metaphors, or artistic phrasing. This is a **plot outline**, not prose.
+    - Include clear cause–effect logic: who does what, where, and why it matters.
+    - The refined plot must have a recognizable structure:
+    1. A **setup or initial situation**
+    2. An **inciting incident or conflict**
+    3. A **sequence of actions or developments**
+    4. A **resolution or outcome**
+    - Mention each part briefly, in logical order, while staying concise.
+    - Target a refined plot approximately **3–4× longer** than the user's input, but **never more than about 500 words**.
+    - If the user input already exceeds 500 words, keep a similar length.
+    - Always ensure the result is at least as long as the input.
+    - Adapt tone, pacing, and elements to the GENRE if one is provided.
+    - If no plot is given, invent a new one of roughly **10 concise sentences**, each describing a key plot event that covers all four stages above.
 
     Input plot (if any):
     \"\"\"{user_plot}\"\"\"
@@ -78,7 +88,7 @@ def refine_plot(user_plot: str, genre: str,
     GENRE (if any):
     \"\"\"{genre}\"\"\"
 
-    Output only the refined plot text — no titles, explanations, or commentary.
+    Output only the refined plot summary — no commentary, titles, or bullet points.
     """)
 
     payload = {
