@@ -94,13 +94,16 @@ def create_interface(pipeline_fn, refine_fn):
             return refined if refined.strip() else plot
 
         generate_btn.click(
+            fn=choose_plot_for_pipeline,
+            inputs=[plot_state, refined_plot_state],
+            outputs=[plot_state]
+        ).then(
             fn=pipeline_fn,
-            inputs=[gr.State(choose_plot_for_pipeline(plot_state.value if hasattr(plot_state, "value") else "", 
-                                                      refined_plot_state.value if hasattr(refined_plot_state, "value") else "")),
-                    chapters_input, genre_input, anpc_input],
+            inputs=[plot_state, chapters_input, genre_input, anpc_input],
             outputs=[
-                expanded_output, chapters_output, chapters_state, current_chapter_output,
-                chapter_selector, chapter_counter, status_output, validation_feedback,
+                expanded_output, chapters_output, chapters_state,
+                current_chapter_output, chapter_selector, chapter_counter,
+                status_output, validation_feedback,
             ]
         )
 
