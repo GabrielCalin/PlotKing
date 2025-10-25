@@ -9,15 +9,49 @@ from pipeline.step4_chapter_writer import generate_chapter_text
 from pipeline.step5_chapter_validator import validate_chapter
 from ui.interface import create_interface
 from pipeline.constants import RUN_MODE_CHOICES
+from pipeline.state_manager import is_stop_requested, save_checkpoint
 
 MAX_VALIDATION_ATTEMPTS = 3
 
 
+# ---------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------
 def ts_prefix(message: str) -> str:
     """Return message prefixed with current datetime up to milliseconds."""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
     return f"[{timestamp}] {message}"
 
+
+def maybe_pause_pipeline(step_label, expanded_plot, chapters_overview, chapters_full,
+                         validation_text, status_log, next_chapter_index=None,
+                         genre=None, anpc=None):
+    """
+    Centralized stop-check logic.
+    If a stop is requested, saves a checkpoint and yields paused state.
+    Returns True if pipeline should stop.
+    """
+    if not is_stop_requested():
+        return False  # continue as normal
+
+    save_checkpoint({
+        "expanded_plot": expanded_plot,
+        "chapters_overview": chapters_overview,
+        "chapters_full": chapters_full,
+        "validation_text": validation_text,
+        "status_log": status_log,
+        "next_chapter_index": next_chapter_index,
+        "genre": genre,
+        "anpc": anpc,
+    })
+    status_log.append(ts_prefix(f"🛑 Stop requested — pipeline paused after {step_label}."))
+    yield expanded_plot, chapters_overview, chapters_full, gr.update(), gr.update(choices=[]), "_Paused_", "\n".join(status_log), validation_text
+    return True
+
+
+# ---------------------------------------------------------
+# Main Pipeline
+# ---------------------------------------------------------
 def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode):
     """
     Stable streaming pipeline:
@@ -44,6 +78,9 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode):
     status_log.append(ts_prefix("✅ Plot expanded."))
     yield expanded_plot, "", [], "", gr.update(choices=[], value=None), "_Ready for chapters..._", "\n".join(status_log), validation_text
 
+    if (yield from maybe_pause_pipeline("plot expansion", expanded_plot, None, [], validation_text, status_log, genre=genre, anpc=anpc)):
+        return
+
     # --- STEP 2 ---
     status_log.append(ts_prefix("📘 Step 2: Generating chapter overview..."))
     yield expanded_plot, "", [], "", gr.update(choices=[], value=None), "_Generating overview..._", "\n".join(status_log), validation_text
@@ -51,6 +88,9 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode):
     chapters_overview = generate_chapters(plot, expanded_plot, num_chapters, genre)
     status_log.append(ts_prefix("✅ Chapters overview generated."))
     yield expanded_plot, chapters_overview, [], "", gr.update(choices=[], value=None), "_Overview ready_", "\n".join(status_log), validation_text
+
+    if (yield from maybe_pause_pipeline("chapter overview generation", expanded_plot, chapters_overview, [], validation_text, status_log, genre=genre, anpc=anpc)):
+        return
 
     # --- STEP 3 (validation) ---
     validation_round = 0
@@ -80,6 +120,9 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode):
 
         yield expanded_plot, chapters_overview, [], "", gr.update(choices=[], value=None), "_Validating overview..._", "\n".join(status_log), validation_text
 
+    if (yield from maybe_pause_pipeline("overview validation", expanded_plot, chapters_overview, [], validation_text, status_log, genre=genre, anpc=anpc)):
+        return
+
     if run_mode == RUN_MODE_CHOICES["OVERVIEW"]:
         status_log.append(ts_prefix("⏹️ Stopped after chapters overview as requested."))
         yield expanded_plot, chapters_overview, [], "", gr.update(choices=[], value=None), "_Stopped after overview_", "\n".join(status_log), validation_text
@@ -105,10 +148,16 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode):
             validation_text,
         )
 
+        if (yield from maybe_pause_pipeline(f"chapter {current_index} start", expanded_plot, chapters_overview, chapters_full, validation_text, status_log, next_chapter_index=current_index, genre=genre, anpc=anpc)):
+            return
+
         # generate chapter
         chapter_text = generate_chapter_text(expanded_plot, chapters_overview, current_index, chapters_full, genre, anpc)
         chapters_full.append(chapter_text)
         status_log.append(ts_prefix(f"✅ Chapter {current_index} generated."))
+
+        if (yield from maybe_pause_pipeline(f"chapter {current_index} generation", expanded_plot, chapters_overview, chapters_full, validation_text, status_log, next_chapter_index=current_index, genre=genre, anpc=anpc)):
+            return
 
         validation_attempts = 0
         while validation_attempts < MAX_VALIDATION_ATTEMPTS:
@@ -169,6 +218,9 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode):
                 break
 
             validation_attempts += 1
+
+        if (yield from maybe_pause_pipeline(f"chapter {current_index} complete", expanded_plot, chapters_overview, chapters_full, validation_text, status_log, next_chapter_index=current_index + 1, genre=genre, anpc=anpc)):
+            return
 
         choices = [f"Chapter {j+1}" for j in range(len(chapters_full))]
         if current_index == 1 and not first_display_done:
