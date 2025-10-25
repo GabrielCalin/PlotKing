@@ -60,7 +60,12 @@ def create_interface(pipeline_fn, refine_fn):
                 with gr.Group(elem_classes=["tight-group"]):
                     chapters_input = gr.Number(label="Number of Chapters", value=5, precision=0)
                     anpc_input = gr.Number(label="Average Number of Pages per Chapter", value=5, precision=0, interactive=True)
-                gr.Markdown("")
+                    run_mode = gr.Dropdown(
+                        label="Run Mode",
+                        choices=["Full Pipeline", "Up to Chapters Overview"],
+                        value="Full Pipeline",
+                        interactive=True
+                    )
 
         generate_btn = gr.Button("🚀 Generate Book")
 
@@ -90,7 +95,7 @@ def create_interface(pipeline_fn, refine_fn):
             outputs=[plot_state]
         ).then(
             fn=pipeline_fn,
-            inputs=[plot_state, chapters_input, genre_input, anpc_input],
+            inputs=[plot_state, chapters_input, genre_input, anpc_input, run_mode],
             outputs=[
                 expanded_output, chapters_output, chapters_state,
                 current_chapter_output, chapter_selector, chapter_counter,

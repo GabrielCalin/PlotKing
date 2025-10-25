@@ -17,7 +17,7 @@ def ts_prefix(message: str) -> str:
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
     return f"[{timestamp}] {message}"
 
-def generate_book_outline_stream(plot, num_chapters, genre, anpc):
+def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode):
     """
     Stable streaming pipeline:
     - Dropdown: sets value="Chapter 1" only for the first chapter.
@@ -78,6 +78,11 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc):
             break
 
         yield expanded_plot, chapters_overview, [], "", gr.update(choices=[], value=None), "_Validating overview..._", "\n".join(status_log), validation_text
+
+    if run_mode == "Up to Chapters Overview":
+        status_log.append(ts_prefix("⏹️ Stopped after chapters overview as requested."))
+        yield expanded_plot, chapters_overview, [], "", gr.update(choices=[], value=None), "_Stopped after overview_", "\n".join(status_log), validation_text
+        return
 
     status_log.append(ts_prefix("🚀 Step 4: Writing chapters..."))
     yield expanded_plot, chapters_overview, [], "", gr.update(choices=[], value=None), "_Starting chapter generation..._", "\n".join(status_log), validation_text
