@@ -6,10 +6,6 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## ✅ Phase 1 — Core Validation & Quality of Life
 
-3. **Generate Plot Idea**  
-   - Generate **similar plot ideas** based on user input.  
-   - Serves as the starting point for the book generation pipeline.
-
 4. **Pipeline Control & Execution Flow**  
    - Allow users to **select which parts of the generation pipeline to execute**:  
      - Expanded Plot  
@@ -122,8 +118,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 | Feature | Status |
 |----------|--------|
-| **Generate Plot Idea** | ⏳ In Progress |
-| **Pipeline Control & Execution Flow** | ⏳ Planned |
+| **Pipeline Control & Execution Flow** | ⏳ In Progress |
 | **Prompt Optimization** | ⏳ Planned |
 | **Saving Project State** | ⏳ Planned |
 | **Manual Chapter Editing** | ⏳ Planned |

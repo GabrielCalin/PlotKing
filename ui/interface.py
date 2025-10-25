@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import gradio as gr
+from ui import load_css
 
 
 def display_selected_chapter(chapter_name, chapters):
@@ -20,17 +21,7 @@ def create_interface(pipeline_fn, refine_fn):
 
     with gr.Blocks(
         title="BookKing - AI Story Builder",
-        css="""
-        .tight-group > *:not(:last-child) { margin-bottom: 4px !important; }
-        .plot-wrapper { border: 1px solid var(--block-border-color); border-radius: var(--block-radius); overflow: hidden; }
-        .plot-header { display: flex; justify-content: space-between; align-items: center; background-color: var(--block-label-background-fill);
-                       padding: 4px 8px; font-weight: 600; font-size: 0.9rem; border-bottom: 1px solid var(--block-border-color); }
-        .plot-buttons { display: flex; gap: 3px; }
-        .plot-buttons button { background: none !important; border: none !important; box-shadow: none !important; padding: 0 4px !important;
-                               min-width: auto !important; height: auto !important; font-size: 0.9rem !important; opacity: 0.65; transition: opacity 0.15s; }
-        .plot-buttons button:hover { opacity: 1; }
-        .plot-textbox textarea { border: none !important; border-radius: 0 !important; box-shadow: none !important; resize: vertical !important; }
-        """
+        css=load_css()
     ) as demo:
         gr.Markdown("""
         # 📖 BookKing - AI Story Builder  
