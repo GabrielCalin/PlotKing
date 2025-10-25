@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import gradio as gr
 from ui import load_css
+from pipeline.constants import RUN_MODE_CHOICES
 
 
 def display_selected_chapter(chapter_name, chapters):
@@ -62,8 +63,8 @@ def create_interface(pipeline_fn, refine_fn):
                     anpc_input = gr.Number(label="Average Number of Pages per Chapter", value=5, precision=0, interactive=True)
                     run_mode = gr.Dropdown(
                         label="Run Mode",
-                        choices=["Full Pipeline", "Up to Chapters Overview"],
-                        value="Full Pipeline",
+                        choices=list(RUN_MODE_CHOICES.values()),
+                        value=RUN_MODE_CHOICES["FULL"],
                         interactive=True
                     )
 
@@ -169,3 +170,9 @@ def create_interface(pipeline_fn, refine_fn):
                           outputs=[plot_state, refined_plot_state])
 
     return demo
+
+def map_run_mode_label_to_code(label):
+    for key, val in RUN_MODE_CHOICES.items():
+        if val == label:
+            return key
+    return "FULL"

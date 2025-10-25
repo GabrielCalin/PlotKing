@@ -8,6 +8,7 @@ from pipeline.step3_validator import validate_chapters
 from pipeline.step4_chapter_writer import generate_chapter_text
 from pipeline.step5_chapter_validator import validate_chapter
 from ui.interface import create_interface
+from pipeline.constants import RUN_MODE_CHOICES
 
 MAX_VALIDATION_ATTEMPTS = 3
 
@@ -79,7 +80,7 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode):
 
         yield expanded_plot, chapters_overview, [], "", gr.update(choices=[], value=None), "_Validating overview..._", "\n".join(status_log), validation_text
 
-    if run_mode == "Up to Chapters Overview":
+    if run_mode == RUN_MODE_CHOICES["OVERVIEW"]:
         status_log.append(ts_prefix("⏹️ Stopped after chapters overview as requested."))
         yield expanded_plot, chapters_overview, [], "", gr.update(choices=[], value=None), "_Stopped after overview_", "\n".join(status_log), validation_text
         return
