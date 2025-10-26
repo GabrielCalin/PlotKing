@@ -2,6 +2,7 @@
 import gradio as gr
 from ui import load_css
 from pipeline.constants import RUN_MODE_CHOICES
+from pipeline.state_manager import request_stop, get_checkpoint, clear_stop, clear_checkpoint
 
 
 def display_selected_chapter(chapter_name, chapters):
@@ -68,7 +69,10 @@ def create_interface(pipeline_fn, refine_fn):
                         interactive=True
                     )
 
-        generate_btn = gr.Button("🚀 Generate Book")
+        with gr.Row():
+            generate_btn = gr.Button("🚀 Generate Book")
+            stop_btn = gr.Button("🛑 Stop", variant="stop", visible=False)
+            resume_btn = gr.Button("▶️ Resume", variant="primary", visible=False)
 
         with gr.Row():
             expanded_output = gr.Textbox(label="📝 Expanded Plot", lines=15)
@@ -90,10 +94,17 @@ def create_interface(pipeline_fn, refine_fn):
         def choose_plot_for_pipeline(plot, refined):
             return refined if refined.strip() else plot
 
+        def show_controls_on_run():
+            return gr.update(visible=True), gr.update(visible=False)
+
         generate_btn.click(
             fn=choose_plot_for_pipeline,
             inputs=[plot_state, refined_plot_state],
             outputs=[plot_state]
+        ).then(
+            fn=show_controls_on_run,
+            inputs=[],
+            outputs=[stop_btn, resume_btn]
         ).then(
             fn=pipeline_fn,
             inputs=[plot_state, chapters_input, genre_input, anpc_input, run_mode],
@@ -104,6 +115,51 @@ def create_interface(pipeline_fn, refine_fn):
             ]
         )
 
+        # --- Stop / Resume ---
+        def stop_pipeline():
+            request_stop()
+            return "🛑 Stop signal sent. Will halt after current step.", gr.update(visible=False), gr.update(visible=True)
+
+        stop_btn.click(
+            fn=stop_pipeline,
+            outputs=[status_output, stop_btn, resume_btn]
+        )
+
+        def set_controls_on_resume():
+            return gr.update(visible=True), gr.update(visible=False)
+
+        # IMPORTANT: this is a GENERATOR function now (uses `yield from`)
+        def resume_pipeline():
+            checkpoint = get_checkpoint()
+            if not checkpoint:
+                # Yield once to satisfy output arity, then end
+                yield "", "", [], "", gr.update(choices=[]), "_No checkpoint_", "⚠️ No checkpoint found to resume from.", ""
+                return
+            plot = checkpoint.get("plot", "")
+            num_chapters = checkpoint.get("num_chapters", 0)
+            genre = checkpoint.get("genre", "")
+            anpc = checkpoint.get("anpc", 0)
+            rm = checkpoint.get("run_mode", RUN_MODE_CHOICES["FULL"])
+            clear_stop()
+            clear_checkpoint()
+            # Delegate streaming to the main pipeline generator
+            yield from pipeline_fn(plot, num_chapters, genre, anpc, rm, checkpoint=checkpoint)
+
+        resume_btn.click(
+            fn=set_controls_on_resume,
+            inputs=[],
+            outputs=[stop_btn, resume_btn]
+        ).then(
+            fn=resume_pipeline,
+            inputs=[],
+            outputs=[
+                expanded_output, chapters_output, chapters_state,
+                current_chapter_output, chapter_selector, chapter_counter,
+                status_output, validation_feedback,
+            ]
+        )
+
+        # --- chapter viewer ---
         chapter_selector.change(
             fn=display_selected_chapter,
             inputs=[chapter_selector, chapters_state],
@@ -142,7 +198,6 @@ def create_interface(pipeline_fn, refine_fn):
 
         def refine_or_clear(plot, refined, mode, genre):
             if mode == "refined":
-                # clear refined plot
                 return gr.update(value=plot, label="Original", interactive=True), "", "original", gr.update(value="🪄")
             else:
                 new_refined = refine_fn(plot, genre)
