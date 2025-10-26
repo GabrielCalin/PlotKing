@@ -3,6 +3,10 @@ import gradio as gr
 from ui import load_css
 from pipeline.constants import RUN_MODE_CHOICES
 from pipeline.state_manager import request_stop, get_checkpoint, clear_stop, clear_checkpoint
+from datetime import datetime
+
+def ts_prefix(message: str) -> str:
+    return f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}] {message}"
 
 
 def display_selected_chapter(chapter_name, chapters):
@@ -116,12 +120,14 @@ def create_interface(pipeline_fn, refine_fn):
         )
 
         # --- Stop / Resume ---
-        def stop_pipeline():
+        def stop_pipeline(cur_status):
             request_stop()
-            return "🛑 Stop signal sent. Will halt after current step.", gr.update(visible=False), gr.update(visible=True)
+            new_status = (cur_status + "\n" + ts_prefix("🛑 Stop requested")).strip() if cur_status else ts_prefix("🛑 Stop requested")
+            return new_status, gr.update(interactive=False, value="Stopping…"), gr.update()
 
         stop_btn.click(
             fn=stop_pipeline,
+            inputs=[status_output],
             outputs=[status_output, stop_btn, resume_btn]
         )
 
