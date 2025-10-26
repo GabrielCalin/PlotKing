@@ -25,7 +25,8 @@ def ts_prefix(message: str) -> str:
 
 def maybe_pause_pipeline(step_label, expanded_plot, chapters_overview, chapters_full,
                          validation_text, status_log, next_chapter_index=None,
-                         genre=None, anpc=None, plot=None, num_chapters=None, run_mode=None):
+                         genre=None, anpc=None, plot=None, num_chapters=None, run_mode=None,
+                         overview_validated=False):
     """
     Centralized stop-check logic.
     If a stop is requested, saves a checkpoint and yields paused state.
@@ -46,6 +47,7 @@ def maybe_pause_pipeline(step_label, expanded_plot, chapters_overview, chapters_
         "plot": plot,
         "num_chapters": num_chapters,
         "run_mode": run_mode,
+        "overview_validated": overview_validated,
     })
     status_log.append(ts_prefix(f"🛑 Stop requested — pipeline paused after {step_label}."))
     yield expanded_plot, chapters_overview, chapters_full, gr.update(), gr.update(choices=[]), "_Paused_", "\n".join(status_log), validation_text
@@ -70,6 +72,7 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
 
     expanded_plot = None
     chapters_overview = None
+    overview_validated = False
 
     # ----- resume path: preload state and announce resume -----
     if checkpoint:
@@ -84,6 +87,7 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
         genre = checkpoint.get("genre", genre)
         anpc = checkpoint.get("anpc", anpc)
         first_display_done = len(chapters_full) > 0
+        overview_validated = checkpoint.get("overview_validated", False)
         status_log.append(ts_prefix("▶️ Resuming from last saved point..."))
         yield (
             expanded_plot or "",
@@ -117,7 +121,8 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
             "plot expansion",
             expanded_plot, None, [],
             validation_text, status_log,
-            genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode
+            genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode,
+            overview_validated=overview_validated
         )):
             return
 
@@ -136,15 +141,15 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
             "chapter overview generation",
             expanded_plot, chapters_overview, [],
             validation_text, status_log,
-            genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode
+            genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode,
+            overview_validated=overview_validated
         )):
             return
 
     # =========================
     # STEP 3: Validate Overview
     # =========================
-    overview_passed = ("Overview Validation: PASSED" in validation_text) or ("Chapters Overview Validation: PASSED" in validation_text)
-    if not overview_passed:
+    if not overview_validated:
         validation_round = 0
         feedback = ""
         while validation_round < MAX_VALIDATION_ATTEMPTS:
@@ -153,6 +158,7 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
             if result == "OK":
                 status_log.append(ts_prefix("✅ Overview validation passed."))
                 validation_text += "✅ Chapters Overview Validation: PASSED"
+                overview_validated = True
                 break
             elif result == "NOT OK":
                 status_log.append(ts_prefix("⚠️ Overview validation issues found."))
@@ -176,7 +182,8 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
             "overview validation",
             expanded_plot, chapters_overview, [],
             validation_text, status_log,
-            genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode
+            genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode,
+            overview_validated=overview_validated
         )):
             return
 
@@ -219,11 +226,11 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
             expanded_plot, chapters_overview, chapters_full,
             validation_text, status_log,
             next_chapter_index=current_index,
-            genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode
+            genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode,
+            overview_validated=overview_validated
         )):
             return
 
-        # generate chapter
         chapter_text = generate_chapter_text(expanded_plot, chapters_overview, current_index, chapters_full, genre, anpc)
         chapters_full.append(chapter_text)
         status_log.append(ts_prefix(f"✅ Chapter {current_index} generated."))
@@ -233,7 +240,8 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
             expanded_plot, chapters_overview, chapters_full,
             validation_text, status_log,
             next_chapter_index=current_index,
-            genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode
+            genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode,
+            overview_validated=overview_validated
         )):
             return
 
@@ -302,7 +310,8 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
             expanded_plot, chapters_overview, chapters_full,
             validation_text, status_log,
             next_chapter_index=current_index + 1,
-            genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode
+            genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode,
+            overview_validated=overview_validated
         )):
             return
 
