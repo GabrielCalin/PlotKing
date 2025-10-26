@@ -99,15 +99,26 @@ def create_interface(pipeline_fn, refine_fn):
             return refined if refined.strip() else plot
 
         def show_controls_on_run():
-            return gr.update(visible=True), gr.update(visible=False)
-        
+            return gr.update(visible=True), gr.update(visible=False), gr.update(visible=False)
+
+        def show_controls_on_resume_run():
+            return gr.update(visible=True, interactive=True, value="🛑 Stop"), gr.update(visible=False), gr.update(visible=False)
+
         def post_pipeline_controls():
             from pipeline.state_manager import get_checkpoint
             checkpoint = get_checkpoint()
             if checkpoint:
-                return gr.update(interactive=True, value="🛑 Stop", visible=False), gr.update(visible=True)
+                return (
+                    gr.update(interactive=True, value="🛑 Stop", visible=False),
+                    gr.update(visible=True),
+                    gr.update(visible=True)
+                )
             else:
-                return gr.update(interactive=True, value="🛑 Stop", visible=False), gr.update(visible=False)
+                return (
+                    gr.update(interactive=True, value="🛑 Stop", visible=False),
+                    gr.update(visible=False),
+                    gr.update(visible=True)
+                )
 
         generate_btn.click(
             fn=choose_plot_for_pipeline,
@@ -116,7 +127,7 @@ def create_interface(pipeline_fn, refine_fn):
         ).then(
             fn=show_controls_on_run,
             inputs=[],
-            outputs=[stop_btn, resume_btn]
+            outputs=[stop_btn, resume_btn, generate_btn]
         ).then(
             fn=pipeline_fn,
             inputs=[plot_state, chapters_input, genre_input, anpc_input, run_mode],
@@ -128,7 +139,7 @@ def create_interface(pipeline_fn, refine_fn):
         ).then(
             fn=post_pipeline_controls,
             inputs=[],
-            outputs=[stop_btn, resume_btn]
+            outputs=[stop_btn, resume_btn, generate_btn]
         )
 
         # --- Stop / Resume ---
@@ -164,9 +175,9 @@ def create_interface(pipeline_fn, refine_fn):
             yield from pipeline_fn(plot, num_chapters, genre, anpc, rm, checkpoint=checkpoint)
 
         resume_btn.click(
-            fn=set_controls_on_resume,
+            fn=show_controls_on_resume_run,
             inputs=[],
-            outputs=[stop_btn, resume_btn]
+            outputs=[stop_btn, resume_btn, generate_btn]
         ).then(
             fn=resume_pipeline,
             inputs=[],
@@ -178,7 +189,7 @@ def create_interface(pipeline_fn, refine_fn):
         ).then(
             fn=post_pipeline_controls,
             inputs=[],
-            outputs=[stop_btn, resume_btn]
+            outputs=[stop_btn, resume_btn, generate_btn]
         )
 
         # --- chapter viewer ---
