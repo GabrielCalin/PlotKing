@@ -100,6 +100,14 @@ def create_interface(pipeline_fn, refine_fn):
 
         def show_controls_on_run():
             return gr.update(visible=True), gr.update(visible=False)
+        
+        def post_pipeline_controls():
+            from pipeline.state_manager import get_checkpoint
+            checkpoint = get_checkpoint()
+            if checkpoint:
+                return gr.update(interactive=True, value="🛑 Stop", visible=False), gr.update(visible=True)
+            else:
+                return gr.update(interactive=True, value="🛑 Stop", visible=False), gr.update(visible=False)
 
         generate_btn.click(
             fn=choose_plot_for_pipeline,
@@ -117,13 +125,17 @@ def create_interface(pipeline_fn, refine_fn):
                 current_chapter_output, chapter_selector, chapter_counter,
                 status_output, validation_feedback,
             ]
+        ).then(
+            fn=post_pipeline_controls,
+            inputs=[],
+            outputs=[stop_btn, resume_btn]
         )
 
         # --- Stop / Resume ---
         def stop_pipeline(cur_status):
             request_stop()
             new_status = (cur_status + "\n" + ts_prefix("🛑 Stop requested")).strip() if cur_status else ts_prefix("🛑 Stop requested")
-            return new_status, gr.update(interactive=False, value="Stopping…"), gr.update()
+            return new_status, gr.update(interactive=False, value="Stopping…"), gr.update(visible=False)
 
         stop_btn.click(
             fn=stop_pipeline,
@@ -163,6 +175,10 @@ def create_interface(pipeline_fn, refine_fn):
                 current_chapter_output, chapter_selector, chapter_counter,
                 status_output, validation_feedback,
             ]
+        ).then(
+            fn=post_pipeline_controls,
+            inputs=[],
+            outputs=[stop_btn, resume_btn]
         )
 
         # --- chapter viewer ---
