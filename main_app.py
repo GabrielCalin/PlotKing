@@ -14,11 +14,7 @@ from pipeline.state_manager import is_stop_requested, save_checkpoint
 MAX_VALIDATION_ATTEMPTS = 3
 
 
-# ---------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------
 def ts_prefix(message: str) -> str:
-    """Return message prefixed with current datetime up to milliseconds."""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
     return f"[{timestamp}] {message}"
 
@@ -27,14 +23,8 @@ def maybe_pause_pipeline(step_label, expanded_plot, chapters_overview, chapters_
                          validation_text, status_log, next_chapter_index=None,
                          genre=None, anpc=None, plot=None, num_chapters=None, run_mode=None,
                          overview_validated=False, choices=None, pending_validation_index=None):
-    """
-    Centralized stop-check logic.
-    If a stop is requested, saves a checkpoint and yields paused state.
-    Returns True if pipeline should stop.
-    """
     if not is_stop_requested():
-        return False  # continue as normal
-
+        return False
     save_checkpoint({
         "expanded_plot": expanded_plot,
         "chapters_overview": chapters_overview,
@@ -55,8 +45,8 @@ def maybe_pause_pipeline(step_label, expanded_plot, chapters_overview, chapters_
         expanded_plot,
         chapters_overview,
         chapters_full,
-        gr.update(),                                      # current_chapter_output (no change)
-        gr.update(choices=choices) if choices is not None else gr.update(),  # keep dropdown
+        gr.update(),
+        gr.update(choices=choices) if choices is not None else gr.update(),
         "_Paused_",
         "\n".join(status_log),
         validation_text,
@@ -64,16 +54,7 @@ def maybe_pause_pipeline(step_label, expanded_plot, chapters_overview, chapters_
     return True
 
 
-# ---------------------------------------------------------
-# Main Pipeline (supports fresh run and resume via checkpoint)
-# ---------------------------------------------------------
 def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, checkpoint=None):
-    """
-    Stable streaming pipeline:
-    - If checkpoint is provided, resumes from saved state (any phase).
-    - Otherwise starts fresh.
-    """
-
     status_log = []
     chapters_full = []
     first_chapter_text = ""
@@ -83,9 +64,9 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
     expanded_plot = None
     chapters_overview = None
     overview_validated = False
-    pending_validation_index = None  # if set, resume starts with validation of that chapter
+    pending_validation_index = None
+    next_chapter_index_cp = None
 
-    # ----- resume path: preload state and announce resume -----
     if checkpoint:
         expanded_plot = checkpoint.get("expanded_plot")
         chapters_overview = checkpoint.get("chapters_overview")
@@ -100,6 +81,7 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
         first_display_done = len(chapters_full) > 0
         overview_validated = checkpoint.get("overview_validated", False)
         pending_validation_index = checkpoint.get("pending_validation_index")
+        next_chapter_index_cp = checkpoint.get("next_chapter_index")
         status_log.append(ts_prefix("▶️ Resuming from last saved point..."))
         yield (
             expanded_plot or "",
@@ -112,15 +94,11 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
             validation_text,
         )
 
-    # ----- input guard (only on fresh run) -----
     if not checkpoint and not plot.strip():
         yield "Please enter a plot description.", "", [], "", gr.update(choices=[], value=None), \
               "_No chapters yet_", "⚠️ No input provided.", ""
         return
 
-    # =========================
-    # STEP 1: Expand Plot
-    # =========================
     if expanded_plot is None:
         status_log.append(ts_prefix("📝 Step 1: Expanding plot..."))
         yield "", "", [], "", gr.update(choices=[], value=None), "_No chapters yet_", "\n".join(status_log), validation_text
@@ -138,9 +116,6 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
         )):
             return
 
-    # =========================
-    # STEP 2: Chapters Overview
-    # =========================
     if chapters_overview is None:
         status_log.append(ts_prefix("📘 Step 2: Generating chapter overview..."))
         yield expanded_plot, "", [], "", gr.update(choices=[], value=None), "_Generating overview..._", "\n".join(status_log), validation_text
@@ -158,9 +133,6 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
         )):
             return
 
-    # =========================
-    # STEP 3: Validate Overview
-    # =========================
     if not overview_validated:
         validation_round = 0
         feedback = ""
@@ -169,13 +141,17 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
             result, feedback = validate_chapters(plot, expanded_plot, chapters_overview, genre)
             if result == "OK":
                 status_log.append(ts_prefix("✅ Overview validation passed."))
+                if validation_text and not validation_text.endswith("\n"):
+                    validation_text += "\n"
                 validation_text += "✅ Chapters Overview Validation: PASSED"
                 overview_validated = True
                 break
             elif result == "NOT OK":
                 status_log.append(ts_prefix("⚠️ Overview validation issues found."))
                 if validation_text:
-                    validation_text += f"\n\n⚠️ Chapters Overview Validation Feedback (attempt {validation_round}):\n{feedback}"
+                    if not validation_text.endswith("\n"):
+                        validation_text += "\n"
+                    validation_text += f"\n⚠️ Chapters Overview Validation Feedback (attempt {validation_round}):\n{feedback}"
                 else:
                     validation_text += f"⚠️ Chapters Overview Validation Feedback (attempt {validation_round}):\n{feedback}"
                 chapters_overview = generate_chapters(plot, expanded_plot, num_chapters, genre, feedback)
@@ -183,7 +159,9 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
             else:
                 status_log.append(ts_prefix(f"❌ Overview validation error: {feedback}"))
                 if validation_text:
-                    validation_text += f"\n\n❌ Validation Error:\n{feedback}"
+                    if not validation_text.endswith("\n"):
+                        validation_text += "\n"
+                    validation_text += f"\n❌ Validation Error:\n{feedback}"
                 else:
                     validation_text += f"❌ Validation Error:\n{feedback}"
                 break
@@ -199,7 +177,6 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
         )):
             return
 
-    # stop after overview if requested — but keep checkpoint to allow resume to continue chapters
     if run_mode == RUN_MODE_CHOICES["OVERVIEW"]:
         save_checkpoint({
             "expanded_plot": expanded_plot,
@@ -212,7 +189,7 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
             "anpc": anpc,
             "plot": plot,
             "num_chapters": num_chapters,
-            "run_mode": RUN_MODE_CHOICES["FULL"],  # on resume, continue with chapters
+            "run_mode": RUN_MODE_CHOICES["FULL"],
             "overview_validated": True,
             "pending_validation_index": None,
         })
@@ -223,13 +200,10 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
     status_log.append(ts_prefix("🚀 Step 4: Writing chapters..."))
     yield expanded_plot, chapters_overview, chapters_full, "", gr.update(choices=[], value=None), "_Starting chapter generation..._", "\n".join(status_log), validation_text
 
-    # =========================
-    # STEP 4 + STEP 5: Chapters
-    # =========================
-    if checkpoint and pending_validation_index:
+    if pending_validation_index:
         start_index = int(pending_validation_index)
-    elif checkpoint and checkpoint.get("next_chapter_index"):
-        start_index = max(1, int(checkpoint["next_chapter_index"]))
+    elif next_chapter_index_cp:
+        start_index = max(1, int(next_chapter_index_cp))
     else:
         start_index = len(chapters_full) + 1
 
@@ -251,38 +225,34 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
                 validation_text,
             )
 
-            # Allow stop BEFORE actual generation (pre-gen pause)
-            if (yield from maybe_pause_pipeline(
-                f"chapter {current_index} start",
-                expanded_plot, chapters_overview, chapters_full,
-                validation_text, status_log,
-                next_chapter_index=current_index,
-                genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode,
-                overview_validated=overview_validated, choices=choices, pending_validation_index=None
-            )):
-                return
-
-            # Generate chapter
             chapter_text = generate_chapter_text(expanded_plot, chapters_overview, current_index, chapters_full, genre, anpc)
             chapters_full.append(chapter_text)
             status_log.append(ts_prefix(f"✅ Chapter {current_index} generated."))
 
-            # Show chapter in dropdown BEFORE validation and allow pause here (post-gen, pre-validation)
             choices = [f"Chapter {j+1}" for j in range(len(chapters_full))]
+            if current_index == 1 and not first_display_done:
+                first_chapter_text = chapters_full[0]
+                dropdown_update = gr.update(choices=choices, value="Chapter 1")
+                current_text_update = first_chapter_text
+                first_display_done = True
+            else:
+                dropdown_update = gr.update(choices=choices)
+                current_text_update = gr.update()
+
             counter_value = f"📘 {len(chapters_full)} chapter(s) generated so far"
             yield (
                 expanded_plot,
                 chapters_overview,
                 chapters_full,
-                gr.update(),  # don't change current_chapter_output here
-                gr.update(choices=choices),
+                current_text_update,
+                dropdown_update,
                 counter_value,
                 "\n".join(status_log),
                 validation_text,
             )
 
             if (yield from maybe_pause_pipeline(
-                f"chapter {current_index} post-generation",
+                f"chapter {current_index} generation",
                 expanded_plot, chapters_overview, chapters_full,
                 validation_text, status_log,
                 next_chapter_index=current_index,
@@ -292,7 +262,6 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
                 return
 
         else:
-            # Resume directly with validation of the already generated chapter
             status_log.append(ts_prefix(f"▶️ Resuming with validation for Chapter {current_index}..."))
             chapter_text = chapters_full[current_index - 1]
             yield (
@@ -306,20 +275,8 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
                 validation_text,
             )
 
-        # VALIDATION loop (can also pause mid-validation if desired)
         validation_attempts = 0
         while validation_attempts < MAX_VALIDATION_ATTEMPTS:
-            # Optional pause point: allow stopping DURING validation
-            if (yield from maybe_pause_pipeline(
-                f"chapter {current_index} validation (attempt {validation_attempts+1})",
-                expanded_plot, chapters_overview, chapters_full,
-                validation_text, status_log,
-                next_chapter_index=current_index,  # still on same chapter
-                genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode,
-                overview_validated=overview_validated, choices=choices, pending_validation_index=current_index
-            )):
-                return
-
             status_log.append(ts_prefix(f"🧩 Step 5: Validating Chapter {current_index}..."))
             yield (
                 expanded_plot,
@@ -343,11 +300,15 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
 
             if result == "OK":
                 status_log.append(ts_prefix(f"✅ Chapter {current_index} passed validation."))
-                validation_text += f"\n\n✅ Chapter {current_index} Validation: PASSED"
+                if validation_text and not validation_text.endswith("\n"):
+                    validation_text += "\n"
+                validation_text += f"\n✅ Chapter {current_index} Validation: PASSED" if validation_text.strip() else f"✅ Chapter {current_index} Validation: PASSED"
                 break
             elif result == "NOT OK":
                 status_log.append(ts_prefix(f"⚠️ Chapter {current_index} failed validation — regenerating."))
-                validation_text += f"\n\n⚠️ Chapter {current_index} Validation Feedback:\n{feedback}"
+                if validation_text and not validation_text.endswith("\n"):
+                    validation_text += "\n"
+                validation_text += f"\n⚠️ Chapter {current_index} Validation Feedback:\n{feedback}" if validation_text.strip() else f"⚠️ Chapter {current_index} Validation Feedback:\n{feedback}"
                 yield (
                     expanded_plot,
                     chapters_overview,
@@ -371,12 +332,13 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
                 status_log.append(ts_prefix(f"✅ Chapter {current_index} regenerated successfully."))
             else:
                 status_log.append(ts_prefix(f"❌ Validation error or unknown result for Chapter {current_index}."))
-                validation_text += f"\n\n❌ Chapter {current_index} Validation Error:\n{feedback}"
+                if validation_text and not validation_text.endswith("\n"):
+                    validation_text += "\n"
+                validation_text += f"\n❌ Chapter {current_index} Validation Error:\n{feedback}" if validation_text.strip() else f"❌ Chapter {current_index} Validation Error:\n{feedback}"
                 break
 
             validation_attempts += 1
 
-        # Allow stop right after finishing this chapter (moves to next on resume)
         if (yield from maybe_pause_pipeline(
             f"chapter {current_index} complete",
             expanded_plot, chapters_overview, chapters_full,
@@ -387,7 +349,6 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
         )):
             return
 
-        # Final per-chapter yield (update dropdown & possibly show Chapter 1 text on first completion)
         choices = [f"Chapter {j+1}" for j in range(len(chapters_full))]
         if current_index == 1 and not first_display_done:
             first_chapter_text = chapters_full[0]
@@ -414,13 +375,12 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
     final_choices = [f"Chapter {i+1}" for i in range(len(chapters_full))]
     dropdown_final = gr.update(choices=final_choices)
     counter_final = f"✅ All {len(chapters_full)} chapters generated!"
-    validation_text += "\n\n🎯 All validations passed successfully."
+    if validation_text and not validation_text.endswith("\n"):
+        validation_text += "\n"
+    validation_text += "\n🎯 All validations passed successfully." if validation_text.strip() else "🎯 All validations passed successfully."
     yield expanded_plot, chapters_overview, chapters_full, gr.update(), dropdown_final, counter_final, "\n".join(status_log), validation_text
 
 
-# ---------------------------------------------------------
-# Thin wrapper for UI resume (no duplication)
-# ---------------------------------------------------------
 def generate_book_outline_stream_resume(checkpoint):
     plot = checkpoint.get("plot", "")
     num_chapters = checkpoint.get("num_chapters", 0)
@@ -430,7 +390,6 @@ def generate_book_outline_stream_resume(checkpoint):
     return generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, checkpoint=checkpoint)
 
 
-# ---------- Launch UI ----------
 if __name__ == "__main__":
     demo = create_interface(generate_book_outline_stream, refine_plot)
     demo.launch(server_name="0.0.0.0", server_port=7860)
