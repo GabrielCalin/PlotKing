@@ -26,7 +26,7 @@ def ts_prefix(message: str) -> str:
 def maybe_pause_pipeline(step_label, expanded_plot, chapters_overview, chapters_full,
                          validation_text, status_log, next_chapter_index=None,
                          genre=None, anpc=None, plot=None, num_chapters=None, run_mode=None,
-                         overview_validated=False):
+                         overview_validated=False, choices=None, pending_validation_index=None):
     """
     Centralized stop-check logic.
     If a stop is requested, saves a checkpoint and yields paused state.
@@ -48,9 +48,19 @@ def maybe_pause_pipeline(step_label, expanded_plot, chapters_overview, chapters_
         "num_chapters": num_chapters,
         "run_mode": run_mode,
         "overview_validated": overview_validated,
+        "pending_validation_index": pending_validation_index,
     })
     status_log.append(ts_prefix(f"🛑 Stop requested — pipeline paused after {step_label}."))
-    yield expanded_plot, chapters_overview, chapters_full, gr.update(), gr.update(choices=[]), "_Paused_", "\n".join(status_log), validation_text
+    yield (
+        expanded_plot,
+        chapters_overview,
+        chapters_full,
+        gr.update(),                                      # current_chapter_output (no change)
+        gr.update(choices=choices) if choices is not None else gr.update(),  # keep dropdown
+        "_Paused_",
+        "\n".join(status_log),
+        validation_text,
+    )
     return True
 
 
@@ -73,6 +83,7 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
     expanded_plot = None
     chapters_overview = None
     overview_validated = False
+    pending_validation_index = None  # if set, resume starts with validation of that chapter
 
     # ----- resume path: preload state and announce resume -----
     if checkpoint:
@@ -88,6 +99,7 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
         anpc = checkpoint.get("anpc", anpc)
         first_display_done = len(chapters_full) > 0
         overview_validated = checkpoint.get("overview_validated", False)
+        pending_validation_index = checkpoint.get("pending_validation_index")
         status_log.append(ts_prefix("▶️ Resuming from last saved point..."))
         yield (
             expanded_plot or "",
@@ -95,7 +107,7 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
             chapters_full,
             gr.update(),
             gr.update(choices=[f"Chapter {i+1}" for i in range(len(chapters_full))]),
-            f"Resuming...",
+            "Resuming...",
             "\n".join(status_log),
             validation_text,
         )
@@ -187,8 +199,23 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
         )):
             return
 
-    # stop after overview if requested
+    # stop after overview if requested — but keep checkpoint to allow resume to continue chapters
     if run_mode == RUN_MODE_CHOICES["OVERVIEW"]:
+        save_checkpoint({
+            "expanded_plot": expanded_plot,
+            "chapters_overview": chapters_overview,
+            "chapters_full": chapters_full,
+            "validation_text": validation_text,
+            "status_log": status_log,
+            "next_chapter_index": 1,
+            "genre": genre,
+            "anpc": anpc,
+            "plot": plot,
+            "num_chapters": num_chapters,
+            "run_mode": RUN_MODE_CHOICES["FULL"],  # on resume, continue with chapters
+            "overview_validated": True,
+            "pending_validation_index": None,
+        })
         status_log.append(ts_prefix("⏹️ Stopped after chapters overview as requested."))
         yield expanded_plot, chapters_overview, [], "", gr.update(choices=[], value=None), "_Stopped after overview_", "\n".join(status_log), validation_text
         return
@@ -199,57 +226,101 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
     # =========================
     # STEP 4 + STEP 5: Chapters
     # =========================
-    start_index = 1
-    if checkpoint and checkpoint.get("next_chapter_index"):
+    if checkpoint and pending_validation_index:
+        start_index = int(pending_validation_index)
+    elif checkpoint and checkpoint.get("next_chapter_index"):
         start_index = max(1, int(checkpoint["next_chapter_index"]))
     else:
         start_index = len(chapters_full) + 1
 
     for i in range(start_index - 1, num_chapters):
         current_index = i + 1
-        status_log.append(ts_prefix(f"✍️ Generating Chapter {current_index}/{num_chapters}..."))
         choices = [f"Chapter {j+1}" for j in range(len(chapters_full))]
+        is_pending_validation = (pending_validation_index == current_index)
 
-        yield (
-            expanded_plot,
-            chapters_overview,
-            chapters_full,
-            gr.update(),
-            gr.update(choices=choices),
-            f"Generating chapter {current_index}...",
-            "\n".join(status_log),
-            validation_text,
-        )
+        if not is_pending_validation:
+            status_log.append(ts_prefix(f"✍️ Generating Chapter {current_index}/{num_chapters}..."))
+            yield (
+                expanded_plot,
+                chapters_overview,
+                chapters_full,
+                gr.update(),
+                gr.update(choices=choices),
+                f"Generating chapter {current_index}...",
+                "\n".join(status_log),
+                validation_text,
+            )
 
-        if (yield from maybe_pause_pipeline(
-            f"chapter {current_index} start",
-            expanded_plot, chapters_overview, chapters_full,
-            validation_text, status_log,
-            next_chapter_index=current_index,
-            genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode,
-            overview_validated=overview_validated
-        )):
-            return
+            # Allow stop BEFORE actual generation (pre-gen pause)
+            if (yield from maybe_pause_pipeline(
+                f"chapter {current_index} start",
+                expanded_plot, chapters_overview, chapters_full,
+                validation_text, status_log,
+                next_chapter_index=current_index,
+                genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode,
+                overview_validated=overview_validated, choices=choices, pending_validation_index=None
+            )):
+                return
 
-        chapter_text = generate_chapter_text(expanded_plot, chapters_overview, current_index, chapters_full, genre, anpc)
-        chapters_full.append(chapter_text)
-        status_log.append(ts_prefix(f"✅ Chapter {current_index} generated."))
+            # Generate chapter
+            chapter_text = generate_chapter_text(expanded_plot, chapters_overview, current_index, chapters_full, genre, anpc)
+            chapters_full.append(chapter_text)
+            status_log.append(ts_prefix(f"✅ Chapter {current_index} generated."))
 
-        if (yield from maybe_pause_pipeline(
-            f"chapter {current_index} generation",
-            expanded_plot, chapters_overview, chapters_full,
-            validation_text, status_log,
-            next_chapter_index=current_index,
-            genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode,
-            overview_validated=overview_validated
-        )):
-            return
+            # Show chapter in dropdown BEFORE validation and allow pause here (post-gen, pre-validation)
+            choices = [f"Chapter {j+1}" for j in range(len(chapters_full))]
+            counter_value = f"📘 {len(chapters_full)} chapter(s) generated so far"
+            yield (
+                expanded_plot,
+                chapters_overview,
+                chapters_full,
+                gr.update(),  # don't change current_chapter_output here
+                gr.update(choices=choices),
+                counter_value,
+                "\n".join(status_log),
+                validation_text,
+            )
 
+            if (yield from maybe_pause_pipeline(
+                f"chapter {current_index} post-generation",
+                expanded_plot, chapters_overview, chapters_full,
+                validation_text, status_log,
+                next_chapter_index=current_index,
+                genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode,
+                overview_validated=overview_validated, choices=choices, pending_validation_index=current_index
+            )):
+                return
+
+        else:
+            # Resume directly with validation of the already generated chapter
+            status_log.append(ts_prefix(f"▶️ Resuming with validation for Chapter {current_index}..."))
+            chapter_text = chapters_full[current_index - 1]
+            yield (
+                expanded_plot,
+                chapters_overview,
+                chapters_full,
+                gr.update(),
+                gr.update(choices=choices),
+                f"Validating chapter {current_index}...",
+                "\n".join(status_log),
+                validation_text,
+            )
+
+        # VALIDATION loop (can also pause mid-validation if desired)
         validation_attempts = 0
         while validation_attempts < MAX_VALIDATION_ATTEMPTS:
-            status_log.append(ts_prefix(f"🧩 Step 5: Validating Chapter {current_index}..."))
-            choices = [f"Chapter {j+1}" for j in range(len(chapters_full))]
+            # Optional pause point: allow stopping DURING validation
+            if (yield from maybe_pause_pipeline(
+                f"chapter {current_index} validation (attempt {validation_attempts+1})",
+                expanded_plot, chapters_overview, chapters_full,
+                validation_text, status_log,
+                next_chapter_index=current_index,  # still on same chapter
+                genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode,
+                overview_validated=overview_validated, choices=choices, pending_validation_index=current_index
+            )):
+                return
 
+            status_log.append(ts_prefix(f"🧩 Step 5: Validating Chapter {current_index}..."))
             yield (
                 expanded_plot,
                 chapters_overview,
@@ -305,16 +376,18 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
 
             validation_attempts += 1
 
+        # Allow stop right after finishing this chapter (moves to next on resume)
         if (yield from maybe_pause_pipeline(
             f"chapter {current_index} complete",
             expanded_plot, chapters_overview, chapters_full,
             validation_text, status_log,
             next_chapter_index=current_index + 1,
             genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode,
-            overview_validated=overview_validated
+            overview_validated=overview_validated, choices=choices, pending_validation_index=None
         )):
             return
 
+        # Final per-chapter yield (update dropdown & possibly show Chapter 1 text on first completion)
         choices = [f"Chapter {j+1}" for j in range(len(chapters_full))]
         if current_index == 1 and not first_display_done:
             first_chapter_text = chapters_full[0]
