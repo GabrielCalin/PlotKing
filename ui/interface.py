@@ -98,26 +98,28 @@ def create_interface(pipeline_fn, refine_fn):
         def choose_plot_for_pipeline(plot, refined):
             return refined if refined.strip() else plot
 
-        def show_controls_on_run():
-            return gr.update(visible=True), gr.update(visible=False), gr.update(visible=False)
-
-        def show_controls_on_resume_run():
-            return gr.update(visible=True, interactive=True, value="🛑 Stop"), gr.update(visible=False), gr.update(visible=False)
+        def pre_run_reset_and_controls():
+            clear_stop()
+            clear_checkpoint()
+            return (
+                gr.update(visible=True, interactive=True, value="🛑 Stop"),
+                gr.update(visible=False),
+                gr.update(visible=False),
+            )
 
         def post_pipeline_controls():
-            from pipeline.state_manager import get_checkpoint
             checkpoint = get_checkpoint()
             if checkpoint:
                 return (
                     gr.update(interactive=True, value="🛑 Stop", visible=False),
                     gr.update(visible=True),
-                    gr.update(visible=True)
+                    gr.update(visible=True),
                 )
             else:
                 return (
                     gr.update(interactive=True, value="🛑 Stop", visible=False),
                     gr.update(visible=False),
-                    gr.update(visible=True)
+                    gr.update(visible=True),
                 )
 
         generate_btn.click(
@@ -125,7 +127,7 @@ def create_interface(pipeline_fn, refine_fn):
             inputs=[plot_state, refined_plot_state],
             outputs=[plot_state]
         ).then(
-            fn=show_controls_on_run,
+            fn=pre_run_reset_and_controls,
             inputs=[],
             outputs=[stop_btn, resume_btn, generate_btn]
         ).then(
@@ -154,14 +156,16 @@ def create_interface(pipeline_fn, refine_fn):
             outputs=[status_output, stop_btn, resume_btn]
         )
 
-        def set_controls_on_resume():
-            return gr.update(visible=True), gr.update(visible=False)
+        def show_controls_on_resume_run():
+            return (
+                gr.update(visible=True, interactive=True, value="🛑 Stop"),
+                gr.update(visible=False),
+                gr.update(visible=False),
+            )
 
-        # IMPORTANT: this is a GENERATOR function now (uses `yield from`)
         def resume_pipeline():
             checkpoint = get_checkpoint()
             if not checkpoint:
-                # Yield once to satisfy output arity, then end
                 yield "", "", [], "", gr.update(choices=[]), "_No checkpoint_", "⚠️ No checkpoint found to resume from.", ""
                 return
             plot = checkpoint.get("plot", "")
@@ -171,7 +175,6 @@ def create_interface(pipeline_fn, refine_fn):
             rm = checkpoint.get("run_mode", RUN_MODE_CHOICES["FULL"])
             clear_stop()
             clear_checkpoint()
-            # Delegate streaming to the main pipeline generator
             yield from pipeline_fn(plot, num_chapters, genre, anpc, rm, checkpoint=checkpoint)
 
         resume_btn.click(
@@ -247,7 +250,6 @@ def create_interface(pipeline_fn, refine_fn):
             outputs=[plot_input, refined_plot_state, current_mode, refine_btn]
         )
 
-        # --- sync user edits ---
         def sync_textbox(text, mode):
             if mode == "refined":
                 return gr.update(), text
