@@ -10,6 +10,7 @@ from pipeline.step5_chapter_validator import validate_chapter
 from ui.interface import create_interface
 from pipeline.constants import RUN_MODE_CHOICES
 from pipeline.state_manager import is_stop_requested, save_checkpoint, clear_stop
+from pipeline.pipeline_state import PipelineState
 
 MAX_VALIDATION_ATTEMPTS = 3
 
@@ -26,352 +27,282 @@ def vtext_add(section: str, validation_text: str) -> str:
     return validation_text + "\n\n" + section
 
 
-def maybe_pause_pipeline(step_label, expanded_plot, chapters_overview, chapters_full,
-                         validation_text, status_log, next_chapter_index=None,
-                         genre=None, anpc=None, plot=None, num_chapters=None, run_mode=None,
-                         overview_validated=False, choices=None, pending_validation_index=None):
+def maybe_pause_pipeline(step_label: str, state: PipelineState):
     if not is_stop_requested():
         return False
-    save_checkpoint({
-        "expanded_plot": expanded_plot,
-        "chapters_overview": chapters_overview,
-        "chapters_full": chapters_full,
-        "validation_text": validation_text,
-        "status_log": status_log,
-        "next_chapter_index": next_chapter_index,
-        "genre": genre,
-        "anpc": anpc,
-        "plot": plot,
-        "num_chapters": num_chapters,
-        "run_mode": run_mode,
-        "overview_validated": overview_validated,
-        "pending_validation_index": pending_validation_index,
-    })
-    status_log.append(ts_prefix(f"🛑 Stop requested — pipeline paused after {step_label}."))
+    save_checkpoint(state.to_dict())
+    state.status_log.append(ts_prefix(f"🛑 Stop requested — pipeline paused after {step_label}."))
     yield (
-        expanded_plot,
-        chapters_overview,
-        chapters_full,
+        state.expanded_plot,
+        state.chapters_overview,
+        state.chapters_full,
         gr.update(),
-        gr.update(choices=choices) if choices is not None else gr.update(),
+        gr.update(choices=state.choices) if state.choices is not None else gr.update(),
         "_Paused_",
-        "\n".join(status_log),
-        validation_text,
+        "\n".join(state.status_log),
+        state.validation_text,
     )
     return True
 
 
 def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, checkpoint=None):
-    status_log = []
-    chapters_full = []
-    first_chapter_text = ""
-    first_display_done = False
-    validation_text = ""
-
-    expanded_plot = None
-    chapters_overview = None
-    overview_validated = False
-    pending_validation_index = None
-    next_chapter_index_cp = None
-
     if not checkpoint:
         clear_stop()
-
-    if checkpoint:
-        expanded_plot = checkpoint.get("expanded_plot")
-        chapters_overview = checkpoint.get("chapters_overview")
-        chapters_full = checkpoint.get("chapters_full") or []
-        validation_text = checkpoint.get("validation_text", "")
-        status_log = checkpoint.get("status_log", [])
-        plot = checkpoint.get("plot", plot)
-        num_chapters = checkpoint.get("num_chapters", num_chapters)
-        run_mode = checkpoint.get("run_mode", run_mode)
-        genre = checkpoint.get("genre", genre)
-        anpc = checkpoint.get("anpc", anpc)
-        first_display_done = len(chapters_full) > 0
-        overview_validated = checkpoint.get("overview_validated", False)
-        pending_validation_index = checkpoint.get("pending_validation_index")
-        next_chapter_index_cp = checkpoint.get("next_chapter_index")
-        status_log.append(ts_prefix("▶️ Resuming from last saved point..."))
+        state = PipelineState(
+            expanded_plot=None,
+            chapters_overview=None,
+            chapters_full=[],
+            validation_text="",
+            status_log=[],
+            genre=genre,
+            anpc=anpc,
+            plot=plot,
+            num_chapters=num_chapters,
+            run_mode=run_mode,
+        )
+    else:
+        state = PipelineState.from_checkpoint(checkpoint)
+        state.status_log.append(ts_prefix("▶️ Resuming from last saved point..."))
         yield (
-            expanded_plot or "",
-            chapters_overview or "",
-            chapters_full,
+            state.expanded_plot or "",
+            state.chapters_overview or "",
+            state.chapters_full,
             gr.update(),
             gr.update(),
             "Resuming...",
-            "\n".join(status_log),
-            validation_text,
+            "\n".join(state.status_log),
+            state.validation_text,
         )
 
-    if not checkpoint and not plot.strip():
+    if not checkpoint and not state.plot.strip():
         yield "Please enter a plot description.", "", [], "", gr.update(choices=[], value=None), \
               "_No chapters yet_", "⚠️ No input provided.", ""
         return
 
-    if expanded_plot is None:
-        status_log.append(ts_prefix("📝 Step 1: Expanding plot..."))
-        yield "", "", [], "", gr.update(choices=[], value=None), "_No chapters yet_", "\n".join(status_log), validation_text
+    if state.expanded_plot is None:
+        state.status_log.append(ts_prefix("📝 Step 1: Expanding plot..."))
+        yield "", "", [], "", gr.update(choices=[], value=None), "_No chapters yet_", "\n".join(state.status_log), state.validation_text
 
-        expanded_plot = expand_plot(plot, genre)
-        status_log.append(ts_prefix("✅ Plot expanded."))
-        yield expanded_plot, "", [], "", gr.update(choices=[], value=None), "_Ready for chapters..._", "\n".join(status_log), validation_text
+        state.expanded_plot = expand_plot(state.plot, state.genre)
+        state.status_log.append(ts_prefix("✅ Plot expanded."))
+        yield state.expanded_plot, "", [], "", gr.update(choices=[], value=None), "_Ready for chapters..._", "\n".join(state.status_log), state.validation_text
 
-        if (yield from maybe_pause_pipeline(
-            "plot expansion",
-            expanded_plot, None, [],
-            validation_text, status_log,
-            genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode,
-            overview_validated=overview_validated
-        )):
+        if (yield from maybe_pause_pipeline("plot expansion", state)):
             return
 
-    if chapters_overview is None:
-        status_log.append(ts_prefix("📘 Step 2: Generating chapter overview..."))
-        yield expanded_plot, "", [], "", gr.update(choices=[], value=None), "_Generating overview..._", "\n".join(status_log), validation_text
+    if state.chapters_overview is None:
+        state.status_log.append(ts_prefix("📘 Step 2: Generating chapter overview..."))
+        yield state.expanded_plot, "", [], "", gr.update(choices=[], value=None), "_Generating overview..._", "\n".join(state.status_log), state.validation_text
 
-        chapters_overview = generate_chapters(plot, expanded_plot, num_chapters, genre)
-        status_log.append(ts_prefix("✅ Chapters overview generated."))
-        yield expanded_plot, chapters_overview, [], "", gr.update(choices=[], value=None), "_Overview ready_", "\n".join(status_log), validation_text
+        state.chapters_overview = generate_chapters(state.plot, state.expanded_plot, state.num_chapters, state.genre)
+        state.status_log.append(ts_prefix("✅ Chapters overview generated."))
+        yield state.expanded_plot, state.chapters_overview, [], "", gr.update(choices=[], value=None), "_Overview ready_", "\n".join(state.status_log), state.validation_text
 
-        if (yield from maybe_pause_pipeline(
-            "chapter overview generation",
-            expanded_plot, chapters_overview, [],
-            validation_text, status_log,
-            genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode,
-            overview_validated=overview_validated
-        )):
+        if (yield from maybe_pause_pipeline("chapter overview generation", state)):
             return
 
-    if not overview_validated:
+    if not state.overview_validated:
         validation_round = 0
         feedback = ""
         while validation_round < MAX_VALIDATION_ATTEMPTS:
             validation_round += 1
-            result, feedback = validate_chapters(plot, expanded_plot, chapters_overview, genre)
+            result, feedback = validate_chapters(state.plot, state.expanded_plot, state.chapters_overview, state.genre)
             if result == "OK":
-                status_log.append(ts_prefix("✅ Overview validation passed."))
-                validation_text = vtext_add("✅ Chapters Overview Validation: PASSED", validation_text)
-                overview_validated = True
+                state.status_log.append(ts_prefix("✅ Overview validation passed."))
+                state.validation_text = vtext_add("✅ Chapters Overview Validation: PASSED", state.validation_text)
+                state.overview_validated = True
                 break
             elif result == "NOT OK":
-                status_log.append(ts_prefix("⚠️ Overview validation issues found."))
-                validation_text = vtext_add(f"⚠️ Chapters Overview Validation Feedback (attempt {validation_round}):\n{feedback}", validation_text)
-                chapters_overview = generate_chapters(plot, expanded_plot, num_chapters, genre, feedback)
-                status_log.append(ts_prefix("🔄 Regenerated overview with feedback."))
+                state.status_log.append(ts_prefix("⚠️ Overview validation issues found."))
+                state.validation_text = vtext_add(f"⚠️ Chapters Overview Validation Feedback (attempt {validation_round}):\n{feedback}", state.validation_text)
+                state.chapters_overview = generate_chapters(state.plot, state.expanded_plot, state.num_chapters, state.genre, feedback)
+                state.status_log.append(ts_prefix("🔄 Regenerated overview with feedback."))
             else:
-                status_log.append(ts_prefix(f"❌ Overview validation error: {feedback}"))
-                validation_text = vtext_add(f"❌ Validation Error:\n{feedback}", validation_text)
+                state.status_log.append(ts_prefix(f"❌ Overview validation error: {feedback}"))
+                state.validation_text = vtext_add(f"❌ Validation Error:\n{feedback}", state.validation_text)
                 break
 
-            yield expanded_plot, chapters_overview, [], "", gr.update(choices=[], value=None), "_Validating overview..._", "\n".join(status_log), validation_text
+            yield state.expanded_plot, state.chapters_overview, [], "", gr.update(choices=[], value=None), "_Validating overview..._", "\n".join(state.status_log), state.validation_text
 
-        if not overview_validated:
-            overview_validated = True
+        if not state.overview_validated:
+            state.overview_validated = True
 
-        if (yield from maybe_pause_pipeline(
-            "overview validation",
-            expanded_plot, chapters_overview, [],
-            validation_text, status_log,
-            genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode,
-            overview_validated=overview_validated
-        )):
+        if (yield from maybe_pause_pipeline("overview validation", state)):
             return
 
-    if run_mode == RUN_MODE_CHOICES["OVERVIEW"]:
-        save_checkpoint({
-            "expanded_plot": expanded_plot,
-            "chapters_overview": chapters_overview,
-            "chapters_full": chapters_full,
-            "validation_text": validation_text,
-            "status_log": status_log,
-            "next_chapter_index": 1,
-            "genre": genre,
-            "anpc": anpc,
-            "plot": plot,
-            "num_chapters": num_chapters,
-            "run_mode": RUN_MODE_CHOICES["FULL"],
-            "overview_validated": True,
-            "pending_validation_index": None,
-        })
-        status_log.append(ts_prefix("⏹️ Stopped after chapters overview as requested."))
-        yield expanded_plot, chapters_overview, [], "", gr.update(choices=[], value=None), "_Stopped after overview_", "\n".join(status_log), validation_text
+    if state.run_mode == RUN_MODE_CHOICES["OVERVIEW"]:
+        save_checkpoint(state.to_dict())
+        state.status_log.append(ts_prefix("⏹️ Stopped after chapters overview as requested."))
+        yield state.expanded_plot, state.chapters_overview, [], "", gr.update(choices=[], value=None), "_Stopped after overview_", "\n".join(state.status_log), state.validation_text
         return
 
-    status_log.append(ts_prefix("🚀 Step 4: Writing chapters..."))
-    yield expanded_plot, chapters_overview, chapters_full, gr.update(), gr.update(), "_Starting chapter generation..._", "\n".join(status_log), validation_text
+    state.status_log.append(ts_prefix("🚀 Step 4: Writing chapters..."))
+    yield state.expanded_plot, state.chapters_overview, state.chapters_full, gr.update(), gr.update(), "_Starting chapter generation..._", "\n".join(state.status_log), state.validation_text
 
-    if pending_validation_index:
-        start_index = int(pending_validation_index)
-    elif next_chapter_index_cp:
-        start_index = max(1, int(next_chapter_index_cp))
+    if state.pending_validation_index:
+        start_index = int(state.pending_validation_index)
+    elif state.next_chapter_index:
+        start_index = max(1, int(state.next_chapter_index))
     else:
-        start_index = len(chapters_full) + 1
+        start_index = len(state.chapters_full) + 1
 
-    for i in range(start_index - 1, num_chapters):
+    first_chapter_text = ""
+    first_display_done = len(state.chapters_full) > 0
+
+    for i in range(start_index - 1, state.num_chapters):
         current_index = i + 1
-        choices = [f"Chapter {j+1}" for j in range(len(chapters_full))]
-        is_pending_validation = (pending_validation_index == current_index)
+        state.choices = [f"Chapter {j+1}" for j in range(len(state.chapters_full))]
+        is_pending_validation = (state.pending_validation_index == current_index)
 
         if not is_pending_validation:
-            status_log.append(ts_prefix(f"✍️ Generating Chapter {current_index}/{num_chapters}..."))
+            state.status_log.append(ts_prefix(f"✍️ Generating Chapter {current_index}/{state.num_chapters}..."))
             yield (
-                expanded_plot,
-                chapters_overview,
-                chapters_full,
+                state.expanded_plot,
+                state.chapters_overview,
+                state.chapters_full,
                 gr.update(),
-                gr.update(choices=choices),
+                gr.update(choices=state.choices),
                 f"Generating chapter {current_index}...",
-                "\n".join(status_log),
-                validation_text,
+                "\n".join(state.status_log),
+                state.validation_text,
             )
 
-            chapter_text = generate_chapter_text(expanded_plot, chapters_overview, current_index, chapters_full, genre, anpc)
-            chapters_full.append(chapter_text)
-            status_log.append(ts_prefix(f"✅ Chapter {current_index} generated."))
+            chapter_text = generate_chapter_text(state.expanded_plot, state.chapters_overview, current_index, state.chapters_full, state.genre, state.anpc)
+            state.chapters_full.append(chapter_text)
+            state.status_log.append(ts_prefix(f"✅ Chapter {current_index} generated."))
 
-            choices = [f"Chapter {j+1}" for j in range(len(chapters_full))]
+            state.choices = [f"Chapter {j+1}" for j in range(len(state.chapters_full))]
             if current_index == 1 and not first_chapter_text:
-                first_chapter_text = chapters_full[0]
+                first_chapter_text = state.chapters_full[0]
             if current_index == 1 and not first_display_done:
-                dropdown_update = gr.update(choices=choices, value="Chapter 1")
+                dropdown_update = gr.update(choices=state.choices, value="Chapter 1")
                 current_text_update = first_chapter_text
                 first_display_done = True
             else:
-                dropdown_update = gr.update(choices=choices)
+                dropdown_update = gr.update(choices=state.choices)
                 current_text_update = gr.update()
 
-            counter_value = f"📘 {len(chapters_full)} chapter(s) generated so far"
+            counter_value = f"📘 {len(state.chapters_full)} chapter(s) generated so far"
             yield (
-                expanded_plot,
-                chapters_overview,
-                chapters_full,
+                state.expanded_plot,
+                state.chapters_overview,
+                state.chapters_full,
                 current_text_update,
                 dropdown_update,
                 counter_value,
-                "\n".join(status_log),
-                validation_text,
+                "\n".join(state.status_log),
+                state.validation_text,
             )
 
-            if (yield from maybe_pause_pipeline(
-                f"chapter {current_index} generation",
-                expanded_plot, chapters_overview, chapters_full,
-                validation_text, status_log,
-                next_chapter_index=current_index,
-                genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode,
-                overview_validated=overview_validated, choices=choices, pending_validation_index=current_index
-            )):
+            state.next_chapter_index = current_index
+            state.pending_validation_index = current_index
+            if (yield from maybe_pause_pipeline(f"chapter {current_index} generation", state)):
                 return
 
         else:
-            status_log.append(ts_prefix(f"▶️ Resuming with validation for Chapter {current_index}..."))
-            chapter_text = chapters_full[current_index - 1]
+            state.status_log.append(ts_prefix(f"▶️ Resuming with validation for Chapter {current_index}..."))
+            chapter_text = state.chapters_full[current_index - 1]
             yield (
-                expanded_plot,
-                chapters_overview,
-                chapters_full,
+                state.expanded_plot,
+                state.chapters_overview,
+                state.chapters_full,
                 gr.update(),
-                gr.update(choices=choices),
+                gr.update(choices=state.choices),
                 f"Validating chapter {current_index}...",
-                "\n".join(status_log),
-                validation_text,
+                "\n".join(state.status_log),
+                state.validation_text,
             )
 
         validation_attempts = 0
         while validation_attempts < MAX_VALIDATION_ATTEMPTS:
-            status_log.append(ts_prefix(f"🧩 Step 5: Validating Chapter {current_index}..."))
+            state.status_log.append(ts_prefix(f"🧩 Step 5: Validating Chapter {current_index}..."))
             yield (
-                expanded_plot,
-                chapters_overview,
-                chapters_full,
+                state.expanded_plot,
+                state.chapters_overview,
+                state.chapters_full,
                 gr.update(),
-                gr.update(choices=choices),
+                gr.update(choices=state.choices),
                 f"Validating chapter {current_index}...",
-                "\n".join(status_log),
-                validation_text,
+                "\n".join(state.status_log),
+                state.validation_text,
             )
 
             result, feedback = validate_chapter(
-                expanded_plot,
-                chapters_overview,
-                chapters_full[:-1],
+                state.expanded_plot,
+                state.chapters_overview,
+                state.chapters_full[:-1],
                 chapter_text,
                 current_index,
-                genre
+                state.genre
             )
 
             if result == "OK":
-                validation_text = vtext_add(f"✅ Chapter {current_index} Validation: PASSED", validation_text)
-                status_log.append(ts_prefix(f"✅ Chapter {current_index} passed validation."))
+                state.validation_text = vtext_add(f"✅ Chapter {current_index} Validation: PASSED", state.validation_text)
+                state.status_log.append(ts_prefix(f"✅ Chapter {current_index} passed validation."))
                 break
             elif result == "NOT OK":
-                validation_text = vtext_add(f"⚠️ Chapter {current_index} Validation Feedback:\n{feedback}", validation_text)
-                status_log.append(ts_prefix(f"⚠️ Chapter {current_index} failed validation — regenerating."))
+                state.validation_text = vtext_add(f"⚠️ Chapter {current_index} Validation Feedback:\n{feedback}", state.validation_text)
+                state.status_log.append(ts_prefix(f"⚠️ Chapter {current_index} failed validation — regenerating."))
                 yield (
-                    expanded_plot,
-                    chapters_overview,
-                    chapters_full,
+                    state.expanded_plot,
+                    state.chapters_overview,
+                    state.chapters_full,
                     gr.update(),
-                    gr.update(choices=choices),
+                    gr.update(choices=state.choices),
                     f"Regenerating chapter {current_index}...",
-                    "\n".join(status_log),
-                    validation_text,
+                    "\n".join(state.status_log),
+                    state.validation_text,
                 )
                 chapter_text = generate_chapter_text(
-                    expanded_plot,
-                    chapters_overview,
+                    state.expanded_plot,
+                    state.chapters_overview,
                     current_index,
-                    chapters_full[:-1],
-                    genre,
-                    anpc,
+                    state.chapters_full[:-1],
+                    state.genre,
+                    state.anpc,
                     feedback=feedback
                 )
-                chapters_full[-1] = chapter_text
-                status_log.append(ts_prefix(f"✅ Chapter {current_index} regenerated successfully."))
+                state.chapters_full[-1] = chapter_text
+                state.status_log.append(ts_prefix(f"✅ Chapter {current_index} regenerated successfully."))
             else:
-                validation_text = vtext_add(f"❌ Chapter {current_index} Validation Error:\n{feedback}", validation_text)
-                status_log.append(ts_prefix(f"❌ Validation error or unknown result for Chapter {current_index}."))
+                state.validation_text = vtext_add(f"❌ Chapter {current_index} Validation Error:\n{feedback}", state.validation_text)
+                state.status_log.append(ts_prefix(f"❌ Validation error or unknown result for Chapter {current_index}."))
                 break
 
             validation_attempts += 1
 
-        if (yield from maybe_pause_pipeline(
-            f"chapter {current_index} complete",
-            expanded_plot, chapters_overview, chapters_full,
-            validation_text, status_log,
-            next_chapter_index=current_index + 1,
-            genre=genre, anpc=anpc, plot=plot, num_chapters=num_chapters, run_mode=run_mode,
-            overview_validated=overview_validated, choices=choices, pending_validation_index=None
-        )):
+        state.next_chapter_index = current_index + 1
+        state.pending_validation_index = None
+        if (yield from maybe_pause_pipeline(f"chapter {current_index} complete", state)):
             return
 
-        choices = [f"Chapter {j+1}" for j in range(len(chapters_full))]
+        state.choices = [f"Chapter {j+1}" for j in range(len(state.chapters_full))]
         if current_index == 1 and first_chapter_text and not first_display_done:
-            dropdown_update = gr.update(choices=choices, value="Chapter 1")
+            dropdown_update = gr.update(choices=state.choices, value="Chapter 1")
             current_text_update = first_chapter_text
             first_display_done = True
         else:
-            dropdown_update = gr.update(choices=choices)
+            dropdown_update = gr.update(choices=state.choices)
             current_text_update = gr.update()
 
-        counter_value = f"📘 {len(chapters_full)} chapter(s) generated so far"
+        counter_value = f"📘 {len(state.chapters_full)} chapter(s) generated so far"
         yield (
-            expanded_plot,
-            chapters_overview,
-            chapters_full,
+            state.expanded_plot,
+            state.chapters_overview,
+            state.chapters_full,
             current_text_update,
             dropdown_update,
             counter_value,
-            "\n".join(status_log),
-            validation_text,
+            "\n".join(state.status_log),
+            state.validation_text,
         )
 
-    status_log.append(ts_prefix("🎉 All chapters generated successfully!"))
-    final_choices = [f"Chapter {i+1}" for i in range(len(chapters_full))]
+    state.status_log.append(ts_prefix("🎉 All chapters generated successfully!"))
+    final_choices = [f"Chapter {i+1}" for i in range(len(state.chapters_full))]
     dropdown_final = gr.update(choices=final_choices)
-    counter_final = f"✅ All {len(chapters_full)} chapters generated!"
-    validation_text = vtext_add("🎯 All validations passed successfully.", validation_text)
-    yield expanded_plot, chapters_overview, chapters_full, gr.update(), dropdown_final, counter_final, "\n".join(status_log), validation_text
+    counter_final = f"✅ All {len(state.chapters_full)} chapters generated!"
+    state.validation_text = vtext_add("🎯 All validations passed successfully.", state.validation_text)
+    yield state.expanded_plot, state.chapters_overview, state.chapters_full, gr.update(), dropdown_final, counter_final, "\n".join(state.status_log), state.validation_text
 
 
 def generate_book_outline_stream_resume(checkpoint):
