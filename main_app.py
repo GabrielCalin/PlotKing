@@ -199,7 +199,7 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
         return
 
     status_log.append(ts_prefix("🚀 Step 4: Writing chapters..."))
-    yield expanded_plot, chapters_overview, chapters_full, "", gr.update(), "_Starting chapter generation..._", "\n".join(status_log), validation_text
+    yield expanded_plot, chapters_overview, chapters_full, gr.update(), gr.update(), "_Starting chapter generation..._", "\n".join(status_log), validation_text
 
     if pending_validation_index:
         start_index = int(pending_validation_index)
