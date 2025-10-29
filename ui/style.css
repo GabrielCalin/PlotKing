@@ -7,6 +7,7 @@
     border: 1px solid var(--block-border-color);
     border-radius: var(--block-radius);
     overflow: hidden;
+    height: auto !important;
 }
 
 /* Header de secțiune */
@@ -84,4 +85,24 @@
 .plot-buttons a {
     padding-left: 0 !important;
     padding-right: 0 !important;
+}
+
+/* Elimină spațiul excesiv din coloanele mici (ex: Select Chapter) */
+.plot-wrapper,
+.gr-column {
+    align-self: flex-start !important;
+}
+
+/* Înlătură padding vertical inutil din wrapper când nu e label */
+.plot-wrapper > div:has(textarea),
+.plot-wrapper > div:has(select),
+.plot-wrapper > div:has(.wrap) {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+/* Corectează vertical spacing-ul între header și textbox */
+.plot-wrapper .plot-textbox,
+.plot-wrapper .gr-textbox {
+    margin-top: 0 !important;
 }
