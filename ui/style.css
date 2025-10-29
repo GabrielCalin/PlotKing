@@ -2,7 +2,6 @@
     margin-bottom: 4px !important;
 }
 
-/* Wrapper general pentru fiecare secțiune cu border */
 .plot-wrapper {
     border: 1px solid var(--block-border-color);
     border-radius: var(--block-radius);
@@ -10,7 +9,6 @@
     height: auto !important;
 }
 
-/* Header de secțiune */
 .plot-header {
     display: flex;
     align-items: center;
@@ -23,25 +21,22 @@
     border-bottom: 1px solid var(--block-border-color);
 }
 
-/* Titlul se extinde pe toată lățimea disponibilă */
 .plot-header > :first-child {
     flex: 1 1 auto;
     min-width: 0;
 }
 
-/* Container pentru butoanele din header (dreapta) */
 .plot-header > .plot-buttons {
     margin-left: auto;
     flex: 0 0 auto !important;
     width: auto !important;
     display: flex !important;
-    align-items: center;
-    justify-content: flex-end;
+    align-items: center !important;
+    justify-content: flex-end !important;
     gap: 3px;
     white-space: nowrap;
 }
 
-/* Butoanele în sine */
 .plot-buttons button {
     background: none !important;
     border: none !important;
@@ -52,13 +47,15 @@
     font-size: 0.9rem !important;
     opacity: 0.65;
     transition: opacity 0.15s;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: right !important;
 }
 
 .plot-buttons button:hover {
     opacity: 1;
 }
 
-/* Textbox din interiorul wrapperului */
 .plot-textbox textarea {
     border: none !important;
     border-radius: 0 !important;
@@ -66,34 +63,11 @@
     resize: vertical !important;
 }
 
-/* Corecție Gradio (suprascrie justify-content:center din .svelte-*) */
-.plot-buttons button,
-.plot-buttons a {
-    display: inline-flex !important;
-    justify-content: flex-end !important;
-    align-items: center !important;
-}
-
-/* În caz că Gradio inserează un span intern */
-.plot-buttons button > *,
-.plot-buttons a > * {
-    margin-left: auto !important;
-}
-
-/* Elimină padding intern care poate centra vizual iconița */
-.plot-buttons button,
-.plot-buttons a {
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-}
-
-/* Elimină spațiul excesiv din coloanele mici (ex: Select Chapter) */
 .plot-wrapper,
 .gr-column {
     align-self: flex-start !important;
 }
 
-/* Înlătură padding vertical inutil din wrapper când nu e label */
 .plot-wrapper > div:has(textarea),
 .plot-wrapper > div:has(select),
 .plot-wrapper > div:has(.wrap) {
@@ -101,23 +75,37 @@
     padding-top: 0 !important;
 }
 
-/* Corectează vertical spacing-ul între header și textbox */
 .plot-wrapper .plot-textbox,
 .plot-wrapper .gr-textbox {
     margin-top: 0 !important;
 }
 
-/* Înălțimi minime egale pentru Expanded Plot și Chapters Overview, chiar dacă doar unul are conținut */
-#expanded-output textarea,
-#chapters-output textarea {
-    min-height: 320px !important;
-}
-
-/* aceeași înălțime fixă, indiferent de conținutul curent */
 #expanded-output textarea,
 #chapters-output textarea {
     height: 360px !important;
     min-height: 360px !important;
     max-height: 360px !important;
     overflow: auto !important;
+}
+
+:root {
+    --header-nudge: 1px;
+}
+
+.plot-header :is(p,h1,h2,h3,h4,h5,h6) {
+    margin: 0 !important;
+    line-height: 1.2 !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.plot-header > .plot-buttons {
+    align-items: center !important;
+}
+
+.plot-buttons button,
+.plot-buttons a {
+    align-items: center !important;
+    justify-content: right !important;
+    transform: translateY(var(--header-nudge));
 }
