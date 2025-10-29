@@ -106,3 +106,9 @@
 .plot-wrapper .gr-textbox {
     margin-top: 0 !important;
 }
+
+/* Înălțimi minime egale pentru Expanded Plot și Chapters Overview, chiar dacă doar unul are conținut */
+#expanded-output textarea,
+#chapters-output textarea {
+    min-height: 320px !important;
+}

@@ -84,16 +84,16 @@ def create_interface(pipeline_fn, refine_fn):
                     gr.Markdown("📝 Expanded Plot")
                     with gr.Row(elem_classes=["plot-buttons"]):
                         regenerate_expanded_btn = gr.Button("🔄", size="sm")
-                expanded_output = gr.Textbox(label="", lines=15, elem_classes=["plot-textbox"])
+                expanded_output = gr.Textbox(label="", lines=15, elem_classes=["plot-textbox"], elem_id="expanded-output")
 
             with gr.Column(elem_classes=["plot-wrapper"]):
                 with gr.Row(elem_classes=["plot-header"]):
                     gr.Markdown("📘 Chapters Overview")
                     with gr.Row(elem_classes=["plot-buttons"]):
                         regenerate_overview_btn = gr.Button("🔄", size="sm")
-                chapters_output = gr.Textbox(label="", lines=15, elem_classes=["plot-textbox"])
+                chapters_output = gr.Textbox(label="", lines=15, elem_classes=["plot-textbox"], elem_id="chapters-output")
 
-        with gr.Row(equal_height=True):
+        with gr.Row():
             with gr.Column(scale=1):
                 chapter_selector = gr.Dropdown(label="📖 Select Chapter", choices=[], value=None, interactive=True)
                 chapter_counter = gr.Markdown("_No chapters yet_")
@@ -102,7 +102,7 @@ def create_interface(pipeline_fn, refine_fn):
                     gr.Markdown("📚 Current Chapter")
                     with gr.Row(elem_classes=["plot-buttons"]):
                         regenerate_chapter_btn = gr.Button("🔄", size="sm")
-                current_chapter_output = gr.Textbox(label="", lines=20, elem_classes=["plot-textbox"])
+                current_chapter_output = gr.Textbox(label="", lines=20, elem_classes=["plot-textbox"], elem_id="current-chapter-output")
 
         status_output = gr.Textbox(label="🧠 Process Log", lines=15)
         validation_feedback = gr.Textbox(label="🧩 Validation Feedback", lines=8)
