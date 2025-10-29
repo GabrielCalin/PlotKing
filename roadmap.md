@@ -6,12 +6,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## ✅ Phase 1 — Core Validation & Quality of Life
 
-4. **Pipeline Control & Execution Flow**  
-   - Allow users to **select which parts of the generation pipeline to execute**:  
-     - Expanded Plot  
-     - Chapter Outlines  
-     - Full Chapter Content  
-   - Provide controls to **pause, stop, or resume** the pipeline at any stage.  
+4. **Pipeline Control & Execution Flow**   
    - Add a **“Regenerate from here”** option at each major step, enabling users to rerun a specific stage without restarting the entire process.
 
 ---

@@ -78,23 +78,37 @@ def create_interface(pipeline_fn, refine_fn):
             stop_btn = gr.Button("🛑 Stop", variant="stop", visible=False)
             resume_btn = gr.Button("▶️ Resume", variant="primary", visible=False)
 
-        with gr.Row():
-            expanded_output = gr.Textbox(label="📝 Expanded Plot", lines=15)
-            chapters_output = gr.Textbox(label="📘 Chapters Overview", lines=15)
+        with gr.Row(equal_height=True):
+            with gr.Column(elem_classes=["plot-wrapper"]):
+                with gr.Row(elem_classes=["plot-header"]):
+                    gr.Markdown("📝 Expanded Plot")
+                    with gr.Row(elem_classes=["plot-buttons"]):
+                        regenerate_expanded_btn = gr.Button("🔄", size="sm")
+                expanded_output = gr.Textbox(lines=15, elem_classes=["plot-textbox"])
 
-        with gr.Row():
+            with gr.Column(elem_classes=["plot-wrapper"]):
+                with gr.Row(elem_classes=["plot-header"]):
+                    gr.Markdown("📘 Chapters Overview")
+                    with gr.Row(elem_classes=["plot-buttons"]):
+                        regenerate_overview_btn = gr.Button("🔄", size="sm")
+                chapters_output = gr.Textbox(lines=15, elem_classes=["plot-textbox"])
+
+        with gr.Row(equal_height=True):
             with gr.Column(scale=1):
                 chapter_selector = gr.Dropdown(label="📖 Select Chapter", choices=[], value=None, interactive=True)
                 chapter_counter = gr.Markdown("_No chapters yet_")
-            with gr.Column(scale=3):
-                current_chapter_output = gr.Textbox(label="📚 Current Chapter", lines=20)
+            with gr.Column(scale=3, elem_classes=["plot-wrapper"]):
+                with gr.Row(elem_classes=["plot-header"]):
+                    gr.Markdown("📚 Current Chapter")
+                    with gr.Row(elem_classes=["plot-buttons"]):
+                        regenerate_chapter_btn = gr.Button("🔄", size="sm")
+                current_chapter_output = gr.Textbox(lines=20, elem_classes=["plot-textbox"])
 
         status_output = gr.Textbox(label="🧠 Process Log", lines=15)
         validation_feedback = gr.Textbox(label="🧩 Validation Feedback", lines=8)
 
         chapters_state = gr.State([])
 
-        # --- main generation button ---
         def choose_plot_for_pipeline(plot, refined):
             return refined if refined.strip() else plot
 
@@ -144,7 +158,6 @@ def create_interface(pipeline_fn, refine_fn):
             outputs=[stop_btn, resume_btn, generate_btn]
         )
 
-        # --- Stop / Resume ---
         def stop_pipeline(cur_status):
             request_stop()
             new_status = (cur_status + "\n" + ts_prefix("🛑 Stop requested")).strip() if cur_status else ts_prefix("🛑 Stop requested")
@@ -195,14 +208,12 @@ def create_interface(pipeline_fn, refine_fn):
             outputs=[stop_btn, resume_btn, generate_btn]
         )
 
-        # --- chapter viewer ---
         chapter_selector.change(
             fn=display_selected_chapter,
             inputs=[chapter_selector, chapters_state],
             outputs=[current_chapter_output]
         )
 
-        # --- ORIGINAL view ---
         def show_original(plot, refined):
             return gr.update(
                 value=plot,
@@ -217,7 +228,6 @@ def create_interface(pipeline_fn, refine_fn):
             outputs=[plot_input, current_mode, refine_btn]
         )
 
-        # --- REFINED view ---
         def show_refined(plot, refined):
             return gr.update(
                 value=refined,

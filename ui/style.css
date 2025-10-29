@@ -2,16 +2,19 @@
     margin-bottom: 4px !important;
 }
 
+/* Wrapper general pentru fiecare secțiune cu border */
 .plot-wrapper {
     border: 1px solid var(--block-border-color);
     border-radius: var(--block-radius);
     overflow: hidden;
 }
 
+/* Header de secțiune */
 .plot-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
     background-color: var(--block-label-background-fill);
     padding: 4px 8px;
     font-weight: 600;
@@ -19,11 +22,25 @@
     border-bottom: 1px solid var(--block-border-color);
 }
 
-.plot-buttons {
-    display: flex;
-    gap: 3px;
+/* Titlul se extinde pe toată lățimea disponibilă */
+.plot-header > :first-child {
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
+/* Container pentru butoanele din header (dreapta) */
+.plot-header > .plot-buttons {
+    margin-left: auto;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 3px;
+    white-space: nowrap;
+}
+
+/* Butoanele în sine */
 .plot-buttons button {
     background: none !important;
     border: none !important;
@@ -40,9 +57,31 @@
     opacity: 1;
 }
 
+/* Textbox din interiorul wrapperului */
 .plot-textbox textarea {
     border: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
     resize: vertical !important;
+}
+
+/* Corecție Gradio (suprascrie justify-content:center din .svelte-*) */
+.plot-buttons button,
+.plot-buttons a {
+    display: inline-flex !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+}
+
+/* În caz că Gradio inserează un span intern */
+.plot-buttons button > *,
+.plot-buttons a > * {
+    margin-left: auto !important;
+}
+
+/* Elimină padding intern care poate centra vizual iconița */
+.plot-buttons button,
+.plot-buttons a {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
 }
