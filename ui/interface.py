@@ -8,7 +8,6 @@ from datetime import datetime
 def ts_prefix(message: str) -> str:
     return f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}] {message}"
 
-
 def display_selected_chapter(chapter_name, chapters):
     if not chapters or not chapter_name:
         return ""
@@ -21,14 +20,10 @@ def display_selected_chapter(chapter_name, chapters):
     return ""
 
 def create_interface(pipeline_fn, refine_fn):
-
     def toggle_plot_label(is_refined):
         return gr.update(label="Refined" if is_refined else "Original")
 
-    with gr.Blocks(
-        title="BookKing - AI Story Builder",
-        css=load_css()
-    ) as demo:
+    with gr.Blocks(title="BookKing - AI Story Builder", css=load_css()) as demo:
         gr.Markdown("""
         # 📖 BookKing - AI Story Builder  
         _Generate, validate, and refine your novels interactively._
@@ -37,6 +32,7 @@ def create_interface(pipeline_fn, refine_fn):
         plot_state = gr.State("")
         refined_plot_state = gr.State("")
         current_mode = gr.State("original")
+        chapters_state = gr.State([])
 
         with gr.Row(equal_height=True):
             with gr.Column(scale=3):
@@ -47,31 +43,16 @@ def create_interface(pipeline_fn, refine_fn):
                             show_original_btn = gr.Button("O", size="sm")
                             show_refined_btn = gr.Button("R", size="sm")
                             refine_btn = gr.Button("🪄", size="sm")
-
-                    plot_input = gr.Textbox(
-                        label="Original",
-                        lines=3,
-                        elem_classes=["plot-textbox"],
-                        placeholder="Ex: A young girl discovers a portal to another world...",
-                        interactive=True
-                    )
-
-                genre_input = gr.Textbox(
-                    label="Genre",
-                    placeholder="Ex: fantasy, science fiction",
-                    lines=2
-                )
-
+                    plot_input = gr.Textbox(label="Original", lines=3, elem_classes=["plot-textbox"],
+                                            placeholder="Ex: A young girl discovers a portal to another world...",
+                                            interactive=True)
+                genre_input = gr.Textbox(label="Genre", placeholder="Ex: fantasy, science fiction", lines=2)
             with gr.Column(scale=1):
                 with gr.Group(elem_classes=["tight-group"]):
                     chapters_input = gr.Number(label="Number of Chapters", value=5, precision=0)
                     anpc_input = gr.Number(label="Average Number of Pages per Chapter", value=5, precision=0, interactive=True)
-                    run_mode = gr.Dropdown(
-                        label="Run Mode",
-                        choices=list(RUN_MODE_CHOICES.values()),
-                        value=RUN_MODE_CHOICES["FULL"],
-                        interactive=True
-                    )
+                    run_mode = gr.Dropdown(label="Run Mode", choices=list(RUN_MODE_CHOICES.values()),
+                                           value=RUN_MODE_CHOICES["FULL"], interactive=True)
 
         with gr.Row():
             generate_btn = gr.Button("🚀 Generate Book")
@@ -83,15 +64,17 @@ def create_interface(pipeline_fn, refine_fn):
                 with gr.Row(elem_classes=["plot-header"]):
                     gr.Markdown("📝 Expanded Plot")
                     with gr.Row(elem_classes=["plot-buttons"]):
-                        regenerate_expanded_btn = gr.Button("🔄", size="sm")
-                expanded_output = gr.Textbox(label="", lines=15, elem_classes=["plot-textbox"], elem_id="expanded-output", autoscroll=False)
+                        regenerate_expanded_btn = gr.Button("🔄", size="sm", visible=False)
+                expanded_output = gr.Textbox(label="", lines=15, elem_classes=["plot-textbox"],
+                                             elem_id="expanded-output", autoscroll=False)
 
             with gr.Column(elem_classes=["plot-wrapper"]):
                 with gr.Row(elem_classes=["plot-header"]):
                     gr.Markdown("📘 Chapters Overview")
                     with gr.Row(elem_classes=["plot-buttons"]):
-                        regenerate_overview_btn = gr.Button("🔄", size="sm")
-                chapters_output = gr.Textbox(label="", lines=15, elem_classes=["plot-textbox"], elem_id="chapters-output", autoscroll=False)
+                        regenerate_overview_btn = gr.Button("🔄", size="sm", visible=False)
+                chapters_output = gr.Textbox(label="", lines=15, elem_classes=["plot-textbox"],
+                                             elem_id="chapters-output", autoscroll=False)
 
         with gr.Row():
             with gr.Column(scale=1):
@@ -101,13 +84,12 @@ def create_interface(pipeline_fn, refine_fn):
                 with gr.Row(elem_classes=["plot-header"]):
                     gr.Markdown("📚 Current Chapter")
                     with gr.Row(elem_classes=["plot-buttons"]):
-                        regenerate_chapter_btn = gr.Button("🔄", size="sm")
-                current_chapter_output = gr.Textbox(label="", lines=20, elem_classes=["plot-textbox"], elem_id="current-chapter-output", autoscroll=False)
+                        regenerate_chapter_btn = gr.Button("🔄", size="sm", visible=False)
+                current_chapter_output = gr.Textbox(label="", lines=20, elem_classes=["plot-textbox"],
+                                                    elem_id="current-chapter-output", autoscroll=False)
 
         status_output = gr.Textbox(label="🧠 Process Log", lines=15)
         validation_feedback = gr.Textbox(label="🧩 Validation Feedback", lines=8)
-
-        chapters_state = gr.State([])
 
         def choose_plot_for_pipeline(plot, refined):
             return refined if refined.strip() else plot
@@ -124,16 +106,25 @@ def create_interface(pipeline_fn, refine_fn):
         def post_pipeline_controls():
             checkpoint = get_checkpoint()
             if checkpoint:
+                expanded_visible = bool(checkpoint.get("expanded_plot"))
+                overview_visible = bool(checkpoint.get("chapters_overview"))
+                chapters_visible = bool(checkpoint.get("chapters_full"))
                 return (
-                    gr.update(interactive=True, value="🛑 Stop", visible=False),
+                    gr.update(interactive=True, visible=False),
                     gr.update(visible=True),
                     gr.update(visible=True),
+                    gr.update(visible=expanded_visible),
+                    gr.update(visible=overview_visible),
+                    gr.update(visible=chapters_visible),
                 )
             else:
                 return (
-                    gr.update(interactive=True, value="🛑 Stop", visible=False),
+                    gr.update(interactive=True, visible=False),
                     gr.update(visible=False),
                     gr.update(visible=True),
+                    gr.update(visible=False),
+                    gr.update(visible=False),
+                    gr.update(visible=False),
                 )
 
         generate_btn.click(
@@ -155,7 +146,8 @@ def create_interface(pipeline_fn, refine_fn):
         ).then(
             fn=post_pipeline_controls,
             inputs=[],
-            outputs=[stop_btn, resume_btn, generate_btn]
+            outputs=[stop_btn, resume_btn, generate_btn,
+                     regenerate_expanded_btn, regenerate_overview_btn, regenerate_chapter_btn]
         )
 
         def stop_pipeline(cur_status):
@@ -205,7 +197,8 @@ def create_interface(pipeline_fn, refine_fn):
         ).then(
             fn=post_pipeline_controls,
             inputs=[],
-            outputs=[stop_btn, resume_btn, generate_btn]
+            outputs=[stop_btn, resume_btn, generate_btn,
+                     regenerate_expanded_btn, regenerate_overview_btn, regenerate_chapter_btn]
         )
 
         chapter_selector.change(
@@ -214,13 +207,131 @@ def create_interface(pipeline_fn, refine_fn):
             outputs=[current_chapter_output]
         )
 
+        # --- Refresh actions ---
+        def refresh_expanded():
+            checkpoint = get_checkpoint()
+            if not checkpoint:
+                yield "", "", [], "", gr.update(), "_No checkpoint_", "⚠️ Cannot refresh without checkpoint.", ""
+                return
+            clear_stop()
+            yield from pipeline_fn(
+                checkpoint["plot"],
+                checkpoint["num_chapters"],
+                checkpoint["genre"],
+                checkpoint["anpc"],
+                checkpoint["run_mode"],
+                checkpoint=checkpoint,
+                refresh_from="expanded"
+            )
+
+        def refresh_overview():
+            checkpoint = get_checkpoint()
+            if not checkpoint:
+                yield "", "", [], "", gr.update(), "_No checkpoint_", "⚠️ Cannot refresh without checkpoint.", ""
+                return
+            clear_stop()
+            yield from pipeline_fn(
+                checkpoint["plot"],
+                checkpoint["num_chapters"],
+                checkpoint["genre"],
+                checkpoint["anpc"],
+                checkpoint["run_mode"],
+                checkpoint=checkpoint,
+                refresh_from="overview"
+            )
+
+        def refresh_chapter(selected_name):
+            checkpoint = get_checkpoint()
+            if not checkpoint:
+                yield "", "", [], "", gr.update(), "_No checkpoint_", "⚠️ Cannot refresh without checkpoint.", ""
+                return
+            if not selected_name:
+                yield "", "", [], "", gr.update(), "_No chapter selected_", "⚠️ Please select a chapter.", ""
+                return
+            try:
+                idx = int(selected_name.split(" ")[1])
+            except Exception:
+                idx = None
+            clear_stop()
+            yield from pipeline_fn(
+                checkpoint["plot"],
+                checkpoint["num_chapters"],
+                checkpoint["genre"],
+                checkpoint["anpc"],
+                checkpoint["run_mode"],
+                checkpoint=checkpoint,
+                refresh_from=idx
+            )
+
+        def show_stop_only():
+            return (
+                gr.update(visible=True, interactive=True, value="🛑 Stop"),
+                gr.update(visible=False),
+                gr.update(visible=False),
+            )
+
+        regenerate_expanded_btn.click(
+            fn=show_stop_only,
+            inputs=[],
+            outputs=[stop_btn, resume_btn, generate_btn]
+        ).then(
+            fn=refresh_expanded,
+            inputs=[],
+            outputs=[
+                expanded_output, chapters_output, chapters_state,
+                current_chapter_output, chapter_selector, chapter_counter,
+                status_output, validation_feedback
+            ]
+        ).then(
+            fn=post_pipeline_controls,
+            inputs=[],
+            outputs=[stop_btn, resume_btn, generate_btn,
+                     regenerate_expanded_btn, regenerate_overview_btn, regenerate_chapter_btn]
+        )
+
+        regenerate_overview_btn.click(
+            fn=show_stop_only,
+            inputs=[],
+            outputs=[stop_btn, resume_btn, generate_btn]
+        ).then(
+            fn=refresh_overview,
+            inputs=[],
+            outputs=[
+                expanded_output, chapters_output, chapters_state,
+                current_chapter_output, chapter_selector, chapter_counter,
+                status_output, validation_feedback
+            ]
+        ).then(
+            fn=post_pipeline_controls,
+            inputs=[],
+            outputs=[stop_btn, resume_btn, generate_btn,
+                     regenerate_expanded_btn, regenerate_overview_btn, regenerate_chapter_btn]
+        )
+
+        regenerate_chapter_btn.click(
+            fn=show_stop_only,
+            inputs=[],
+            outputs=[stop_btn, resume_btn, generate_btn]
+        ).then(
+            fn=refresh_chapter,
+            inputs=[chapter_selector],
+            outputs=[
+                expanded_output, chapters_output, chapters_state,
+                current_chapter_output, chapter_selector, chapter_counter,
+                status_output, validation_feedback
+            ]
+        ).then(
+            fn=post_pipeline_controls,
+            inputs=[],
+            outputs=[stop_btn, resume_btn, generate_btn,
+                     regenerate_expanded_btn, regenerate_overview_btn, regenerate_chapter_btn]
+        )
+
+        # --- Plot refinement controls ---
         def show_original(plot, refined):
-            return gr.update(
-                value=plot,
-                label="Original",
-                interactive=True,
-                placeholder="Ex: A young girl discovers a portal to another world..."
-            ), "original", gr.update(value="🪄")
+            return gr.update(value=plot, label="Original", interactive=True,
+                             placeholder="Ex: A young girl discovers a portal to another world..."), \
+                   "original", gr.update(value="🪄")
 
         show_original_btn.click(
             fn=show_original,
@@ -229,12 +340,9 @@ def create_interface(pipeline_fn, refine_fn):
         )
 
         def show_refined(plot, refined):
-            return gr.update(
-                value=refined,
-                label="Refined",
-                interactive=False,
-                placeholder="This refined version will be used for generation (if present)."
-            ), "refined", gr.update(value="🧹")
+            return gr.update(value=refined, label="Refined", interactive=False,
+                             placeholder="This refined version will be used for generation (if present)."), \
+                   "refined", gr.update(value="🧹")
 
         show_refined_btn.click(
             fn=show_refined,
@@ -247,12 +355,9 @@ def create_interface(pipeline_fn, refine_fn):
                 return gr.update(value=plot, label="Original", interactive=True), "", "original", gr.update(value="🪄")
             else:
                 new_refined = refine_fn(plot, genre)
-                return gr.update(
-                    value=new_refined,
-                    label="Refined",
-                    interactive=False,
-                    placeholder="This refined version will be used for generation (if present)."
-                ), new_refined, "refined", gr.update(value="🧹")
+                return gr.update(value=new_refined, label="Refined", interactive=False,
+                                 placeholder="This refined version will be used for generation (if present)."), \
+                       new_refined, "refined", gr.update(value="🧹")
 
         refine_btn.click(
             fn=refine_or_clear,
@@ -270,9 +375,3 @@ def create_interface(pipeline_fn, refine_fn):
                           outputs=[plot_state, refined_plot_state])
 
     return demo
-
-def map_run_mode_label_to_code(label):
-    for key, val in RUN_MODE_CHOICES.items():
-        if val == label:
-            return key
-    return "FULL"

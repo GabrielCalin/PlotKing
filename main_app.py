@@ -45,9 +45,36 @@ def maybe_pause_pipeline(step_label: str, state: PipelineState):
     return True
 
 
-def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, checkpoint=None):
-    if not checkpoint:
-        clear_stop()
+def apply_refresh_point(state: PipelineState, refresh_from):
+    if refresh_from == "expanded":
+        state.expanded_plot = None
+        state.chapters_overview = None
+        state.chapters_full = []
+        state.overview_validated = False
+
+    elif refresh_from == "overview":
+        state.chapters_overview = None
+        state.chapters_full = []
+        state.overview_validated = False
+
+    elif isinstance(refresh_from, int):
+        keep_until = refresh_from - 1
+        state.chapters_full = state.chapters_full[:keep_until]
+        state.next_chapter_index = refresh_from
+        state.pending_validation_index = None
+
+    return state
+
+
+def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, checkpoint=None, refresh_from=None):
+    clear_stop()
+
+    if checkpoint:
+        state = PipelineState.from_checkpoint(checkpoint)
+        if refresh_from:
+            state.status_log.append(ts_prefix("🔁 Regeneration requested..."))
+            state = apply_refresh_point(state, refresh_from)
+    else:
         state = PipelineState(
             expanded_plot=None,
             chapters_overview=None,
@@ -59,19 +86,6 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
             plot=plot,
             num_chapters=num_chapters,
             run_mode=run_mode,
-        )
-    else:
-        state = PipelineState.from_checkpoint(checkpoint)
-        state.status_log.append(ts_prefix("▶️ Resuming from last saved point..."))
-        yield (
-            state.expanded_plot or "",
-            state.chapters_overview or "",
-            state.chapters_full,
-            gr.update(),
-            gr.update(),
-            "Resuming...",
-            "\n".join(state.status_log),
-            state.validation_text,
         )
 
     if not checkpoint and not state.plot.strip():
