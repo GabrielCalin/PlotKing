@@ -112,3 +112,12 @@
 #chapters-output textarea {
     min-height: 320px !important;
 }
+
+/* aceeași înălțime fixă, indiferent de conținutul curent */
+#expanded-output textarea,
+#chapters-output textarea {
+    height: 360px !important;
+    min-height: 360px !important;
+    max-height: 360px !important;
+    overflow: auto !important;
+}
