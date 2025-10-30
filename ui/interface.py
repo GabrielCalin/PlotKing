@@ -107,12 +107,45 @@ def create_interface(pipeline_fn, refine_fn):
             checkpoint = get_checkpoint()
             if not checkpoint:
                 return (
-                    gr.update(interactive=True, visible=False),
-                    gr.update(visible=False),
-                    gr.update(visible=True),
-                    gr.update(visible=False),
-                    gr.update(visible=False),
-                    gr.update(visible=False),
+                    gr.update(interactive=True, visible=False),  # Stop
+                    gr.update(visible=False),                    # Resume
+                    gr.update(visible=True),                     # Generate
+                    gr.update(visible=False),                    # 🔄 Expanded
+                    gr.update(visible=False),                    # 🔄 Overview
+                    gr.update(visible=False),                    # 🔄 Chapter
+                )
+
+            expanded_visible = bool(checkpoint.get("expanded_plot"))
+            overview_visible = bool(checkpoint.get("chapters_overview"))
+            chapters_count = len(checkpoint.get("chapters_full", []))
+
+            try:
+                total_chapters = int(checkpoint.get("num_chapters") or chapters_count)
+            except Exception:
+                total_chapters = chapters_count
+
+            has_resume_markers = bool(checkpoint.get("pending_validation_index")) or bool(checkpoint.get("next_chapter_index"))
+            is_complete = expanded_visible and overview_visible and (chapters_count >= max(1, total_chapters)) and not has_resume_markers
+
+            chapters_visible = chapters_count > 0
+
+            if is_complete:
+                return (
+                    gr.update(interactive=True, visible=False),  # Stop
+                    gr.update(visible=False),                    # Resume HIDDEN la final
+                    gr.update(visible=True),                     # Generate
+                    gr.update(visible=expanded_visible),         # 🔄 Expanded
+                    gr.update(visible=overview_visible),         # 🔄 Overview
+                    gr.update(visible=chapters_visible),         # 🔄 Chapter
+                )
+            else:
+                return (
+                    gr.update(interactive=True, visible=False),  # Stop
+                    gr.update(visible=True),                     # Resume VISIBLE doar dacă nu e complet
+                    gr.update(visible=True),                     # Generate
+                    gr.update(visible=expanded_visible),
+                    gr.update(visible=overview_visible),
+                    gr.update(visible=chapters_visible),
                 )
 
         generate_btn.click(

@@ -330,6 +330,8 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
     counter_final = f"✅ All {len(state.chapters_full)} chapters generated!"
     state.validation_text = vtext_add("🎯 All validations passed successfully.", state.validation_text)
     
+    state.next_chapter_index = None
+    state.pending_validation_index = None
     save_checkpoint(state.to_dict())
     
     yield state.expanded_plot, state.chapters_overview, state.chapters_full, gr.update(), dropdown_final, counter_final, "\n".join(state.status_log), state.validation_text
