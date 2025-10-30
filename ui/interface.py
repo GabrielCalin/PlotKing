@@ -105,19 +105,7 @@ def create_interface(pipeline_fn, refine_fn):
 
         def post_pipeline_controls():
             checkpoint = get_checkpoint()
-            if checkpoint:
-                expanded_visible = bool(checkpoint.get("expanded_plot"))
-                overview_visible = bool(checkpoint.get("chapters_overview"))
-                chapters_visible = bool(checkpoint.get("chapters_full"))
-                return (
-                    gr.update(interactive=True, visible=False),
-                    gr.update(visible=True),
-                    gr.update(visible=True),
-                    gr.update(visible=expanded_visible),
-                    gr.update(visible=overview_visible),
-                    gr.update(visible=chapters_visible),
-                )
-            else:
+            if not checkpoint:
                 return (
                     gr.update(interactive=True, visible=False),
                     gr.update(visible=False),

@@ -61,7 +61,7 @@ def apply_refresh_point(state: PipelineState, refresh_from):
         state.overview_validated = False
 
     elif isinstance(refresh_from, int):
-        keep_until = refresh_from - 1
+        keep_until = min(refresh_from - 1, len(state.chapters_full))
         state.chapters_full = state.chapters_full[:keep_until]
         state.next_chapter_index = refresh_from
         state.pending_validation_index = None
@@ -154,12 +154,22 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
         return
 
     state.status_log.append(ts_prefix("🚀 Step 4: Writing chapters..."))
-    yield state.expanded_plot, state.chapters_overview, state.chapters_full, gr.update(), gr.update(), "_Starting chapter generation..._", "\n".join(state.status_log), state.validation_text
+    preloop_choices = [f"Chapter {j+1}" for j in range(len(state.chapters_full))]
+    yield (
+        state.expanded_plot,
+        state.chapters_overview,
+        state.chapters_full,
+        gr.update(),
+        gr.update(choices=preloop_choices),
+        "_Starting chapter generation..._",
+        "\n".join(state.status_log),
+        state.validation_text,
+    )
 
     if state.pending_validation_index:
         start_index = int(state.pending_validation_index)
     elif state.next_chapter_index:
-        start_index = max(1, int(state.next_chapter_index))
+        start_index = min(int(state.next_chapter_index), len(state.chapters_full) + 1)
     else:
         start_index = len(state.chapters_full) + 1
 
@@ -319,6 +329,9 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
     dropdown_final = gr.update(choices=final_choices)
     counter_final = f"✅ All {len(state.chapters_full)} chapters generated!"
     state.validation_text = vtext_add("🎯 All validations passed successfully.", state.validation_text)
+    
+    save_checkpoint(state.to_dict())
+    
     yield state.expanded_plot, state.chapters_overview, state.chapters_full, gr.update(), dropdown_final, counter_final, "\n".join(state.status_log), state.validation_text
 
 
