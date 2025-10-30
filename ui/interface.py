@@ -65,16 +65,14 @@ def create_interface(pipeline_fn, refine_fn):
                     gr.Markdown("📝 Expanded Plot")
                     with gr.Row(elem_classes=["plot-buttons"]):
                         regenerate_expanded_btn = gr.Button("🔄", size="sm", visible=False)
-                expanded_output = gr.Textbox(label="", lines=15, elem_classes=["plot-textbox"],
-                                             elem_id="expanded-output", autoscroll=False)
+                expanded_output = gr.Markdown(elem_id="expanded-output", height=360)
 
             with gr.Column(elem_classes=["plot-wrapper"]):
                 with gr.Row(elem_classes=["plot-header"]):
                     gr.Markdown("📘 Chapters Overview")
                     with gr.Row(elem_classes=["plot-buttons"]):
                         regenerate_overview_btn = gr.Button("🔄", size="sm", visible=False)
-                chapters_output = gr.Textbox(label="", lines=15, elem_classes=["plot-textbox"],
-                                             elem_id="chapters-output", autoscroll=False)
+                chapters_output = gr.Markdown(elem_id="chapters-output", height=360)
 
         with gr.Row():
             with gr.Column(scale=1):
@@ -85,8 +83,7 @@ def create_interface(pipeline_fn, refine_fn):
                     gr.Markdown("📚 Current Chapter")
                     with gr.Row(elem_classes=["plot-buttons"]):
                         regenerate_chapter_btn = gr.Button("🔄", size="sm", visible=False)
-                current_chapter_output = gr.Textbox(label="", lines=20, elem_classes=["plot-textbox"],
-                                                    elem_id="current-chapter-output", autoscroll=False)
+                current_chapter_output = gr.Markdown(elem_id="current-chapter-output", height=360)
 
         status_output = gr.Textbox(label="🧠 Process Log", lines=15)
         validation_feedback = gr.Textbox(label="🧩 Validation Feedback", lines=8)
@@ -110,12 +107,12 @@ def create_interface(pipeline_fn, refine_fn):
             checkpoint = get_checkpoint()
             if not checkpoint:
                 return (
-                    gr.update(interactive=True, visible=False),  # Stop
-                    gr.update(visible=False),                    # Resume
-                    gr.update(visible=True),                     # Generate
-                    gr.update(visible=False),                    # 🔄 Expanded
-                    gr.update(visible=False),                    # 🔄 Overview
-                    gr.update(visible=False),                    # 🔄 Chapter
+                    gr.update(interactive=True, visible=False),
+                    gr.update(visible=False),
+                    gr.update(visible=True),
+                    gr.update(visible=False),
+                    gr.update(visible=False),
+                    gr.update(visible=False),
                 )
 
             expanded_visible = bool(checkpoint.get("expanded_plot"))
@@ -310,16 +307,13 @@ def create_interface(pipeline_fn, refine_fn):
                 idx = int(selected_name.split(" ")[1])
             except Exception:
                 idx = None
-
             clear_stop()
-
             if idx == 1:
                 current_text_update = ""
                 dropdown_update = gr.update(value=None)
             else:
                 current_text_update = checkpoint.get("chapters_full", [])[0] if checkpoint.get("chapters_full") else ""
                 dropdown_update = gr.update(value="Chapter 1")
-
             yield (
                 gr.update(value=checkpoint.get("expanded_plot", "")),
                 gr.update(value=checkpoint.get("chapters_overview", "")),
@@ -330,7 +324,6 @@ def create_interface(pipeline_fn, refine_fn):
                 ts_prefix(f"🔁 Refresh from chapter {idx} initiated."),
                 checkpoint.get("validation_text", ""),
             )
-
             yield from pipeline_fn(
                 checkpoint["plot"],
                 checkpoint["num_chapters"],
