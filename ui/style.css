@@ -56,36 +56,14 @@
     opacity: 1;
 }
 
-.plot-textbox textarea {
-    border: none !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    resize: vertical !important;
-}
-
 .plot-wrapper,
 .gr-column {
     align-self: flex-start !important;
 }
 
-.plot-wrapper > div:has(textarea),
-.plot-wrapper > div:has(select),
-.plot-wrapper > div:has(.wrap) {
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-}
-
 .plot-wrapper .plot-textbox,
 .plot-wrapper .gr-textbox {
     margin-top: 0 !important;
-}
-
-#expanded-output textarea,
-#chapters-output textarea {
-    height: 360px !important;
-    min-height: 360px !important;
-    max-height: 360px !important;
-    overflow: auto !important;
 }
 
 :root {
