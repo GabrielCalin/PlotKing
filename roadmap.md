@@ -4,17 +4,11 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ---
 
-## ✅ Phase 1 — Core Validation & Quality of Life
-
-4. **Pipeline Control & Execution Flow**   
-   - Add a **“Regenerate from here”** option at each major step, enabling users to rerun a specific stage without restarting the entire process.
-
----
-
 ## 🧭 Phase 2 — User Experience & Creativity Tools
 
 5. **Prompt Optimization**  
    - Refine prompts for each stage (plot expansion, chapter generation, validation) to improve quality and narrative coherence.
+   - Generate metadata such as book title, characters, places when expanding plot and chapter names with chapters overview.
 
 6. **Saving Project State**  
    - Enable saving and resuming work sessions.  
@@ -24,6 +18,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 7. **Manual Chapter Editing**  
    - Allow users to edit any generated chapter directly within the interface.
    - Trigger regenerations if plot changes. 
+   - Consider a dedicated tab and / or a new UI technology (switch from Gradio).
 
 8. **AI Editing on Selected Text**  
     - Enable users to **select a portion of text** and apply quick AI edits (rewrite, expand, simplify, etc.).
@@ -113,8 +108,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 | Feature | Status |
 |----------|--------|
-| **Pipeline Control & Execution Flow** | ⏳ In Progress |
-| **Prompt Optimization** | ⏳ Planned |
+| **Prompt Optimization** | ⏳ In Progress |
 | **Saving Project State** | ⏳ Planned |
 | **Manual Chapter Editing** | ⏳ Planned |
 | **AI Editing on Selected Text** | ⏳ Planned |

@@ -252,7 +252,28 @@ def create_interface(pipeline_fn, refine_fn):
                 idx = int(selected_name.split(" ")[1])
             except Exception:
                 idx = None
+
             clear_stop()
+
+            if idx == 1:
+                current_text_update = ""
+                dropdown_update = gr.update(value=None)
+            else:
+                current_text_update = checkpoint.get("chapters_full", [])[0] if checkpoint.get("chapters_full") else ""
+                dropdown_update = gr.update(value="Chapter 1")
+
+            yield (
+                gr.update(value=checkpoint.get("expanded_plot", "")),
+                gr.update(value=checkpoint.get("chapters_overview", "")),
+                checkpoint.get("chapters_full", []),
+                current_text_update,
+                dropdown_update,
+                f"Refreshing from chapter {idx}...",
+                ts_prefix(f"🔁 Refresh from chapter {idx} initiated."),
+                checkpoint.get("validation_text", ""),
+            )
+
+            # apoi rulăm pipeline-ul propriu-zis
             yield from pipeline_fn(
                 checkpoint["plot"],
                 checkpoint["num_chapters"],
