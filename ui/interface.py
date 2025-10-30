@@ -268,12 +268,16 @@ def create_interface(pipeline_fn, refine_fn):
                 gr.update(visible=True, interactive=True, value="🛑 Stop"),
                 gr.update(visible=False),
                 gr.update(visible=False),
+                gr.update(visible=False),
+                gr.update(visible=False),
+                gr.update(visible=False),
             )
 
         regenerate_expanded_btn.click(
             fn=show_stop_only,
             inputs=[],
-            outputs=[stop_btn, resume_btn, generate_btn]
+            outputs=[stop_btn, resume_btn, generate_btn,
+                    regenerate_expanded_btn, regenerate_overview_btn, regenerate_chapter_btn]
         ).then(
             fn=refresh_expanded,
             inputs=[],
@@ -292,7 +296,9 @@ def create_interface(pipeline_fn, refine_fn):
         regenerate_overview_btn.click(
             fn=show_stop_only,
             inputs=[],
-            outputs=[stop_btn, resume_btn, generate_btn]
+            outputs=[stop_btn, resume_btn, generate_btn,
+                    regenerate_expanded_btn, regenerate_overview_btn, regenerate_chapter_btn]
+
         ).then(
             fn=refresh_overview,
             inputs=[],
@@ -311,7 +317,9 @@ def create_interface(pipeline_fn, refine_fn):
         regenerate_chapter_btn.click(
             fn=show_stop_only,
             inputs=[],
-            outputs=[stop_btn, resume_btn, generate_btn]
+            outputs=[stop_btn, resume_btn, generate_btn,
+                    regenerate_expanded_btn, regenerate_overview_btn, regenerate_chapter_btn]
+
         ).then(
             fn=refresh_chapter,
             inputs=[chapter_selector],

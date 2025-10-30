@@ -46,6 +46,9 @@ def maybe_pause_pipeline(step_label: str, state: PipelineState):
 
 
 def apply_refresh_point(state: PipelineState, refresh_from):
+    state.pending_validation_index = None
+    state.next_chapter_index = None
+
     if refresh_from == "expanded":
         state.expanded_plot = None
         state.chapters_overview = None
