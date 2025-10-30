@@ -74,6 +74,7 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
 
     if checkpoint:
         state = PipelineState.from_checkpoint(checkpoint)
+        state.run_mode = run_mode
         if refresh_from:
             state.status_log.append(ts_prefix("🔁 Regeneration requested..."))
             state = apply_refresh_point(state, refresh_from)

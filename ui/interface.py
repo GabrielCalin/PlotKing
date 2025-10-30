@@ -101,6 +101,9 @@ def create_interface(pipeline_fn, refine_fn):
                 gr.update(visible=True, interactive=True, value="🛑 Stop"),
                 gr.update(visible=False),
                 gr.update(visible=False),
+                gr.update(visible=False),
+                gr.update(visible=False),
+                gr.update(visible=False),
             )
 
         def post_pipeline_controls():
@@ -125,28 +128,49 @@ def create_interface(pipeline_fn, refine_fn):
                 total_chapters = chapters_count
 
             has_resume_markers = bool(checkpoint.get("pending_validation_index")) or bool(checkpoint.get("next_chapter_index"))
-            is_complete = expanded_visible and overview_visible and (chapters_count >= max(1, total_chapters)) and not has_resume_markers
+
+            is_full_complete = expanded_visible and overview_visible and (chapters_count >= max(1, total_chapters)) and not has_resume_markers
+            stopped_at_overview = expanded_visible and overview_visible and (chapters_count == 0) and not has_resume_markers
 
             chapters_visible = chapters_count > 0
 
-            if is_complete:
+            if is_full_complete:
                 return (
-                    gr.update(interactive=True, visible=False),  # Stop
-                    gr.update(visible=False),                    # Resume HIDDEN la final
-                    gr.update(visible=True),                     # Generate
-                    gr.update(visible=expanded_visible),         # 🔄 Expanded
-                    gr.update(visible=overview_visible),         # 🔄 Overview
-                    gr.update(visible=chapters_visible),         # 🔄 Chapter
-                )
-            else:
-                return (
-                    gr.update(interactive=True, visible=False),  # Stop
-                    gr.update(visible=True),                     # Resume VISIBLE doar dacă nu e complet
-                    gr.update(visible=True),                     # Generate
+                    gr.update(interactive=True, visible=False),
+                    gr.update(visible=False),
+                    gr.update(visible=True),
                     gr.update(visible=expanded_visible),
                     gr.update(visible=overview_visible),
                     gr.update(visible=chapters_visible),
                 )
+            elif stopped_at_overview:
+                return (
+                    gr.update(interactive=True, visible=False),
+                    gr.update(visible=True),
+                    gr.update(visible=True),
+                    gr.update(visible=expanded_visible),
+                    gr.update(visible=overview_visible),
+                    gr.update(visible=False),
+                )
+            else:
+                return (
+                    gr.update(interactive=True, visible=False),
+                    gr.update(visible=True),
+                    gr.update(visible=True),
+                    gr.update(visible=expanded_visible),
+                    gr.update(visible=overview_visible),
+                    gr.update(visible=chapters_visible),
+                )
+
+        def show_stop_only():
+            return (
+                gr.update(visible=True, interactive=True, value="🛑 Stop"),
+                gr.update(visible=False),
+                gr.update(visible=False),
+                gr.update(visible=False),
+                gr.update(visible=False),
+                gr.update(visible=False),
+            )
 
         generate_btn.click(
             fn=choose_plot_for_pipeline,
@@ -155,7 +179,8 @@ def create_interface(pipeline_fn, refine_fn):
         ).then(
             fn=pre_run_reset_and_controls,
             inputs=[],
-            outputs=[stop_btn, resume_btn, generate_btn]
+            outputs=[stop_btn, resume_btn, generate_btn,
+                     regenerate_expanded_btn, regenerate_overview_btn, regenerate_chapter_btn]
         ).then(
             fn=pipeline_fn,
             inputs=[plot_state, chapters_input, genre_input, anpc_input, run_mode],
@@ -187,6 +212,9 @@ def create_interface(pipeline_fn, refine_fn):
                 gr.update(visible=True, interactive=True, value="🛑 Stop"),
                 gr.update(visible=False),
                 gr.update(visible=False),
+                gr.update(visible=False),
+                gr.update(visible=False),
+                gr.update(visible=False),
             )
 
         def resume_pipeline():
@@ -199,14 +227,24 @@ def create_interface(pipeline_fn, refine_fn):
             genre = checkpoint.get("genre", "")
             anpc = checkpoint.get("anpc", 0)
             rm = checkpoint.get("run_mode", RUN_MODE_CHOICES["FULL"])
+
+            expanded_visible = bool(checkpoint.get("expanded_plot"))
+            overview_visible = bool(checkpoint.get("chapters_overview"))
+            chapters_count = len(checkpoint.get("chapters_full", []))
+            has_resume_markers = bool(checkpoint.get("pending_validation_index")) or bool(checkpoint.get("next_chapter_index"))
+            stopped_at_overview = expanded_visible and overview_visible and (chapters_count == 0) and not has_resume_markers and (rm == RUN_MODE_CHOICES.get("OVERVIEW"))
+
+            resume_run_mode = RUN_MODE_CHOICES["FULL"] if stopped_at_overview else rm
+
             clear_stop()
             clear_checkpoint()
-            yield from pipeline_fn(plot, num_chapters, genre, anpc, rm, checkpoint=checkpoint)
+            yield from pipeline_fn(plot, num_chapters, genre, anpc, resume_run_mode, checkpoint=checkpoint)
 
         resume_btn.click(
             fn=show_controls_on_resume_run,
             inputs=[],
-            outputs=[stop_btn, resume_btn, generate_btn]
+            outputs=[stop_btn, resume_btn, generate_btn,
+                     regenerate_expanded_btn, regenerate_overview_btn, regenerate_chapter_btn]
         ).then(
             fn=resume_pipeline,
             inputs=[],
@@ -228,7 +266,6 @@ def create_interface(pipeline_fn, refine_fn):
             outputs=[current_chapter_output]
         )
 
-        # --- Refresh actions ---
         def refresh_expanded():
             checkpoint = get_checkpoint()
             if not checkpoint:
@@ -294,7 +331,6 @@ def create_interface(pipeline_fn, refine_fn):
                 checkpoint.get("validation_text", ""),
             )
 
-            # apoi rulăm pipeline-ul propriu-zis
             yield from pipeline_fn(
                 checkpoint["plot"],
                 checkpoint["num_chapters"],
@@ -305,21 +341,11 @@ def create_interface(pipeline_fn, refine_fn):
                 refresh_from=idx
             )
 
-        def show_stop_only():
-            return (
-                gr.update(visible=True, interactive=True, value="🛑 Stop"),
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=False),
-            )
-
         regenerate_expanded_btn.click(
             fn=show_stop_only,
             inputs=[],
             outputs=[stop_btn, resume_btn, generate_btn,
-                    regenerate_expanded_btn, regenerate_overview_btn, regenerate_chapter_btn]
+                     regenerate_expanded_btn, regenerate_overview_btn, regenerate_chapter_btn]
         ).then(
             fn=refresh_expanded,
             inputs=[],
@@ -339,8 +365,7 @@ def create_interface(pipeline_fn, refine_fn):
             fn=show_stop_only,
             inputs=[],
             outputs=[stop_btn, resume_btn, generate_btn,
-                    regenerate_expanded_btn, regenerate_overview_btn, regenerate_chapter_btn]
-
+                     regenerate_expanded_btn, regenerate_overview_btn, regenerate_chapter_btn]
         ).then(
             fn=refresh_overview,
             inputs=[],
@@ -360,8 +385,7 @@ def create_interface(pipeline_fn, refine_fn):
             fn=show_stop_only,
             inputs=[],
             outputs=[stop_btn, resume_btn, generate_btn,
-                    regenerate_expanded_btn, regenerate_overview_btn, regenerate_chapter_btn]
-
+                     regenerate_expanded_btn, regenerate_overview_btn, regenerate_chapter_btn]
         ).then(
             fn=refresh_chapter,
             inputs=[chapter_selector],
@@ -377,7 +401,6 @@ def create_interface(pipeline_fn, refine_fn):
                      regenerate_expanded_btn, regenerate_overview_btn, regenerate_chapter_btn]
         )
 
-        # --- Plot refinement controls ---
         def show_original(plot, refined):
             return gr.update(value=plot, label="Original", interactive=True,
                              placeholder="Ex: A young girl discovers a portal to another world..."), \
