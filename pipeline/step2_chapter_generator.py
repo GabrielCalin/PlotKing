@@ -27,31 +27,56 @@ def generate_chapters(initial_requirements: str,
         feedback_section = f"\n\nAdditional reviewer feedback to consider when generating:\n\"\"\"{feedback}\"\"\"\n"
 
     PROMPT_TEMPLATE = textwrap.dedent(f"""
-    You are a professional book structure designer.
+    You are a professional **book structure designer** and narrative planner.
 
     The user originally provided the following brief concept or requirements for the story:
     \"\"\"{initial_requirements}\"\"\"
 
-    This idea has been expanded into a detailed and authoritative story summary below.
-    Use the expanded summary as the **main reference** for your work, but also keep in mind
-    the intent and themes suggested in the initial requirements.
+    This concept has been expanded into a detailed and authoritative **story summary** below.  
+    Use the expanded summary as the **main reference** for your work, while preserving the tone, logic, and themes of the initial requirements.
 
-    Your task:
-    - Create exactly {num_chapters} chapter titles and medium-length descriptions.
-    - Each description should summarize what happens in that chapter, focusing on key events or turning points.
-    - Keep the tone neutral and factual (not artistic or emotional).
-    - Adapt chapter structure, pacing, and tone to match the GENRE described below.
-    - Output as a numbered list in the following format:
+    ---
 
-    Chapter 1: <Title>
-    Description: <10–15 sentences>
+    ### Your task
+    Create exactly **{num_chapters} chapters**, each with:
+    - A **catchy, final chapter title** that could be used in a published book (brief, memorable, evocative).
+    - A **medium-length factual description** (10–15 sentences) summarizing the key events, actions, and transitions of that chapter.
 
-    EXPANDED STORY SUMMARY:
+    ---
+
+    ### Narrative & structural guidelines
+    - **Use Markdown formatting** for clarity and readability.
+    - Format each chapter as:
+
+    #### Chapter 1: *<Title>*
+    **Description:** <neutral summary of 10–15 sentences>
+
+    - The overall flow of chapters should reflect a **realistic novel structure**:
+    1. Only the **first few chapters** (roughly 10–20% of total) should focus on **Setup / Initial Situation** and **Inciting Conflict**.  
+    2. The **majority of chapters** (roughly 60–70%) should center on **Developments / Escalation**, where the tension rises, new events unfold, and stakes increase.  
+    3. The final chapters should include the **Climax / Turning Point** and **Resolution / Outcome**, providing a satisfying conclusion consistent with the story arc.
+
+    - Every significant event, character, or development mentioned in the **Expanded Story Summary** must appear in your chapter plan.  
+    - If the number of chapters requested ({num_chapters}) requires more material than is present in the expanded plot, you are encouraged to **creatively elaborate or add bridging content** — as long as it aligns with the story’s tone, logic, and genre.
+    - Keep tone **neutral, factual, and descriptive**, as this outline will be used later for full novelization.
+
+    ---
+
+    ### Reference materials
+
+    **Expanded Story Summary:**
     \"\"\"{expanded_plot}\"\"\"
 
-    GENRE:
+    **Genre:**
     \"\"\"{genre}\"\"\"
+
     {feedback_section}
+
+    ---
+
+    ### Output format
+    Return only the **Markdown-formatted list of chapters**, in the exact format shown above.  
+    No meta explanations, commentary, or text outside the chapter list.
     """)
 
     payload = {
