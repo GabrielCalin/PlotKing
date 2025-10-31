@@ -15,14 +15,21 @@ PROMPT_TEMPLATE = textwrap.dedent("""
 You are a story structure analyst.
 Your task is to verify if a list of proposed chapters is coherent and consistent with the story described below.
 
-Be moderately critical: ignore minor inconsistencies in style or small overlaps, but identify clear contradictions or missing logic.
+Be moderately critical: ignore minor inconsistencies in style or small overlaps, but identify clear contradictions, missing logic, or structural imbalance.
 
 Instructions:
 1. Compare both the "Initial Story Requirements" and the "Expanded Plot Summary" with the proposed chapters.
 2. Prioritize consistency with the Expanded Plot, but also ensure that the Initial Requirements are not contradicted.
 3. Consider the GENRE described below when judging tone, pacing, and structure.
-4. If the chapters align well with the story, answer exactly: "OK".
-5. If there are issues, answer:
+4. Additionally, verify that:
+   - The chapter distribution follows a balanced story structure (Setup and Inciting events early, most chapters in Developments/Escalation, followed by a clear Climax and Resolution).
+   - All major events and turning points from the Expanded Plot Summary are represented — none should be omitted or contradicted.
+   - The chapters follow a logical cause–effect progression with consistent timeline and smooth transitions.
+   - The main characters’ roles, motivations, and relationships remain consistent with their portrayal in the Expanded Plot Summary.
+   - The tone and pacing fit the specified GENRE, and each chapter adds meaningful narrative value without redundancy or filler.
+5. Do **not** suggest changing the **number of chapters** — only evaluate and comment on their internal coherence, logic, and alignment.
+6. If the chapters align well with the story, answer exactly: "OK".
+7. If there are issues, answer:
    "NOT OK"
    and provide a concise list of high-level corrections or suggestions (max 5 sentences) focused ONLY on improving the chapters (not rewriting the plot).
 
