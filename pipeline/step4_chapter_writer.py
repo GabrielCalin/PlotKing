@@ -36,13 +36,10 @@ Write **only** Chapter {chapter_number} of the story, using the following materi
 Inputs:
 - **Global Story Summary (authoritative plot):**
 \"\"\"{expanded_plot}\"\"\"
-
 - **Chapters Overview (titles + short descriptions of all chapters):**
 \"\"\"{chapters_overview}\"\"\"
-
 - **Previously Written Chapters (if any, may be empty):**
 \"\"\"{previous_chapters_summary}\"\"\"
-
 - **GENRE** (to guide tone, pacing, and atmosphere):
 \"\"\"{genre}\"\"\"
 
@@ -70,12 +67,12 @@ Inputs:
    - If it is **not the final chapter**, close with a natural sense of transition or anticipation — a pause that leads smoothly into the next chapter.  
    - If it **is the final chapter**, conclude the story in a way that aligns with the **Chapters Overview** and **Global Story Summary**, providing resolution without adding new material beyond the planned ending.  
    - Do **not** comment on the chapter itself or describe that it “ends”; simply write the story up to its natural stopping point.
-9. Target length: around **{word_target} words**.
+9. Target length: around **{word_target} words**.  
+   - To reach this length, expand creatively within the scope of this chapter’s description. Add realistic detail, dialogue, atmosphere, and depth that make sense for the story and characters.  
+   - **Do not include or borrow content from later chapters** to increase word count. All expansion must remain consistent with this chapter’s overview and the global plot.
 10. Output **only** the final story text — no explanations, meta commentary, or outline notes.
 
 {feedback_section}
-
----
 
 Begin writing **Chapter {chapter_number}** now.
 """).strip()
