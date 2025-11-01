@@ -22,32 +22,33 @@ VALIDATION_PROMPT = textwrap.dedent("""
 You are a balanced and analytical literary editor.
 
 Task:
-Evaluate whether the **current chapter (Chapter {chapter_number})** aligns with its own description inside the **Chapters Overview**, and whether it remains logically consistent with the story so far.
+Evaluate whether the **current chapter (Chapter {chapter_number})** aligns with its own description inside the **Chapters Overview**, and whether it remains logically consistent with the story so far and the overall plot structure.
 
 Inputs:
 - Global Plot Summary (overall context of the story):
 \"\"\"{expanded_plot}\"\"\"
-
 - Chapters Overview (contains all chapter titles and descriptions, including the target one):
 \"\"\"{chapters_overview}\"\"\"
-
 - Previous Chapters (if any, may be empty):
 \"\"\"{previous_chapters_summary}\"\"\"
-
 - Current Chapter (to validate):
 \"\"\"{current_chapter}\"\"\"
-
 - GENRE (to guide tone, pacing, and atmosphere):
 \"\"\"{genre}\"\"\"
 
 Your job:
 1. In the "Chapters Overview", **find the description that corresponds to Chapter {chapter_number}**.
 2. Evaluate if the current chapter **matches that description** in tone, events, structure, and purpose.
-3. Check for **logical continuity** with earlier chapters (characters, motivations, timeline).  
-   - If no previous chapters exist, skip this check.
-4. Consider the GENRE when judging consistency of tone, pacing, and atmosphere.
-5. Be fair: small stylistic or pacing differences are acceptable.
-6. Respond in one of the following strict formats:
+3. Check for **logical continuity**:
+   - It must align with previous chapters (characters, motivations, timeline, world state).  
+   - The chapter must also act as a **logical continuation** of the events and emotional trajectory established so far, flowing naturally from what precedes it.  
+   - It must also **not include or resolve events that belong to future chapters**, based on their descriptions in the overview.  
+   - Ensure there are no unjustified time jumps or contradictions in the sequence of events.
+4. Confirm that all **key elements from the chapter’s description** are present — no important actions, revelations, or interactions should be missing.
+5. Verify that the chapter **advances the story** rather than repeating or stalling the plot.
+6. Consider the **GENRE** when judging consistency of tone, pacing, and atmosphere; writing style should match the genre’s expected rhythm and mood.
+7. Be fair: small stylistic or pacing differences are acceptable.
+8. Respond in one of the following strict formats:
 
 If everything fits reasonably well:
 
@@ -58,7 +59,7 @@ Otherwise:
 
 RESULT: NOT OK  
 SUGGESTIONS:  
-- bullet-point list of what to fix or adjust to better align with the overview, prior context, and genre.
+- bullet-point list of what to fix or adjust to better align with the overview, prior/future context, and genre.
 
 Keep the response concise and formatted exactly like shown above.
 """).strip()
