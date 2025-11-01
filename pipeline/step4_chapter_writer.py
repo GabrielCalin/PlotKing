@@ -28,38 +28,57 @@ GEN_PARAMS = {
 }
 
 CHAPTER_PROMPT_TEMPLATE = textwrap.dedent("""
-You are an expert long-form fiction writer.
+You are an expert **long-form fiction writer**.
 
 Task:
-Write **only** Chapter {chapter_number} of the story, using the following materials.
+Write **only** Chapter {chapter_number} of the story, using the following materials and strict continuity rules.
 
 Inputs:
-- Global Story Summary (the authoritative plot):
+- **Global Story Summary (authoritative plot):**
 \"\"\"{expanded_plot}\"\"\"
 
-- Chapters Overview (titles + short descriptions of all chapters):
+- **Chapters Overview (titles + short descriptions of all chapters):**
 \"\"\"{chapters_overview}\"\"\"
 
-- Previously Written Chapters (if any, may be empty):
+- **Previously Written Chapters (if any, may be empty):**
 \"\"\"{previous_chapters_summary}\"\"\"
 
-- GENRE (to guide tone, pacing, and atmosphere):
+- **GENRE** (to guide tone, pacing, and atmosphere):
 \"\"\"{genre}\"\"\"
 
-Your job:
-1. Locate in the chapters overview the description that corresponds to **Chapter {chapter_number}**.
-2. Write the **complete text** for that chapter, following its description exactly in tone, purpose, and key events.
-3. Ensure logical continuity with previous chapters (characters, timeline, motivations).  
-   - If there are no previous chapters, start naturally from the story’s beginning.
-4. Maintain a clear and structured prose style, but allow natural dialogue and expressive language where it enhances the scene.
-5. Adapt style, pacing, and atmosphere to fit the GENRE described above.
-6. Target length: around {word_target} words.
-7. End with a natural chapter conclusion (not mid-scene or mid-sentence).
-8. Do not include chapter headers, outlines, or meta commentary — only the story text itself.
+---
+
+### Your job
+1. Locate in the Chapters Overview the exact description that corresponds to **Chapter {chapter_number}**.  
+   - Use its **title exactly as written** at the start of the chapter, formatted as a **Markdown H2 heading** (`##`).
+   - Do **not** invent or alter the title in any way.
+
+2. Write the **complete narrative text** for that chapter, following its description precisely in:
+   - tone, atmosphere, and pacing,
+   - key events and intended emotional beats.
+
+3. Ensure **logical continuity**:
+   - Maintain consistency with **previous chapters** (characters, setting, timeline, motivations, tone).
+   - Anticipate and align smoothly with what will happen in the **next chapter**, ensuring seamless transition.
+   - Do **not** include or foreshadow events that explicitly belong to future chapters.
+
+4. Maintain a clear, engaging, and immersive prose style appropriate for long-form fiction.
+   - Natural dialogue, expressive narration, and sensory details are encouraged.
+   - You may use **Markdown elements** (e.g., `---` for scene breaks, italics, or bold) if they enhance structure or readability.
+
+5. Adapt writing style, pacing, and atmosphere to the specified **GENRE**.
+
+6. Target length: around **{word_target} words**.
+
+7. End the chapter with a **natural and complete conclusion**, not mid-scene or mid-sentence.
+
+8. Output **only** the final story text — no explanations, meta commentary, or outline notes.
 
 {feedback_section}
 
-Begin writing Chapter {chapter_number} now.
+---
+
+Begin writing **Chapter {chapter_number}** now.
 """).strip()
 
 
