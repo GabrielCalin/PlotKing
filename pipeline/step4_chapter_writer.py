@@ -49,30 +49,29 @@ Inputs:
 ---
 
 ### Your job
-1. Locate in the Chapters Overview the exact description that corresponds to **Chapter {chapter_number}**.  
-   - Use its **title exactly as written** at the start of the chapter, formatted as a **Markdown H2 heading** (`##`).
+1. Before writing, mentally review the Global Story Summary and Chapters Overview to fully understand the story’s logic and timeline.
+2. Locate in the Chapters Overview the exact description that corresponds to **Chapter {chapter_number}**.  
+   - Use its **title exactly as written** at the start of the chapter, formatted as a **Markdown H2 heading** (`##`).  
    - Do **not** invent or alter the title in any way.
-
-2. Write the **complete narrative text** for that chapter, following its description precisely in:
-   - tone, atmosphere, and pacing,
-   - key events and intended emotional beats.
-
-3. Ensure **logical continuity**:
-   - Maintain consistency with **previous chapters** (characters, setting, timeline, motivations, tone).
-   - Anticipate and align smoothly with what will happen in the **next chapter**, ensuring seamless transition.
-   - Do **not** include or foreshadow events that explicitly belong to future chapters.
-
-4. Maintain a clear, engaging, and immersive prose style appropriate for long-form fiction.
-   - Natural dialogue, expressive narration, and sensory details are encouraged.
-   - You may use **Markdown elements** (e.g., `---` for scene breaks, italics, or bold) if they enhance structure or readability.
-
-5. Adapt writing style, pacing, and atmosphere to the specified **GENRE**.
-
-6. Target length: around **{word_target} words**.
-
-7. End the chapter with a **natural and complete conclusion**, not mid-scene or mid-sentence.
-
-8. Output **only** the final story text — no explanations, meta commentary, or outline notes.
+3. Write the **complete narrative text** for that chapter, following its description precisely in tone, purpose, and key events.  
+   - Maintain smooth internal flow between moments without subdividing the text into numbered or titled scenes.
+4. Ensure **logical continuity**.  
+   - Maintain consistency with **previous chapters** (characters, setting, timeline, motivations, tone).  
+   - Anticipate what will happen in the **next chapter**, ensuring seamless transition.  
+   - Do **not** include or foreshadow events that explicitly belong to future chapters.  
+   - Do not include flashbacks, summaries of previous events, or visions of future ones unless explicitly stated in this chapter’s overview.
+5. Preserve internal continuity of all details (locations, time of day, physical states, objects, tone) introduced so far.  
+   - Balance action, dialogue, and narration so that external events drive the story forward.
+6. Maintain a clear, engaging, and immersive prose style appropriate for long-form fiction.  
+   - Natural dialogue, expressive narration, and sensory details are encouraged.  
+   - You may use **Markdown elements** (e.g., `---` for scene breaks, *italics*, or **bold**) if they enhance structure or readability, but do not label or number scenes.
+7. Adapt writing style, pacing, and atmosphere to match the **GENRE** conventions (e.g., suspense rhythm for thrillers, sensory prose for romance, measured clarity for sci-fi).
+8. End the chapter appropriately for its position in the book.  
+   - If it is **not the final chapter**, close with a natural sense of transition or anticipation — a pause that leads smoothly into the next chapter.  
+   - If it **is the final chapter**, conclude the story in a way that aligns with the **Chapters Overview** and **Global Story Summary**, providing resolution without adding new material beyond the planned ending.  
+   - Do **not** comment on the chapter itself or describe that it “ends”; simply write the story up to its natural stopping point.
+9. Target length: around **{word_target} words**.
+10. Output **only** the final story text — no explanations, meta commentary, or outline notes.
 
 {feedback_section}
 
