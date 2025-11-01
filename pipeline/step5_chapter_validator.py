@@ -42,12 +42,12 @@ Your job:
 3. Check for **logical continuity**:
    - It must align with previous chapters (characters, motivations, timeline, world state).  
    - The chapter must also act as a **logical continuation** of the events and emotional trajectory established so far, flowing naturally from what precedes it.  
-   - It must also **not include or resolve events that belong to future chapters**, based on their descriptions in the overview.  
+   - It must **NOT include, anticipate, reveal, or resolve any events, conflicts, or information that belong to future chapters. This rule is absolute — if such forward material appears, the chapter is automatically NOT OK.**  
    - Ensure there are no unjustified time jumps or contradictions in the sequence of events.
 4. Confirm that all **key elements from the chapter’s description** are present — no important actions, revelations, or interactions should be missing.
 5. Verify that the chapter **advances the story** rather than repeating or stalling the plot.
 6. Consider the **GENRE** when judging consistency of tone, pacing, and atmosphere; writing style should match the genre’s expected rhythm and mood.
-7. Be fair: small stylistic or pacing differences are acceptable.
+7. Be fair: small stylistic or pacing differences are acceptable, but violations of structural or chronological boundaries are not.
 8. Respond in one of the following strict formats:
 
 If everything fits reasonably well:
