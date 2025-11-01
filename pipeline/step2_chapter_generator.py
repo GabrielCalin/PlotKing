@@ -38,10 +38,11 @@ def generate_chapters(initial_requirements: str,
         \"\"\"{feedback}\"\"\"
 
         **Revise and improve** the existing chapter overview by applying the feedback with minimal necessary changes.
-        - Preserve the **number of chapters**, **overall structure**, and **tone** unless feedback explicitly asks otherwise.
+        - The **exact number of chapters ({num_chapters}) must remain unchanged** — do not change the nunber of chapters under any circumstance.
+        - Preserve the **overall structure**, **progression**, and **tone** of the story.
         - Adjust only what is needed to fix logic, flow, clarity, or consistency issues.
         - Keep chapter titles unless the feedback calls for renaming.
-        - Return the improved version in the **exact same Markdown format** as the original.
+        - Output the result in the *exact same Markdown format* as the original instructions require.
 
         ---
 

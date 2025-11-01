@@ -8,7 +8,7 @@ def expand_plot(user_plot: str, genre: str, model="mistral", api_url="http://loc
     You are an expert story planner and narrative designer.
 
     Task:
-    Expand and detail the following short plot idea provided by the USER into a **structured Markdown story blueprint** of about two pages (approximately 700–1000 words).
+    Expand and detail the following short plot idea provided by the USER into a **structured Markdown story blueprint** of about two pages (approximately 1500–2000 words).
     The result must describe **what happens in the story — scene by scene —** in a clear, factual, and objective tone, as if outlining the events and motivations for later novelization.
     Avoid artistic phrasing, dialogue, metaphors, or emotional embellishment. Write as a neutral narrator describing the logical progression of events.
 
@@ -43,7 +43,7 @@ def expand_plot(user_plot: str, genre: str, model="mistral", api_url="http://loc
     Additional Guidelines:
     - Maintain the user's main concept, tone, and characters as much as possible.
     - Adapt structure, pacing, and tone to the specified **GENRE**.
-    - The total text should be **700–1000 words**, or proportional to the input length if the user’s text already exceeds this range.
+    - The total text should be **1500–2000 words**, or proportional to the input length if the user’s text already exceeds this range.
     - Always ensure the output is at least as detailed as the input.
 
     USER PLOT:
