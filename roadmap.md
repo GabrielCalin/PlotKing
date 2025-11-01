@@ -7,8 +7,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 ## 🧭 Phase 2 — User Experience & Creativity Tools
 
 5. **Prompt Optimization**  
-   - Refine prompts for each stage (plot expansion, chapter generation, validation) to improve quality and narrative coherence.
-   - Generate metadata such as book title, characters, places when expanding plot and chapter names with chapters overview.
+   - Provide failed generated content along with feedback and instructions to base on it but make changes according to feedback.
 
 6. **Saving Project State**  
    - Enable saving and resuming work sessions.  

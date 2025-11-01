@@ -133,8 +133,8 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
             elif result == "NOT OK":
                 state.status_log.append(ts_prefix("⚠️ Overview validation issues found."))
                 state.validation_text = vtext_add(f"⚠️ Chapters Overview Validation Feedback (attempt {validation_round}):\n{feedback}", state.validation_text)
-                state.chapters_overview = generate_chapters(state.plot, state.expanded_plot, state.num_chapters, state.genre, feedback)
-                state.status_log.append(ts_prefix("🔄 Regenerated overview with feedback."))
+                state.chapters_overview = generate_chapters(state.plot, state.expanded_plot, state.num_chapters, state.genre, feedback=feedback,previous_output=state.chapters_overview)
+                state.status_log.append(ts_prefix("🔄 Revised overview with feedback."))
             else:
                 state.status_log.append(ts_prefix(f"❌ Overview validation error: {feedback}"))
                 state.validation_text = vtext_add(f"❌ Validation Error:\n{feedback}", state.validation_text)
