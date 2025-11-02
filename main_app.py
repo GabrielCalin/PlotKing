@@ -288,7 +288,8 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
                     state.chapters_full[:-1],
                     state.genre,
                     state.anpc,
-                    feedback=feedback
+                    feedback=feedback,
+                    previous_output=state.chapters_full[-1]
                 )
                 state.chapters_full[-1] = chapter_text
                 state.status_log.append(ts_prefix(f"✅ Chapter {current_index} regenerated successfully."))

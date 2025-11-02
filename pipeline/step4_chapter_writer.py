@@ -1,16 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-step4_chapter_writer.py
-
-Generates the full text for a specific chapter based on:
-- Expanded Plot
-- Chapters Overview
-- Previously written chapters (if any)
-- Current Chapter Number
-- Genre (influences style, tone, and pacing)
-
-The model will identify the correct chapter description from the overview
-based on the chapter number, and write that chapter only.
+step4_chapter_writer.py — revised for feedback-based revision
 """
 
 import os
@@ -27,6 +17,8 @@ GEN_PARAMS = {
     "max_tokens": 8000,
 }
 
+
+# --- Original chapter-writing prompt ---
 CHAPTER_PROMPT_TEMPLATE = textwrap.dedent("""
 You are an expert **long-form fiction writer**.
 
@@ -72,9 +64,71 @@ Inputs:
    - **Do not include or borrow content from later chapters** to increase word count. All expansion must remain consistent with this chapter’s overview and the global plot.
 10. Output **only** the final story text — no explanations, meta commentary, or outline notes.
 
-{feedback_section}
-
 Begin writing **Chapter {chapter_number}** now.
+""").strip()
+
+
+# --- New revision prompt (for feedback + previous_output) ---
+CHAPTER_REVISION_PROMPT_TEMPLATE = textwrap.dedent("""
+You are an expert **fiction editor and ghostwriter** specializing in long-form narrative revision.
+
+Task:
+You previously wrote **Chapter {chapter_number}** of the story.  
+You must now **revise and improve** it according to reviewer feedback — maintaining the chapter’s title and role in the story,
+but you may adjust its internal flow, tone, and events as needed to satisfy the feedback.
+
+---
+
+### Reference Materials
+
+- **Global Story Summary (authoritative plot):**
+\"\"\"{expanded_plot}\"\"\"
+
+- **Chapters Overview (titles + short descriptions of all chapters):**
+\"\"\"{chapters_overview}\"\"\"
+
+- **Previously Written Chapters (before this one):**
+\"\"\"{previous_chapters_summary}\"\"\"
+
+- **Current Draft of Chapter {chapter_number}:**
+\"\"\"{previous_output}\"\"\"
+
+- **Reviewer Feedback:**
+\"\"\"{feedback}\"\"\"
+
+- **GENRE (to guide tone, pacing, and atmosphere):**
+\"\"\"{genre}\"\"\"
+
+---
+
+### Revision Instructions
+
+1. **Locate** in the Chapters Overview the description corresponding to **Chapter {chapter_number}**, and study it carefully.  
+   - You must preserve the **chapter title exactly as written** (Markdown H2 format, `## <Title>`).  
+   - The events and tone of this chapter must remain consistent with its overview description and position in the overall story arc.
+
+2. **Revise the existing draft**, focusing on the feedback provided.  
+   - You may **modify or expand events, dialogue, or pacing** as long as they align with the chapter’s purpose in the overview.  
+   - Ensure all story logic, character motivations, and world details remain consistent with previous chapters.  
+   - Do **not** move, merge, or remove this chapter; its place in the story and title must remain fixed.
+
+3. Maintain full **continuity**:
+   - Respect everything that has already happened in previous chapters.  
+   - Do not include or foreshadow content that explicitly belongs to future chapters.  
+   - Do not contradict the global summary or previously established facts.
+
+4. Keep prose **immersive, cohesive, and natural**, as if this were the final, polished version.  
+   - Smooth transitions, expressive narration, realistic dialogue, and sensory details are encouraged.  
+   - You may restructure paragraphs or add short connective sentences if it helps the flow.
+
+5. **Length & format**:
+   - The revised chapter should be approximately the same length as before (±10% of {word_target} words).  
+   - Do **not** produce a summary or outline — write the full narrative text.  
+   - Output only the story content in Markdown format (no notes or explanations).
+
+---
+
+Begin revising **Chapter {chapter_number}** now.
 """).strip()
 
 
@@ -95,40 +149,55 @@ def generate_chapter_text(expanded_plot: str,
                           anpc: int = None,
                           local_api_url=None,
                           model_name=None,
-                          feedback=None):
+                          feedback=None,
+                          previous_output=None):
+    """
+    Generates or revises the full text for one chapter.
+    If `feedback` and `previous_output` are provided, performs a focused revision instead of rewriting.
+    """
     url = local_api_url or LOCAL_API_URL
     model = model_name or MODEL_NAME
 
     previous_joined = _join_previous_chapters(previous_chapters or [])
-    feedback_section = ""
-    if feedback:
-        feedback_section = f"\n\nAdditional reviewer feedback to address:\n\"\"\"{feedback}\"\"\"\n"
 
+    # determine target length
     if anpc and anpc > 0:
         base_words = anpc * 500
         word_target = int(random.uniform(base_words * 0.75, base_words * 1.25))
     else:
         word_target = random.randint(2500, 3500)
 
-    prompt = CHAPTER_PROMPT_TEMPLATE.format(
-        expanded_plot=expanded_plot,
-        chapters_overview=chapters_overview,
-        previous_chapters_summary=previous_joined,
-        genre=genre or "unspecified",
-        chapter_number=chapter_index,
-        word_target=word_target,
-        feedback_section=feedback_section
-    )
+    # choose the correct prompt
+    if feedback and previous_output:
+        prompt = CHAPTER_REVISION_PROMPT_TEMPLATE.format(
+            expanded_plot=expanded_plot,
+            chapters_overview=chapters_overview,
+            previous_chapters_summary=previous_joined,
+            previous_output=previous_output,
+            feedback=feedback,
+            genre=genre or "unspecified",
+            chapter_number=chapter_index,
+            word_target=word_target,
+        )
+    else:
+        prompt = CHAPTER_PROMPT_TEMPLATE.format(
+            expanded_plot=expanded_plot,
+            chapters_overview=chapters_overview,
+            previous_chapters_summary=previous_joined,
+            genre=genre or "unspecified",
+            chapter_number=chapter_index,
+            word_target=word_target,
+        )
 
     payload = {
         "model": model,
         "messages": [
-            {"role": "system", "content": "You are a professional fiction ghostwriter creating coherent novel chapters."},
+            {"role": "system", "content": "You are a professional fiction ghostwriter ensuring perfect narrative coherence."},
             {"role": "user", "content": prompt}
         ],
-        "temperature": GEN_PARAMS.get("temperature", 0.8),
-        "top_p": GEN_PARAMS.get("top_p", 0.95),
-        "max_tokens": GEN_PARAMS.get("max_tokens", 4000),
+        "temperature": GEN_PARAMS["temperature"],
+        "top_p": GEN_PARAMS["top_p"],
+        "max_tokens": GEN_PARAMS["max_tokens"],
     }
 
     try:
