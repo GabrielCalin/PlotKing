@@ -94,6 +94,20 @@ def create_interface(pipeline_fn, refine_fn):
         status_output = gr.Textbox(label="🧠 Process Log", lines=15)
         validation_feedback = gr.Textbox(label="🧩 Validation Feedback", lines=8)
 
+        # ========= Generator WRAPPERS (necesare pt. Gradio) =========
+        def _resume_pipeline():
+            # generator wrapper peste H.resume_pipeline
+            yield from H.resume_pipeline(pipeline_fn)
+
+        def _refresh_expanded():
+            yield from H.refresh_expanded(pipeline_fn)
+
+        def _refresh_overview():
+            yield from H.refresh_overview(pipeline_fn)
+
+        def _refresh_chapter(selected_name):
+            yield from H.refresh_chapter(pipeline_fn, selected_name)
+
         # ---- Wiring ----
 
         # Launch pipeline
@@ -145,7 +159,7 @@ def create_interface(pipeline_fn, refine_fn):
             outputs=[status_output, stop_btn, resume_btn],
         )
 
-        # Resume
+        # Resume (folosește wrapperul generator)
         resume_btn.click(
             fn=H.show_controls_on_resume_run,
             inputs=[],
@@ -158,7 +172,7 @@ def create_interface(pipeline_fn, refine_fn):
                 regenerate_chapter_btn,
             ],
         ).then(
-            fn=lambda: H.resume_pipeline(pipeline_fn),
+            fn=_resume_pipeline,
             inputs=[],
             outputs=[
                 expanded_output,
@@ -204,7 +218,7 @@ def create_interface(pipeline_fn, refine_fn):
                 regenerate_chapter_btn,
             ],
         ).then(
-            fn=lambda: H.refresh_expanded(pipeline_fn),
+            fn=_refresh_expanded,
             inputs=[],
             outputs=[
                 expanded_output,
@@ -242,7 +256,7 @@ def create_interface(pipeline_fn, refine_fn):
                 regenerate_chapter_btn,
             ],
         ).then(
-            fn=lambda: H.refresh_overview(pipeline_fn),
+            fn=_refresh_overview,
             inputs=[],
             outputs=[
                 expanded_output,
@@ -280,7 +294,7 @@ def create_interface(pipeline_fn, refine_fn):
                 regenerate_chapter_btn,
             ],
         ).then(
-            fn=lambda selected_name: H.refresh_chapter(pipeline_fn, selected_name),
+            fn=_refresh_chapter,
             inputs=[chapter_selector],
             outputs=[
                 expanded_output,
