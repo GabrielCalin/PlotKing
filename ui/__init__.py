@@ -1,6 +1,11 @@
-import os
+# ui/__init__.py
+from pathlib import Path
 
-def load_css(file_name="style.css"):
-    path = os.path.join(os.path.dirname(__file__), file_name)
-    with open(path, "r", encoding="utf-8") as f:
-        return f.read()
+_ASSETS_DIR = Path(__file__).parent / "assets"
+
+def load_css(file_name: str = "style.css") -> str:
+    path = _ASSETS_DIR / file_name
+    try:
+        return path.read_text(encoding="utf-8")
+    except Exception:
+        return ""

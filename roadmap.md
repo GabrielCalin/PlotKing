@@ -6,9 +6,6 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## 🧭 Phase 2 — User Experience & Creativity Tools
 
-5. **Prompt Optimization**  
-   - Provide failed generated content along with feedback and instructions to base on it but make changes according to feedback.
-
 6. **Saving Project State**  
    - Enable saving and resuming work sessions.  
    - Save expanded plot, chapters, validation logs, and progress metadata.  
@@ -107,8 +104,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 | Feature | Status |
 |----------|--------|
-| **Prompt Optimization** | ⏳ In Progress |
-| **Saving Project State** | ⏳ Planned |
+| **Saving Project State** | ⏳ In Progress |
 | **Manual Chapter Editing** | ⏳ Planned |
 | **AI Editing on Selected Text** | ⏳ Planned |
 | **AI Chat per Chapter** | ⏳ Planned |
