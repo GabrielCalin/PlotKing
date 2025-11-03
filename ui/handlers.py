@@ -2,7 +2,7 @@
 import gradio as gr
 from pipeline.constants import RUN_MODE_CHOICES
 from pipeline.state_manager import request_stop, get_checkpoint, clear_stop, clear_checkpoint
-from ui.ui_state import ts_prefix
+from utils.timestamp import ts_prefix
 
 # --- Helpers “pure” folosite în mai multe locuri ---
 
