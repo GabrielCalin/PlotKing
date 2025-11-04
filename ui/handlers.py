@@ -225,17 +225,23 @@ def sync_textbox(text, mode):
 
 # ==== Project Management (save / load / delete) ====
 
-# Folderul "projects" la rădăcina repo-ului (ui/.. -> root -> projects)
-_PROJECTS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "projects")
+import os, re, json
+from pipeline.state_manager import save_checkpoint
+from utils.timestamp import ts_prefix
+from pipeline.constants import RUN_MODE_CHOICES
+import gradio as gr
 
-# Nume fișier permis: litere, cifre, spații, underscore, minus
+_PROJECTS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "projects")
 _NAME_RE = re.compile(r'^[A-Za-z0-9 _-]+$')
+
 
 def _ensure_projects_dir():
     os.makedirs(_PROJECTS_DIR, exist_ok=True)
 
+
 def _project_path(name: str) -> str:
     return os.path.join(_PROJECTS_DIR, f"{name}.json")
+
 
 def _validate_name(name: str):
     if not name or not name.strip():
@@ -243,50 +249,43 @@ def _validate_name(name: str):
     name = name.strip()
     if not _NAME_RE.match(name):
         return "❌ Invalid project name. Use letters, numbers, spaces, '-' or '_' only."
-    return None  # valid
+    return None
+
 
 def list_projects():
     _ensure_projects_dir()
-    names = []
-    for fn in os.listdir(_PROJECTS_DIR):
-        if fn.lower().endswith(".json"):
-            names.append(fn[:-5])  # strip .json
+    names = [fn[:-5] for fn in os.listdir(_PROJECTS_DIR) if fn.lower().endswith(".json")]
     names.sort(key=lambda s: s.lower())
     return names
+
 
 def save_project(project_name,
                  plot_input, genre_input, chapters_input, anpc_input,
                  expanded_output, chapters_overview_output, chapters_state):
-    """
-    Scrie projects/<name>.json cu starea curentă (poate fi parțială).
-    Returnează: (status_output_text, project_dropdown_update)
-    """
     _ensure_projects_dir()
-
     err = _validate_name(project_name)
     if err:
         return ts_prefix(err), gr.update(choices=list_projects(), value=None)
 
-    # Normalizează/validează tipurile de câmpuri numerice
     try:
         num_chapters = int(chapters_input) if chapters_input is not None else None
     except Exception:
         num_chapters = None
-
     try:
         anpc = int(anpc_input) if anpc_input is not None else None
     except Exception:
         anpc = None
 
+    checkpoint = get_checkpoint() or {}
     data = {
         "project_name": project_name.strip(),
-        "plot_description": (plot_input or ""),
+        "plot_original": checkpoint.get("plot", plot_input or ""),
+        "plot_refined": checkpoint.get("refined_plot", ""),
         "genre": (genre_input or ""),
         "num_chapters": num_chapters,
         "avg_pages_per_chapter": anpc,
         "expanded_plot": (expanded_output or ""),
         "chapters_overview": (chapters_overview_output or ""),
-        # "chapters" = lista textelor de capitole (poate fi goală)
         "chapters": chapters_state or [],
     }
 
@@ -297,37 +296,32 @@ def save_project(project_name,
     except Exception as e:
         return ts_prefix(f"❌ Save failed: {e}"), gr.update(choices=list_projects())
 
-    # După save: actualizează dropdown și selectează numele
     projects = list_projects()
-    status = ts_prefix(f"💾 Saved project “{project_name.strip()}”.")
-    return status, gr.update(choices=projects, value=project_name.strip())
+    msg = ts_prefix(f"💾 Saved project “{project_name.strip()}”.")
+    return msg, gr.update(choices=projects, value=project_name.strip())
 
-def load_project(selected_name):
-    """
-    Încarcă projects/<selected_name>.json și populă UI-ul.
-    Returnează în ordinea wiring-ului:
-      plot_input, genre_input, chapters_input, anpc_input,
-      expanded_output, chapters_output, chapters_state, status_output
-    """
+
+def load_project(selected_name, current_status):
     if not selected_name:
         msg = ts_prefix("❌ Select a project to load.")
-        # întoarcem “no-op” pentru componentele de UI (nu le schimbăm)
-        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), msg
+        return (gr.update(), gr.update(), gr.update(), gr.update(),
+                gr.update(), gr.update(), gr.update(), gr.update(),
+                gr.update(), gr.update(), gr.update(), current_status + "\n" + msg)
 
     path = _project_path(selected_name)
     if not os.path.exists(path):
         msg = ts_prefix(f"❌ Project “{selected_name}” not found.")
-        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), msg
+        return (gr.update(),)*11 + (current_status + "\n" + msg,)
 
     try:
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
     except Exception as e:
         msg = ts_prefix(f"❌ Failed to read project: {e}")
-        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), msg
+        return (gr.update(),)*11 + (current_status + "\n" + msg,)
 
-    # Extrage câmpurile cu fallback-uri sigure
-    plot = data.get("plot_description", "")
+    plot = data.get("plot_original", "")
+    refined = data.get("plot_refined", "")
     genre = data.get("genre", "")
     num_chapters = data.get("num_chapters", None)
     anpc = data.get("avg_pages_per_chapter", None)
@@ -335,13 +329,13 @@ def load_project(selected_name):
     overview = data.get("chapters_overview", "")
     chapters_list = data.get("chapters", []) or []
 
-    # Setează un checkpoint ca să poți relua pipeline-ul după load (dacă vrei)
     checkpoint = {
         "plot": plot,
+        "refined_plot": refined,
         "num_chapters": num_chapters,
         "genre": genre,
         "anpc": anpc,
-        "run_mode": RUN_MODE_CHOICES["FULL"],  # default safe
+        "run_mode": RUN_MODE_CHOICES["FULL"],
         "expanded_plot": expanded,
         "chapters_overview": overview,
         "chapters_full": chapters_list,
@@ -353,23 +347,35 @@ def load_project(selected_name):
     }
     save_checkpoint(checkpoint)
 
-    # Returnează update-urile pentru UI
+    # Capitol handling
+    if not chapters_list:
+        chapter_dropdown = gr.update(choices=[], value=None)
+        current_chapter_text = gr.update(value="", visible=False)
+        chapter_counter = "_No chapters yet_"
+    else:
+        chapter_dropdown = gr.update(choices=[f"Chapter {i+1}" for i in range(len(chapters_list))],
+                                     value="Chapter 1")
+        current_chapter_text = gr.update(value=chapters_list[0], visible=True)
+        chapter_counter = f"Chapter 1 / {len(chapters_list)}"
+
+    msg = ts_prefix(f"📂 Loaded project “{selected_name}”.")
     return (
-        gr.update(value=plot),            # plot_input
-        gr.update(value=genre),           # genre_input
-        gr.update(value=num_chapters),    # chapters_input
-        gr.update(value=anpc),            # anpc_input
-        gr.update(value=expanded),        # expanded_output (Markdown)
-        gr.update(value=overview),        # chapters_output (Markdown)
-        chapters_list,                    # chapters_state (list)
-        ts_prefix(f"📂 Loaded project “{selected_name}”."),
+        gr.update(value=plot),              # plot_input
+        gr.update(value=genre),             # genre_input
+        gr.update(value=num_chapters),      # chapters_input
+        gr.update(value=anpc),              # anpc_input
+        gr.update(value=expanded),          # expanded_output
+        gr.update(value=overview),          # chapters_output
+        chapters_list,                      # chapters_state
+        gr.update(value=selected_name),     # project_name
+        chapter_dropdown,                   # chapter_selector
+        current_chapter_text,               # current_chapter_output
+        gr.update(value=chapter_counter),   # chapter_counter
+        current_status + "\n" + msg         # status_output
     )
 
+
 def delete_project(selected_name):
-    """
-    Șterge projects/<selected_name>.json.
-    Returnează: (status_output_text, project_dropdown_update)
-    """
     if not selected_name:
         return ts_prefix("❌ Select a project to delete."), gr.update(choices=list_projects(), value=None)
 
@@ -383,4 +389,5 @@ def delete_project(selected_name):
         return ts_prefix(f"❌ Delete failed: {e}"), gr.update(choices=list_projects(), value=None)
 
     projects = list_projects()
-    return ts_prefix(f"🗑️ Deleted project “{selected_name}”."), gr.update(choices=projects, value=None)
+    new_value = projects[0] if projects else None
+    return ts_prefix(f"🗑️ Deleted project “{selected_name}”."), gr.update(choices=projects, value=new_value)

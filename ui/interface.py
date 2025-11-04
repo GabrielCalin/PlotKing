@@ -379,7 +379,7 @@ def create_interface(pipeline_fn, refine_fn):
 
         load_project_btn.click(
             fn=H.load_project,
-            inputs=[project_dropdown],
+            inputs=[project_dropdown, status_output],
             outputs=[
                 plot_input,
                 genre_input,
@@ -388,6 +388,10 @@ def create_interface(pipeline_fn, refine_fn):
                 expanded_output,
                 chapters_output,
                 chapters_state,
+                project_name,
+                chapter_selector,
+                current_chapter_output,
+                chapter_counter,
                 status_output,
             ],
         )
@@ -396,6 +400,18 @@ def create_interface(pipeline_fn, refine_fn):
             fn=H.delete_project,
             inputs=[project_dropdown],
             outputs=[status_output, project_dropdown],
+        )
+
+        # === Populate project list on startup ===
+        demo.load(
+            fn=lambda: (
+                gr.update(
+                    choices=H.list_projects(),
+                    value=(H.list_projects()[0] if H.list_projects() else None)
+                )
+            ),
+            inputs=None,
+            outputs=[project_dropdown],
         )
 
     return demo
