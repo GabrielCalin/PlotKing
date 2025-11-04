@@ -361,4 +361,41 @@ def create_interface(pipeline_fn, refine_fn):
             fn=H.sync_textbox, inputs=[plot_input, current_mode], outputs=[plot_state, refined_plot_state]
         )
 
+        # === Project management wiring ===
+        save_project_btn.click(
+            fn=H.save_project,
+            inputs=[
+                project_name,
+                plot_input,
+                genre_input,
+                chapters_input,
+                anpc_input,
+                expanded_output,
+                chapters_output,
+                chapters_state,
+            ],
+            outputs=[status_output, project_dropdown],
+        )
+
+        load_project_btn.click(
+            fn=H.load_project,
+            inputs=[project_dropdown],
+            outputs=[
+                plot_input,
+                genre_input,
+                chapters_input,
+                anpc_input,
+                expanded_output,
+                chapters_output,
+                chapters_state,
+                status_output,
+            ],
+        )
+
+        delete_project_btn.click(
+            fn=H.delete_project,
+            inputs=[project_dropdown],
+            outputs=[status_output, project_dropdown],
+        )
+
     return demo
