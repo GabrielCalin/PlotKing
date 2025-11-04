@@ -357,7 +357,7 @@ def load_project(selected_name, current_status):
             value="Chapter 1"
         )
         current_chapter_text = gr.update(value=chapters_list[0])
-        chapter_counter = f"Chapter 1 / {len(chapters_list)}"
+        chapter_counter = ""
 
     if plot_refined and plot_refined.strip():
         plot_display = gr.update(value=plot_refined, interactive=False, label="Refined")
