@@ -349,12 +349,14 @@ def load_project(selected_name, current_status):
 
     if not chapters_list:
         chapter_dropdown = gr.update(choices=[], value=None)
-        current_chapter_text = gr.update(value="", visible=False)
+        current_chapter_text = gr.update(value="")
         chapter_counter = "_No chapters yet_"
     else:
-        chapter_dropdown = gr.update(choices=[f"Chapter {i+1}" for i in range(len(chapters_list))],
-                                     value="Chapter 1")
-        current_chapter_text = gr.update(value=chapters_list[0], visible=True)
+        chapter_dropdown = gr.update(
+            choices=[f"Chapter {i+1}" for i in range(len(chapters_list))],
+            value="Chapter 1"
+        )
+        current_chapter_text = gr.update(value=chapters_list[0])
         chapter_counter = f"Chapter 1 / {len(chapters_list)}"
 
     if plot_refined and plot_refined.strip():
