@@ -305,31 +305,30 @@ def load_project(selected_name, current_status):
         return (gr.update(), gr.update(), gr.update(), gr.update(),
                 gr.update(), gr.update(), gr.update(),
                 gr.update(), gr.update(), gr.update(), gr.update(),
-                gr.update(), gr.update(),
+                gr.update(), gr.update(), gr.update(),
                 current_status + "\n" + msg)
 
     path = _project_path(selected_name)
     if not os.path.exists(path):
         msg = ts_prefix(f"❌ Project “{selected_name}” not found.")
-        return (gr.update(),)*12 + (current_status + "\n" + msg,)
+        return (gr.update(),)*14 + (current_status + "\n" + msg,)
 
     try:
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
     except Exception as e:
         msg = ts_prefix(f"❌ Failed to read project: {e}")
-        return (gr.update(),)*12 + (current_status + "\n" + msg,)
+        return (gr.update(),)*14 + (current_status + "\n" + msg,)
 
     plot_original = data.get("plot_original", "")
-    plot_refined  = data.get("plot_refined", "")
-    genre         = data.get("genre", "")
-    num_chapters  = data.get("num_chapters", None)
-    anpc          = data.get("avg_pages_per_chapter", None)
-    expanded      = data.get("expanded_plot", "")
-    overview      = data.get("chapters_overview", "")
+    plot_refined = data.get("plot_refined", "")
+    genre = data.get("genre", "")
+    num_chapters = data.get("num_chapters", None)
+    anpc = data.get("avg_pages_per_chapter", None)
+    expanded = data.get("expanded_plot", "")
+    overview = data.get("chapters_overview", "")
     chapters_list = data.get("chapters", []) or []
 
-    # checkpoint pentru Resume & re-run coerent
     checkpoint = {
         "plot": plot_original,
         "refined_plot": plot_refined,
@@ -348,7 +347,6 @@ def load_project(selected_name, current_status):
     }
     save_checkpoint(checkpoint)
 
-    # Chapter viewer
     if not chapters_list:
         chapter_dropdown = gr.update(choices=[], value=None)
         current_chapter_text = gr.update(value="", visible=False)
@@ -359,22 +357,33 @@ def load_project(selected_name, current_status):
         current_chapter_text = gr.update(value=chapters_list[0], visible=True)
         chapter_counter = f"Chapter 1 / {len(chapters_list)}"
 
+    if plot_refined and plot_refined.strip():
+        plot_display = gr.update(value=plot_refined, interactive=False, label="Refined")
+        refine_btn_state = gr.update(value="🧹")
+        mode_value = "refined"
+    else:
+        plot_display = gr.update(value=plot_original, interactive=True, label="Original")
+        refine_btn_state = gr.update(value="🪄")
+        mode_value = "original"
+
     msg = ts_prefix(f"📂 Loaded project “{selected_name}”.")
     return (
-        gr.update(value=plot_original),     # plot_input (textbox arată ORIGINAL by default)
-        gr.update(value=genre),             # genre_input
-        gr.update(value=num_chapters),      # chapters_input
-        gr.update(value=anpc),              # anpc_input
-        gr.update(value=expanded),          # expanded_output (Markdown)
-        gr.update(value=overview),          # chapters_output (Markdown)
-        chapters_list,                      # chapters_state (State list)
-        gr.update(value=selected_name),     # project_name (textbox)
-        chapter_dropdown,                   # chapter_selector
-        current_chapter_text,               # current_chapter_output
-        gr.update(value=chapter_counter),   # chapter_counter
-        plot_original,                      # plot_state (State)
-        plot_refined,                       # refined_plot_state (State)
-        current_status + "\n" + msg         # status_output (append)
+        plot_display,
+        gr.update(value=genre),
+        gr.update(value=num_chapters),
+        gr.update(value=anpc),
+        gr.update(value=expanded),
+        gr.update(value=overview),
+        chapters_list,
+        gr.update(value=selected_name),
+        chapter_dropdown,
+        current_chapter_text,
+        gr.update(value=chapter_counter),
+        plot_original,        # State: ORIGINAL
+        plot_refined,         # State: REFINED
+        mode_value,           # current_mode
+        refine_btn_state,
+        current_status + "\n" + msg
     )
 
 def delete_project(selected_name, current_status):

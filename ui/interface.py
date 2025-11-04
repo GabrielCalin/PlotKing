@@ -395,8 +395,10 @@ def create_interface(pipeline_fn, refine_fn):
                 chapter_selector,
                 current_chapter_output,
                 chapter_counter,
-                plot_state,             # <— primește ORIGINAL (State)
-                refined_plot_state,     # <— primește REFINED (State)
+                plot_state,
+                refined_plot_state,
+                current_mode,          # <-- adăugat aici
+                refine_btn,
                 status_output,
             ],
         )
