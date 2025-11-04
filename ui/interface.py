@@ -21,6 +21,28 @@ def create_interface(pipeline_fn, refine_fn):
         current_mode = gr.State("original")
         chapters_state = gr.State([])
 
+        # ---- Project Section (nou, collapsed by default) ----
+        with gr.Accordion("📂 Project", open=False):
+            with gr.Row(equal_height=True):
+                with gr.Column(scale=3):
+                    project_name = gr.Textbox(
+                        label="Project Name",
+                        placeholder="Enter project name...",
+                        interactive=True,
+                        lines=1,
+                        max_lines=1,
+                    )
+                    project_dropdown = gr.Dropdown(
+                        label="Saved Projects",
+                        choices=[],
+                        value=None,
+                        interactive=True,
+                    )
+                with gr.Column(scale=1, elem_classes=["project-buttons"], min_width=120):
+                    save_project_btn = gr.Button("💾 Save", size="sm")
+                    load_project_btn = gr.Button("📂 Load", size="sm")
+                    delete_project_btn = gr.Button("❌ Delete", size="sm")
+
         # ---- Inputs (plot + genre + params) ----
         with gr.Row(equal_height=True):
             with gr.Column(scale=3):
