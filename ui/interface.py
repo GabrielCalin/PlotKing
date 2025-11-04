@@ -373,6 +373,9 @@ def create_interface(pipeline_fn, refine_fn):
                 expanded_output,
                 chapters_output,
                 chapters_state,
+                plot_state,            # <— nou: ORIGINAL (State)
+                refined_plot_state,    # <— nou: REFINED (State)
+                status_output,         # <— pentru append în log
             ],
             outputs=[status_output, project_dropdown],
         )
@@ -392,13 +395,15 @@ def create_interface(pipeline_fn, refine_fn):
                 chapter_selector,
                 current_chapter_output,
                 chapter_counter,
+                plot_state,             # <— primește ORIGINAL (State)
+                refined_plot_state,     # <— primește REFINED (State)
                 status_output,
             ],
         )
 
         delete_project_btn.click(
             fn=H.delete_project,
-            inputs=[project_dropdown],
+            inputs=[project_dropdown, status_output],
             outputs=[status_output, project_dropdown],
         )
 
