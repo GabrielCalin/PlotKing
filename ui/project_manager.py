@@ -211,6 +211,7 @@ def delete_project(selected_name, current_status):
 def new_project(current_status):
     """
     Resetează complet toate inputurile și outputurile – echivalent cu o sesiune nouă.
+    Toate butoanele sunt resetate: doar Generate rămâne vizibil.
     """
     clear_stop()
     clear_checkpoint()
@@ -227,7 +228,7 @@ def new_project(current_status):
         [],                                                        # chapters_state
         gr.update(value=""),                                       # project_name
         gr.update(choices=[], value=None),                         # chapter_selector
-        gr.update(value="", visible=True),                         # current_chapter_output
+        gr.update(value="", visible=True),                         # current_chapter_output (vizibil, gol)
         "_No chapters yet_",                                       # chapter_counter
         gr.update(value=""),                                       # plot_state (original)
         gr.update(value=""),                                       # refined_plot_state
@@ -236,4 +237,7 @@ def new_project(current_status):
         gr.update(visible=False),                                  # regenerate_expanded_btn
         gr.update(visible=False),                                  # regenerate_overview_btn
         gr.update(visible=False),                                  # regenerate_chapter_btn
+        gr.update(visible=False, interactive=False, value="🛑 Stop"),   # stop_btn
+        gr.update(visible=False, interactive=False, value="▶️ Resume"), # resume_btn
+        gr.update(visible=True, interactive=True, value="🚀 Generate Book"), # generate_btn
     )

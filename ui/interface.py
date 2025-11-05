@@ -443,6 +443,9 @@ def create_interface(pipeline_fn, refine_fn):
                 regenerate_expanded_btn,
                 regenerate_overview_btn,
                 regenerate_chapter_btn,
+                stop_btn,
+                resume_btn,
+                generate_btn,
             ],
         )
 
