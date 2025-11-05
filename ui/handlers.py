@@ -381,7 +381,7 @@ def load_project(selected_name, current_status):
     # Resume logic
     resume_visible = incomplete
     stop_visible = False
-    generate_visible = not incomplete
+    generate_visible = True
 
     return (
         plot_display,
