@@ -369,6 +369,20 @@ def load_project(selected_name, current_status):
         mode_value = "original"
 
     msg = ts_prefix(f"📂 Loaded project “{selected_name}”.")
+
+    # --- Determine visibility for control buttons ---
+    expanded_visible = bool(expanded and expanded.strip())
+    overview_visible = bool(overview and overview.strip())
+    chapters_visible = len(chapters_list) > 0
+
+    total_chapters = num_chapters or len(chapters_list)
+    incomplete = expanded_visible and (not overview_visible or len(chapters_list) < total_chapters)
+
+    # Resume logic
+    resume_visible = incomplete
+    stop_visible = False
+    generate_visible = not incomplete
+
     return (
         plot_display,
         gr.update(value=genre),
@@ -385,7 +399,14 @@ def load_project(selected_name, current_status):
         plot_refined,         # State: REFINED
         mode_value,           # current_mode
         refine_btn_state,
-        current_status + "\n" + msg
+        current_status + "\n" + msg,
+        # --- new control visibility updates ---
+        gr.update(visible=stop_visible, interactive=False, value="🛑 Stop"),
+        gr.update(visible=resume_visible, interactive=True, value="▶️ Resume"),
+        gr.update(visible=generate_visible, interactive=True, value="🚀 Generate Book"),
+        gr.update(visible=expanded_visible),   # regenerate_expanded_btn
+        gr.update(visible=overview_visible),   # regenerate_overview_btn
+        gr.update(visible=chapters_visible),   # regenerate_chapter_btn
     )
 
 def delete_project(selected_name, current_status):

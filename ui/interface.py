@@ -399,9 +399,15 @@ def create_interface(pipeline_fn, refine_fn):
                 chapter_counter,
                 plot_state,
                 refined_plot_state,
-                current_mode,          # <-- adăugat aici
+                current_mode,
                 refine_btn,
                 status_output,
+                stop_btn,
+                resume_btn,
+                generate_btn,
+                regenerate_expanded_btn,
+                regenerate_overview_btn,
+                regenerate_chapter_btn,
             ],
         ).then(
             fn=lambda name: f"<div id='bk-project'>{name}</div>" if name else "<div id='bk-project'>(No project loaded)</div>",
