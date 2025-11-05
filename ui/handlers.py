@@ -410,12 +410,14 @@ def delete_project(selected_name, current_status):
     new_value = projects[0] if projects else None
     return current_status + "\n" + ts_prefix(f"🗑️ Deleted project “{selected_name}”."), gr.update(choices=projects, value=new_value)
 
-def new_project():
+def new_project(current_status):
     """
     Resetează complet toate inputurile și outputurile – echivalent cu o sesiune nouă.
     """
     clear_stop()
     clear_checkpoint()
+
+    new_log = (current_status or "") + "\n" + ts_prefix("🆕 New project started.")
 
     return (
         gr.update(value="", label="Original", interactive=True),   # plot_input
@@ -432,5 +434,5 @@ def new_project():
         gr.update(value=""),                                       # plot_state (original)
         gr.update(value=""),                                       # refined_plot_state
         gr.update(value="🪄"),                                     # refine_btn reset
-        current_status + "\n" + ts_prefix("🆕 New project started.")                       # status_output
+        new_log                                                    # status_output (append)
     )

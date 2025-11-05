@@ -417,7 +417,7 @@ def create_interface(pipeline_fn, refine_fn):
 
         new_project_btn.click(
             fn=H.new_project,
-            inputs=[],
+            inputs=[status_output],
             outputs=[
                 plot_input,
                 genre_input,
