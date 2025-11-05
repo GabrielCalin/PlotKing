@@ -89,7 +89,6 @@
 }
 
 /* === Header Bar === */
-/* === Framed Elegant Header === */
 #bk-header {
   background-color: #ffffff;
   border: 1px solid #e0e0e0;
@@ -143,7 +142,7 @@
 @media (max-width: 640px) {
   #bk-header {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: flex-start; /* aliniere stânga pe mobil */
     gap: 4px;
   }
   #bk-title {
@@ -151,5 +150,8 @@
   }
   #bk-project {
     font-size: 0.8rem;
+    justify-content: flex-start; /* pe mobil: textul merge stânga */
+    text-align: left;            /* aliniere stânga */
+    width: 100%;                 /* ocupă toată lățimea containerului */
   }
 }
