@@ -403,7 +403,7 @@ def create_interface(pipeline_fn, refine_fn):
                 status_output,
             ],
         ).then(
-            fn=lambda name: f"<div id='bk-project'>📂 {name}</div>" if name else "<div id='bk-project'>(No project loaded)</div>",
+            fn=lambda name: f"<div id='bk-project'>{name}</div>" if name else "<div id='bk-project'>(No project loaded)</div>",
             inputs=[project_name],
             outputs=[current_project_label],
         )
