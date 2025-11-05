@@ -10,10 +10,11 @@ from pipeline.constants import RUN_MODE_CHOICES
 
 def create_interface(pipeline_fn, refine_fn):
     with gr.Blocks(title="BookKing - AI Story Builder", css=load_css()) as demo:
-        gr.Markdown("""
-        # 📖 BookKing - AI Story Builder  
-        _Generate, validate, and refine your novels interactively._
-        """)
+        header_project = gr.State("")
+
+        with gr.Row(elem_id="bk-header"):
+            gr.HTML("<div id='bk-title'>📖 BookKing – AI Story Builder</div>")
+            current_project_label = gr.HTML("<div id='bk-project'>(No project loaded)</div>")
 
         # ---- States ----
         plot_state = gr.State("")
@@ -401,6 +402,10 @@ def create_interface(pipeline_fn, refine_fn):
                 refine_btn,
                 status_output,
             ],
+        ).then(
+            fn=lambda name: f"<div id='bk-project'>📂 {name}</div>" if name else "<div id='bk-project'>(No project loaded)</div>",
+            inputs=[project_name],
+            outputs=[current_project_label],
         )
 
         delete_project_btn.click(

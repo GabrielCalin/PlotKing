@@ -87,3 +87,31 @@
     justify-content: right !important;
     transform: translateY(var(--header-nudge));
 }
+
+/* === Header Bar === */
+#bk-header {
+  background-color: #1e1e1e;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 1rem;
+  border-radius: 0.4rem;
+  margin-bottom: 0.8rem;
+  font-family: "Segoe UI", sans-serif;
+}
+
+#bk-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffd966; /* galben-auriu subtil */
+}
+
+#bk-project {
+  font-size: 0.9rem;
+  color: #aaa;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
