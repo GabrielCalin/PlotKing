@@ -474,10 +474,13 @@ def new_project(current_status):
         [],                                                        # chapters_state
         gr.update(value=""),                                       # project_name
         gr.update(choices=[], value=None),                         # chapter_selector
-        gr.update(value="", visible=False),                        # current_chapter_output
+        gr.update(value="", visible=True),                         # current_chapter_output (vizibil, gol)
         "_No chapters yet_",                                       # chapter_counter
         gr.update(value=""),                                       # plot_state (original)
         gr.update(value=""),                                       # refined_plot_state
         gr.update(value="🪄"),                                     # refine_btn reset
-        new_log                                                    # status_output (append)
+        new_log,                                                   # status_output (append)
+        gr.update(visible=False),                                  # regenerate_expanded_btn
+        gr.update(visible=False),                                  # regenerate_overview_btn
+        gr.update(visible=False),                                  # regenerate_chapter_btn
     )

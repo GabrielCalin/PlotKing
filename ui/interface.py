@@ -440,6 +440,9 @@ def create_interface(pipeline_fn, refine_fn):
                 refined_plot_state,
                 refine_btn,
                 status_output,
+                regenerate_expanded_btn,
+                regenerate_overview_btn,
+                regenerate_chapter_btn,
             ],
         )
 
