@@ -40,6 +40,7 @@ def create_interface(pipeline_fn, refine_fn):
                         interactive=True,
                     )
                 with gr.Column(scale=1, elem_classes=["project-buttons"], min_width=120):
+                    new_project_btn = gr.Button("🆕 New", size="sm")
                     save_project_btn = gr.Button("💾 Save", size="sm")
                     load_project_btn = gr.Button("📂 Load", size="sm")
                     delete_project_btn = gr.Button("❌ Delete", size="sm")
@@ -412,6 +413,28 @@ def create_interface(pipeline_fn, refine_fn):
             fn=H.delete_project,
             inputs=[project_dropdown, status_output],
             outputs=[status_output, project_dropdown],
+        )
+
+        new_project_btn.click(
+            fn=H.new_project,
+            inputs=[],
+            outputs=[
+                plot_input,
+                genre_input,
+                chapters_input,
+                anpc_input,
+                expanded_output,
+                chapters_output,
+                chapters_state,
+                project_name,
+                chapter_selector,
+                current_chapter_output,
+                chapter_counter,
+                plot_state,
+                refined_plot_state,
+                refine_btn,
+                status_output,
+            ],
         )
 
         # === Populate project list on startup ===

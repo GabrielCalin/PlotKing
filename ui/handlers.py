@@ -409,3 +409,28 @@ def delete_project(selected_name, current_status):
     projects = list_projects()
     new_value = projects[0] if projects else None
     return current_status + "\n" + ts_prefix(f"🗑️ Deleted project “{selected_name}”."), gr.update(choices=projects, value=new_value)
+
+def new_project():
+    """
+    Resetează complet toate inputurile și outputurile – echivalent cu o sesiune nouă.
+    """
+    clear_stop()
+    clear_checkpoint()
+
+    return (
+        gr.update(value="", label="Original", interactive=True),   # plot_input
+        gr.update(value=""),                                       # genre_input
+        gr.update(value=5),                                        # num_chapters
+        gr.update(value=5),                                        # anpc_input
+        gr.update(value=""),                                       # expanded_output
+        gr.update(value=""),                                       # chapters_output
+        [],                                                        # chapters_state
+        gr.update(value=""),                                       # project_name
+        gr.update(choices=[], value=None),                         # chapter_selector
+        gr.update(value="", visible=False),                        # current_chapter_output
+        "_No chapters yet_",                                       # chapter_counter
+        gr.update(value=""),                                       # plot_state (original)
+        gr.update(value=""),                                       # refined_plot_state
+        gr.update(value="🪄"),                                     # refine_btn reset
+        current_status + "\n" + ts_prefix("🆕 New project started.")                       # status_output
+    )
