@@ -6,22 +6,17 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## 🧭 Phase 2 — User Experience & Creativity Tools
 
-6. **Saving Project State**  
-   - Enable saving and resuming work sessions.  
-   - Save expanded plot, chapters, validation logs, and progress metadata.  
-   - Support multiple concurrent projects.
-
 7. **Manual Chapter Editing**  
-   - Allow users to edit any generated chapter directly within the interface.
-   - Trigger regenerations if plot changes. 
-   - Consider a dedicated tab and / or a new UI technology (switch from Gradio).
+   - Allow users to edit any generated chapter directly within the interface.  
+   - Trigger regenerations if plot changes.  
+   - Consider a dedicated tab and/or a new UI technology (switch from Gradio).
 
 8. **AI Editing on Selected Text**  
-    - Enable users to **select a portion of text** and apply quick AI edits (rewrite, expand, simplify, etc.).
+   - Enable users to **select a portion of text** and apply quick AI edits (rewrite, expand, simplify, etc.).
 
 9. **AI Chat per Chapter**  
-    - Add an interactive chat panel to discuss or request changes for a specific chapter.  
-    - A supervising LLM ensures narrative consistency and, when necessary, re-writes dependent chapters.
+   - Add an interactive chat panel to discuss or request changes for a specific chapter.  
+   - A supervising LLM ensures narrative consistency and, when necessary, re-writes dependent chapters.
 
 10. **Add Empty Chapters (Writer Assist Mode)**  
    - Let users insert blank chapters manually.  
@@ -32,14 +27,14 @@ This document outlines the planned development milestones for the **AI Story Gen
 ## 🎨 Phase 3 — Presentation and Export
 
 11. **Export to EPUB**  
-    - Export full books as `.epub` files with metadata and optional AI-generated cover.  
+   - Export full books as `.epub` files with metadata. 
 
-12. **Generate EPUB Cover Image**  
-    - Automatically create covers based on title, genre, and plot.  
-    - Optional integration with **ComfyUI** or external image workflows.
+12. **Public GitHub Repository**  
+   - Make the project public and document setup, dependencies, and contribution flow.
 
-13. **Public GitHub Repository**  
-    - Make the project public and document setup, dependencies, and contribution flow.
+13. **Generate EPUB Cover Image**  
+   - Automatically create covers based on title, genre, and plot.  
+   - Optional integration with **ComfyUI** or external image workflows.
 
 ---
 
@@ -55,48 +50,57 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ---
 
-## 💬 Phase 5 — Advanced Interaction & Collaboration
+## ⚙️ Phase 5 — Configuration & Customization
 
-16. **Advanced Cross-Chapter Chat**  
-    - A global AI chat that can handle **multi-chapter edits** and **story-level refactoring**.  
-    - Allows broader transformations such as tone adjustment, pacing changes, or multi-arc restructuring.
+18. **Settings Tab**  
+   - Add a settings section for advanced parameters:  
+     - Model selection per task.  
+     - Max tokens per chapter.  
+     - Timeout and retry policies.  
+     - Context window behavior (summaries vs full chapter inclusion).  
+     - Temperature, top-p, and verbosity controls.
 
-17. **Character & Object Modification**  
-    - Provide an interface to modify a character’s **personality, appearance, relationships, or role**.  
-    - Extendable to modify **key objects** or **locations** across chapters.  
-    - System ensures consistency by updating references in future (and optionally past) chapters.
+19. **Model Selection per Task**  
+   - Choose separate models for each step (e.g., validation vs writing).  
+   - Integration with **OpenAI**, **LM Studio**, or **local LLMs**.
+
+20. **Automatic Translation**  
+   - Add automatic **multi-language translation** for full books or chapters.  
+   - Universal model-agnostic design, with export to any supported language.  
 
 ---
 
-## ⚙️ Phase 6 — Configuration & Customization
+## 💬 Phase 6 — Advanced Interaction & Collaboration
 
-18. **Settings Tab**  
-    - Add a settings section for advanced parameters:  
-      - Model selection per task.  
-      - Max tokens per chapter.  
-      - Timeout and retry policies.  
-      - Context window behavior (summaries vs full chapter inclusion).  
-      - Temperature, top-p, and verbosity controls.
+16. **Advanced Cross-Chapter Chat**  
+   - A global AI chat that can handle **multi-chapter edits** and **story-level refactoring**.  
+   - Allows broader transformations such as tone adjustment, pacing changes, or multi-arc restructuring.
 
-19. **Model Selection per Task**  
-    - Choose separate models for each step (e.g., validation vs writing).  
-    - Integration with **OpenAI**, **LM Studio**, or **local LLMs**.
+17. **Character & Object Modification**  
+   - Provide an interface to modify a character’s **personality, appearance, relationships, or role**.  
+   - Extendable to modify **key objects** or **locations** across chapters.  
+   - System ensures consistency by updating references in future (and optionally past) chapters.
 
 ---
 
 ## 🧠 Phase 7 — Experimental & Research Features
 
-20. **Book Comparison System**  
-    - Compare multiple books via pairwise evaluation (e.g., 4-book tournament → semifinals → final).  
-    - Criteria: writing quality, consistency, emotional impact, etc.
+21. **Book Comparison System**  
+   - Compare multiple books via pairwise evaluation (e.g., 4-book tournament → semifinals → final).  
+   - Criteria: writing quality, consistency, emotional impact, etc.
 
-21. **Graphic Story Generation**  
-    - Enrich stories with AI-generated illustrations per chapter.
+22. **Generate Audio Book**  
+   - Convert generated chapters to **narrated audio** using text-to-speech (TTS).  
+   - Voices adjustable by tone, gender, and style (narrative, dramatic, cinematic).  
+   - Export as MP3/FLAC or integrated audio player in UI.
 
-22. **Embedded LLMs & Research-Driven Non-Fiction Mode**  
-    - Add support for embedded or local assistant models to perform factual research before writing.  
-    - Ideal for **biographies, essays, or technical non-fiction** where factual correctness is essential.  
-    - *Low priority / experimental feature.*
+23. **Graphic Story Generation**  
+   - Enrich stories with AI-generated illustrations per chapter.
+
+24. **Embedded LLMs & Research-Driven Non-Fiction Mode**  
+   - Add support for embedded or local assistant models to perform factual research before writing.  
+   - Ideal for **biographies, essays, or technical non-fiction** where factual correctness is essential.  
+   - *Low priority / experimental feature.*
 
 ---
 
@@ -104,25 +108,26 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 | Feature | Status |
 |----------|--------|
-| **Saving Project State** | ⏳ In Progress |
-| **Manual Chapter Editing** | ⏳ Planned |
+| **Manual Chapter Editing** | ⏳ In Progress |
 | **AI Editing on Selected Text** | ⏳ Planned |
 | **AI Chat per Chapter** | ⏳ Planned |
 | **Add Empty Chapters (Writer Assist Mode)** | ⏳ Planned |
 | **Export to EPUB** | 🔜 Future |
-| **Generate EPUB Cover Image** | 🔜 Future |
 | **Public GitHub Repository** | 🔜 Future |
+| **Generate EPUB Cover Image** | 🔜 Future |
 | **Infill Chapters** | 🔜 Future |
 | **Outfill Chapters** | 🔜 Future |
-| **Advanced Cross-Chapter Chat** | 🔜 Future |
-| **Character & Object Modification** | 🔜 Future |
 | **Settings Tab** | 🔜 Future |
 | **Model Selection per Task** | 🔜 Future |
+| **Automatic Translation** | 🔜 Future |
+| **Advanced Cross-Chapter Chat** | 🔜 Future |
+| **Character & Object Modification** | 🔜 Future |
 | **Book Comparison System** | 🔬 Experimental |
+| **Generate Audio Book** | 🔬 Experimental |
 | **Graphic Story Generation** | 🔬 Experimental |
 | **Embedded LLMs / Research Non-Fiction Mode** | 🔬 Experimental |
 
 ---
 
-**Last updated:** October 2025  
+**Last updated:** November 2025  
 **Maintained by:** Gabriel C.
