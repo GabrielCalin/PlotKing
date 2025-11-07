@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# ui/tabs/editor_tab.py — control panel compact, with lock for Section + Mode during editing
+# ui/tabs/editor_tab.py — Editor tab with full empty-state handling and lockable controls
 
 import gradio as gr
 import ui.editor_handlers as H
@@ -15,8 +15,16 @@ def render_editor_tab(sections_epoch):
     validation_msg = gr.State("")
     pending_plan = gr.State(None)
 
-    # ---- (1) Main Layout: two-column row ----
-    with gr.Row(elem_id="editor-main"):
+    # ---- (0) Empty state message (visible by default) ----
+    empty_msg = gr.Markdown(
+        "📭 **No content to edit.**\n\n"
+        "Please **generate a new book** or **load an existing project** in the *Create* tab to begin editing.",
+        elem_id="editor-empty",
+        visible=True,  # visible at startup
+    )
+
+    # ---- (1) Main Layout ----
+    with gr.Row(elem_id="editor-main", visible=False) as editor_main:
         # ---- (1a) Left Column: Compact Control Panel ----
         with gr.Column(scale=1, min_width=280, elem_classes=["tight-group"]):
             section_dropdown = gr.Dropdown(
@@ -52,7 +60,7 @@ def render_editor_tab(sections_epoch):
             )
 
     # ---- (2) Validation Area ----
-    with gr.Accordion("🔎 Validation Result", open=False, elem_id="editor-validation") as accordion:
+    with gr.Accordion("🔎 Validation Result", open=False, elem_id="editor-validation", visible=False) as accordion:
         validation_box = gr.Textbox(
             label="Validation Output",
             lines=8,
@@ -65,14 +73,33 @@ def render_editor_tab(sections_epoch):
             discard2_btn = gr.Button("🗑️ Discard", visible=False)
 
     # ---- (3) Status Strip ----
-    status_strip = gr.Markdown("_Ready._", elem_id="editor-status")
+    status_strip = gr.Markdown("_Ready._", elem_id="editor-status", visible=False)
 
     # ====== Helper functions ======
 
     def _refresh_sections(_):
+        """Repopulate dropdown when sections_epoch changes, or show empty state."""
         sections = H.editor_list_sections()
+
+        if not sections:
+            # 🔹 hide everything except empty message
+            return (
+                gr.update(visible=True),   # show empty_msg
+                gr.update(visible=False),  # hide editor_main
+                gr.update(visible=False),  # hide accordion
+                gr.update(visible=False),  # hide status strip
+                gr.update(choices=[], value=None),  # hide dropdown
+            )
+
         default = "Expanded Plot" if "Expanded Plot" in sections else (sections[0] if sections else None)
-        return gr.update(choices=sections, value=default)
+        # show everything normally
+        return (
+            gr.update(visible=False),  # hide empty_msg
+            gr.update(visible=True),   # show editor_main
+            gr.update(visible=True),   # show accordion
+            gr.update(visible=True),   # show status strip
+            gr.update(choices=sections, value=default),  # dropdown update
+        )
 
     def _load_section_content(name):
         if not name:
@@ -149,22 +176,32 @@ def render_editor_tab(sections_epoch):
         return (
             text,
             "", "", None,
-            gr.update(visible=False),   # hide Confirm
-            gr.update(visible=False),   # hide Discard
-            gr.update(visible=False),   # hide Apply
-            gr.update(visible=False),   # hide Continue
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
             gr.Accordion("🔎 Validation Result", open=False),
-            gr.update(visible=True),    # show Viewer
-            gr.update(visible=False),   # hide Editor
-            gr.update(visible=True),    # show Start
-            gr.update(interactive=True),# unlock Mode
-            gr.update(interactive=True),# unlock Section
+            gr.update(visible=True),
+            gr.update(visible=False),
+            gr.update(visible=True),
+            gr.update(interactive=True),
+            gr.update(interactive=True),
             "Changes discarded.",
         )
 
     # ====== Wiring ======
 
-    sections_epoch.change(fn=_refresh_sections, inputs=[sections_epoch], outputs=[section_dropdown])
+    sections_epoch.change(
+        fn=_refresh_sections,
+        inputs=[sections_epoch],
+        outputs=[
+            empty_msg,        # (1)
+            editor_main,      # (2)
+            accordion,        # (3)
+            status_strip,     # (4)
+            section_dropdown, # actualizare dropdown
+        ],
+    )
 
     section_dropdown.change(
         fn=_load_section_content,
@@ -174,7 +211,6 @@ def render_editor_tab(sections_epoch):
 
     mode_radio.change(fn=_toggle_mode, inputs=[mode_radio], outputs=[start_edit_btn, status_strip])
 
-    # 📝 Start Editing
     start_edit_btn.click(
         fn=_start_edit,
         inputs=[current_md],
@@ -185,12 +221,11 @@ def render_editor_tab(sections_epoch):
             viewer_md,
             editor_tb,
             mode_radio,
-            section_dropdown,  # lock Section
+            section_dropdown,
             status_strip,
         ],
     )
 
-    # ✅ Confirm Edit
     confirm_btn.click(
         fn=_confirm_edit,
         inputs=[selected_section, editor_tb],
@@ -199,12 +234,11 @@ def render_editor_tab(sections_epoch):
             apply_updates_btn, continue_btn, discard2_btn,
             start_edit_btn, editor_tb, viewer_md,
             confirm_btn, discard_btn, mode_radio,
-            section_dropdown,  # unlock Section
+            section_dropdown,
             status_strip,
         ],
     )
 
-    # 💾 Apply Updates
     apply_updates_btn.click(
         fn=_apply_updates,
         inputs=[selected_section, editor_tb, pending_plan],
@@ -215,7 +249,6 @@ def render_editor_tab(sections_epoch):
         ],
     )
 
-    # 🔁 Continue Editing
     continue_btn.click(
         fn=_continue_edit,
         inputs=[],
@@ -225,7 +258,6 @@ def render_editor_tab(sections_epoch):
         ],
     )
 
-    # 🗑️ Discard (both)
     discard_btn.click(
         fn=_discard,
         inputs=[selected_section],
