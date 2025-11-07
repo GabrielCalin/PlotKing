@@ -17,8 +17,8 @@ def render_editor_tab(sections_epoch):
 
     # ---- (0) Empty state message (visible by default) ----
     empty_msg = gr.Markdown(
-        "📭 **No content to edit.**\n\n"
-        "Please **generate a new book** or **load an existing project** in the *Create* tab to begin editing.",
+        "📚 **Nothing to edit yet!**  \n"
+        "Your story world is still blank — go craft one in the *Create* tab! ✨",
         elem_id="editor-empty",
         visible=True,  # visible at startup
     )
