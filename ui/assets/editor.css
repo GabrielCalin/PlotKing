@@ -1,0 +1,33 @@
+/* Fixează headerul și action bar-ul de sus */
+.sticky-header, .sticky-bar {
+  position: sticky;
+  top: 0;
+  background: var(--color-background-primary, #fff);
+  z-index: 20;
+  padding: 6px 0;
+  border-bottom: 1px solid #ddd;
+}
+
+/* Glow pentru zona de validare */
+#editor-validation {
+  scroll-margin-top: 100px;
+}
+
+#editor-validation.glow {
+  animation: glowPulse 1.2s ease-in-out;
+}
+
+@keyframes glowPulse {
+  0% { box-shadow: 0 0 0px rgba(0, 200, 255, 0.0); }
+  50% { box-shadow: 0 0 10px rgba(0, 200, 255, 0.6); }
+  100% { box-shadow: 0 0 0px rgba(0, 200, 255, 0.0); }
+}
+
+/* Status strip */
+#editor-status {
+  font-size: 0.85em;
+  color: #555;
+  border-top: 1px solid #ddd;
+  padding-top: 4px;
+  margin-top: 8px;
+}

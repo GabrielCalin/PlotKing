@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# ui/tabs/create_tab.py — conținutul integral al interfeței inițiale, ca tabul "Create"
 
 import gradio as gr
 from ui import load_css
@@ -8,7 +7,7 @@ import ui.handlers as H
 from pipeline.constants import RUN_MODE_CHOICES
 
 
-def render_create_tab(pipeline_fn, refine_fn, current_project_label):
+def render_create_tab(pipeline_fn, refine_fn, current_project_label, sections_epoch):
     header_project = gr.State("")
 
     # ---- States ----
@@ -17,7 +16,11 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label):
     current_mode = gr.State("original")
     chapters_state = gr.State([])
 
-    # ---- Project Section (nou, collapsed by default) ----
+    # ---- helper: bump epoch (pt. sincronizare Editor) ----
+    def _bump_epoch(epoch):
+        return (epoch or 0) + 1
+
+    # ---- Project Section ----
     with gr.Accordion("📂 Project", open=False):
         with gr.Row(equal_height=True):
             with gr.Column(scale=3):
@@ -113,9 +116,8 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label):
     status_output = gr.Textbox(label="🧠 Process Log", lines=15)
     validation_feedback = gr.Textbox(label="🧩 Validation Feedback", lines=8)
 
-    # ========= Generator WRAPPERS (necesare pt. Gradio) =========
+    # ========= Generator WRAPPERS =========
     def _resume_pipeline():
-        # generator wrapper peste H.resume_pipeline
         yield from H.resume_pipeline(pipeline_fn)
 
     def _refresh_expanded():
@@ -169,6 +171,10 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label):
             regenerate_overview_btn,
             regenerate_chapter_btn,
         ],
+    ).then(
+        fn=_bump_epoch,
+        inputs=[sections_epoch],
+        outputs=[sections_epoch],
     )
 
     # Stop
@@ -178,7 +184,7 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label):
         outputs=[status_output, stop_btn, resume_btn],
     )
 
-    # Resume (folosește wrapperul generator)
+    # Resume
     resume_btn.click(
         fn=H.show_controls_on_resume_run,
         inputs=[],
@@ -215,6 +221,10 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label):
             regenerate_overview_btn,
             regenerate_chapter_btn,
         ],
+    ).then(
+        fn=_bump_epoch,
+        inputs=[sections_epoch],
+        outputs=[sections_epoch],
     )
 
     # Dropdown chapter viewer
@@ -260,6 +270,10 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label):
             regenerate_overview_btn,
             regenerate_chapter_btn,
         ],
+    ).then(
+        fn=_bump_epoch,
+        inputs=[sections_epoch],
+        outputs=[sections_epoch],
     )
 
     # Regenerate: Overview
@@ -298,6 +312,10 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label):
             regenerate_overview_btn,
             regenerate_chapter_btn,
         ],
+    ).then(
+        fn=_bump_epoch,
+        inputs=[sections_epoch],
+        outputs=[sections_epoch],
     )
 
     # Regenerate: Chapter
@@ -336,6 +354,10 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label):
             regenerate_overview_btn,
             regenerate_chapter_btn,
         ],
+    ).then(
+        fn=_bump_epoch,
+        inputs=[sections_epoch],
+        outputs=[sections_epoch],
     )
 
     # Plot toggles
@@ -353,7 +375,7 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label):
         outputs=[plot_input, refined_plot_state, current_mode, refine_btn],
     )
 
-    # Textbox sync (original vs refined)
+    # Textbox sync
     plot_input.change(
         fn=H.sync_textbox, inputs=[plot_input, current_mode], outputs=[plot_state, refined_plot_state]
     )
@@ -370,9 +392,9 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label):
             expanded_output,
             chapters_output,
             chapters_state,
-            plot_state,            # <— ORIGINAL (State)
-            refined_plot_state,    # <— REFINED (State)
-            status_output,         # <— pentru append în log
+            plot_state,
+            refined_plot_state,
+            status_output,
         ],
         outputs=[status_output, project_dropdown],
     )
@@ -408,12 +430,20 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label):
         fn=lambda name: f"<div id='bk-project'>{name}</div>" if name else "<div id='bk-project'>(No project loaded)</div>",
         inputs=[project_name],
         outputs=[current_project_label],
+    ).then(
+        fn=_bump_epoch,
+        inputs=[sections_epoch],
+        outputs=[sections_epoch],
     )
 
     delete_project_btn.click(
         fn=H.delete_project,
         inputs=[project_dropdown, status_output],
         outputs=[status_output, project_dropdown],
+    ).then(
+        fn=_bump_epoch,
+        inputs=[sections_epoch],
+        outputs=[sections_epoch],
     )
 
     new_project_btn.click(
@@ -442,6 +472,10 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label):
             resume_btn,
             generate_btn,
         ],
+    ).then(
+        fn=_bump_epoch,
+        inputs=[sections_epoch],
+        outputs=[sections_epoch],
     )
 
     return project_dropdown
