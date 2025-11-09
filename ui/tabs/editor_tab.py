@@ -64,11 +64,11 @@ def render_editor_tab(sections_epoch):
             viewer_md = gr.Markdown(
                 value="_Nothing selected_",
                 elem_id="editor-viewer",
-                height=480,
+                height=600,
             )
             editor_tb = gr.Textbox(
                 label="Edit Section",
-                lines=20,
+                lines=30,
                 visible=False,
                 interactive=True,
             )
