@@ -42,8 +42,9 @@ def render_editor_tab(sections_epoch):
             )
 
             start_edit_btn = gr.Button("✍️ Start Editing", variant="primary", visible=False)
-            confirm_btn = gr.Button("✅ Confirm Edit", visible=False)
+            confirm_btn = gr.Button("✅ Validate", visible=False)
             discard_btn = gr.Button("🗑️ Discard", visible=False)
+            force_edit_btn = gr.Button("⚡ Force Edit", visible=False)
 
         # ---- (1b) Right Column: Viewer / Editor ----
         with gr.Column(scale=3):
@@ -116,6 +117,7 @@ def render_editor_tab(sections_epoch):
             gr.update(visible=False),     # hide Start
             gr.update(visible=True),      # show Confirm
             gr.update(visible=True),      # show Discard
+            gr.update(visible=True),      # show Force Edit
             gr.update(visible=False),     # hide Markdown viewer
             gr.update(visible=True, value=curr_text),  # show Textbox editor
             gr.update(interactive=False), # lock Mode
@@ -138,9 +140,25 @@ def render_editor_tab(sections_epoch):
             gr.update(visible=True),    # show Viewer
             gr.update(visible=False),   # hide Confirm
             gr.update(visible=False),   # hide Discard
+            gr.update(visible=False),   # hide Force Edit
             gr.update(interactive=True),# unlock Mode
             gr.update(interactive=True),# unlock Section
             f"Validation complete for {section}.",
+        )
+
+    def _force_edit(section, draft):
+        """Apply changes directly without validation — unlocks controls after."""
+        saved_text, preview_text = H.force_edit(section, draft)
+        return (
+            gr.update(value=preview_text, visible=True),  # update and show Viewer
+            "_Synced (forced).",
+            gr.update(visible=False),   # hide Editor
+            gr.update(visible=False),   # hide Confirm
+            gr.update(visible=False),   # hide Discard
+            gr.update(visible=False),   # hide Force Edit
+            gr.update(visible=True),    # show Start Editing
+            gr.update(interactive=True),# unlock Mode
+            gr.update(interactive=True),# unlock Section
         )
 
     def _apply_updates(section, draft, plan):
@@ -184,6 +202,7 @@ def render_editor_tab(sections_epoch):
             gr.update(visible=True),
             gr.update(visible=False),
             gr.update(visible=True),
+            gr.update(visible=False),   # hide Force Edit
             gr.update(interactive=True),
             gr.update(interactive=True),
             "Changes discarded.",
@@ -218,6 +237,7 @@ def render_editor_tab(sections_epoch):
             start_edit_btn,
             confirm_btn,
             discard_btn,
+            force_edit_btn,
             viewer_md,
             editor_tb,
             mode_radio,
@@ -233,7 +253,7 @@ def render_editor_tab(sections_epoch):
             validation_box, pending_plan, accordion,
             apply_updates_btn, continue_btn, discard2_btn,
             start_edit_btn, editor_tb, viewer_md,
-            confirm_btn, discard_btn, mode_radio,
+            confirm_btn, discard_btn, force_edit_btn, mode_radio,
             section_dropdown,
             status_strip,
         ],
@@ -265,7 +285,7 @@ def render_editor_tab(sections_epoch):
             viewer_md, editor_tb, validation_box, pending_plan,
             confirm_btn, discard_btn, apply_updates_btn, continue_btn,
             accordion, viewer_md, editor_tb, start_edit_btn,
-            mode_radio, section_dropdown, status_strip,
+            force_edit_btn, mode_radio, section_dropdown, status_strip,
         ],
     )
 
@@ -276,7 +296,17 @@ def render_editor_tab(sections_epoch):
             viewer_md, editor_tb, validation_box, pending_plan,
             confirm_btn, discard_btn, apply_updates_btn, continue_btn,
             accordion, viewer_md, editor_tb, start_edit_btn,
-            mode_radio, section_dropdown, status_strip,
+            force_edit_btn, mode_radio, section_dropdown, status_strip,
+        ],
+    )
+
+    force_edit_btn.click(
+        fn=_force_edit,
+        inputs=[selected_section, editor_tb],
+        outputs=[
+            viewer_md, status_strip, editor_tb,
+            confirm_btn, discard_btn, force_edit_btn, start_edit_btn,
+            mode_radio, section_dropdown,
         ],
     )
 

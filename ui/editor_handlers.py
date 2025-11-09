@@ -17,7 +17,7 @@ def editor_validate(section, draft):
     return msg, plan
 
 def editor_apply(section, draft, plan):
-    # Aplica modificarea efectivă (în state / fișier)
+    # Aplica modificarea efectivă (în state / fișier) după validare
     saved_text = draft
     preview_text = draft
     # Dacă există plan, declanșează pipeline + schimbare tab
@@ -25,6 +25,13 @@ def editor_apply(section, draft, plan):
         switch_to_create()
         # aici se poate porni pipeline parțial
         switch_to_editor()
+    return saved_text, preview_text
+
+def force_edit(section, draft):
+    # Aplica modificarea direct, fără validare (Force Edit)
+    saved_text = draft
+    preview_text = draft
+    # Nu declanșează pipeline, aplică direct modificarea
     return saved_text, preview_text
 
 def switch_to_create():
