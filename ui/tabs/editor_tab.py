@@ -46,6 +46,19 @@ def render_editor_tab(sections_epoch):
             discard_btn = gr.Button("🗑️ Discard", visible=False)
             force_edit_btn = gr.Button("⚡ Force Edit", visible=False)
 
+            # Validation Result (apare în locul butoanelor Validate/Discard/Force Edit)
+            validation_title = gr.Markdown("🔎 **Validation Result**", visible=False)
+            validation_box = gr.Textbox(
+                label="Validation Output",
+                lines=8,
+                interactive=False,
+                placeholder="Validation results will appear here after confirming edits.",
+                visible=False,
+            )
+            apply_updates_btn = gr.Button("✅ Apply Updates", visible=False)
+            continue_btn = gr.Button("🔁 Continue Editing", visible=False)
+            discard2_btn = gr.Button("🗑️ Discard", visible=False)
+
         # ---- (1b) Right Column: Viewer / Editor ----
         with gr.Column(scale=3):
             viewer_md = gr.Markdown(
@@ -59,19 +72,6 @@ def render_editor_tab(sections_epoch):
                 visible=False,
                 interactive=True,
             )
-
-    # ---- (2) Validation Area ----
-    with gr.Accordion("🔎 Validation Result", open=False, elem_id="editor-validation", visible=False) as accordion:
-        validation_box = gr.Textbox(
-            label="Validation Output",
-            lines=8,
-            interactive=False,
-            placeholder="Validation results will appear here after confirming edits.",
-        )
-        with gr.Row():
-            apply_updates_btn = gr.Button("✅ Apply Updates", visible=False)
-            continue_btn = gr.Button("🔁 Continue Editing", visible=False)
-            discard2_btn = gr.Button("🗑️ Discard", visible=False)
 
     # ---- (3) Status Strip ----
     status_strip = gr.Markdown("_Ready._", elem_id="editor-status", visible=False)
@@ -87,7 +87,6 @@ def render_editor_tab(sections_epoch):
             return (
                 gr.update(visible=True),   # show empty_msg
                 gr.update(visible=False),  # hide editor_main
-                gr.update(visible=False),  # hide accordion
                 gr.update(visible=False),  # hide status strip
                 gr.update(choices=[], value=None),  # hide dropdown
             )
@@ -97,7 +96,6 @@ def render_editor_tab(sections_epoch):
         return (
             gr.update(visible=False),  # hide empty_msg
             gr.update(visible=True),   # show editor_main
-            gr.update(visible=True),   # show accordion
             gr.update(visible=True),   # show status strip
             gr.update(choices=sections, value=default),  # dropdown update
         )
@@ -126,23 +124,22 @@ def render_editor_tab(sections_epoch):
         )
 
     def _confirm_edit(section, draft):
-        """Send text for validation — unlocks controls after."""
+        """Send text for validation — shows Validation Result in place of buttons."""
         msg, plan = H.editor_validate(section, draft)
         return (
-            msg,
-            plan,
-            gr.Accordion("🔎 Validation Result", open=True),
-            gr.update(visible=True),    # show Apply
-            gr.update(visible=True),    # show Continue
+            msg,  # validation_box value
+            plan,  # pending_plan
+            gr.update(visible=True),    # show Validation Title
+            gr.update(value=msg, visible=True),   # show Validation Box with message
+            gr.update(visible=True),    # show Apply Updates
+            gr.update(visible=True),    # show Continue Editing
             gr.update(visible=True),    # show Discard2
-            gr.update(visible=True),    # show Start Editing
-            gr.update(visible=False),   # hide Editor
-            gr.update(visible=True),    # show Viewer
-            gr.update(visible=False),   # hide Confirm
+            gr.update(visible=False),   # hide Validate
             gr.update(visible=False),   # hide Discard
             gr.update(visible=False),   # hide Force Edit
-            gr.update(interactive=True),# unlock Mode
-            gr.update(interactive=True),# unlock Section
+            gr.update(visible=True),    # keep Editor visible
+            gr.update(interactive=False), # keep Mode locked
+            gr.update(interactive=False), # keep Section locked
             f"Validation complete for {section}.",
         )
 
@@ -164,27 +161,30 @@ def render_editor_tab(sections_epoch):
     def _apply_updates(section, draft, plan):
         saved_text, preview_text = H.editor_apply(section, draft, plan)
         return (
-            preview_text,
+            gr.update(value=preview_text, visible=True),  # update and show Viewer
             "_Synced._",
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.Accordion("🔎 Validation Result", open=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
+            gr.update(visible=False),   # hide Editor
+            gr.update(visible=False),   # hide Validation Title
+            gr.update(visible=False),   # hide Validation Box
+            gr.update(visible=False),   # hide Apply Updates
+            gr.update(visible=False),   # hide Continue Editing
+            gr.update(visible=False),   # hide Discard2
+            gr.update(visible=True),    # show Start Editing
+            gr.update(interactive=True),# unlock Mode
+            gr.update(interactive=True),# unlock Section
         )
 
     def _continue_edit():
+        """Return to editing mode with Validate/Discard/Force Edit buttons."""
         return (
-            gr.Accordion("🔎 Validation Result", open=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=True),
-            gr.update(visible=True),
-            gr.update(visible=True),
+            gr.update(visible=False),   # hide Validation Title
+            gr.update(visible=False),   # hide Validation Box
+            gr.update(visible=False),   # hide Apply Updates
+            gr.update(visible=False),   # hide Continue Editing
+            gr.update(visible=False),   # hide Discard2
+            gr.update(visible=True),    # show Validate
+            gr.update(visible=True),    # show Discard
+            gr.update(visible=True),    # show Force Edit
             "Continue editing.",
         )
 
@@ -192,19 +192,20 @@ def render_editor_tab(sections_epoch):
         """Revert changes — unlock Section + Mode."""
         text = H.editor_get_section_content(section) or "_Empty_"
         return (
-            text,
-            "", "", None,
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.Accordion("🔎 Validation Result", open=False),
-            gr.update(visible=True),
-            gr.update(visible=False),
-            gr.update(visible=True),
+            gr.update(value=text, visible=True),  # update and show Viewer
+            gr.update(value="", visible=False),   # clear and hide Editor
+            gr.update(value="", visible=False),  # clear and hide Validation Box
+            None,  # clear pending_plan
+            gr.update(visible=False),   # hide Validation Title
+            gr.update(visible=False),   # hide Apply Updates
+            gr.update(visible=False),   # hide Continue Editing
+            gr.update(visible=False),   # hide Discard2
+            gr.update(visible=True),    # show Start Editing
+            gr.update(visible=False),   # hide Validate
+            gr.update(visible=False),   # hide Discard
             gr.update(visible=False),   # hide Force Edit
-            gr.update(interactive=True),
-            gr.update(interactive=True),
+            gr.update(interactive=True),# unlock Mode
+            gr.update(interactive=True),# unlock Section
             "Changes discarded.",
         )
 
@@ -216,8 +217,7 @@ def render_editor_tab(sections_epoch):
         outputs=[
             empty_msg,        # (1)
             editor_main,      # (2)
-            accordion,        # (3)
-            status_strip,     # (4)
+            status_strip,     # (3)
             section_dropdown, # actualizare dropdown
         ],
     )
@@ -250,11 +250,12 @@ def render_editor_tab(sections_epoch):
         fn=_confirm_edit,
         inputs=[selected_section, editor_tb],
         outputs=[
-            validation_box, pending_plan, accordion,
+            validation_box, pending_plan,
+            validation_title, validation_box,
             apply_updates_btn, continue_btn, discard2_btn,
-            start_edit_btn, editor_tb, viewer_md,
-            confirm_btn, discard_btn, force_edit_btn, mode_radio,
-            section_dropdown,
+            confirm_btn, discard_btn, force_edit_btn,
+            editor_tb,
+            mode_radio, section_dropdown,
             status_strip,
         ],
     )
@@ -264,8 +265,11 @@ def render_editor_tab(sections_epoch):
         inputs=[selected_section, editor_tb, pending_plan],
         outputs=[
             viewer_md, status_strip,
+            editor_tb,
+            validation_title, validation_box,
             apply_updates_btn, continue_btn, discard2_btn,
-            accordion, editor_tb, confirm_btn, discard_btn, start_edit_btn,
+            start_edit_btn,
+            mode_radio, section_dropdown,
         ],
     )
 
@@ -273,8 +277,10 @@ def render_editor_tab(sections_epoch):
         fn=_continue_edit,
         inputs=[],
         outputs=[
-            accordion, apply_updates_btn, continue_btn, discard2_btn,
-            editor_tb, confirm_btn, discard_btn, start_edit_btn, status_strip,
+            validation_title, validation_box,
+            apply_updates_btn, continue_btn, discard2_btn,
+            confirm_btn, discard_btn, force_edit_btn,
+            status_strip,
         ],
     )
 
@@ -283,9 +289,11 @@ def render_editor_tab(sections_epoch):
         inputs=[selected_section],
         outputs=[
             viewer_md, editor_tb, validation_box, pending_plan,
-            confirm_btn, discard_btn, apply_updates_btn, continue_btn,
-            accordion, viewer_md, editor_tb, start_edit_btn,
-            force_edit_btn, mode_radio, section_dropdown, status_strip,
+            validation_title,
+            apply_updates_btn, continue_btn, discard2_btn,
+            start_edit_btn,
+            confirm_btn, discard_btn, force_edit_btn,
+            mode_radio, section_dropdown, status_strip,
         ],
     )
 
@@ -294,9 +302,11 @@ def render_editor_tab(sections_epoch):
         inputs=[selected_section],
         outputs=[
             viewer_md, editor_tb, validation_box, pending_plan,
-            confirm_btn, discard_btn, apply_updates_btn, continue_btn,
-            accordion, viewer_md, editor_tb, start_edit_btn,
-            force_edit_btn, mode_radio, section_dropdown, status_strip,
+            validation_title,
+            apply_updates_btn, continue_btn, discard2_btn,
+            start_edit_btn,
+            confirm_btn, discard_btn, force_edit_btn,
+            mode_radio, section_dropdown, status_strip,
         ],
     )
 
