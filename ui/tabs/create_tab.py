@@ -385,13 +385,9 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label, sections_ep
         fn=H.save_project,
         inputs=[
             project_name,
-            plot_input,
             genre_input,
             chapters_input,
             anpc_input,
-            expanded_output,
-            chapters_output,
-            chapters_state,
             plot_state,
             refined_plot_state,
             status_output,

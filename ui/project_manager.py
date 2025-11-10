@@ -38,8 +38,7 @@ def _choose_plot_for_pipeline(plot, refined):
 
 def save_project(
     project_name,
-    plot_input, genre_input, chapters_input, anpc_input,
-    expanded_output, chapters_overview_output, chapters_state,
+    genre_input, chapters_input, anpc_input,
     plot_state_value, refined_plot_state_value,
     current_status
 ):
@@ -49,6 +48,7 @@ def save_project(
     if err:
         return current_status + "\n" + ts_prefix(err), gr.update(choices=list_projects(), value=None)
 
+    # Procesează parametrii
     try:
         num_chapters = int(chapters_input) if chapters_input is not None else None
     except Exception:
@@ -57,17 +57,33 @@ def save_project(
         anpc = int(anpc_input) if anpc_input is not None else None
     except Exception:
         anpc = None
+    genre = genre_input or ""
+
+    # Checkpoint-ul este sursa de adevăr pentru expanded_plot, chapters_overview și chapters
+    from pipeline.state_manager import get_checkpoint
+    checkpoint = get_checkpoint()
+    
+    if checkpoint:
+        # Citește din checkpoint doar expanded_plot, chapters_overview și chapters
+        expanded_plot = checkpoint.get("expanded_plot") or ""
+        chapters_overview = checkpoint.get("chapters_overview") or ""
+        chapters = checkpoint.get("chapters_full") or []
+    else:
+        # Dacă checkpoint nu există, folosește valori goale
+        expanded_plot = ""
+        chapters_overview = ""
+        chapters = []
 
     data = {
         "project_name": project_name.strip(),
         "plot_original": plot_state_value or "",
         "plot_refined": refined_plot_state_value or "",
-        "genre": (genre_input or ""),
+        "genre": genre,
         "num_chapters": num_chapters,
         "avg_pages_per_chapter": anpc,
-        "expanded_plot": (expanded_output or ""),
-        "chapters_overview": (chapters_overview_output or ""),
-        "chapters": chapters_state or [],
+        "expanded_plot": expanded_plot,
+        "chapters_overview": chapters_overview,
+        "chapters": chapters,
     }
 
     path = _project_path(project_name.strip())
