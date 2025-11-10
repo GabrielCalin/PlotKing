@@ -52,17 +52,11 @@ If ONLY minor changes (spelling, punctuation, formatting) are detected:
 RESULT: NO_CHANGES
 MESSAGE: no major changes detected
 
-If there are meaningful differences:
-RESULT: MINOR_CHANGES
+If there are any meaningful differences:
+RESULT: CHANGES_DETECTED
 CHANGES:
 - Brief description of change 1
 - Brief description of change 2
-
-If there are significant structural or content changes:
-RESULT: MAJOR_CHANGES
-CHANGES:
-- Brief description of major change 1
-- Brief description of major change 2
 
 Keep the response concise. Focus only on describing what changed, not on what needs to be adapted.
 """).strip()
@@ -83,10 +77,9 @@ def call_llm_version_diff(
     
     Returnează:
       ("NO_CHANGES", message)      – doar modificări minore detectate
-      ("MINOR_CHANGES", details)   – modificări minore dar cu impact
-      ("MAJOR_CHANGES", details)   – modificări majore detectate
-      ("UNKNOWN", raw)             – dacă formatul nu e recunoscut
-      ("ERROR", message)           – dacă a eșuat requestul
+      ("CHANGES_DETECTED", details) – modificări semnificative detectate
+      ("UNKNOWN", raw)              – dacă formatul nu e recunoscut
+      ("ERROR", message)            – dacă a eșuat requestul
     """
     url = api_url or LOCAL_API_URL
     model = model_name or MODEL_NAME
@@ -123,9 +116,7 @@ def call_llm_version_diff(
     up = content.upper()
     if "RESULT: NO_CHANGES" in up:
         return ("NO_CHANGES", content)
-    if "RESULT: MINOR_CHANGES" in up:
-        return ("MINOR_CHANGES", content)
-    if "RESULT: MAJOR_CHANGES" in up:
-        return ("MAJOR_CHANGES", content)
+    if "RESULT: CHANGES_DETECTED" in up:
+        return ("CHANGES_DETECTED", content)
     return ("UNKNOWN", content)
 

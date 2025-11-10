@@ -90,10 +90,12 @@ def editor_validate(section, draft):
     elif result == "NO_CHANGES":
         msg = f"✅ {details}"
         plan = None
-    else:
-        # MINOR_CHANGES sau MAJOR_CHANGES
+    elif result == "CHANGES_DETECTED":
         msg = details
         plan = None  # Plan-ul va fi determinat de alt AI ulterior
+    else:
+        msg = f"⚠️ Unexpected result: {result}\n\n{details}"
+        plan = None
     
     return msg, plan
 
