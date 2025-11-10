@@ -185,6 +185,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(visible=True),    # show Start Editing
             gr.update(interactive=True),# unlock Mode
             gr.update(interactive=True),# unlock Section
+            updated_text,  # update current_md state with the new text
             new_log,
             new_create_epoch,  # bump create_sections_epoch to notify Create tab
         )
@@ -204,6 +205,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(visible=True),    # show Start Editing
             gr.update(interactive=True),# unlock Mode
             gr.update(interactive=True),# unlock Section
+            preview_text,  # update current_md state with the new text
             new_log,
         )
 
@@ -310,6 +312,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             apply_updates_btn, continue_btn, discard2_btn,
             start_edit_btn,
             mode_radio, section_dropdown,
+            current_md,  # update current_md state
             status_log,
         ],
     )
@@ -361,6 +364,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             viewer_md, status_strip, editor_tb,
             confirm_btn, discard_btn, force_edit_btn, start_edit_btn,
             mode_radio, section_dropdown,
+            current_md,  # update current_md state
             status_log,
             create_sections_epoch,  # bump create_sections_epoch to notify Create tab
         ],
