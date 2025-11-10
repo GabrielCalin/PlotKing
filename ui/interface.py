@@ -15,16 +15,27 @@ def create_interface(pipeline_fn, refine_fn):
             gr.HTML("<div id='bk-title'>📖 BookKing – AI Story Builder</div>")
             current_project_label = gr.HTML("<div id='bk-project'>(No project loaded)</div>")
 
-        sections_epoch = gr.State(0)
+        # Două state-uri separate pentru sincronizare bidirecțională:
+        # - editor_sections_epoch: Create → Editor (când Create modifică ceva, notifică Editor)
+        # - create_sections_epoch: Editor → Create (când Editor modifică ceva, notifică Create)
+        editor_sections_epoch = gr.State(0)
+        create_sections_epoch = gr.State(0)
 
         # === Tabs ===
         with gr.Tabs():
             with gr.Tab("🪶 Create"):
                 # returnăm project_dropdown ca să-l putem popula la load
-                project_dropdown = render_create_tab(pipeline_fn, refine_fn, current_project_label, sections_epoch=sections_epoch)
+                project_dropdown = render_create_tab(
+                    pipeline_fn, refine_fn, current_project_label,
+                    editor_sections_epoch=editor_sections_epoch,
+                    create_sections_epoch=create_sections_epoch
+                )
 
             with gr.Tab("✏️ Editor"):
-                render_editor_tab(sections_epoch=sections_epoch)
+                render_editor_tab(
+                    editor_sections_epoch=editor_sections_epoch,
+                    create_sections_epoch=create_sections_epoch
+                )
 
         # === Populate project list on startup ===
         demo.load(

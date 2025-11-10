@@ -6,7 +6,7 @@ import ui.editor_handlers as H
 from utils.timestamp import ts_prefix
 
 
-def render_editor_tab(sections_epoch):
+def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     """Render the Editor tab (manual editing mode only)."""
 
     # ====== States ======
@@ -91,7 +91,7 @@ def render_editor_tab(sections_epoch):
         return updated_log, gr.update(value=updated_log)
 
     def _refresh_sections(_):
-        """Repopulate dropdown when sections_epoch changes, or show empty state."""
+        """Repopulate dropdown when editor_sections_epoch changes (Create → Editor sync), or show empty state."""
         sections = H.editor_list_sections()
 
         if not sections:
@@ -170,10 +170,11 @@ def render_editor_tab(sections_epoch):
             new_log,
         )
 
-    def _force_edit(section, draft, current_log):
+    def _force_edit(section, draft, current_log, create_epoch):
         """Apply changes directly without validation — unlocks controls after."""
         updated_text = H.force_edit(section, draft)
         new_log, status_update = _append_status(current_log, f"⚡ ({section}) Synced (forced).")
+        new_create_epoch = (create_epoch or 0) + 1  # Bump create_sections_epoch to notify Create tab
         return (
             gr.update(value=updated_text, visible=True),  # update and show Viewer
             status_update,
@@ -185,6 +186,7 @@ def render_editor_tab(sections_epoch):
             gr.update(interactive=True),# unlock Mode
             gr.update(interactive=True),# unlock Section
             new_log,
+            new_create_epoch,  # bump create_sections_epoch to notify Create tab
         )
 
     def _apply_updates(section, draft, plan, current_log):
@@ -246,9 +248,10 @@ def render_editor_tab(sections_epoch):
 
     # ====== Wiring ======
 
-    sections_epoch.change(
+    # ---- Sincronizare Create → Editor: refresh Editor tab când Create modifică checkpoint ----
+    editor_sections_epoch.change(
         fn=_refresh_sections,
-        inputs=[sections_epoch],
+        inputs=[editor_sections_epoch],
         outputs=[
             empty_msg,        # (1)
             editor_main,      # (2)
@@ -353,12 +356,13 @@ def render_editor_tab(sections_epoch):
 
     force_edit_btn.click(
         fn=_force_edit,
-        inputs=[selected_section, editor_tb, status_log],
+        inputs=[selected_section, editor_tb, status_log, create_sections_epoch],
         outputs=[
             viewer_md, status_strip, editor_tb,
             confirm_btn, discard_btn, force_edit_btn, start_edit_btn,
             mode_radio, section_dropdown,
             status_log,
+            create_sections_epoch,  # bump create_sections_epoch to notify Create tab
         ],
     )
 
