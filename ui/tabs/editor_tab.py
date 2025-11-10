@@ -134,9 +134,9 @@ def render_editor_tab(sections_epoch):
         new_log, status_update = _append_status(current_log, last_msg)
         return gr.update(visible=(mode == "Manual")), status_update, new_log
 
-    def _start_edit(curr_text, current_log):
+    def _start_edit(curr_text, section, current_log):
         """Switch to edit mode — locks Section + Mode."""
-        new_log, status_update = _append_status(current_log, "✍️ Editing started.")
+        new_log, status_update = _append_status(current_log, f"✍️ ({section}) Editing started.")
         return (
             gr.update(visible=False),     # hide Start
             gr.update(visible=True),      # show Confirm
@@ -152,7 +152,7 @@ def render_editor_tab(sections_epoch):
 
     def _confirm_edit(section, draft, current_log):
         """Send text for validation — shows Validation Result in place of buttons."""
-        new_log, status_update = _append_status(current_log, f"🔍 Validation started for {section}.")
+        new_log, status_update = _append_status(current_log, f"🔍 ({section}) Validation started.")
         msg, plan = H.editor_validate(section, draft)
         return (
             msg,  # validation_box value
@@ -175,7 +175,7 @@ def render_editor_tab(sections_epoch):
     def _force_edit(section, draft, current_log):
         """Apply changes directly without validation — unlocks controls after."""
         saved_text, preview_text = H.force_edit(section, draft)
-        new_log, status_update = _append_status(current_log, "⚡ Synced (forced).")
+        new_log, status_update = _append_status(current_log, f"⚡ ({section}) Synced (forced).")
         return (
             gr.update(value=preview_text, visible=True),  # update and show Viewer
             status_update,
@@ -191,7 +191,7 @@ def render_editor_tab(sections_epoch):
 
     def _apply_updates(section, draft, plan, current_log):
         saved_text, preview_text = H.editor_apply(section, draft, plan)
-        new_log, status_update = _append_status(current_log, "✅ Synced.")
+        new_log, status_update = _append_status(current_log, f"✅ ({section}) Synced.")
         return (
             gr.update(value=preview_text, visible=True),  # update and show Viewer
             status_update,
@@ -207,9 +207,9 @@ def render_editor_tab(sections_epoch):
             new_log,
         )
 
-    def _continue_edit(current_log):
+    def _continue_edit(section, current_log):
         """Return to editing mode with Validate/Discard/Force Edit buttons."""
-        new_log, status_update = _append_status(current_log, "🔁 Continue editing.")
+        new_log, status_update = _append_status(current_log, f"🔁 ({section}) Continue editing.")
         return (
             gr.update(visible=False),   # hide Validation Title
             gr.update(visible=False),   # hide Validation Box
@@ -226,7 +226,7 @@ def render_editor_tab(sections_epoch):
     def _discard(section, current_log):
         """Revert changes — unlock Section + Mode."""
         text = H.editor_get_section_content(section) or "_Empty_"
-        new_log, status_update = _append_status(current_log, "🗑️ Changes discarded.")
+        new_log, status_update = _append_status(current_log, f"🗑️ ({section}) Changes discarded.")
         return (
             gr.update(value=text, visible=True),  # update and show Viewer
             gr.update(value="", visible=False),   # clear and hide Editor
@@ -269,7 +269,7 @@ def render_editor_tab(sections_epoch):
 
     start_edit_btn.click(
         fn=_start_edit,
-        inputs=[current_md, status_log],
+        inputs=[current_md, selected_section, status_log],
         outputs=[
             start_edit_btn,
             confirm_btn,
@@ -315,7 +315,7 @@ def render_editor_tab(sections_epoch):
 
     continue_btn.click(
         fn=_continue_edit,
-        inputs=[status_log],
+        inputs=[selected_section, status_log],
         outputs=[
             validation_title, validation_box,
             apply_updates_btn, continue_btn, discard2_btn,
