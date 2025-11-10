@@ -57,13 +57,44 @@ def editor_get_section_content(name):
     return ""
 
 def editor_validate(section, draft):
-    # Exemplu de validare
-    if "kill" in draft.lower():
-        msg = f"Warning: '{section}' introduces major plot changes."
-        plan = {"regen_overview": True, "regen_chapters": [3,4,5]}
-    else:
-        msg = "OK"
+    """Validează modificările comparând versiunea originală cu versiunea editată."""
+    from pipeline.state_manager import get_checkpoint
+    from pipeline.context import PipelineContext
+    from pipeline.steps.version_diff import call_llm_version_diff
+    
+    checkpoint = get_checkpoint()
+    if not checkpoint:
+        return "Error: No checkpoint found.", None
+    
+    # Obține versiunea originală din checkpoint (fără să o modificăm)
+    original_version = editor_get_section_content(section) or ""
+    
+    # Creează un context temporar din checkpoint pentru a obține genre
+    context = PipelineContext.from_checkpoint(checkpoint)
+    
+    # Apelează call_llm_version_diff
+    result, details = call_llm_version_diff(
+        section_type=section,
+        original_version=original_version,
+        modified_version=draft or "",
+        genre=context.genre or "",
+    )
+    
+    # Formatează rezultatul pentru Validation Output
+    if result == "ERROR":
+        msg = f"❌ Error during validation: {details}"
         plan = None
+    elif result == "UNKNOWN":
+        msg = f"⚠️ Unexpected validation format:\n\n{details}"
+        plan = None
+    elif result == "NO_CHANGES":
+        msg = f"✅ {details}"
+        plan = None
+    else:
+        # MINOR_CHANGES sau MAJOR_CHANGES
+        msg = details
+        plan = None  # Plan-ul va fi determinat de alt AI ulterior
+    
     return msg, plan
 
 def editor_apply(section, draft, plan):
