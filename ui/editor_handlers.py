@@ -80,11 +80,36 @@ def editor_apply(section, draft, plan):
     return saved_text, preview_text
 
 def force_edit(section, draft):
-    # Aplica modificarea direct, fără validare (Force Edit)
-    saved_text = draft
-    preview_text = draft
-    # Nu declanșează pipeline, aplică direct modificarea
-    return saved_text, preview_text
+    """Aplică modificarea direct în checkpoint, fără validare."""
+    from pipeline.state_manager import get_checkpoint, save_checkpoint
+    
+    checkpoint = get_checkpoint()
+    if not checkpoint:
+        return draft
+    
+    # Creează o copie a checkpoint-ului pentru a-l actualiza
+    updated_checkpoint = checkpoint.copy()
+    
+    # Actualizează secțiunea corespunzătoare
+    if section == "Expanded Plot":
+        updated_checkpoint["expanded_plot"] = draft
+    elif section == "Chapters Overview":
+        updated_checkpoint["chapters_overview"] = draft
+    elif section.startswith("Chapter "):
+        try:
+            chapter_num = int(section.split(" ")[1])
+            chapters_full = list(updated_checkpoint.get("chapters_full", []))  # Creează o copie
+            # Actualizează doar dacă capitolul există deja
+            if 1 <= chapter_num <= len(chapters_full):
+                chapters_full[chapter_num - 1] = draft
+                updated_checkpoint["chapters_full"] = chapters_full
+        except (ValueError, IndexError):
+            pass
+    
+    # Salvează checkpoint-ul actualizat
+    save_checkpoint(updated_checkpoint)
+    
+    return draft
 
 def switch_to_create():
     print(">>> Switching to Create tab... (JS trigger here)")

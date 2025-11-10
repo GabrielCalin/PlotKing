@@ -172,10 +172,10 @@ def render_editor_tab(sections_epoch):
 
     def _force_edit(section, draft, current_log):
         """Apply changes directly without validation — unlocks controls after."""
-        saved_text, preview_text = H.force_edit(section, draft)
+        updated_text = H.force_edit(section, draft)
         new_log, status_update = _append_status(current_log, f"⚡ ({section}) Synced (forced).")
         return (
-            gr.update(value=preview_text, visible=True),  # update and show Viewer
+            gr.update(value=updated_text, visible=True),  # update and show Viewer
             status_update,
             gr.update(visible=False),   # hide Editor
             gr.update(visible=False),   # hide Confirm
