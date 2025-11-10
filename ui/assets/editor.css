@@ -31,3 +31,20 @@
   padding-top: 4px;
   margin-top: 8px;
 }
+
+/* Empty state message - centered and larger font */
+#editor-empty {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 60vh !important;
+  text-align: center !important;
+  font-size: 1.5rem !important;
+  line-height: 1.6 !important;
+  color: #666 !important;
+}
+
+#editor-empty p {
+  font-size: 1.5rem !important;
+  margin: 0.5rem 0 !important;
+}
