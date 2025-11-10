@@ -253,3 +253,71 @@ def sync_textbox(text, mode):
         return gr.update(), text
     else:
         return text, gr.update()
+
+def refresh_create_from_checkpoint(epoch, current_chapters_state, current_chapter_selector):
+    """Actualizează conținutul Create tab din checkpoint când Editor modifică ceva."""
+    from ui.ui_state import display_selected_chapter
+    
+    checkpoint = get_checkpoint()
+    if not checkpoint:
+        # Dacă nu există checkpoint, nu schimbăm nimic
+        return (
+            gr.update(),  # expanded_output
+            gr.update(),  # chapters_output
+            gr.update(),  # chapters_state
+            gr.update(),  # current_chapter_output
+            gr.update(),  # chapter_selector
+            gr.update(),  # chapter_counter
+        )
+    
+    # Citește din checkpoint
+    expanded = checkpoint.get("expanded_plot", "") or ""
+    overview = checkpoint.get("chapters_overview", "") or ""
+    chapters_list = checkpoint.get("chapters_full", []) or []
+    
+    # Actualizează expanded_output și chapters_output
+    expanded_update = gr.update(value=expanded)
+    overview_update = gr.update(value=overview)
+    
+    # Actualizează chapters_state
+    chapters_state_update = chapters_list
+    
+    # Actualizează chapter_selector dacă numărul de capitole s-a schimbat
+    if len(chapters_list) != len(current_chapters_state or []):
+        if chapters_list:
+            chapter_choices = [f"Chapter {i+1}" for i in range(len(chapters_list))]
+            # Păstrează selecția curentă dacă e validă, altfel selectează primul
+            current_value = current_chapter_selector
+            if current_value not in chapter_choices:
+                current_value = chapter_choices[0] if chapter_choices else None
+            chapter_selector_update = gr.update(choices=chapter_choices, value=current_value)
+        else:
+            chapter_selector_update = gr.update(choices=[], value=None)
+    else:
+        # Păstrează selector-ul, dar actualizează choices în caz că s-a schimbat ceva
+        if chapters_list:
+            chapter_choices = [f"Chapter {i+1}" for i in range(len(chapters_list))]
+            chapter_selector_update = gr.update(choices=chapter_choices)
+        else:
+            chapter_selector_update = gr.update()
+    
+    # Actualizează current_chapter_output dacă există o selecție (întotdeauna, pentru că conținutul poate fi modificat)
+    if current_chapter_selector and chapters_list:
+        current_chapter_update = display_selected_chapter(current_chapter_selector, chapters_list)
+    else:
+        current_chapter_update = gr.update(value="")
+    
+    # Actualizează chapter_counter
+    if chapters_list:
+        chapter_counter_update = gr.update(value=f"📖 {len(chapters_list)} chapter(s) available")
+    else:
+        chapter_counter_update = gr.update(value="_No chapters yet_")
+    
+    return (
+        expanded_update,
+        overview_update,
+        chapters_state_update,
+        current_chapter_update,
+        chapter_selector_update,
+        chapter_counter_update,
+    )
