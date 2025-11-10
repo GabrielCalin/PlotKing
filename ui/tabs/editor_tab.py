@@ -12,8 +12,6 @@ def render_editor_tab(sections_epoch):
     # ====== States ======
     selected_section = gr.State(None)
     current_md = gr.State("")
-    draft_text = gr.State("")
-    validation_msg = gr.State("")
     pending_plan = gr.State(None)
     status_log = gr.State("")  # pentru append la status_strip
 
