@@ -7,6 +7,7 @@ LLM helper pentru analiza impactului unui diff asupra altor secțiuni.
 import os
 import textwrap
 import requests
+import json
 from typing import List, Tuple
 
 LOCAL_API_URL = os.getenv("LMSTUDIO_API_URL", "http://127.0.0.1:1234/v1/chat/completions")
@@ -51,19 +52,12 @@ Keep the tone concise and focused on actionable reasoning.
 """).strip()
 
 
-def _format_candidate_sections(sections: List[Tuple[str, str]], max_chars: int = 1800) -> str:
+def _format_candidate_sections(sections: List[Tuple[str, str]]) -> str:
     formatted = []
-    total = 0
     for name, content in sections:
         snippet = (content or "").strip()
-        if len(snippet) > 300:
-            snippet = snippet[:300].rstrip() + "..."
         block = f"- {name}: \"{snippet}\""
-        if total + len(block) > max_chars:
-            formatted.append("- ... (truncated)")
-            break
         formatted.append(block)
-        total += len(block)
     if not formatted:
         return "(no additional context provided)"
     return "\n".join(formatted)
