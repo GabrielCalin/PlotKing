@@ -50,7 +50,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             validation_title = gr.Markdown("🔎 **Validation Result**", visible=False)
             validation_box = gr.Markdown(
                 value="Validation results will appear here after confirming edits.",
-                height=500,
+                height=350,
                 visible=False,
             )
             apply_updates_btn = gr.Button("✅ Apply Updates", visible=False)
@@ -66,7 +66,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             )
             editor_tb = gr.Textbox(
                 label="Edit Section",
-                lines=30,
+                lines=35,
                 visible=False,
                 interactive=True,
             )
