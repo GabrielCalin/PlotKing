@@ -37,7 +37,15 @@ Impact Expectations:
 
 **Chapters Overview changes**: Impact occurs if the change contradicts existing content or breaks continuity. If continuity is broken, all following chapters need adaptation and should be marked as impacted. When marking Chapters Overview as impacted, you must clearly specify which chapters from Chapters Overview need adaptation in the reason.
 
-**Chapter changes**: Impact occurs if the change contradicts something (even minor details not mentioned in Expanded Plot or Chapters Overview) or breaks continuity. If Chapters Overview indicates certain chapters need regeneration due to continuity issues, those chapters must be marked as impacted.
+**Chapter changes**: Impact occurs if the change:
+1. Contradicts something (even minor details not mentioned in Expanded Plot or Chapters Overview)
+2. Breaks continuity with following sections
+3. Introduces a major new event or plot development that affects the story's direction
+
+For major new events: You must check continuity between the EDITED SECTION CONTENT and the following sections in POTENTIAL IMPACTED SECTIONS. If a major new event is introduced (e.g., character makes a significant decision, new plot development, location change), it requires updates in:
+- Expanded Plot (to include the new event)
+- Chapters Overview (to reflect the new development)
+- Following chapters (to maintain continuity with the new event)
 
 Examples:
 
@@ -54,13 +62,19 @@ Example 2: Character name changed in Expanded Plot. That character appears in Ch
 Example 3: Minor change in Chapter 3 (out of 5): Susan's eyes are green instead of brown. Eye color is also mentioned in Chapter 5.
 - Chapter 5: IMPACTED (eye color detail needs update for consistency)
 
+Example 4: Chapter 4 (out of 5) is modified. Previously, Chapter 4 ended with John at home. New modification: John decides to embark on an adventure to Mount Everest the next day. This is a major new plot development not mentioned in Expanded Plot or Chapters Overview.
+- Expanded Plot: IMPACTED (major new event - John's Everest adventure - needs to be included)
+- Chapters Overview: IMPACTED (needs to reflect John's departure and adventure in Chapter 4 description, Chapter 5 needs adaptation)
+- Chapter 5: IMPACTED (must account for John being on Everest adventure, continuity broken with previous ending)
+
 Task:
 1. Review the edited section content, change summary, and potentially impacted sections.
 2. **IMPORTANT**: SECTION EDITED ({section_name}) is the one that was modified. POTENTIAL IMPACTED SECTIONS are other sections that may need updates due to changes made in {section_name}.
-3. Apply the impact expectations above to determine which sections require adaptation.
-4. Only reference section names from the POTENTIALLY IMPACTED SECTION NAMES list.
-5. For every impacted section, provide a short explanation (2 sentences max) describing why the changes made in {section_name} require this adaptation.
-6. If none of the sections require an update, state that explicitly.
+3. **CRITICAL**: Check continuity between EDITED SECTION CONTENT and following sections in POTENTIAL IMPACTED SECTIONS. If a major new event or plot development is introduced, it requires updates even if there are no direct contradictions.
+4. Apply the impact expectations above to determine which sections require adaptation.
+5. Only reference section names from the POTENTIALLY IMPACTED SECTION NAMES list.
+6. For every impacted section, provide a short explanation (2 sentences max) describing why the changes made in {section_name} require this adaptation.
+7. If none of the sections require an update, state that explicitly.
 
 Output format (strict):
 If no updates needed:
