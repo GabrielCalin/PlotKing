@@ -6,9 +6,10 @@ apelează modelul, și întoarce (result, diff_details).
 """
 
 import os
+import json
 import textwrap
 import requests
-from typing import Tuple
+from typing import Tuple, Dict, Any
 
 LOCAL_API_URL = os.getenv("LMSTUDIO_API_URL", "http://127.0.0.1:1234/v1/chat/completions")
 MODEL_NAME = os.getenv("LMSTUDIO_MODEL", "phi-3-mini-4k-instruct")
@@ -46,19 +47,26 @@ Instructions:
    - Additions or removals of significant content
    - Changes to tone, pacing, or genre elements
 
-3. **Output format**: You must respond in one of these exact formats:
+3. **Output format (strict JSON)**: You must respond with a single JSON object and nothing else.
 
-If ONLY minor changes (spelling, punctuation, formatting) are detected:
-RESULT: NO_CHANGES
-MESSAGE: no major changes detected
+If ONLY minor changes (spelling, punctuation, formatting) are detected, respond exactly like this:
+{{
+  "result": "NO_CHANGES",
+  "message": "no major changes detected"
+}}
 
-If there are any meaningful differences:
-RESULT: CHANGES_DETECTED
-CHANGES:
-- Brief description of change 1
-- Brief description of change 2
+If there are meaningful differences, respond exactly like this:
+{{
+  "result": "CHANGES_DETECTED",
+  "changes": [
+    "Brief description of change 1",
+    "Brief description of change 2"
+  ]
+}}
 
-Keep the response concise. Focus only on describing what changed, not on what needs to be adapted.
+- The JSON must include only the keys shown above.
+- The `changes` array must contain natural-language bullet descriptions of each significant change.
+- Do not add any extra text before or after the JSON.
 """).strip()
 
 
@@ -71,15 +79,15 @@ def call_llm_version_diff(
     api_url: str = None,
     model_name: str = None,
     timeout: int = 300,
-) -> Tuple[str, str]:
+) -> Tuple[str, Dict[str, Any]]:
     """
     Compară două versiuni ale unei secțiuni și returnează diferențele.
     
     Returnează:
-      ("NO_CHANGES", message)      – doar modificări minore detectate
-      ("CHANGES_DETECTED", details) – modificări semnificative detectate
-      ("UNKNOWN", raw)              – dacă formatul nu e recunoscut
-      ("ERROR", message)            – dacă a eșuat requestul
+      ("NO_CHANGES", data)      – doar modificări minore detectate (data conține cheia "message")
+      ("CHANGES_DETECTED", data) – modificări semnificative detectate (data conține cheia "changes")
+      ("UNKNOWN", {"raw": content})              – dacă formatul nu e recunoscut
+      ("ERROR", {"error": message})            – dacă a eșuat requestul
     """
     url = api_url or LOCAL_API_URL
     model = model_name or MODEL_NAME
@@ -111,12 +119,20 @@ def call_llm_version_diff(
                 .strip()
         )
     except Exception as e:
-        return ("ERROR", str(e))
+        return ("ERROR", {"error": str(e)})
 
-    up = content.upper()
-    if "RESULT: NO_CHANGES" in up:
-        return ("NO_CHANGES", content)
-    if "RESULT: CHANGES_DETECTED" in up:
-        return ("CHANGES_DETECTED", content)
-    return ("UNKNOWN", content)
+    try:
+        parsed = json.loads(content)
+    except json.JSONDecodeError:
+        return ("UNKNOWN", {"raw": content})
+
+    result = parsed.get("result")
+    if result in {"NO_CHANGES", "CHANGES_DETECTED"}:
+        if result == "NO_CHANGES" and "message" not in parsed:
+            parsed["message"] = "no major changes detected"
+        if result == "CHANGES_DETECTED" and "changes" not in parsed:
+            parsed["changes"] = []
+        return (result, parsed)
+
+    return ("UNKNOWN", {"raw": content})
 

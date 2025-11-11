@@ -5,10 +5,10 @@ LLM helper pentru analiza impactului unui diff asupra altor secțiuni.
 """
 
 import os
+import json
 import textwrap
 import requests
-import json
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Any
 
 LOCAL_API_URL = os.getenv("LMSTUDIO_API_URL", "http://127.0.0.1:1234/v1/chat/completions")
 MODEL_NAME = os.getenv("LMSTUDIO_MODEL", "phi-3-mini-4k-instruct")
@@ -19,7 +19,7 @@ GEN_PARAMS = {
 }
 
 _IMPACT_PROMPT = textwrap.dedent("""\
-You are a continuity analyst helping a human editor understand which story sections need updates after a change.
+ You are a continuity analyst helping a human editor understand which story sections need updates after a change.
 
 Inputs you receive:
 - SECTION EDITED: {section_name}
@@ -76,22 +76,31 @@ Task:
 6. For every impacted section, provide a short explanation (2 sentences max) describing why the changes made in {section_name} require this adaptation.
 7. If none of the sections require an update, state that explicitly.
 
-Output format (strict):
-If no updates needed:
-RESULT: NO_IMPACT
-IMPACTED_SECTIONS: []
-MESSAGE: brief reason
+Output format (strict JSON):
+- Respond with a single JSON object and nothing else.
+- Use one of the following structures:
+
+If no updates are needed:
+{{
+  "result": "NO_IMPACT",
+  "message": "brief reason",
+  "impacted_sections": []
+}}
 
 If updates are required:
-RESULT: IMPACT_DETECTED
-IMPACTED_SECTIONS: ["Section Name", "Another Section"]
-IMPACT:
-- Section: <section name>
-  Reason: <short explanation mentioning that changes in {section_name} require this adaptation>
-- Section: <...>
-  Reason: <...>
+{{
+  "result": "IMPACT_DETECTED",
+  "impacted_sections": [
+    {{
+      "name": "Section Name",
+      "reason": "Short explanation mentioning why changes in {section_name} require this adaptation"
+    }}
+  ]
+}}
 
-Keep the tone concise and focused on actionable reasoning.
+- The JSON must include only the keys shown above.
+- The impacted_sections array must list only sections from POTENTIALLY IMPACTED SECTION NAMES.
+- Do not add any extra text before or after the JSON.
 """).strip()
 
 
@@ -106,28 +115,6 @@ def _format_candidate_sections(sections: List[Tuple[str, str]]) -> str:
     return "\n".join(formatted)
 
 
-def _extract_impacted_sections(content: str) -> List[str]:
-    impacted = []
-    for line in content.splitlines():
-        if line.strip().startswith("IMPACTED_SECTIONS:"):
-            try:
-                _, rest = line.split(":", 1)
-                rest = rest.strip()
-                if rest.startswith("[") and rest.endswith("]"):
-                    inner = rest[1:-1].strip()
-                    if inner:
-                        items = [item.strip().strip('"') for item in inner.split(",")]
-                        impacted = [item for item in items if item]
-                    else:
-                        impacted = []
-                else:
-                    impacted = []
-            except ValueError:
-                impacted = []
-            break
-    return impacted
-
-
 def call_llm_impact_analysis(
     *,
     section_name: str,
@@ -137,15 +124,15 @@ def call_llm_impact_analysis(
     api_url: str = None,
     model_name: str = None,
     timeout: int = 300,
-) -> Tuple[str, str, List[str]]:
+) -> Tuple[str, Dict[str, Any], List[str]]:
     """
     Analizează ce secțiuni trebuie adaptate după un diff.
 
     Returnează:
-      ("NO_IMPACT", message, impacted_sections)
-      ("IMPACT_DETECTED", details, impacted_sections)
-      ("UNKNOWN", raw, [])
-      ("ERROR", message, [])
+      ("NO_IMPACT", data, impacted_sections)
+      ("IMPACT_DETECTED", data, impacted_sections)
+      ("UNKNOWN", {"raw": content}, [])
+      ("ERROR", {"error": message}, [])
     """
     url = api_url or LOCAL_API_URL
     model = model_name or MODEL_NAME
@@ -182,12 +169,32 @@ def call_llm_impact_analysis(
                 .strip()
         )
     except Exception as e:
-        return ("ERROR", str(e), [])
+        return ("ERROR", {"error": str(e)}, [])
 
-    impacted_sections = _extract_impacted_sections(content)
-    up = content.upper()
-    if "RESULT: NO_IMPACT" in up:
-        return ("NO_IMPACT", content, impacted_sections)
-    if "RESULT: IMPACT_DETECTED" in up:
-        return ("IMPACT_DETECTED", content, impacted_sections)
-    return ("UNKNOWN", content, [])
+    try:
+        parsed = json.loads(content)
+    except json.JSONDecodeError:
+        return ("UNKNOWN", {"raw": content}, [])
+
+    result = parsed.get("result")
+    if result in {"NO_IMPACT", "IMPACT_DETECTED"}:
+        impacted_sections = []
+        if result == "NO_IMPACT":
+            parsed.setdefault("message", "No other sections require updates.")
+            parsed.setdefault("impacted_sections", [])
+        else:
+            sections_data = parsed.get("impacted_sections") or []
+            cleaned_sections = []
+            for entry in sections_data:
+                if isinstance(entry, dict):
+                    name = entry.get("name")
+                    reason = entry.get("reason")
+                    if name:
+                        impacted_sections.append(name)
+                        cleaned_sections.append({"name": name, "reason": reason or ""})
+            parsed["impacted_sections"] = cleaned_sections
+        if result == "NO_IMPACT" and not impacted_sections:
+            impacted_sections = []
+        return (result, parsed, impacted_sections)
+
+    return ("UNKNOWN", {"raw": content}, [])
