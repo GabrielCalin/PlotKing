@@ -77,7 +77,7 @@ def editor_validate(section, draft):
         plan = None
     elif result == "CHANGES_DETECTED":
         candidates = _build_candidate_sections(section, checkpoint)
-        impact_result, impact_details = call_llm_impact_analysis(
+        impact_result, impact_details, impacted = call_llm_impact_analysis(
             section_name=section,
             diff_summary=details,
             candidate_sections=candidates,
@@ -92,6 +92,9 @@ def editor_validate(section, draft):
         parts = [details]
         if impact_msg:
             parts.append(impact_msg)
+        if impacted:
+            impacted_str = ", ".join(impacted)
+            parts.append(f"Impacted sections: {impacted_str}")
         msg = "\n\n".join(parts)
         plan = None
     else:
