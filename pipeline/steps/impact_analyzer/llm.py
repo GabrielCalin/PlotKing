@@ -14,8 +14,8 @@ LOCAL_API_URL = os.getenv("LMSTUDIO_API_URL", "http://127.0.0.1:1234/v1/chat/com
 MODEL_NAME = os.getenv("LMSTUDIO_MODEL", "phi-3-mini-4k-instruct")
 
 GEN_PARAMS = {
-    "temperature": 0.3,
-    "top_p": 0.9
+    "temperature": 0.1,
+    "top_p": 0.3
 }
 
 _IMPACT_PROMPT = textwrap.dedent("""\
@@ -56,10 +56,11 @@ Example 3: Minor change in Chapter 3 (out of 5): Susan's eyes are green instead 
 
 Task:
 1. Review the edited section content, change summary, and potentially impacted sections.
-2. Apply the impact expectations above to determine which sections require adaptation.
-3. Only reference section names from the POTENTIALLY IMPACTED SECTION NAMES list.
-4. For every impacted section, provide a short explanation (2 sentences max) describing why the change matters.
-5. If none of the sections require an update, state that explicitly.
+2. **IMPORTANT**: SECTION EDITED ({section_name}) is the one that was modified. POTENTIAL IMPACTED SECTIONS are other sections that may need updates due to changes made in {section_name}.
+3. Apply the impact expectations above to determine which sections require adaptation.
+4. Only reference section names from the POTENTIALLY IMPACTED SECTION NAMES list.
+5. For every impacted section, provide a short explanation (2 sentences max) describing why the changes made in {section_name} require this adaptation.
+6. If none of the sections require an update, state that explicitly.
 
 Output format (strict):
 If no updates needed:
@@ -72,7 +73,7 @@ RESULT: IMPACT_DETECTED
 IMPACTED_SECTIONS: ["Section Name", "Another Section"]
 IMPACT:
 - Section: <section name>
-  Reason: <short explanation>
+  Reason: <short explanation mentioning that changes in {section_name} require this adaptation>
 - Section: <...>
   Reason: <...>
 
