@@ -176,25 +176,27 @@ def _section_content_from_checkpoint(checkpoint, name: str) -> str:
 def _build_candidate_sections(section: str, checkpoint) -> List[Tuple[str, str]]:
     candidates: List[Tuple[str, str]] = []
 
+    if not section:
+        return candidates
+
     def add(name: str):
-        if not name:
+        if not name or name == section:
             return
         content = _section_content_from_checkpoint(checkpoint, name) or ""
         candidates.append((name, content))
 
-    normalized = (section or "").strip()
     total_chapters = len(checkpoint.get("chapters_full", []) or [])
 
-    if normalized in {"Expanded Plot", "Chapters Overview"}:
+    if section in {"Expanded Plot", "Chapters Overview"}:
         add("Expanded Plot")
         add("Chapters Overview")
         for idx in range(1, total_chapters + 1):
             add(f"Chapter {idx}")
-    elif normalized.startswith("Chapter "):
+    elif section.startswith("Chapter "):
         add("Expanded Plot")
         add("Chapters Overview")
         try:
-            chapter_num = int(normalized.split(" ")[1])
+            chapter_num = int(section.split(" ")[1])
         except (ValueError, IndexError):
             chapter_num = None
         if chapter_num:
