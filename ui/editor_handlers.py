@@ -1,4 +1,110 @@
 from typing import List, Tuple
+import re
+
+def _format_validation_markdown(result: str, details: str, impact_result: str = None, impact_details: str = None, impacted: List[str] = None) -> str:
+    """Formatează rezultatul validării într-un format markdown human-readable."""
+    
+    if result == "ERROR":
+        return f"""## ❌ Error
+
+**Validation failed with error:**
+
+```
+{details}
+```
+"""
+    
+    if result == "UNKNOWN":
+        return f"""## ⚠️ Unexpected Format
+
+**Received unexpected validation format:**
+
+```
+{details}
+```
+"""
+    
+    if result == "NO_CHANGES":
+        message = details.split("MESSAGE:", 1)[1].strip() if "MESSAGE:" in details else details
+        return f"""## ✅ No Major Changes Detected
+
+{message}
+"""
+    
+    if result == "CHANGES_DETECTED":
+        changes_section = ""
+        if "CHANGES:" in details:
+            changes_text = details.split("CHANGES:", 1)[1].strip()
+            changes_lines = [line.strip() for line in changes_text.split("\n") if line.strip() and not line.strip().startswith("RESULT:")]
+            if changes_lines:
+                changes_section = "### 📝 Changes Detected\n\n"
+                for line in changes_lines:
+                    if line.startswith("-"):
+                        changes_section += f"{line}\n"
+                    else:
+                        changes_section += f"- {line}\n"
+        
+        impact_section = ""
+        if impact_result == "ERROR":
+            impact_section = f"\n\n### ❌ Impact Analysis Error\n\n{impact_details}\n"
+        elif impact_result == "UNKNOWN":
+            impact_section = f"\n\n### ⚠️ Unexpected Impact Format\n\n{impact_details}\n"
+        elif impact_result == "IMPACT_DETECTED":
+            impact_section = "\n\n### ⚠️ Impact Analysis\n\n"
+            
+            if impacted:
+                impact_section += f"**Sections that need updates:** {', '.join(f'`{s}`' for s in impacted)}\n\n"
+            
+            if "IMPACT:" in impact_details:
+                impact_text = impact_details.split("IMPACT:", 1)[1].strip()
+                impact_items = []
+                current_section = None
+                current_reason = []
+                
+                for line in impact_text.split("\n"):
+                    line = line.strip()
+                    if line.startswith("- Section:"):
+                        if current_section:
+                            impact_items.append((current_section, "\n".join(current_reason).strip()))
+                        current_section = line.replace("- Section:", "").strip()
+                        current_reason = []
+                    elif line.startswith("Reason:"):
+                        reason = line.replace("Reason:", "").strip()
+                        if reason:
+                            current_reason.append(reason)
+                    elif line and current_reason:
+                        current_reason.append(line)
+                
+                if current_section:
+                    impact_items.append((current_section, "\n".join(current_reason).strip()))
+                
+                if impact_items:
+                    for section, reason in impact_items:
+                        impact_section += f"#### 📌 {section}\n\n{reason}\n\n"
+            elif "MESSAGE:" in impact_details:
+                message = impact_details.split("MESSAGE:", 1)[1].strip()
+                impact_section += f"{message}\n"
+        elif impact_result == "NO_IMPACT":
+            if "MESSAGE:" in impact_details:
+                message = impact_details.split("MESSAGE:", 1)[1].strip()
+                impact_section = f"\n\n### ✅ No Impact Detected\n\n{message}\n"
+            else:
+                impact_section = "\n\n### ✅ No Impact Detected\n\nNo other sections require updates.\n"
+        
+        return f"""## 📋 Validation Results
+
+{changes_section}{impact_section}
+"""
+    
+    return f"""## ⚠️ Unexpected Result
+
+**Result:** `{result}`
+
+**Details:**
+```
+{details}
+```
+"""
 
 def editor_list_sections():
     """Returnează lista secțiunilor existente din checkpoint."""
@@ -67,13 +173,13 @@ def editor_validate(section, draft):
 
     # Formatează rezultatul pentru Validation Output
     if result == "ERROR":
-        msg = f"❌ Error during validation: {details}"
+        msg = _format_validation_markdown(result, details)
         plan = None
     elif result == "UNKNOWN":
-        msg = f"⚠️ Unexpected validation format:\n\n{details}"
+        msg = _format_validation_markdown(result, details)
         plan = None
     elif result == "NO_CHANGES":
-        msg = f"✅ {details}"
+        msg = _format_validation_markdown(result, details)
         plan = None
     elif result == "CHANGES_DETECTED":
         candidates = _build_candidate_sections(section, checkpoint)
@@ -83,23 +189,10 @@ def editor_validate(section, draft):
             diff_summary=details,
             candidate_sections=candidates,
         )
-        if impact_result == "ERROR":
-            impact_msg = f"❌ Impact analysis error: {impact_details}"
-        elif impact_result == "UNKNOWN":
-            impact_msg = f"⚠️ Unexpected impact format:\n\n{impact_details}"
-        else:
-            impact_msg = impact_details
-
-        parts = [details]
-        if impact_msg:
-            parts.append(impact_msg)
-        if impacted:
-            impacted_str = ", ".join(impacted)
-            parts.append(f"Impacted sections: {impacted_str}")
-        msg = "\n\n".join(parts)
+        msg = _format_validation_markdown(result, details, impact_result, impact_details, impacted)
         plan = None
     else:
-        msg = f"⚠️ Unexpected result: {result}\n\n{details}"
+        msg = _format_validation_markdown(result, details)
         plan = None
 
     return msg, plan
