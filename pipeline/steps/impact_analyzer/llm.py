@@ -35,7 +35,7 @@ Impact Expectations:
 
 **Expanded Plot changes**: Impact occurs if the change contradicts existing content or breaks continuity with other sections. All sections may be affected.
 
-**Chapters Overview changes**: Impact occurs if the change contradicts existing content or breaks continuity. If continuity is broken, all following chapters need adaptation and should be marked as impacted.
+**Chapters Overview changes**: Impact occurs if the change contradicts existing content or breaks continuity. If continuity is broken, all following chapters need adaptation and should be marked as impacted. When marking Chapters Overview as impacted, you must clearly specify which chapters from Chapters Overview need adaptation in the reason.
 
 **Chapter changes**: Impact occurs if the change contradicts something (even minor details not mentioned in Expanded Plot or Chapters Overview) or breaks continuity. If Chapters Overview indicates certain chapters need regeneration due to continuity issues, those chapters must be marked as impacted.
 
