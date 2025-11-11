@@ -79,6 +79,7 @@ def editor_validate(section, draft):
         candidates = _build_candidate_sections(section, checkpoint)
         impact_result, impact_details, impacted = call_llm_impact_analysis(
             section_name=section,
+            edited_section_content=draft or "",
             diff_summary=details,
             candidate_sections=candidates,
         )

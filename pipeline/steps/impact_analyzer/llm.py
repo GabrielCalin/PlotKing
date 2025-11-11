@@ -23,17 +23,42 @@ You are a continuity analyst helping a human editor understand which story secti
 
 Inputs you receive:
 - SECTION EDITED: {section_name}
+- EDITED SECTION CONTENT (after modification):
+\"\"\"{edited_section_content}\"\"\"
 - SUMMARY OF CHANGES:
 \"\"\"{diff_summary}\"\"\"
 - POTENTIAL IMPACTED SECTIONS ({candidate_count}):
 {candidate_sections}
-- SECTION NAMES (for strict references only): {candidate_names}
+- POTENTIALLY IMPACTED SECTION NAMES (use only these exact names in references): {candidate_names}
+
+Impact Expectations:
+
+**Expanded Plot changes**: Impact occurs if the change contradicts existing content or breaks continuity with other sections. All sections may be affected.
+
+**Chapters Overview changes**: Impact occurs if the change contradicts existing content or breaks continuity. If continuity is broken, all following chapters need adaptation and should be marked as impacted.
+
+**Chapter changes**: Impact occurs if the change contradicts something (even minor details not mentioned in Expanded Plot or Chapters Overview) or breaks continuity. If Chapters Overview indicates certain chapters need regeneration due to continuity issues, those chapters must be marked as impacted.
+
+Examples:
+
+Example 1: Expanded Plot states character Gary survives, and Chapters Overview indicates this happens in Chapter 4 (out of 7 chapters). Modification: Gary dies in Chapter 4.
+- Expanded Plot: IMPACTED (Gary dies, contradicts survival)
+- Chapters Overview: IMPACTED (continuity broken, Chapters 5-7 need adaptation)
+- Chapters 5, 6, 7: IMPACTED (continuity broken)
+
+Example 2: Character name changed in Expanded Plot. That character appears in Chapter 3 description (out of 5 chapters).
+- Chapters Overview: IMPACTED (needs name update in Chapter 3 description)
+- Chapter 3: IMPACTED (name appears, needs update)
+- Chapter 4: IMPACTED (name appears but not mentioned in Chapters Overview, still needs update)
+
+Example 3: Minor change in Chapter 3 (out of 5): Susan's eyes are green instead of brown. Eye color is also mentioned in Chapter 5.
+- Chapter 5: IMPACTED (eye color detail needs update for consistency)
 
 Task:
-1. Review the change summary and the list of potentially impacted sections.
-2. Decide which sections actually require adaptation to preserve continuity, character usage, settings, or plot logic.
-3. Only reference section names that appear in the provided SECTION NAMES list.
-4. For every section that needs adaptation, provide a short explanation (2 sentences max) describing why the change matters.
+1. Review the edited section content, change summary, and potentially impacted sections.
+2. Apply the impact expectations above to determine which sections require adaptation.
+3. Only reference section names from the POTENTIALLY IMPACTED SECTION NAMES list.
+4. For every impacted section, provide a short explanation (2 sentences max) describing why the change matters.
 5. If none of the sections require an update, state that explicitly.
 
 Output format (strict):
@@ -91,6 +116,7 @@ def _extract_impacted_sections(content: str) -> List[str]:
 def call_llm_impact_analysis(
     *,
     section_name: str,
+    edited_section_content: str,
     diff_summary: str,
     candidate_sections: List[Tuple[str, str]],
     api_url: str = None,
@@ -114,6 +140,7 @@ def call_llm_impact_analysis(
 
     prompt = _IMPACT_PROMPT.format(
         section_name=section_name,
+        edited_section_content=edited_section_content or "(empty)",
         diff_summary=diff_summary or "(empty)",
         candidate_count=len(candidate_sections),
         candidate_sections=formatted_candidates,
