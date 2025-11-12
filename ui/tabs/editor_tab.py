@@ -50,17 +50,17 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             validation_title = gr.Markdown("🔎 **Validation Result**", visible=False)
             validation_box = gr.Markdown(
                 value="Validation results will appear here after confirming edits.",
-                height=350,
+                height=400,
                 visible=False,
             )
 
             with gr.Row(elem_classes=["validation-row"]):
-                apply_updates_btn = gr.Button("✅ Apply Updates", visible=False)
-                regenerate_btn = gr.Button("🔄 Regenerate", visible=False)
+                apply_updates_btn = gr.Button("✅ Apply", scale=1, min_width=0, visible=False)
+                regenerate_btn = gr.Button("🔄 Regenerate", scale=1, min_width=0, visible=False)
 
             with gr.Row(elem_classes=["validation-row"]):
-                continue_btn = gr.Button("🔁 Continue Editing", visible=False)
-                discard2_btn = gr.Button("🗑️ Discard", visible=False)
+                continue_btn = gr.Button("🔁 Back", scale=1, min_width=0, visible=False)
+                discard2_btn = gr.Button("🗑️ Discard", scale=1, min_width=0, visible=False)
 
         # ---- (1b) Right Column: Viewer / Editor ----
         with gr.Column(scale=3):
