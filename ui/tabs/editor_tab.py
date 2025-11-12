@@ -53,9 +53,14 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 height=350,
                 visible=False,
             )
-            apply_updates_btn = gr.Button("✅ Apply Updates", visible=False)
-            continue_btn = gr.Button("🔁 Continue Editing", visible=False)
-            discard2_btn = gr.Button("🗑️ Discard", visible=False)
+
+            with gr.Row(elem_classes=["validation-row"]):
+                apply_updates_btn = gr.Button("✅ Apply Updates", visible=False)
+                regenerate_btn = gr.Button("🔄 Regenerate", visible=False)
+
+            with gr.Row(elem_classes=["validation-row"]):
+                continue_btn = gr.Button("🔁 Continue Editing", visible=False)
+                discard2_btn = gr.Button("🗑️ Discard", visible=False)
 
         # ---- (1b) Right Column: Viewer / Editor ----
         with gr.Column(scale=3):
@@ -156,6 +161,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(visible=True),    # show Validation Title
             gr.update(value=msg, visible=True),   # show Validation Box with message
             gr.update(visible=True),    # show Apply Updates
+            gr.update(visible=True),    # show Regenerate
             gr.update(visible=True),    # show Continue Editing
             gr.update(visible=True),    # show Discard2
             gr.update(visible=False),   # hide Validate
@@ -198,6 +204,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(visible=False),   # hide Validation Title
             gr.update(visible=False),   # hide Validation Box
             gr.update(visible=False),   # hide Apply Updates
+            gr.update(visible=False),   # hide Regenerate
             gr.update(visible=False),   # hide Continue Editing
             gr.update(visible=False),   # hide Discard2
             gr.update(visible=True),    # show Start Editing
@@ -214,6 +221,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(visible=False),   # hide Validation Title
             gr.update(visible=False),   # hide Validation Box
             gr.update(visible=False),   # hide Apply Updates
+            gr.update(visible=False),   # hide Regenerate
             gr.update(visible=False),   # hide Continue Editing
             gr.update(visible=False),   # hide Discard2
             gr.update(visible=True),    # show Validate
@@ -234,6 +242,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             None,  # clear pending_plan
             gr.update(visible=False),   # hide Validation Title
             gr.update(visible=False),   # hide Apply Updates
+            gr.update(visible=False),   # hide Regenerate
             gr.update(visible=False),   # hide Continue Editing
             gr.update(visible=False),   # hide Discard2
             gr.update(visible=True),    # show Start Editing
@@ -291,7 +300,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         outputs=[
             validation_box, pending_plan,
             validation_title, validation_box,
-            apply_updates_btn, continue_btn, discard2_btn,
+            apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
             confirm_btn, discard_btn, force_edit_btn,
             editor_tb,
             mode_radio, section_dropdown,
@@ -307,7 +316,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             viewer_md, status_strip,
             editor_tb,
             validation_title, validation_box,
-            apply_updates_btn, continue_btn, discard2_btn,
+            apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
             start_edit_btn,
             mode_radio, section_dropdown,
             current_md,  # update current_md state
@@ -320,7 +329,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         inputs=[selected_section, status_log],
         outputs=[
             validation_title, validation_box,
-            apply_updates_btn, continue_btn, discard2_btn,
+            apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
             confirm_btn, discard_btn, force_edit_btn,
             status_strip,
             status_log,
@@ -333,7 +342,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         outputs=[
             viewer_md, editor_tb, validation_box, pending_plan,
             validation_title,
-            apply_updates_btn, continue_btn, discard2_btn,
+            apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
             start_edit_btn,
             confirm_btn, discard_btn, force_edit_btn,
             mode_radio, section_dropdown, status_strip,
@@ -347,7 +356,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         outputs=[
             viewer_md, editor_tb, validation_box, pending_plan,
             validation_title,
-            apply_updates_btn, continue_btn, discard2_btn,
+            apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
             start_edit_btn,
             confirm_btn, discard_btn, force_edit_btn,
             mode_radio, section_dropdown, status_strip,
@@ -365,6 +374,21 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             current_md,  # update current_md state
             status_log,
             create_sections_epoch,  # bump create_sections_epoch to notify Create tab
+        ],
+    )
+
+    regenerate_btn.click(
+        fn=_confirm_edit,
+        inputs=[selected_section, editor_tb, status_log],
+        outputs=[
+            validation_box, pending_plan,
+            validation_title, validation_box,
+            apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
+            confirm_btn, discard_btn, force_edit_btn,
+            editor_tb,
+            mode_radio, section_dropdown,
+            status_strip,
+            status_log,
         ],
     )
 
