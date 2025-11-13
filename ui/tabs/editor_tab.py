@@ -195,24 +195,105 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         )
 
     def _apply_updates(section, draft, plan, current_log):
-        saved_text, preview_text = H.editor_apply(section, draft, plan)
-        new_log, status_update = _append_status(current_log, f"✅ ({section}) Synced.")
-        return (
-            gr.update(value=preview_text, visible=True),  # update and show Viewer
-            status_update,
-            gr.update(visible=False),   # hide Editor
-            gr.update(visible=False),   # hide Validation Title
-            gr.update(visible=False),   # hide Validation Box
-            gr.update(visible=False),   # hide Apply Updates
-            gr.update(visible=False),   # hide Regenerate
-            gr.update(visible=False),   # hide Continue Editing
-            gr.update(visible=False),   # hide Discard2
-            gr.update(visible=True),    # show Start Editing
-            gr.update(interactive=True),# unlock Mode
-            gr.update(interactive=True),# unlock Section
-            preview_text,  # update current_md state with the new text
-            new_log,
-        )
+        """
+        Aplică modificările și rulează pipeline-ul de editare dacă există secțiuni impactate.
+        Este generator dacă există plan, altfel returnează direct.
+        """
+        if plan and isinstance(plan, dict) and plan.get("impacted_sections"):
+            preview_text = draft  # Inițializează cu draft
+            new_log = current_log  # Inițializează cu current_log
+            
+            # Rulează pipeline-ul de editare
+            for result in H.editor_apply(section, draft, plan):
+                if isinstance(result, tuple) and len(result) == 8:
+                    # Rezultat din runner_edit: (expanded_plot, chapters_overview, chapters_full, current_text, dropdown, counter, status_log, validation_text)
+                    expanded_plot, chapters_overview, chapters_full, current_text, dropdown, counter, status_log_text, validation_text = result
+                    
+                    # Determină preview_text bazat pe section
+                    if section == "Expanded Plot":
+                        preview_text = expanded_plot or draft
+                    elif section == "Chapters Overview":
+                        preview_text = chapters_overview or draft
+                    elif section.startswith("Chapter "):
+                        try:
+                            chapter_num = int(section.split(" ")[1])
+                            if 1 <= chapter_num <= len(chapters_full):
+                                preview_text = chapters_full[chapter_num - 1] or draft
+                            else:
+                                preview_text = draft
+                        except (ValueError, IndexError):
+                            preview_text = draft
+                    else:
+                        preview_text = draft
+                    
+                    # Actualizează status_log cu status_log_text din pipeline
+                    new_log = status_log_text if status_log_text else current_log
+                    
+                    yield (
+                        gr.update(value=preview_text, visible=True),  # update and show Viewer
+                        gr.update(value=counter or f"🔄 Adapting sections..."),  # status_strip
+                        gr.update(visible=False),   # hide Editor
+                        gr.update(visible=False),   # hide Validation Title
+                        gr.update(visible=False),   # hide Validation Box
+                        gr.update(visible=False),   # hide Apply Updates
+                        gr.update(visible=False),   # hide Regenerate
+                        gr.update(visible=False),   # hide Continue Editing
+                        gr.update(visible=False),   # hide Discard2
+                        gr.update(visible=True),    # show Start Editing
+                        gr.update(interactive=True),# unlock Mode
+                        gr.update(interactive=True),# unlock Section
+                        preview_text,  # update current_md state with the new text
+                        new_log,
+                    )
+            
+            # Finalizare după pipeline
+            new_log, status_update = _append_status(new_log, f"✅ ({section}) Synced and sections adapted.")
+            yield (
+                gr.update(value=preview_text, visible=True),  # update and show Viewer
+                status_update,
+                gr.update(visible=False),   # hide Editor
+                gr.update(visible=False),   # hide Validation Title
+                gr.update(visible=False),   # hide Validation Box
+                gr.update(visible=False),   # hide Apply Updates
+                gr.update(visible=False),   # hide Regenerate
+                gr.update(visible=False),   # hide Continue Editing
+                gr.update(visible=False),   # hide Discard2
+                gr.update(visible=True),    # show Start Editing
+                gr.update(interactive=True),# unlock Mode
+                gr.update(interactive=True),# unlock Section
+                preview_text,  # update current_md state with the new text
+                new_log,
+            )
+        else:
+            # Nu există plan sau secțiuni impactate, doar salvează modificarea
+            result = H.editor_apply(section, draft, plan)
+            # editor_apply poate fi generator sau returnează tuple
+            if hasattr(result, '__iter__') and not isinstance(result, (str, tuple)):
+                # Este generator, dar nu ar trebui să fie în acest caz
+                for item in result:
+                    pass  # Consumă generator-ul
+                preview_text = draft
+            else:
+                # Returnează tuple (saved_text, preview_text)
+                saved_text, preview_text = result if isinstance(result, tuple) else (draft, draft)
+            
+            new_log, status_update = _append_status(current_log, f"✅ ({section}) Synced.")
+            return (
+                gr.update(value=preview_text, visible=True),  # update and show Viewer
+                status_update,
+                gr.update(visible=False),   # hide Editor
+                gr.update(visible=False),   # hide Validation Title
+                gr.update(visible=False),   # hide Validation Box
+                gr.update(visible=False),   # hide Apply Updates
+                gr.update(visible=False),   # hide Regenerate
+                gr.update(visible=False),   # hide Continue Editing
+                gr.update(visible=False),   # hide Discard2
+                gr.update(visible=True),    # show Start Editing
+                gr.update(interactive=True),# unlock Mode
+                gr.update(interactive=True),# unlock Section
+                preview_text,  # update current_md state with the new text
+                new_log,
+            )
 
     def _continue_edit(section, current_log):
         """Return to editing mode with Validate/Discard/Force Edit buttons."""
@@ -322,6 +403,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             current_md,  # update current_md state
             status_log,
         ],
+        queue=True,
     )
 
     continue_btn.click(

@@ -190,7 +190,13 @@ def editor_validate(section, draft):
             candidate_sections=candidates,
         )
         msg = _format_validation_markdown(result, diff_data, impact_result, impact_data, impacted)
-        plan = None
+        # Păstrăm datele pentru runner_edit
+        plan = {
+            "edited_section": section,
+            "diff_data": diff_data,
+            "impact_data": impact_data,
+            "impacted_sections": impacted,
+        } if impact_result == "IMPACT_DETECTED" and impacted else None
     else:
         msg = _format_validation_markdown(result, diff_data)
         plan = None
@@ -198,17 +204,53 @@ def editor_validate(section, draft):
     return msg, plan
 
 def editor_apply(section, draft, plan):
-    # Aplica modificarea efectivă (în state / fișier) după validare
-    saved_text = draft
-    preview_text = draft
+    """
+    Aplică modificarea și rulează pipeline-ul de editare dacă există secțiuni impactate.
+    Returnează (saved_text, preview_text) și rulează pipeline-ul de editare.
+    """
+    from pipeline.state_manager import get_checkpoint, save_checkpoint
     
-    # Dacă există plan, declanșează pipeline + schimbare tab
-    if plan:
-        switch_to_create()
-        # aici se poate porni pipeline parțial
-        switch_to_editor()
+    checkpoint = get_checkpoint()
+    if not checkpoint:
+        return draft, draft
     
-    return saved_text, preview_text
+    # Salvează modificarea user-ului în checkpoint
+    updated_checkpoint = checkpoint.copy()
+    if section == "Expanded Plot":
+        updated_checkpoint["expanded_plot"] = draft
+    elif section == "Chapters Overview":
+        updated_checkpoint["chapters_overview"] = draft
+    elif section.startswith("Chapter "):
+        try:
+            chapter_num = int(section.split(" ")[1])
+            chapters_full = list(updated_checkpoint.get("chapters_full", []))
+            if 1 <= chapter_num <= len(chapters_full):
+                chapters_full[chapter_num - 1] = draft
+                updated_checkpoint["chapters_full"] = chapters_full
+        except (ValueError, IndexError):
+            pass
+    
+    save_checkpoint(updated_checkpoint)
+    
+    # Dacă există plan cu secțiuni impactate, rulează pipeline-ul de editare
+    if plan and isinstance(plan, dict):
+        edited_section = plan.get("edited_section", section)
+        diff_data = plan.get("diff_data", {})
+        impact_data = plan.get("impact_data", {})
+        impacted = plan.get("impacted_sections", [])
+        
+        if impacted:
+            from pipeline.runner_edit import run_edit_pipeline_stream
+            yield from run_edit_pipeline_stream(
+                edited_section=edited_section,
+                diff_data=diff_data,
+                impact_data=impact_data,
+                impacted_sections=impacted,
+            )
+            return
+    
+    # Dacă nu există plan sau nu sunt secțiuni impactate, doar returnează textul
+    return draft, draft
 
 def force_edit(section, draft):
     """Aplică modificarea direct în checkpoint, fără validare."""
