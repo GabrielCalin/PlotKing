@@ -65,12 +65,16 @@ def run_edit_pipeline_stream(
     
     state = PipelineContext.from_checkpoint(checkpoint)
     
+    # Creează un log nou doar pentru edit pipeline (nu modificăm state.status_log existent)
+    edit_log = []
+    
     diff_summary = ""
     if diff_data.get("changes"):
         diff_summary = "\n".join(f"- {item}" for item in diff_data.get("changes", []) if item)
     else:
         diff_summary = diff_data.get("message", "")
     
+    # Yield cu log-urile existente (edit_log este gol la început)
     yield (
         state.expanded_plot or "",
         state.chapters_overview or "",
@@ -78,7 +82,7 @@ def run_edit_pipeline_stream(
         gr.update(),
         gr.update(choices=[f"Chapter {i+1}" for i in range(len(state.chapters_full))]),
         "_Adapting sections..._",
-        "\n".join(state.status_log),
+        "\n".join(edit_log),
         state.validation_text,
     )
     
@@ -89,7 +93,7 @@ def run_edit_pipeline_stream(
     if "Expanded Plot" in impacted_sections:
         impact_reason = _get_section_impact(impact_data, "Expanded Plot")
         if impact_reason:
-            log_ui(state.status_log, "📝 Adapting Expanded Plot...")
+            log_ui(edit_log, "📝 Adapting Expanded Plot...")
             yield (
                 state.expanded_plot or "",
                 state.chapters_overview or "",
@@ -97,7 +101,7 @@ def run_edit_pipeline_stream(
                 gr.update(),
                 gr.update(choices=[f"Chapter {i+1}" for i in range(len(state.chapters_full))]),
                 "_Adapting Expanded Plot..._",
-                "\n".join(state.status_log),
+                "\n".join(edit_log),
                 state.validation_text,
             )
             
@@ -108,7 +112,7 @@ def run_edit_pipeline_stream(
                 impact_reason=impact_reason,
                 diff_summary=diff_summary,
             )
-            log_ui(state.status_log, "✅ Expanded Plot adapted.")
+            log_ui(edit_log, "✅ Expanded Plot adapted.")
             save_checkpoint(state.__dict__)
             
             yield (
@@ -118,7 +122,7 @@ def run_edit_pipeline_stream(
                 gr.update(),
                 gr.update(choices=[f"Chapter {i+1}" for i in range(len(state.chapters_full))]),
                 "_Expanded Plot adapted_",
-                "\n".join(state.status_log),
+                "\n".join(edit_log),
                 state.validation_text,
             )
             
@@ -129,7 +133,7 @@ def run_edit_pipeline_stream(
     if "Chapters Overview" in impacted_sections:
         impact_reason = _get_section_impact(impact_data, "Chapters Overview")
         if impact_reason:
-            log_ui(state.status_log, "📘 Adapting Chapters Overview...")
+            log_ui(edit_log, "📘 Adapting Chapters Overview...")
             yield (
                 state.expanded_plot or "",
                 state.chapters_overview or "",
@@ -137,7 +141,7 @@ def run_edit_pipeline_stream(
                 gr.update(),
                 gr.update(choices=[f"Chapter {i+1}" for i in range(len(state.chapters_full))]),
                 "_Adapting Chapters Overview..._",
-                "\n".join(state.status_log),
+                "\n".join(edit_log),
                 state.validation_text,
             )
             
@@ -148,7 +152,7 @@ def run_edit_pipeline_stream(
                 impact_reason=impact_reason,
                 diff_summary=diff_summary,
             )
-            log_ui(state.status_log, "✅ Chapters Overview adapted.")
+            log_ui(edit_log, "✅ Chapters Overview adapted.")
             save_checkpoint(state.__dict__)
             
             yield (
@@ -158,7 +162,7 @@ def run_edit_pipeline_stream(
                 gr.update(),
                 gr.update(choices=[f"Chapter {i+1}" for i in range(len(state.chapters_full))]),
                 "_Chapters Overview adapted_",
-                "\n".join(state.status_log),
+                "\n".join(edit_log),
                 state.validation_text,
             )
             
@@ -180,7 +184,7 @@ def run_edit_pipeline_stream(
         if not impact_reason:
             continue
         
-        log_ui(state.status_log, f"✍️ Adapting {chapter_name}...")
+        log_ui(edit_log, f"✍️ Adapting {chapter_name}...")
         yield (
             state.expanded_plot or "",
             state.chapters_overview or "",
@@ -188,7 +192,7 @@ def run_edit_pipeline_stream(
             gr.update(),
             gr.update(choices=[f"Chapter {i+1}" for i in range(len(state.chapters_full))]),
             f"_Adapting {chapter_name}..._",
-            "\n".join(state.status_log),
+            "\n".join(edit_log),
             state.validation_text,
         )
         
@@ -202,7 +206,7 @@ def run_edit_pipeline_stream(
         )
         
         state.chapters_full[chapter_num - 1] = edited_chapter
-        log_ui(state.status_log, f"✅ {chapter_name} adapted.")
+        log_ui(edit_log, f"✅ {chapter_name} adapted.")
         save_checkpoint(state.__dict__)
         
         yield (
@@ -212,7 +216,7 @@ def run_edit_pipeline_stream(
             gr.update(),
             gr.update(choices=[f"Chapter {i+1}" for i in range(len(state.chapters_full))]),
             f"_{chapter_name} adapted_",
-            "\n".join(state.status_log),
+            "\n".join(edit_log),
             state.validation_text,
         )
         
@@ -220,7 +224,7 @@ def run_edit_pipeline_stream(
             return
     
     # Finalizare
-    log_ui(state.status_log, f"🎉 Adaptive editing pipeline completed!")
+    log_ui(edit_log, f"🎉 Adaptive editing pipeline completed!")
     final_choices = [f"Chapter {i+1}" for i in range(len(state.chapters_full))]
     dropdown_final = gr.update(choices=final_choices)
     counter_final = f"✅ Adaptation complete for {len(impacted_sections)} section(s)"
@@ -234,7 +238,7 @@ def run_edit_pipeline_stream(
         gr.update(),
         dropdown_final,
         counter_final,
-        "\n".join(state.status_log),
+        "\n".join(edit_log),
         state.validation_text,
     )
 
