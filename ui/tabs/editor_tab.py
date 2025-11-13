@@ -145,7 +145,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(visible=True),      # show Discard
             gr.update(visible=True),      # show Force Edit
             gr.update(visible=False),     # hide Markdown viewer
-            gr.update(visible=True, value=curr_text),  # show Textbox editor
+            gr.update(visible=True, value=curr_text, interactive=True),  # show Textbox editor and enable editing
             gr.update(interactive=False), # lock Mode
             gr.update(interactive=False), # lock Section
             status_update,
@@ -170,9 +170,9 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(visible=False),   # hide Discard
             gr.update(visible=False),   # hide Force Edit
             gr.update(visible=False),   # hide Start Editing
-            gr.update(visible=True),    # keep Editor visible
+            gr.update(visible=True, interactive=False),  # keep Editor visible but disable editing
             gr.update(interactive=False), # keep Mode locked
-            gr.update(interactive=True), # allow Section change
+            gr.update(interactive=False), # lock Section dropdown
             gr.update(value=new_log, visible=True),  # show Process Log with "Validation started"
             new_log,  # status_log state
         )
@@ -195,9 +195,9 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(visible=False),   # hide Discard
             gr.update(visible=False),   # hide Force Edit
             gr.update(visible=False),   # hide Start Editing
-            gr.update(visible=True),    # keep Editor visible
+            gr.update(visible=True, interactive=False),  # keep Editor visible but disable editing
             gr.update(interactive=False), # keep Mode locked
-            gr.update(interactive=True), # allow Section change
+            gr.update(interactive=False), # keep Section locked
             gr.update(value=final_log, visible=True),  # show Process Log with "Validation completed"
             final_log,  # status_log state
         )
@@ -333,6 +333,9 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(visible=True),    # show Validate
             gr.update(visible=True),    # show Discard
             gr.update(visible=True),    # show Force Edit
+            gr.update(visible=True, interactive=True),  # show Editor and enable editing
+            gr.update(interactive=False), # keep Mode locked
+            gr.update(interactive=False), # keep Section locked
             status_update,
             new_log,
         )
@@ -441,6 +444,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             validation_title, validation_box,
             apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
             confirm_btn, discard_btn, force_edit_btn,
+            editor_tb,
+            mode_radio, section_dropdown,
             status_strip,
             status_log,
         ],
