@@ -283,7 +283,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 gr.update(visible=False),   # hide Regenerate
                 gr.update(visible=False),   # hide Continue Editing
                 gr.update(visible=False),   # hide Discard2
-                gr.update(visible=True),    # show Start Editing (pipeline finished)
+                gr.update(visible=False),  # hide Start Editing (Mode is set to View after Apply)
                 gr.update(value="View", interactive=True),  # unlock Mode (pipeline finished)
                 gr.update(interactive=True),  # unlock Section (pipeline finished)
                 preview_text,  # update current_md state
@@ -313,7 +313,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 gr.update(visible=False),   # hide Regenerate
                 gr.update(visible=False),   # hide Continue Editing
                 gr.update(visible=False),   # hide Discard2
-                gr.update(visible=True),    # show Start Editing
+                gr.update(visible=False),  # hide Start Editing (Mode is set to View after Apply)
                 gr.update(interactive=True), # unlock Mode
                 gr.update(interactive=True), # unlock Section
                 preview_text,  # update current_md state with the new text
