@@ -253,21 +253,17 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                     expanded_plot, chapters_overview, chapters_full, current_text, dropdown, counter, status_log_text, validation_text = result
                     adapted_section = _infer_section_from_counter(str(counter))
                     
-                    if section == "Expanded Plot":
+                    if adapted_section == "Expanded Plot":
                         preview_text = expanded_plot or draft
-                    elif section == "Chapters Overview":
+                    elif adapted_section == "Chapters Overview":
                         preview_text = chapters_overview or draft
-                    elif section.startswith("Chapter "):
+                    elif adapted_section and adapted_section.startswith("Chapter "):
                         try:
-                            chapter_num = int(section.split(" ")[1])
+                            chapter_num = int(adapted_section.split(" ")[1])
                             if 1 <= chapter_num <= len(chapters_full):
                                 preview_text = chapters_full[chapter_num - 1] or draft
-                            else:
-                                preview_text = draft
-                        except (ValueError, IndexError):
-                            preview_text = draft
-                    else:
-                        preview_text = draft
+                        except:
+                            pass
 
                     if adapted_section == section:
                         viewer_update = gr.update(value=preview_text, visible=True)  # update and show Viewer
