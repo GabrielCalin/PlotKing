@@ -94,6 +94,21 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         updated_log = (current_log or "") + new_line
         return updated_log, gr.update(value=updated_log)
 
+    def _infer_section_from_counter(counter: str):
+        if not counter:
+            return None
+        if "Expanded Plot" in counter:
+            return "Expanded Plot"
+        if "Chapters Overview" in counter:
+            return "Chapters Overview"
+        if "Chapter " in counter:
+            # încearcă să extragi numărul
+            import re
+            m = re.search(r"Chapter\s+(\d+)", counter)
+            if m:
+                return f"Chapter {m.group(1)}"
+        return None
+
     def _refresh_sections(_):
         """Repopulate dropdown when editor_sections_epoch changes (Create → Editor sync), or show empty state."""
         sections = H.editor_list_sections()
@@ -236,6 +251,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             for result in H.editor_apply(section, draft, plan):
                 if isinstance(result, tuple) and len(result) == 8:
                     expanded_plot, chapters_overview, chapters_full, current_text, dropdown, counter, status_log_text, validation_text = result
+                    adapted_section = _infer_section_from_counter(str(counter))
                     
                     if section == "Expanded Plot":
                         preview_text = expanded_plot or draft
@@ -252,11 +268,16 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                             preview_text = draft
                     else:
                         preview_text = draft
+
+                    if adapted_section == section:
+                        viewer_update = gr.update(value=preview_text, visible=True)  # update and show Viewer
+                    else:
+                        viewer_update = gr.update(visible=True)  # keep visible, don't change content
                     
                     new_log = merge_logs(base_log, status_log_text)
                     
                     yield (
-                        gr.update(value=preview_text, visible=True),  # update and show Viewer
+                        viewer_update,  # <— înlocuiește gr.update(value=preview_text, visible=True)
                         gr.update(value=new_log, visible=True),  # update Process Log
                         gr.update(visible=False),   # hide Editor
                         gr.update(visible=False),   # hide Validation Title
@@ -275,8 +296,15 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             if new_log and not new_log.endswith("\n"):
                 new_log += "\n"
             new_log, status_update = _append_status(new_log, f"✅ ({section}) Synced and sections adapted.")
+
+            adapted_section = _infer_section_from_counter(str(counter)) if 'counter' in locals() else None
+            if adapted_section == section:
+                final_viewer_update = gr.update(value=preview_text, visible=True)  # update and show Viewer
+            else:
+                final_viewer_update = gr.update(visible=True)  # keep visible, don't change content
+
             yield (
-                gr.update(value=preview_text, visible=True),  # update and show Viewer
+                final_viewer_update,  # <— înlocuiește gr.update(value=preview_text, visible=True)
                 gr.update(value=new_log, visible=True),  # update Process Log with final message
                 gr.update(visible=False),   # hide Editor
                 gr.update(visible=False),   # hide Validation Title
