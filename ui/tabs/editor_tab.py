@@ -155,8 +155,34 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     def _confirm_edit(section, draft, current_log):
         """Send text for validation — shows Validation Result in place of buttons."""
         new_log, status_update = _append_status(current_log, f"🔍 ({section}) Validation started.")
+        
+        # Yield imediat cu butoanele ascunse și log-ul "Validation started"
+        yield (
+            "",  # validation_box value (placeholder)
+            None,  # pending_plan (placeholder)
+            gr.update(visible=True),    # show Validation Title
+            gr.update(value="🔄 Validating...", visible=True),   # show Validation Box with loading message
+            gr.update(visible=False),   # hide Apply Updates (until validation completes)
+            gr.update(visible=False),   # hide Regenerate (until validation completes)
+            gr.update(visible=False),   # hide Continue Editing (until validation completes)
+            gr.update(visible=False),   # hide Discard2 (until validation completes)
+            gr.update(visible=False),   # hide Validate
+            gr.update(visible=False),   # hide Discard
+            gr.update(visible=False),   # hide Force Edit
+            gr.update(visible=False),   # hide Start Editing
+            gr.update(visible=True),    # keep Editor visible
+            gr.update(interactive=False), # keep Mode locked
+            gr.update(interactive=True), # allow Section change
+            gr.update(value=new_log, visible=True),  # show Process Log with "Validation started"
+            new_log,  # status_log state
+        )
+        
+        # Apelează validarea (blocant)
         msg, plan = H.editor_validate(section, draft)
-        return (
+        final_log, _ = _append_status(new_log, f"✅ ({section}) Validation completed.")
+        
+        # Yield cu rezultatul validării
+        yield (
             msg,  # validation_box value
             plan,  # pending_plan
             gr.update(visible=True),    # show Validation Title
@@ -168,11 +194,12 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(visible=False),   # hide Validate
             gr.update(visible=False),   # hide Discard
             gr.update(visible=False),   # hide Force Edit
+            gr.update(visible=False),   # hide Start Editing
             gr.update(visible=True),    # keep Editor visible
             gr.update(interactive=False), # keep Mode locked
             gr.update(interactive=True), # allow Section change
-            gr.update(value=new_log, visible=True),  # show Process Log
-            new_log,  # status_log state
+            gr.update(value=final_log, visible=True),  # show Process Log with "Validation completed"
+            final_log,  # status_log state
         )
 
     def _force_edit(section, draft, current_log, create_epoch):
@@ -381,6 +408,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             validation_title, validation_box,
             apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
             confirm_btn, discard_btn, force_edit_btn,
+            start_edit_btn,
             editor_tb,
             mode_radio, section_dropdown,
             status_strip,
@@ -467,11 +495,14 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             validation_title, validation_box,
             apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
             confirm_btn, discard_btn, force_edit_btn,
+            start_edit_btn,
             editor_tb,
             mode_radio, section_dropdown,
             status_strip,
             status_log,
         ],
+        queue=True,
+        show_progress=False,
     )
 
     return section_dropdown
