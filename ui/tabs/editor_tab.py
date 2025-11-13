@@ -132,7 +132,9 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 last_line = lines[-1]
                 if last_msg in last_line:
                     # Mesajul există deja, nu adăugăm din nou
-                    return gr.update(visible=(mode == "Manual")), gr.update(), current_log
+                    return gr.update(visible=(mode == "Manual")), gr.update(value=current_log), current_log
+                if "Adapting" in last_line or "Validation completed" in last_line:
+                    return gr.update(visible=(mode == "Manual")), gr.update(value=current_log), current_log
         new_log, status_update = _append_status(current_log, last_msg)
         return gr.update(visible=(mode == "Manual")), status_update, new_log
 
