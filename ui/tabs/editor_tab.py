@@ -247,6 +247,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                     )
             
             # Finalizare după pipeline
+            if new_log and not new_log.endswith("\n"):
+                new_log += "\n"
             new_log, status_update = _append_status(new_log, f"✅ ({section}) Synced and sections adapted.")
             yield (
                 gr.update(value=preview_text, visible=True),  # update and show Viewer

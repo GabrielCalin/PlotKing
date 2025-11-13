@@ -71,7 +71,6 @@ def run_edit_pipeline_stream(
     else:
         diff_summary = diff_data.get("message", "")
     
-    log_ui(state.status_log, f"🔄 Starting adaptive editing pipeline for: {', '.join(impacted_sections) if impacted_sections else 'no sections'}")
     yield (
         state.expanded_plot or "",
         state.chapters_overview or "",
@@ -86,19 +85,9 @@ def run_edit_pipeline_stream(
     if (yield from _maybe_pause_pipeline("edit pipeline start", state)):
         return
     
-    # Debug: log impact_data structure
-    if impact_data:
-        impact_items = impact_data.get("impacted_sections", [])
-        log_ui(state.status_log, f"🔍 Debug: impact_data has {len(impact_items)} impacted_sections entries")
-        for item in impact_items:
-            if isinstance(item, dict):
-                log_ui(state.status_log, f"🔍 Debug: - {item.get('name', 'unknown')}: {item.get('reason', 'no reason')[:50]}...")
-    
     # 1. Edit Expanded Plot dacă e impactat
     if "Expanded Plot" in impacted_sections:
         impact_reason = _get_section_impact(impact_data, "Expanded Plot")
-        if not impact_reason:
-            log_ui(state.status_log, f"⚠️ Expanded Plot in impacted_sections but no impact reason found in impact_data")
         if impact_reason:
             log_ui(state.status_log, "📝 Adapting Expanded Plot...")
             yield (
@@ -139,8 +128,6 @@ def run_edit_pipeline_stream(
     # 2. Edit Chapters Overview dacă e impactat
     if "Chapters Overview" in impacted_sections:
         impact_reason = _get_section_impact(impact_data, "Chapters Overview")
-        if not impact_reason:
-            log_ui(state.status_log, f"⚠️ Chapters Overview in impacted_sections but no impact reason found in impact_data")
         if impact_reason:
             log_ui(state.status_log, "📘 Adapting Chapters Overview...")
             yield (
@@ -233,7 +220,7 @@ def run_edit_pipeline_stream(
             return
     
     # Finalizare
-    log_ui(state.status_log, "🎉 Adaptive editing pipeline completed!")
+    log_ui(state.status_log, f"🎉 Adaptive editing pipeline completed!")
     final_choices = [f"Chapter {i+1}" for i in range(len(state.chapters_full))]
     dropdown_final = gr.update(choices=final_choices)
     counter_final = f"✅ Adaptation complete for {len(impacted_sections)} section(s)"
