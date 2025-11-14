@@ -9,6 +9,7 @@ import textwrap
 import requests
 import json
 from typing import List, Optional
+from utils.json_utils import extract_json_from_response
 
 LOCAL_API_URL = os.getenv("LMSTUDIO_API_URL", "http://127.0.0.1:1234/v1/chat/completions")
 MODEL_NAME = os.getenv("LMSTUDIO_MODEL", "phi-3-mini-4k-instruct")
@@ -132,11 +133,11 @@ def call_llm_edit_chapter(
         data = resp.json()
         content = data["choices"][0]["message"]["content"].strip()
         
-        # Parse JSON response
+        # Parse JSON response (suportă atât JSON pur cât și wrappat în tag-uri)
         try:
-            result = json.loads(content)
+            result = extract_json_from_response(content)
             return result.get("adapted_chapter", content)
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, ValueError):
             # Fallback dacă nu e JSON valid
             return content
     except Exception as e:
