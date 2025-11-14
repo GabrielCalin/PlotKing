@@ -239,11 +239,13 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             new_create_epoch,  # bump create_sections_epoch to notify Create tab
         )
 
-    def _apply_updates(section, draft, plan, current_log):
+    def _apply_updates(section, draft, plan, current_log, create_epoch):
         """
         Aplică modificările și rulează pipeline-ul de editare dacă există secțiuni impactate.
         Este generator dacă există plan, altfel returnează direct.
         """
+        new_create_epoch = (create_epoch or 0) + 1  # Bump create_sections_epoch to notify Create tab
+        
         if plan and isinstance(plan, dict) and plan.get("impacted_sections"):
             preview_text = draft
             base_log = current_log
@@ -287,6 +289,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                         gr.update(interactive=True),  # allow Section change
                         preview_text,  # update current_md state
                         new_log,  # update status_log state
+                        new_create_epoch,  # bump create_sections_epoch to notify Create tab
                     )
             
             if new_log and not new_log.endswith("\n"):
@@ -314,6 +317,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 gr.update(interactive=True),  # unlock Section (pipeline finished)
                 preview_text,  # update current_md state
                 new_log,  # update status_log state
+                new_create_epoch,  # bump create_sections_epoch to notify Create tab
             )
         else:
             # Nu există plan sau secțiuni impactate, doar salvează modificarea
@@ -344,6 +348,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 gr.update(interactive=True), # unlock Section
                 preview_text,  # update current_md state with the new text
                 new_log,  # update status_log state
+                new_create_epoch,  # bump create_sections_epoch to notify Create tab
             )
 
     def _continue_edit(section, current_log):
@@ -449,7 +454,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     apply_updates_btn.click(
         fn=_apply_updates,
-        inputs=[section_dropdown, editor_tb, pending_plan, status_log],
+        inputs=[section_dropdown, editor_tb, pending_plan, status_log, create_sections_epoch],
         outputs=[
             viewer_md, status_strip,
             editor_tb,
@@ -459,6 +464,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             mode_radio, section_dropdown,
             current_md,  # update current_md state
             status_log,
+            create_sections_epoch,  # bump create_sections_epoch to notify Create tab
         ],
         queue=True,
     )
