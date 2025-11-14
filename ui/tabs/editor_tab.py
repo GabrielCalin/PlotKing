@@ -244,11 +244,10 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         Aplică modificările și rulează pipeline-ul de editare dacă există secțiuni impactate.
         Este generator dacă există plan, altfel returnează direct.
         """
-        new_create_epoch = (create_epoch or 0) + 1  # Bump create_sections_epoch to notify Create tab
-        
         if plan and isinstance(plan, dict) and plan.get("impacted_sections"):
             preview_text = draft
             base_log = current_log
+            current_epoch = create_epoch or 0
             
             for result in H.editor_apply(section, draft, plan):
                 if isinstance(result, tuple) and len(result) == 8:
@@ -273,6 +272,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                         viewer_update = gr.update(visible=True)  # keep visible, don't change content
                     
                     new_log = merge_logs(base_log, status_log_text)
+                    current_epoch += 1  # Bump create_sections_epoch at each iteration
                     
                     yield (
                         viewer_update,  # <— înlocuiește gr.update(value=preview_text, visible=True)
@@ -289,7 +289,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                         gr.update(interactive=True),  # allow Section change
                         preview_text,  # update current_md state
                         new_log,  # update status_log state
-                        new_create_epoch,  # bump create_sections_epoch to notify Create tab
+                        current_epoch,  # bump create_sections_epoch to notify Create tab at each iteration
                     )
             
             if new_log and not new_log.endswith("\n"):
@@ -302,6 +302,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             else:
                 final_viewer_update = gr.update(visible=True)  # keep visible, don't change content
 
+            current_epoch += 1  # Bump create_sections_epoch at final yield too
             yield (
                 final_viewer_update,  # <— înlocuiește gr.update(value=preview_text, visible=True)
                 gr.update(value=new_log, visible=True),  # update Process Log with final message
@@ -317,7 +318,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 gr.update(interactive=True),  # unlock Section (pipeline finished)
                 preview_text,  # update current_md state
                 new_log,  # update status_log state
-                new_create_epoch,  # bump create_sections_epoch to notify Create tab
+                current_epoch,  # bump create_sections_epoch to notify Create tab at final yield
             )
         else:
             # Nu există plan sau secțiuni impactate, doar salvează modificarea
@@ -333,6 +334,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 saved_text, preview_text = result if isinstance(result, tuple) else (draft, draft)
             
             new_log, status_update = _append_status(current_log, f"✅ ({section}) Synced.")
+            new_create_epoch = (create_epoch or 0) + 1  # Bump create_sections_epoch AFTER save completes
             return (
                 gr.update(value=preview_text, visible=True),  # update and show Viewer
                 gr.update(value=new_log, visible=True),  # update Process Log
