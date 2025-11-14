@@ -449,7 +449,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     apply_updates_btn.click(
         fn=_apply_updates,
-        inputs=[selected_section, editor_tb, pending_plan, status_log],
+        inputs=[section_dropdown, editor_tb, pending_plan, status_log],
         outputs=[
             viewer_md, status_strip,
             editor_tb,
