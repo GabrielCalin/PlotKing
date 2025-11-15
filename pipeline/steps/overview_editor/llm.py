@@ -16,7 +16,7 @@ MODEL_NAME = os.getenv("LMSTUDIO_MODEL", "phi-3-mini-4k-instruct")
 GEN_PARAMS = {
     "temperature": 0.6,
     "top_p": 0.95,
-    "max_tokens": 4096,
+    "max_tokens": 8000,
 }
 
 _EDIT_OVERVIEW_PROMPT = textwrap.dedent("""\
@@ -75,12 +75,13 @@ Task:
    - Consider: Do the changes require substantial restructuring of following chapters, or can they flow naturally with minor tweaks?
 
 2. Then, adapt the Chapters Overview accordingly:
+   NOTE: The chapters that need to be adapted (subsequent chapters after the edited chapter in case of chapter edits, or all chapters in case of Expanded Plot changes) have NOT yet been updated. You have full creative freedom to decide how these chapters should be adapted based on your analysis. Your decisions here will determine how these chapters will be adapted later.
 
 {adaptation_instructions}
 
 Output Requirements:
 - Maintain the same Markdown format as the original (#### Chapter N: *Title* followed by **Description:**)
-- Preserve the same number of chapters
+- CRITICAL: You MUST preserve the EXACT same number of chapters as in the ORIGINAL CHAPTERS OVERVIEW. Do NOT add, remove, merge, or split any chapters. The output must have exactly the same number of chapters as the input.
 - Keep chapter titles unchanged unless the impact requires title updates
 - Preserve all chapter descriptions that are not affected by the changes
 - Update only the parts that need to change based on the impact
