@@ -24,14 +24,23 @@ _EDIT_CHAPTER_PROMPT = textwrap.dedent("""\
 You are an expert fiction editor specializing in adapting chapters to maintain continuity after story changes.
 
 Context:
-A user made an edit to a section of the story. This edit has been analyzed, and Chapter {chapter_number} needs to be updated to reflect the impact of that change.
+A user made an edit to a section of the story. This edit has been analyzed, and an impact was determined on Chapter {chapter_number}. The following sections have ALREADY been adapted to accommodate the changes:
+- **Expanded Plot** (already modified according to the diff)
+- **Chapters Overview** (already updated to reflect the changes)
+- **Previously Written Chapters** (already adapted if needed)
+
+Now, Chapter {chapter_number} needs to be adapted to:
+- Continue naturally from the previous chapter (which has already been adapted)
+- Respect the **Chapters Overview** (which has already been updated)
+- Align with the **Expanded Plot** (which has already been modified)
+- Accommodate the **diff** and follow the **impact reason** instructions
 
 Inputs:
-- **Global Story Summary (authoritative plot):**
+- **Global Story Summary (authoritative plot - already modified according to the diff):**
 \"\"\"{expanded_plot}\"\"\"
-- **Chapters Overview (titles + short descriptions of all chapters):**
+- **Chapters Overview (titles + short descriptions of all chapters - already updated to reflect changes):**
 \"\"\"{chapters_overview}\"\"\"
-- **Previously Written Chapters (before this one):**
+- **Previously Written Chapters (before this one - already adapted if needed):**
 \"\"\"{previous_chapters_summary}\"\"\"
 - **Current Chapter {chapter_number} (to be edited):**
 \"\"\"{original_chapter}\"\"\"
@@ -42,25 +51,29 @@ Inputs:
 - **GENRE** (to guide tone, pacing, and atmosphere):
 \"\"\"{genre}\"\"\"
 
+IMPORTANT: The Expanded Plot, Chapters Overview, and Previously Written Chapters provided above are ALREADY modified according to the diff. Do NOT compare against "original" versions that don't exist here. Your task is to adapt the current chapter to be coherent with these already-adapted sections.
+
 Task:
 1. First, analyze the impact and changes to determine if this is a BREAKING CHANGE:
-   - A breaking change requires significant restructuring, contradicts established facts, or fundamentally alters the story's direction
-   - A non-breaking change can be accommodated with minimal modifications while preserving most of the original content
+   - A BREAKING CHANGE means the modifications require significant restructuring, contradict established facts, or fundamentally alter the story's direction. Major modifications are allowed, but preserve as much of the original chapter content as possible. Only change what is necessary to address the breaking change while maintaining coherence with the Expanded Plot, Chapters Overview, and previous chapters.
+   - A NON-BREAKING CHANGE means the changes can be accommodated with minimal modifications. Make MINIMAL modifications — only what is strictly necessary. Preserve the vast majority of the original chapter text unchanged.
 
 2. Then, adapt Chapter {chapter_number} accordingly:
-   - If BREAKING CHANGE: Significant modifications are allowed, but preserve as much of the original chapter content as possible. Only change what is necessary to address the breaking change.
-   - If NON-BREAKING CHANGE: Make MINIMAL modifications — only what is strictly necessary. Preserve the vast majority of the original chapter text unchanged.
+   - If BREAKING CHANGE: Significant modifications are allowed, but preserve as much of the original chapter content as possible. The priority is coherence with Expanded Plot, Chapters Overview, and previous chapters. Only change what is necessary to address the breaking change.
+   - If NON-BREAKING CHANGE: Make MINIMAL modifications — only what is strictly necessary to accommodate the difference and impact. Preserve the vast majority of the original chapter text unchanged.
 
 Specific Instructions:
 1. Locate in the Chapters Overview the exact description that corresponds to **Chapter {chapter_number}**.
    - Use its **title exactly as written** at the start of the chapter, formatted as a **Markdown H2 heading** (`##`).
    - Do **not** invent or alter the title in any way.
-2. Review the original chapter text and identify what needs to change based on the impact reason.
+2. Review the original chapter text and identify what needs to change based on the impact reason and diff.
 3. Maintain **logical continuity**:
-   - Keep consistency with **previous chapters** (characters, setting, timeline, motivations, tone).
-   - Ensure smooth transition to the **next chapter**.
-   - Do **not** include or foreshadow events that explicitly belong to future chapters.
-4. Preserve the chapter's role, purpose, and position in the story arc.
+   - Ensure smooth continuation from the **previous chapter** (which has already been adapted)
+   - Keep consistency with the **Chapters Overview** (which has already been updated)
+   - Align with the **Expanded Plot** (which has already been modified)
+   - Respect the **diff** and follow the **impact reason** instructions
+   - Do **not** include or foreshadow events that explicitly belong to future chapters
+4. Preserve the chapter's role, purpose, and position in the story arc as defined in the Chapters Overview.
 5. Maintain a clear, engaging, and immersive prose style appropriate for long-form fiction.
 6. Adapt writing style, pacing, and atmosphere to match the **GENRE** conventions.
 7. Target length: approximately the same as the original chapter (±10%).
