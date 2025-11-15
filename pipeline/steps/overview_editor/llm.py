@@ -45,6 +45,28 @@ GENRE:
 
 {chapter_section}
 
+Examples:
+
+Example 1: Chapter 4 (out of 7) is modified. Original Chapter 4 description: "Gary faces danger but survives." New chapter content: Gary dies at the end of Chapter 4.
+- BREAKING CHANGE: Yes (Gary's death requires major adaptations to Chapters 5-7)
+- Chapters Overview adaptation: Update Chapter 4 description to reflect Gary's death. Adapt Chapters 5-7 descriptions to account for Gary's absence (characters react to his death, story continues without him, etc.)
+
+Example 2: Chapter 3 (out of 5) is modified. Original Chapter 3 description: "Susan visits the market, her brown eyes scanning the stalls." New chapter content: Susan visits the market, her green eyes scanning the stalls. Eye color change only.
+- BREAKING CHANGE: No (minor detail change)
+- Chapters Overview adaptation: Update Chapter 3 description to mention green eyes instead of brown. If Chapter 5 also mentions eye color, make minimal update there for consistency. Preserve all other content unchanged.
+
+Example 3: Chapter 4 (out of 5) is modified. Original Chapter 4 description: "John returns home and reflects on his day." New chapter content: John returns home, but then decides to embark on an adventure to Mount Everest the next day. This is a major new plot development.
+- BREAKING CHANGE: Yes (major new plot development requires Chapter 5 to adapt significantly)
+- Chapters Overview adaptation: Update Chapter 4 description to include John's decision to go to Mount Everest. Adapt Chapter 5 description to reflect John being on Everest adventure instead of continuing from the previous home scene.
+
+Example 4: Expanded Plot is modified. Character name "Robert" changed to "Michael" throughout. Chapters Overview mentions Robert in Chapter 2 and Chapter 4 descriptions.
+- BREAKING CHANGE: No (simple name replacement)
+- Chapters Overview adaptation: Replace "Robert" with "Michael" in Chapter 2 and Chapter 4 descriptions. Preserve all other content unchanged.
+
+Example 5: Expanded Plot is modified. Original plot: "The story follows a peaceful journey." Modified plot: "The story follows a journey that ends in a violent confrontation with enemies." This affects the climax described in Chapters Overview for Chapters 6-7 (out of 7).
+- BREAKING CHANGE: Yes (fundamental change to story direction requires major adaptations)
+- Chapters Overview adaptation: Adapt Chapters 6-7 descriptions to reflect the violent confrontation ending, ensuring coherence with the modified Expanded Plot. Preserve earlier chapters as much as possible.
+
 Task:
 1. First, analyze the impact and changes to determine if this is a BREAKING CHANGE:
    - The Expanded Plot provided above is already modified according to the diff. Do NOT compare against an "original" Expanded Plot that doesn't exist here.
@@ -110,7 +132,7 @@ The user edited Chapter {chapter_index}. You need to:
 1. Analyze the new chapter content and create a summary of what actually happens in it
 2. Update the description of Chapter {chapter_index} in the Chapters Overview to incorporate the user's changes
 3. The new description should be based on a summary of this new chapter content, while preserving everything from the old description that is still valid
-4. Do NOT add anything extra beyond what is in the new chapter content
+4. The new description must be STRICTLY based ONLY on what happens in the new chapter content. Do NOT add conclusions, realizations, or consequences that are not explicitly stated in the new chapter content
 5. If this is a BREAKING CHANGE and the impact reason provides instructions, adapt the following chapters to naturally continue from this modified chapter, using creativity while maintaining coherence
 """
         adaptation_instructions = f"""- Generate the description for Chapter {chapter_index} based on a summary of the NEW CHAPTER CONTENT provided above
