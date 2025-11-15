@@ -151,6 +151,7 @@ def run_edit_pipeline_stream(
                 original_overview=original_overview,
                 impact_reason=impact_reason,
                 diff_summary=diff_summary,
+                edited_section=edited_section,
             )
             log_ui(edit_log, "✅ Chapters Overview adapted.")
             save_checkpoint(state.__dict__)
