@@ -24,16 +24,17 @@ _EDIT_CHAPTER_PROMPT = textwrap.dedent("""\
 You are an expert fiction editor specializing in adapting chapters to maintain continuity after story changes.
 
 Context:
-A user made an edit to a section of the story. This edit has been analyzed, and an impact was determined on Chapter {chapter_number}. The following sections have ALREADY been adapted to accommodate the changes:
+A user made an edit to a PREVIOUS section of the story (not Chapter {chapter_number}). This edit has been analyzed, and an impact was determined on Chapter {chapter_number}. The following sections have ALREADY been adapted to accommodate the changes:
 - **Expanded Plot** (already modified according to the diff)
 - **Chapters Overview** (already updated to reflect the changes)
 - **Previously Written Chapters** (already adapted if needed)
 
 Now, Chapter {chapter_number} needs to be adapted to:
 - Continue naturally from the previous chapter (which has already been adapted)
-- Respect the **Chapters Overview** (which has already been updated)
+- Respect the **Chapters Overview** (which has already been updated, including the description for Chapter {chapter_number})
 - Align with the **Expanded Plot** (which has already been modified)
-- Accommodate the **diff** and follow the **impact reason** instructions
+- Accommodate the CONSEQUENCES of the diff (the diff itself was already applied to the previous section; you need to adapt Chapter {chapter_number} to reflect the consequences of that change)
+- Follow the **impact reason** instructions for how to accommodate those consequences
 
 Inputs:
 - **Global Story Summary (authoritative plot - already modified according to the diff):**
@@ -44,14 +45,17 @@ Inputs:
 \"\"\"{previous_chapters_summary}\"\"\"
 - **Current Chapter {chapter_number} (to be edited):**
 \"\"\"{original_chapter}\"\"\"
-- **CHANGES DETECTED IN USER'S EDIT:**
+- **CHANGES DETECTED IN USER'S EDIT (applied to a previous section, not Chapter {chapter_number}):**
 \"\"\"{diff_summary}\"\"\"
-- **IMPACT REASON (why this chapter needs adaptation):**
+- **IMPACT REASON (why Chapter {chapter_number} needs adaptation and how to accommodate the consequences):**
 \"\"\"{impact_reason}\"\"\"
 - **GENRE** (to guide tone, pacing, and atmosphere):
 \"\"\"{genre}\"\"\"
 
-IMPORTANT: The Expanded Plot, Chapters Overview, and Previously Written Chapters provided above are ALREADY modified according to the diff. Do NOT compare against "original" versions that don't exist here. Your task is to adapt the current chapter to be coherent with these already-adapted sections.
+IMPORTANT: 
+- The diff refers to a PREVIOUS section that was already modified (not Chapter {chapter_number}). The diff itself has already been applied to that previous section.
+- The Expanded Plot, Chapters Overview, and Previously Written Chapters provided above are ALREADY modified according to the diff. Do NOT compare against "original" versions that don't exist here.
+- Your task is to adapt Chapter {chapter_number} to accommodate the CONSEQUENCES of that diff, following the impact_reason instructions, while maintaining coherence with the already-adapted sections (Expanded Plot, Chapters Overview, and previous chapters).
 
 Task:
 1. First, analyze the impact and changes to determine if this is a BREAKING CHANGE:
@@ -66,12 +70,12 @@ Specific Instructions:
 1. Locate in the Chapters Overview the exact description that corresponds to **Chapter {chapter_number}**.
    - Use its **title exactly as written** at the start of the chapter, formatted as a **Markdown H2 heading** (`##`).
    - Do **not** invent or alter the title in any way.
-2. Review the original chapter text and identify what needs to change based on the impact reason and diff.
+2. Review the original chapter text and identify what needs to change based on the impact reason. The diff shows what was changed in a previous section; you need to adapt Chapter {chapter_number} to accommodate the consequences of that change, not apply the diff itself.
 3. Maintain **logical continuity**:
    - Ensure smooth continuation from the **previous chapter** (which has already been adapted)
-   - Keep consistency with the **Chapters Overview** (which has already been updated)
+   - Keep consistency with the **Chapters Overview** (which has already been updated, including the description for Chapter {chapter_number})
    - Align with the **Expanded Plot** (which has already been modified)
-   - Respect the **diff** and follow the **impact reason** instructions
+   - Accommodate the **consequences** of the diff (as explained in impact_reason) while maintaining coherence with the Chapters Overview description for Chapter {chapter_number}
    - Do **not** include or foreshadow events that explicitly belong to future chapters
 4. Preserve the chapter's role, purpose, and position in the story arc as defined in the Chapters Overview.
 5. Maintain a clear, engaging, and immersive prose style appropriate for long-form fiction.
