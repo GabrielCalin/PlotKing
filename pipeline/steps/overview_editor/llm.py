@@ -140,9 +140,7 @@ The user edited Chapter {chapter_index}. You need to:
    - Preserve everything from the old Chapter {chapter_index} description that is still valid
    - Do NOT add anything beyond what is in the new chapter content
    - If BREAKING CHANGE: Adapt subsequent chapters (as indicated in impact_reason) with significant modifications to naturally continue from this modified chapter, using creativity while maintaining coherence
-   - If NON-BREAKING CHANGE: Make MINIMAL modifications to subsequent chapters for coherence — only what is necessary to ensure they flow naturally from the modified Chapter {chapter_index}
-- If BREAKING CHANGE: Significant modifications to subsequent chapters are allowed, but preserve as much of the original overview as possible. Only change what is necessary to address the breaking change.
-- If NON-BREAKING CHANGE: Make MINIMAL modifications to subsequent chapters for coherence. Preserve the vast majority of the original text unchanged, but ensure smooth flow from the modified chapter."""
+   - If NON-BREAKING CHANGE: Make MINIMAL modifications to subsequent chapters for coherence — only what is necessary to ensure they flow naturally from the modified Chapter {chapter_index}"""
     else:
         chapter_section = ""
         adaptation_instructions = """- The most important priority is COHERENCE with the Expanded Plot (which is already modified according to the diff)
