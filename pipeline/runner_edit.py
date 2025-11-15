@@ -111,6 +111,7 @@ def run_edit_pipeline_stream(
                 original_plot=original_plot,
                 impact_reason=impact_reason,
                 diff_summary=diff_summary,
+                edited_section=edited_section,
             )
             log_ui(edit_log, "✅ Expanded Plot adapted.")
             save_checkpoint(state.__dict__)

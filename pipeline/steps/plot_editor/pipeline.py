@@ -8,6 +8,7 @@ def run_plot_editor(
     original_plot: str,
     impact_reason: str,
     diff_summary: str,
+    edited_section: str = "",
 ) -> PipelineContext:
     """
     Pipeline step: editează expanded_plot bazat pe impact și diff.
@@ -16,6 +17,7 @@ def run_plot_editor(
         original_plot=original_plot,
         impact_reason=impact_reason,
         diff_summary=diff_summary,
+        edited_section=edited_section,
         genre=context.genre or "",
     )
     return context
