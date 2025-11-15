@@ -31,7 +31,7 @@ EDITED SECTION:
 ORIGINAL CHAPTERS OVERVIEW:
 \"\"\"{original_overview}\"\"\"
 
-EXPANDED PLOT (reference):
+EXPANDED PLOT (already modified according to the diff):
 \"\"\"{expanded_plot}\"\"\"
 
 CHANGES DETECTED IN USER'S EDIT:
@@ -47,8 +47,10 @@ GENRE:
 
 Task:
 1. First, analyze the impact and changes to determine if this is a BREAKING CHANGE:
-   - A breaking change requires significant restructuring, contradicts established facts, or fundamentally alters the story's direction
-   - A non-breaking change can be accommodated with minimal modifications while preserving most of the original content
+   - The Expanded Plot provided above is already modified according to the diff. Do NOT compare against an "original" Expanded Plot that doesn't exist here.
+   - A BREAKING CHANGE means that subsequent chapters need MAJOR adaptations to continue naturally from the changes made (according to diff_summary and impact_reason)
+   - A NON-BREAKING CHANGE means the changes can be accommodated with minimal modifications, but you may still need to make minor adjustments to subsequent chapters for coherence
+   - Consider: Do the changes require substantial restructuring of following chapters, or can they flow naturally with minor tweaks?
 
 2. Then, adapt the Chapters Overview accordingly:
 
@@ -104,7 +106,7 @@ def call_llm_edit_overview(
         chapter_section = f"""NEW CHAPTER {chapter_index} CONTENT (the complete edited chapter):
 \"\"\"{new_chapter_content}\"\"\"
 
-IMPORTANT: The user edited Chapter {chapter_index}. You need to:
+The user edited Chapter {chapter_index}. You need to:
 1. Analyze the new chapter content and create a summary of what actually happens in it
 2. Update the description of Chapter {chapter_index} in the Chapters Overview to incorporate the user's changes
 3. The new description should be based on a summary of this new chapter content, while preserving everything from the old description that is still valid
@@ -114,17 +116,17 @@ IMPORTANT: The user edited Chapter {chapter_index}. You need to:
         adaptation_instructions = f"""- Generate the description for Chapter {chapter_index} based on a summary of the NEW CHAPTER CONTENT provided above
    - Preserve everything from the old Chapter {chapter_index} description that is still valid
    - Do NOT add anything beyond what is in the new chapter content
-   - If BREAKING CHANGE: Adapt subsequent chapters (if mentioned in impact reason) to naturally continue from this modified chapter, using creativity while maintaining coherence
-   - If NON-BREAKING CHANGE: Make MINIMAL modifications to other chapters — only what is strictly necessary
-- If BREAKING CHANGE: Significant modifications are allowed, but preserve as much of the original overview as possible. Only change what is necessary to address the breaking change.
-- If NON-BREAKING CHANGE: Make MINIMAL modifications — only what is strictly necessary. Preserve the vast majority of the original text unchanged."""
+   - If BREAKING CHANGE: Adapt subsequent chapters (as indicated in impact_reason) with significant modifications to naturally continue from this modified chapter, using creativity while maintaining coherence
+   - If NON-BREAKING CHANGE: Make MINIMAL modifications to subsequent chapters for coherence — only what is necessary to ensure they flow naturally from the modified Chapter {chapter_index}
+- If BREAKING CHANGE: Significant modifications to subsequent chapters are allowed, but preserve as much of the original overview as possible. Only change what is necessary to address the breaking change.
+- If NON-BREAKING CHANGE: Make MINIMAL modifications to subsequent chapters for coherence. Preserve the vast majority of the original text unchanged, but ensure smooth flow from the modified chapter."""
     else:
         chapter_section = ""
-        adaptation_instructions = """- The most important priority is COHERENCE with the Expanded Plot
+        adaptation_instructions = """- The most important priority is COHERENCE with the Expanded Plot (which is already modified according to the diff)
    - Modify impacted chapters according to the impact reason and diff so that chapters are coherent with the Expanded Plot
    - Preserve everything that is still valid, but coherence with Expanded Plot takes precedence
-- If BREAKING CHANGE: Significant modifications are allowed, but preserve as much of the original overview as possible. Only change what is necessary to address the breaking change.
-- If NON-BREAKING CHANGE: Make MINIMAL modifications — only what is strictly necessary. Preserve the vast majority of the original text unchanged."""
+- If BREAKING CHANGE: Significant modifications to impacted chapters are allowed, but preserve as much of the original overview as possible. Only change what is necessary to address the breaking change.
+- If NON-BREAKING CHANGE: Make MINIMAL modifications to impacted chapters for coherence — only what is necessary to ensure they align with the modified Expanded Plot. Preserve the vast majority of the original text unchanged."""
 
     prompt = _EDIT_OVERVIEW_PROMPT.format(
         edited_section=edited_section,
