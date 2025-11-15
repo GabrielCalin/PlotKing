@@ -24,7 +24,7 @@ _EDIT_CHAPTER_PROMPT = textwrap.dedent("""\
 You are an expert fiction editor specializing in adapting chapters to maintain continuity after story changes.
 
 Context:
-A user made an edit to a PREVIOUS section of the story (not Chapter {chapter_number}). This edit has been analyzed, and an impact was determined on Chapter {chapter_number}. The following sections have ALREADY been adapted to accommodate the changes:
+A user made an edit to **{edited_section}**. This edit has been analyzed, and an impact was determined on Chapter {chapter_number}. The following sections have ALREADY been adapted to accommodate the changes:
 - **Expanded Plot** (already modified according to the diff)
 - **Chapters Overview** (already updated to reflect the changes)
 - **Previously Written Chapters** (already adapted if needed)
@@ -45,7 +45,7 @@ Inputs:
 \"\"\"{previous_chapters_summary}\"\"\"
 - **Current Chapter {chapter_number} (to be edited):**
 \"\"\"{original_chapter}\"\"\"
-- **CHANGES DETECTED IN USER'S EDIT (applied to a previous section, not Chapter {chapter_number}):**
+- **CHANGES DETECTED IN USER'S EDIT (applied to {edited_section}, not Chapter {chapter_number}):**
 \"\"\"{diff_summary}\"\"\"
 - **IMPACT REASON (why Chapter {chapter_number} needs adaptation and how to accommodate the consequences):**
 \"\"\"{impact_reason}\"\"\"
@@ -109,6 +109,7 @@ def call_llm_edit_chapter(
     original_chapter: str,
     impact_reason: str,
     diff_summary: str,
+    edited_section: str = "",
     genre: str = "",
     anpc: Optional[int] = None,
     *,
@@ -131,6 +132,7 @@ def call_llm_edit_chapter(
         original_chapter=original_chapter or "",
         diff_summary=diff_summary or "",
         impact_reason=impact_reason or "",
+        edited_section=edited_section or "a previous section",
         genre=genre or "unspecified",
         chapter_number=chapter_index,
     )

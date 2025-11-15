@@ -204,6 +204,7 @@ def run_edit_pipeline_stream(
             original_chapter=original_chapter,
             impact_reason=impact_reason,
             diff_summary=diff_summary,
+            edited_section=edited_section,
         )
         
         state.chapters_full[chapter_num - 1] = edited_chapter

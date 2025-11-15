@@ -14,6 +14,7 @@ def run_chapter_editor(
     original_chapter: str,
     impact_reason: str,
     diff_summary: str,
+    edited_section: str = "",
 ) -> str:
     """
     Returnează textul capitolului editat, fără efecte secundare asupra contextului.
@@ -31,6 +32,7 @@ def run_chapter_editor(
         original_chapter=original_chapter,
         impact_reason=impact_reason,
         diff_summary=diff_summary,
+        edited_section=edited_section,
         genre=context.genre or "",
         anpc=context.anpc,
     )
