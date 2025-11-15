@@ -81,11 +81,12 @@ Task:
 
 Output Requirements:
 - Maintain the same Markdown format as the original (#### Chapter N: *Title* followed by **Description:**)
-- CRITICAL: You MUST preserve the EXACT same number of chapters as in the ORIGINAL CHAPTERS OVERVIEW. Do NOT add, remove, merge, or split any chapters. The output must have exactly the same number of chapters as the input.
+- CRITICAL: You MUST preserve the EXACT same number of chapters as in the ORIGINAL CHAPTERS OVERVIEW. The exact number of chapters ({num_chapters}) must remain unchanged — do not change it. Do NOT add, remove, merge, or split any chapters. The output must have exactly the same number of chapters as the input.
 - Keep chapter titles unchanged unless the impact requires title updates
 - Preserve all chapter descriptions that are not affected by the changes
 - Update only the parts that need to change based on the impact
 - Ensure the adapted overview remains coherent with the Expanded Plot
+- When making major modifications to chapter descriptions, ensure each description is a neutral summary of 10–15 sentences
 
 You must output a JSON object with the following structure:
 {{
@@ -106,6 +107,7 @@ def call_llm_edit_overview(
     edited_section: str = None,
     new_chapter_content: str = None,
     chapter_index: int = None,
+    num_chapters: int = None,
     *,
     api_url: str = None,
     model_name: str = None,
@@ -119,6 +121,7 @@ def call_llm_edit_overview(
         edited_section: Numele secțiunii editate (ex: "Chapter 4" sau "Expanded Plot")
         new_chapter_content: Conținutul complet al capitolului nou (dacă a fost editat un capitol)
         chapter_index: Index-ul capitolului editat (1-based, dacă e cazul)
+        num_chapters: Numărul total de capitole (folosit pentru validare)
     """
     url = api_url or LOCAL_API_URL
     model = model_name or MODEL_NAME
@@ -158,6 +161,7 @@ The user edited Chapter {chapter_index}. You need to:
         genre=genre or "unspecified",
         chapter_section=chapter_section,
         adaptation_instructions=adaptation_instructions,
+        num_chapters=num_chapters or 0,
     )
 
     payload = {

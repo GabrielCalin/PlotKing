@@ -36,6 +36,7 @@ def run_overview_editor(
         edited_section=edited_section,
         new_chapter_content=new_chapter_content,
         chapter_index=chapter_index,
+        num_chapters=context.num_chapters,
     )
     return context
 
