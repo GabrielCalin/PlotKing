@@ -57,6 +57,28 @@ IMPORTANT:
 - The Expanded Plot, Chapters Overview, and Previously Written Chapters provided above are ALREADY modified according to the diff. Do NOT compare against "original" versions that don't exist here.
 - Your task is to adapt Chapter {chapter_number} to accommodate the CONSEQUENCES of that diff, following the impact_reason instructions, while maintaining coherence with the already-adapted sections (Expanded Plot, Chapters Overview, and previous chapters).
 
+Examples:
+
+Example 1: Chapter 4 (out of 7) was edited. User modified Chapter 4 so that Gary dies at the end (previously he survived). Now Chapter 5 needs to be adapted.
+- BREAKING CHANGE: Yes (Gary's death requires major restructuring of Chapter 5)
+- Chapter 5 adaptation: Follow the new Chapter 5 description from Chapters Overview (which has already been updated to reflect Gary's death). The chapter must account for Gary's absence. Characters react to his death, the story continues without him. Remove any references to Gary being alive. Adapt scenes that depended on Gary's presence. Preserve as much of the original Chapter 5 content as possible, but restructure to reflect the new reality and align with the updated Chapters Overview description.
+
+Example 2: Chapter 3 (out of 5) was edited. User changed Susan's eye color from brown to green in Chapter 3. Chapter 5 also mentions Susan's eye color.
+- BREAKING CHANGE: No (minor detail change)
+- Chapter 5 adaptation: Make MINIMAL modification - only change the eye color reference from "brown" to "green" wherever it appears. Preserve all other content unchanged. This is a simple find-and-replace type change.
+
+Example 3: Chapter 4 (out of 5) was edited. User modified Chapter 4 so that John decides to embark on an adventure to Mount Everest the next day (previously Chapter 4 ended with John at home). Now Chapter 5 needs to be adapted.
+- BREAKING CHANGE: Yes (major plot development requires significant adaptation)
+- Chapter 5 adaptation: Follow the new Chapter 5 description from Chapters Overview (which has already been updated to reflect John's Everest adventure). Chapter 5 must reflect that John is embarking on his Everest adventure, not continuing from the home scene. Adapt the opening to show John preparing for or beginning his journey to Everest. Restructure scenes to account for the new setting and circumstances. Preserve character development and themes from the original Chapter 5, but adapt the plot to continue naturally from John's decision to embark on the Everest adventure and align with the updated Chapters Overview description.
+
+Example 4: Expanded Plot was edited. Character name "Robert" was changed to "Michael" throughout. Chapter 3 contains references to Robert.
+- BREAKING CHANGE: No (simple name replacement)
+- Chapter 3 adaptation: Make MINIMAL modifications - replace all instances of "Robert" with "Michael". Preserve all other content unchanged. This is a straightforward name replacement.
+
+Example 5: Chapters Overview was edited. Original Chapter 6 description was "The journey continues peacefully." Modified description is "The journey builds toward a violent confrontation with enemies." Chapter 6 (out of 7) needs to be adapted to reflect this change.
+- BREAKING CHANGE: Yes (fundamental change to story direction requires major adaptation)
+- Chapter 6 adaptation: Adapt Chapter 6 to build toward the violent confrontation ending. Introduce tension, conflict, and foreshadowing of the confrontation. Adapt scenes to align with the new story direction while preserving the chapter's role in the story arc. Maintain coherence with the modified Chapters Overview description for Chapter 6.
+
 Task:
 1. First, analyze the impact and changes to determine if this is a BREAKING CHANGE:
    - A BREAKING CHANGE means the modifications require significant restructuring, contradict established facts, or fundamentally alter the story's direction. Major modifications are allowed, but preserve as much of the original chapter content as possible. Only change what is necessary to address the breaking change while maintaining coherence with the Expanded Plot, Chapters Overview, and previous chapters.
