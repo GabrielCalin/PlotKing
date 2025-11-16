@@ -19,7 +19,7 @@ GEN_PARAMS = {
 }
 
 _IMPACT_PROMPT = textwrap.dedent("""\
- You are a continuity analyst helping a human editor understand which story sections need updates after a change.
+You are a continuity analyst that identifies which story sections need updates after a change and provides detailed instructions for other AI editors (plot editor, overview editor, chapter editor) on how to adapt those sections.
 
 Inputs you receive:
 - SECTION EDITED: {section_name}
@@ -50,22 +50,22 @@ For major new events: You must check continuity between the EDITED SECTION CONTE
 Examples:
 
 Example 1: Expanded Plot states character Gary survives, and Chapters Overview indicates this happens in Chapter 4 (out of 7 chapters). Modification: Gary dies in Chapter 4.
-- Expanded Plot: IMPACTED (Gary dies, contradicts survival)
-- Chapters Overview: IMPACTED (continuity broken, Chapters 5-7 need adaptation)
-- Chapters 5, 6, 7: IMPACTED (continuity broken)
+- Expanded Plot: IMPACTED (Gary dies in Chapter 4, contradicting the survival mentioned in the Plot Summary section. Update the Developments phase to reflect Gary's death instead of survival. Adapt the Climax and Resolution sections to account for Gary's absence. Check and update the Key Characters section if it mentions Gary's role in later events.)
+- Chapters Overview: IMPACTED (continuity broken, Chapters 5-7 need adaptation. Update Chapter 4 description to reflect Gary's death. Adapt Chapters 5, 6, and 7 descriptions to show characters reacting to his death and continuing the story without him.)
+- Chapters 5, 6, 7: IMPACTED (continuity broken - Gary's death means these chapters cannot reference Gary being alive. Adapt Chapter 5 opening to show characters reacting to Gary's death. Remove scenes or references that depended on Gary's presence in Chapters 6 and 7, while maintaining each chapter's core purpose.)
 
-Example 2: Character name changed in Expanded Plot. That character appears in Chapter 3 description (out of 5 chapters).
-- Chapters Overview: IMPACTED (needs name update in Chapter 3 description)
-- Chapter 3: IMPACTED (name appears, needs update)
-- Chapter 4: IMPACTED (name appears but not mentioned in Chapters Overview, still needs update)
+Example 2: Character name changed in Expanded Plot from "Robert" to "Michael". That character appears in Chapter 3 description (out of 5 chapters).
+- Chapters Overview: IMPACTED (needs name update in Chapter 3 description. Replace "Robert" with "Michael" in the Chapter 3 description to match the Expanded Plot.)
+- Chapter 3: IMPACTED (name appears, needs update. Replace all instances of "Robert" with "Michael" throughout the chapter text, preserving all other content unchanged.)
+- Chapter 4: IMPACTED (name appears but not mentioned in Chapters Overview, still needs update. Replace all instances of "Robert" with "Michael" in the chapter text for consistency.)
 
 Example 3: Minor change in Chapter 3 (out of 5): Susan's eyes are green instead of brown. Eye color is also mentioned in Chapter 5.
-- Chapter 5: IMPACTED (eye color detail needs update for consistency)
+- Chapter 5: IMPACTED (eye color detail needs update for consistency. Replace "brown" with "green" wherever Susan's eye color is mentioned in Chapter 5, preserving all other content unchanged.)
 
 Example 4: Chapter 4 (out of 5) is modified. Previously, Chapter 4 ended with John at home. New modification: John decides to embark on an adventure to Mount Everest the next day. This is a major new plot development not mentioned in Expanded Plot or Chapters Overview.
-- Expanded Plot: IMPACTED (major new event - John's Everest adventure - needs to be included)
-- Chapters Overview: IMPACTED (needs to reflect John's departure and adventure in Chapter 4 description, Chapter 5 needs adaptation)
-- Chapter 5: IMPACTED (must account for John being on Everest adventure, continuity broken with previous ending)
+- Expanded Plot: IMPACTED (major new event - John's Everest adventure - needs to be included. Integrate John's Everest adventure into the Plot Summary section, specifically in the Developments phase where John's journey is described. Update the section that currently describes John's story ending at home to include his decision to go to Everest and the subsequent adventure, integrating it naturally into the existing narrative flow.)
+- Chapters Overview: IMPACTED (needs to reflect John's departure and adventure in Chapter 4 description, Chapter 5 needs adaptation. Update Chapter 4 description to mention John's decision to embark on the Everest adventure. Adapt Chapter 5 description to show John is on Everest rather than continuing from the home scene.)
+- Chapter 5: IMPACTED (must account for John being on Everest adventure, continuity broken with previous ending. Adapt the chapter to reflect that John is on his Everest adventure, not continuing from being at home. Update the opening and subsequent scenes to show John preparing for or beginning his journey to Everest, maintaining continuity with the modified Chapter 4.)
 
 Task:
 1. Review the edited section content, change summary, and potentially impacted sections.
@@ -73,8 +73,13 @@ Task:
 3. **CRITICAL**: Check continuity between EDITED SECTION CONTENT and following sections in POTENTIAL IMPACTED SECTIONS. If a major new event or plot development is introduced, it requires updates even if there are no direct contradictions.
 4. Apply the impact expectations above to determine which sections require adaptation.
 5. Only reference section names from the POTENTIALLY IMPACTED SECTION NAMES list.
-6. For every impacted section, provide a short explanation (2 sentences max) describing why the changes made in {section_name} require this adaptation.
-7. If none of the sections require an update, state that explicitly.
+6. For every impacted section, provide detailed instructions (2-4 sentences) directly addressed to the AI editor that will adapt that section. Write as if giving instructions directly to that AI (e.g., for Expanded Plot: "Update...", "Adapt...", "Integrate..."). The instructions should include:
+   - **Why** the changes made in {section_name} require this adaptation
+   - **What specific content** needs to be changed or added
+   - **Where in the section** the changes should be made (e.g., "in the Plot Summary section, during the Developments phase", "in Chapter X description", "in the Key Characters section")
+   - **Context** about how the new change relates to existing content (e.g., "this event occurs in Chapter 4 and affects the story arc described in the Plot Summary")
+7. Write instructions directly and concisely, as if addressing the AI editor that will perform the adaptation (e.g., "Update the Developments phase...", "Adapt Chapter 4 description...", "Replace all instances of...").
+8. If none of the sections require an update, state that explicitly.
 
 Output format (strict JSON):
 - Respond with a single JSON object and nothing else.
@@ -93,7 +98,7 @@ If updates are required:
   "impacted_sections": [
     {{
       "name": "Section Name",
-      "reason": "Short explanation mentioning why changes in {section_name} require this adaptation"
+      "reason": "Detailed instructions (2-4 sentences) directly addressed to the AI editor that will adapt this section. Include: why the changes require adaptation, what specific content needs to change, where in the section the changes should be made, and context about how the new change relates to existing content. Write directly and concisely (e.g., 'Update the Developments phase...', 'Adapt Chapter 4 description...', 'Replace all instances of...')"
     }}
   ]
 }}
