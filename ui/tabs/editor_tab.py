@@ -249,6 +249,26 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             base_log = current_log
             current_epoch = create_epoch or 0
             
+            # Yield imediat cu draft-ul salvat pentru a actualiza markdown-ul
+            new_log, status_update = _append_status(current_log, f"✅ ({section}) Changes saved. Adapting impacted sections...")
+            yield (
+                gr.update(value=draft, visible=True),  # afișează draft-ul salvat imediat
+                status_update,  # update Process Log
+                gr.update(visible=False),   # hide Editor
+                gr.update(visible=False),   # hide Validation Title
+                gr.update(visible=False),   # hide Validation Box
+                gr.update(visible=False),   # hide Apply Updates
+                gr.update(visible=False),   # hide Regenerate
+                gr.update(visible=False),   # hide Continue Editing
+                gr.update(visible=False),   # hide Discard2
+                gr.update(visible=False),   # hide Start Editing (pipeline running)
+                gr.update(value="View", interactive=False),  # set Mode to View and lock
+                gr.update(interactive=True),  # allow Section change
+                draft,  # update current_md state with draft
+                new_log,  # update status_log state
+                current_epoch,  # bump create_sections_epoch
+            )
+            
             for result in H.editor_apply(section, draft, plan):
                 if isinstance(result, tuple) and len(result) == 8:
                     expanded_plot, chapters_overview, chapters_full, current_text, dropdown, counter, status_log_text, validation_text = result
