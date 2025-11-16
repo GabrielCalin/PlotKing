@@ -245,7 +245,6 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         Este generator dacă există plan, altfel returnează direct.
         """
         if plan and isinstance(plan, dict) and plan.get("impacted_sections"):
-            preview_text = draft
             base_log = current_log
             current_epoch = create_epoch or 0
             
@@ -272,30 +271,12 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             for result in H.editor_apply(section, draft, plan):
                 if isinstance(result, tuple) and len(result) == 8:
                     expanded_plot, chapters_overview, chapters_full, current_text, dropdown, counter, status_log_text, validation_text = result
-                    adapted_section = _infer_section_from_counter(str(counter))
-                    
-                    if adapted_section == "Expanded Plot":
-                        preview_text = expanded_plot or draft
-                    elif adapted_section == "Chapters Overview":
-                        preview_text = chapters_overview or draft
-                    elif adapted_section and adapted_section.startswith("Chapter "):
-                        try:
-                            chapter_num = int(adapted_section.split(" ")[1])
-                            if 1 <= chapter_num <= len(chapters_full):
-                                preview_text = chapters_full[chapter_num - 1] or draft
-                        except:
-                            pass
-
-                    if adapted_section == section:
-                        viewer_update = gr.update(value=preview_text, visible=True)  # update and show Viewer
-                    else:
-                        viewer_update = gr.update(visible=True)  # keep visible, don't change content
                     
                     new_log = merge_logs(base_log, status_log_text)
                     current_epoch += 1  # Bump create_sections_epoch at each iteration
                     
                     yield (
-                        viewer_update,  # <— înlocuiește gr.update(value=preview_text, visible=True)
+                        gr.update(visible=True),  # keep viewer visible, don't change content
                         gr.update(value=new_log, visible=True),  # update Process Log
                         gr.update(visible=False),   # hide Editor
                         gr.update(visible=False),   # hide Validation Title
@@ -307,7 +288,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                         gr.update(visible=False),   # hide Start Editing (pipeline running)
                         gr.update(value="View", interactive=False),  # set Mode to View and lock
                         gr.update(interactive=True),  # allow Section change
-                        preview_text,  # update current_md state
+                        gr.update(),  # keep current_md state unchanged
                         new_log,  # update status_log state
                         current_epoch,  # bump create_sections_epoch to notify Create tab at each iteration
                     )
@@ -316,15 +297,9 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 new_log += "\n"
             new_log, status_update = _append_status(new_log, f"✅ ({section}) Synced and sections adapted.")
 
-            adapted_section = _infer_section_from_counter(str(counter)) if 'counter' in locals() else None
-            if adapted_section == section:
-                final_viewer_update = gr.update(value=preview_text, visible=True)  # update and show Viewer
-            else:
-                final_viewer_update = gr.update(visible=True)  # keep visible, don't change content
-
             current_epoch += 1  # Bump create_sections_epoch at final yield too
             yield (
-                final_viewer_update,  # <— înlocuiește gr.update(value=preview_text, visible=True)
+                gr.update(visible=True),  # keep viewer visible, don't change content
                 gr.update(value=new_log, visible=True),  # update Process Log with final message
                 gr.update(visible=False),   # hide Editor
                 gr.update(visible=False),   # hide Validation Title
@@ -336,7 +311,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 gr.update(visible=False),  # hide Start Editing (Mode is set to View after Apply)
                 gr.update(value="View", interactive=True),  # unlock Mode (pipeline finished)
                 gr.update(interactive=True),  # unlock Section (pipeline finished)
-                preview_text,  # update current_md state
+                gr.update(),  # keep current_md state unchanged
                 new_log,  # update status_log state
                 current_epoch,  # bump create_sections_epoch to notify Create tab at final yield
             )
