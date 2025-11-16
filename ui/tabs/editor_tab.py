@@ -341,7 +341,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 gr.update(visible=False),   # hide Continue Editing
                 gr.update(visible=False),   # hide Discard2
                 gr.update(visible=False),  # hide Start Editing (Mode is set to View after Apply)
-                gr.update(interactive=True), # unlock Mode
+                gr.update(value="View", interactive=True), # reset Mode to View and unlock
                 gr.update(interactive=True), # unlock Section
                 preview_text,  # update current_md state with the new text
                 new_log,  # update status_log state
