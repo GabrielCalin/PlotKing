@@ -33,7 +33,7 @@ Inputs you receive:
 
 Impact Expectations:
 
-**Expanded Plot changes**: Impact occurs if the change contradicts existing content or breaks continuity with other sections. All sections may be affected.
+**Expanded Plot changes**: Impact occurs if the change contradicts existing content or breaks continuity with other sections. All sections may be affected. **IMPORTANT**: When providing instructions for Expanded Plot adaptation, do NOT mention specific chapter numbers (e.g., "Chapter 4", "Chapter 5"). Instead, refer to events or developments in a chapter-agnostic way (e.g., "the event where Gary dies", "John's Everest adventure"). This keeps the Expanded Plot focused on the story arc rather than chapter structure.
 
 **Chapters Overview changes**: Impact occurs if the change contradicts existing content or breaks continuity. If continuity is broken, all following chapters need adaptation and should be marked as impacted. When marking Chapters Overview as impacted, you must clearly specify which chapters from Chapters Overview need adaptation in the reason.
 
@@ -50,7 +50,7 @@ For major new events: You must check continuity between the EDITED SECTION CONTE
 Examples:
 
 Example 1: Expanded Plot states character Gary survives, and Chapters Overview indicates this happens in Chapter 4 (out of 7 chapters). Modification: Gary dies in Chapter 4.
-- Expanded Plot: IMPACTED (Gary dies in Chapter 4, contradicting the survival mentioned in the Plot Summary section. Update the Developments phase to reflect Gary's death instead of survival. Adapt the Climax and Resolution sections to account for Gary's absence. Check and update the Key Characters section if it mentions Gary's role in later events.)
+- Expanded Plot: IMPACTED (Gary dies, contradicting the survival mentioned in the Plot Summary section. Update the Developments phase to reflect Gary's death instead of survival. Adapt the Climax and Resolution sections to account for Gary's absence. Check and update the Key Characters section if it mentions Gary's role in later events.)
 - Chapters Overview: IMPACTED (continuity broken, Chapters 5-7 need adaptation. Update Chapter 4 description to reflect Gary's death. Adapt Chapters 5, 6, and 7 descriptions to show characters reacting to his death and continuing the story without him.)
 - Chapters 5, 6, 7: IMPACTED (continuity broken - Gary's death means these chapters cannot reference Gary being alive. Adapt Chapter 5 opening to show characters reacting to Gary's death. Remove scenes or references that depended on Gary's presence in Chapters 6 and 7, while maintaining each chapter's core purpose.)
 
@@ -63,7 +63,7 @@ Example 3: Minor change in Chapter 3 (out of 5): Susan's eyes are green instead 
 - Chapter 5: IMPACTED (eye color detail needs update for consistency. Replace "brown" with "green" wherever Susan's eye color is mentioned in Chapter 5, preserving all other content unchanged.)
 
 Example 4: Chapter 4 (out of 5) is modified. Previously, Chapter 4 ended with John at home. New modification: John decides to embark on an adventure to Mount Everest the next day. This is a major new plot development not mentioned in Expanded Plot or Chapters Overview.
-- Expanded Plot: IMPACTED (major new event - John's Everest adventure - needs to be included. Integrate John's Everest adventure into the Plot Summary section, specifically in the Developments phase where John's journey is described. Update the section that currently describes John's story ending at home to include his decision to go to Everest and the subsequent adventure, integrating it naturally into the existing narrative flow.)
+- Expanded Plot: IMPACTED (major new event - John's Everest adventure - needs to be included. Integrate John's Everest adventure into the Plot Summary section, specifically in the Developments phase where John's journey is described. Update the section that currently describes John's story ending at home to include his decision to go to Everest and the subsequent adventure, integrating it naturally into the existing narrative flow. Do not mention which chapter this occurs in.)
 - Chapters Overview: IMPACTED (needs to reflect John's departure and adventure in Chapter 4 description, Chapter 5 needs adaptation. Update Chapter 4 description to mention John's decision to embark on the Everest adventure. Adapt Chapter 5 description to show John is on Everest rather than continuing from the home scene.)
 - Chapter 5: IMPACTED (must account for John being on Everest adventure, continuity broken with previous ending. Adapt the chapter to reflect that John is on his Everest adventure, not continuing from being at home. Update the opening and subsequent scenes to show John preparing for or beginning his journey to Everest, maintaining continuity with the modified Chapter 4.)
 
@@ -77,7 +77,7 @@ Task:
    - **Why** the changes made in {section_name} require this adaptation
    - **What specific content** needs to be changed or added
    - **Where in the section** the changes should be made (e.g., "in the Plot Summary section, during the Developments phase", "in Chapter X description", "in the Key Characters section")
-   - **Context** about how the new change relates to existing content (e.g., "this event occurs in Chapter 4 and affects the story arc described in the Plot Summary")
+   - **Context** about how the new change relates to existing content (e.g., "this event affects the story arc described in the Plot Summary")
 7. Write instructions directly and concisely, as if addressing the AI editor that will perform the adaptation (e.g., "Update the Developments phase...", "Adapt Chapter 4 description...", "Replace all instances of...").
 8. If none of the sections require an update, state that explicitly.
 

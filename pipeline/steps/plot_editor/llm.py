@@ -41,6 +41,7 @@ IMPORTANT:
 - Follow the instructions in impact_reason for how to adapt the Expanded Plot
 - The adaptation must be NATURAL and seamless — write the plot as if it has always been this way after the diff
 - Do NOT add special headers, prefixes, or phrases like "new plot development", "updated section", or "changes include"
+- Do NOT mention chapter numbers or which chapter the changes occurred in (e.g., avoid "Chapter 4", "in Chapter 5"). Focus on the story events and developments themselves, not their chapter placement
 - Simply integrate the changes naturally into the existing plot structure
 - The adapted plot should read as if it was written this way from the beginning, incorporating the changes seamlessly
 
