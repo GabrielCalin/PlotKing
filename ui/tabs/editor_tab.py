@@ -323,15 +323,12 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 # Este generator, dar nu ar trebui să fie în acest caz
                 for item in result:
                     pass  # Consumă generator-ul
-                preview_text = draft
-            else:
-                # Returnează tuple (saved_text, preview_text)
-                saved_text, preview_text = result if isinstance(result, tuple) else (draft, draft)
             
             new_log, status_update = _append_status(current_log, f"✅ ({section}) Synced.")
             new_create_epoch = (create_epoch or 0) + 1  # Bump create_sections_epoch AFTER save completes
-            return (
-                gr.update(value=preview_text, visible=True),  # update and show Viewer
+
+            yield (
+                gr.update(value=draft, visible=True),  # update and show Viewer with draft
                 gr.update(value=new_log, visible=True),  # update Process Log
                 gr.update(visible=False),   # hide Editor
                 gr.update(visible=False),   # hide Validation Title
@@ -343,7 +340,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 gr.update(visible=False),  # hide Start Editing (Mode is set to View after Apply)
                 gr.update(value="View", interactive=True), # reset Mode to View and unlock
                 gr.update(interactive=True), # unlock Section
-                preview_text,  # update current_md state with the new text
+                draft,  # update current_md state with draft
                 new_log,  # update status_log state
                 new_create_epoch,  # bump create_sections_epoch to notify Create tab
             )
