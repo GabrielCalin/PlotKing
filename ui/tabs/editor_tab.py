@@ -44,14 +44,14 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
             start_edit_btn = gr.Button("✍️ Start Editing", variant="primary", visible=False)
             
-            rewrite_instructions_tb = gr.Textbox(
-                label="Rewrite Instructions",
-                placeholder="Enter instructions on how to rewrite this section...",
-                lines=3,
-                visible=False,
-                interactive=True,
-            )
-            rewrite_btn = gr.Button("🔄 Rewrite", variant="primary", visible=False)
+            with gr.Column(visible=False) as rewrite_section:
+                rewrite_instructions_tb = gr.Textbox(
+                    label="Rewrite Instructions",
+                    placeholder="Enter instructions on how to rewrite this section...",
+                    lines=3,
+                    interactive=True,
+                )
+                rewrite_btn = gr.Button("🔄 Rewrite", variant="primary")
             confirm_btn = gr.Button("✅ Validate", visible=False)
             discard_btn = gr.Button("🗑️ Discard", visible=False)
             force_edit_btn = gr.Button("⚡ Force Edit", visible=False)
@@ -159,7 +159,6 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                     return (
                         gr.update(visible=(mode == "Manual")),
                         gr.update(visible=(mode == "Rewrite")),
-                        gr.update(visible=(mode == "Rewrite")),
                         gr.update(value=current_log),
                         current_log
                     )
@@ -167,14 +166,12 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                     return (
                         gr.update(visible=(mode == "Manual")),
                         gr.update(visible=(mode == "Rewrite")),
-                        gr.update(visible=(mode == "Rewrite")),
                         gr.update(value=current_log),
                         current_log
                     )
         new_log, status_update = _append_status(current_log, last_msg)
         return (
             gr.update(visible=(mode == "Manual")),
-            gr.update(visible=(mode == "Rewrite")),
             gr.update(visible=(mode == "Rewrite")),
             status_update,
             new_log
@@ -185,8 +182,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         new_log, status_update = _append_status(current_log, f"✍️ ({section}) Editing started.")
         return (
             gr.update(visible=False),     # hide Start
-            gr.update(visible=False),     # hide Rewrite Instructions
-            gr.update(visible=False),     # hide Rewrite Button
+            gr.update(visible=False),     # hide Rewrite Section
             gr.update(visible=True),      # show Confirm
             gr.update(visible=True),      # show Discard
             gr.update(visible=True),      # show Force Edit
@@ -216,8 +212,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(visible=False),   # hide Discard
             gr.update(visible=False),   # hide Force Edit
             gr.update(visible=False),   # hide Start Editing
-            gr.update(visible=False),   # hide Rewrite Instructions
-            gr.update(visible=False),   # hide Rewrite Button
+            gr.update(visible=False),   # hide Rewrite Section
             gr.update(visible=True, interactive=False),  # keep Editor visible but disable editing
             gr.update(interactive=False), # keep Mode locked
             gr.update(interactive=False), # lock Section dropdown
@@ -243,8 +238,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(visible=False),   # hide Discard
             gr.update(visible=False),   # hide Force Edit
             gr.update(visible=False),   # hide Start Editing
-            gr.update(visible=False),   # hide Rewrite Instructions
-            gr.update(visible=False),   # hide Rewrite Button
+            gr.update(visible=False),   # hide Rewrite Section
             gr.update(visible=True, interactive=False),  # keep Editor visible but disable editing
             gr.update(interactive=False), # keep Mode locked
             gr.update(interactive=False), # keep Section locked
@@ -265,8 +259,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(visible=False),   # hide Discard
             gr.update(visible=False),   # hide Force Edit
             gr.update(visible=True),    # show Start Editing (will be hidden by _toggle_mode if not Manual mode)
-            gr.update(visible=False),   # hide Rewrite Instructions (will be shown by _toggle_mode if Rewrite mode)
-            gr.update(visible=False),   # hide Rewrite Button (will be shown by _toggle_mode if Rewrite mode)
+            gr.update(visible=False),   # hide Rewrite Section (will be shown by _toggle_mode if Rewrite mode)
             gr.update(interactive=True),# unlock Mode
             gr.update(interactive=True),# unlock Section
             updated_text,  # update current_md state with the new text
@@ -296,8 +289,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 gr.update(visible=False),   # hide Continue Editing
                 gr.update(visible=False),   # hide Discard2
                 gr.update(visible=False),   # hide Start Editing (pipeline running)
-                gr.update(visible=False),   # hide Rewrite Instructions
-                gr.update(visible=False),   # hide Rewrite Button
+                gr.update(visible=False),   # hide Rewrite Section
                 gr.update(value="View", interactive=False),  # set Mode to View and lock
                 gr.update(interactive=True),  # allow Section change
                 draft,  # update current_md state with draft
@@ -323,8 +315,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                         gr.update(visible=False),   # hide Continue Editing
                         gr.update(visible=False),   # hide Discard2
                         gr.update(visible=False),   # hide Start Editing (pipeline running)
-                        gr.update(visible=False),   # hide Rewrite Instructions
-                        gr.update(visible=False),   # hide Rewrite Button
+                        gr.update(visible=False),   # hide Rewrite Section
                         gr.update(value="View", interactive=False),  # set Mode to View and lock
                         gr.update(interactive=True),  # allow Section change
                         gr.update(),  # keep current_md state unchanged
@@ -348,8 +339,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 gr.update(visible=False),   # hide Continue Editing
                 gr.update(visible=False),   # hide Discard2
                 gr.update(visible=False),  # hide Start Editing (Mode is set to View after Apply)
-                gr.update(visible=False),   # hide Rewrite Instructions
-                gr.update(visible=False),   # hide Rewrite Button
+                gr.update(visible=False),   # hide Rewrite Section
                 gr.update(value="View", interactive=True),  # unlock Mode (pipeline finished)
                 gr.update(interactive=True),  # unlock Section (pipeline finished)
                 gr.update(),  # keep current_md state unchanged
@@ -379,8 +369,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 gr.update(visible=False),   # hide Continue Editing
                 gr.update(visible=False),   # hide Discard2
                 gr.update(visible=False),  # hide Start Editing (Mode is set to View after Apply)
-                gr.update(visible=False),   # hide Rewrite Instructions
-                gr.update(visible=False),   # hide Rewrite Button
+                gr.update(visible=False),   # hide Rewrite Section
                 gr.update(value="View", interactive=True), # reset Mode to View and unlock
                 gr.update(interactive=True), # unlock Section
                 draft,  # update current_md state with draft
@@ -401,8 +390,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(visible=True),    # show Validate
             gr.update(visible=True),    # show Discard
             gr.update(visible=True),    # show Force Edit
-            gr.update(visible=False),   # hide Rewrite Instructions
-            gr.update(visible=False),   # hide Rewrite Button
+            gr.update(visible=False),   # hide Rewrite Section
             gr.update(visible=True, interactive=True),  # show Editor and enable editing
             gr.update(interactive=False), # keep Mode locked
             gr.update(interactive=False), # keep Section locked
@@ -428,8 +416,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(visible=False),   # hide Validate
             gr.update(visible=False),   # hide Discard
             gr.update(visible=False),   # hide Force Edit
-            gr.update(visible=False),   # hide Rewrite Instructions (will be shown by _toggle_mode if Rewrite mode)
-            gr.update(visible=False),   # hide Rewrite Button (will be shown by _toggle_mode if Rewrite mode)
+            gr.update(visible=False),   # hide Rewrite Section (will be shown by _toggle_mode if Rewrite mode)
             gr.update(interactive=True),# unlock Mode
             gr.update(interactive=True),# unlock Section
             status_update,
@@ -459,7 +446,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     mode_radio.change(
         fn=_toggle_mode,
         inputs=[mode_radio, status_log],
-        outputs=[start_edit_btn, rewrite_instructions_tb, rewrite_btn, status_strip, status_log]
+        outputs=[start_edit_btn, rewrite_section, status_strip, status_log]
     )
 
     start_edit_btn.click(
@@ -467,8 +454,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         inputs=[current_md, selected_section, status_log],
         outputs=[
             start_edit_btn,
-            rewrite_instructions_tb,
-            rewrite_btn,
+            rewrite_section,
             confirm_btn,
             discard_btn,
             force_edit_btn,
@@ -490,8 +476,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
             confirm_btn, discard_btn, force_edit_btn,
             start_edit_btn,
-            rewrite_instructions_tb,
-            rewrite_btn,
+            rewrite_section,
             editor_tb,
             mode_radio, section_dropdown,
             status_strip,
@@ -510,8 +495,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             validation_title, validation_box,
             apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
             start_edit_btn,
-            rewrite_instructions_tb,
-            rewrite_btn,
+            rewrite_section,
             mode_radio, section_dropdown,
             current_md,  # update current_md state
             status_log,
@@ -527,8 +511,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             validation_title, validation_box,
             apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
             confirm_btn, discard_btn, force_edit_btn,
-            rewrite_instructions_tb,
-            rewrite_btn,
+            rewrite_section,
             editor_tb,
             mode_radio, section_dropdown,
             status_strip,
@@ -545,8 +528,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
             start_edit_btn,
             confirm_btn, discard_btn, force_edit_btn,
-            rewrite_instructions_tb,
-            rewrite_btn,
+            rewrite_section,
             mode_radio, section_dropdown, status_strip,
             status_log,
         ],
@@ -561,8 +543,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
             start_edit_btn,
             confirm_btn, discard_btn, force_edit_btn,
-            rewrite_instructions_tb,
-            rewrite_btn,
+            rewrite_section,
             mode_radio, section_dropdown, status_strip,
             status_log,
         ],
@@ -574,8 +555,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         outputs=[
             viewer_md, status_strip, editor_tb,
             confirm_btn, discard_btn, force_edit_btn, start_edit_btn,
-            rewrite_instructions_tb,
-            rewrite_btn,
+            rewrite_section,
             mode_radio, section_dropdown,
             current_md,  # update current_md state
             status_log,
@@ -592,8 +572,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
             confirm_btn, discard_btn, force_edit_btn,
             start_edit_btn,
-            rewrite_instructions_tb,
-            rewrite_btn,
+            rewrite_section,
             editor_tb,
             mode_radio, section_dropdown,
             status_strip,

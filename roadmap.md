@@ -6,11 +6,6 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## 🧭 Phase 2 — User Experience & Creativity Tools
 
-7. **Manual Chapter Editing**  
-   - Allow users to edit any generated chapter directly within the interface.  
-   - Trigger regenerations if plot changes.  
-   - Consider a dedicated tab and/or a new UI technology (switch from Gradio).
-
 8. **AI Editing on Selected Text**  
    - Enable users to **select a portion of text** and apply quick AI edits (rewrite, expand, simplify, etc.).
 
@@ -127,8 +122,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 | Feature | Status |
 |----------|--------|
-| **Manual Chapter Editing** | ⏳ In Progress |
-| **AI Editing on Selected Text** | ⏳ Planned |
+| **AI Editing on Selected Text** | ⏳ In Progress |
 | **AI Chat per Chapter** | ⏳ Planned |
 | **Add Empty Chapters (Writer Assist Mode)** | ⏳ Planned |
 | **Stop Edit Pipeline** | ⏳ Planned |
