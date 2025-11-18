@@ -61,7 +61,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                     lines=3,
                     interactive=True,
                 )
-                rewrite_btn = gr.Button("🔄 Rewrite", variant="primary")
+                rewrite_btn = gr.Button("🔄 Rewrite", variant="primary", interactive=False)
                 rewrite_validate_btn = gr.Button("✅ Validate", visible=False)
                 rewrite_discard_btn = gr.Button("🗑️ Discard", visible=False)
                 rewrite_force_edit_btn = gr.Button("⚡ Force Edit", visible=False)
@@ -440,9 +440,10 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         selected_value = evt.value if hasattr(evt, 'value') else ""
         selected_index = evt.index if hasattr(evt, 'index') else None
         preview_text = _format_selected_preview(selected_value)
+        has_selection = bool(selected_value and selected_index)
         if isinstance(selected_index, (list, tuple)) and len(selected_index) == 2:
-            return selected_value, selected_index, preview_text
-        return selected_value, None, preview_text
+            return selected_value, selected_index, preview_text, gr.update(interactive=has_selection)
+        return selected_value, None, preview_text, gr.update(interactive=False)
 
     def _replace_text_with_highlight(full_text, start_idx, end_idx, new_text):
         """Replace selected text with new text and wrap new text in red markdown."""
@@ -461,40 +462,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     def _rewrite_handler(section, selected_txt, selected_idx, instructions, current_text, current_log, original_text):
         """Handle rewrite button click - call handler and replace selected text."""
-        if not selected_txt or selected_idx is None:
-            new_log, status_update = _append_status(current_log, f"⚠️ ({section}) No text selected.")
-            return (
-                gr.update(visible=True, interactive=False),
-                gr.update(visible=True, value="⚠️ Please select text first."),
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=True),
-                status_update,
-                current_log,
-                current_text,
-                "",
-                None,
-                original_text if original_text else current_text,
-            )
-        
         start_idx, end_idx = selected_idx if isinstance(selected_idx, (list, tuple)) and len(selected_idx) == 2 else (None, None)
-        if start_idx is None or end_idx is None:
-            new_log, status_update = _append_status(current_log, f"⚠️ ({section}) Invalid selection indices.")
-            return (
-                gr.update(visible=True, interactive=False),
-                gr.update(visible=True, value="⚠️ Invalid selection."),
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=True),
-                status_update,
-                current_log,
-                current_text,
-                "",
-                None,
-                original_text if original_text else current_text,
-            )
         
         original_text = H.editor_get_section_content(section)
         
@@ -545,7 +513,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(visible=False),  # rewrite_validate_btn
             gr.update(visible=False),  # rewrite_discard_btn
             gr.update(visible=False),  # rewrite_force_edit_btn
-            gr.update(visible=True),  # rewrite_btn
+            gr.update(visible=True, interactive=False),  # rewrite_btn - disabled pentru că selected_text este empty
             gr.update(value=""),  # rewrite_selected_preview
             status_update,  # status_strip
             new_log,  # status_log
@@ -681,7 +649,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     editor_tb.select(
         fn=_handle_text_selection,
         inputs=None,
-        outputs=[selected_text, selected_indices, rewrite_selected_preview],
+        outputs=[selected_text, selected_indices, rewrite_selected_preview, rewrite_btn],
     )
 
     mode_radio.change(
