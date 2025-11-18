@@ -623,11 +623,11 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         )
 
     def _discard_from_validate(section, current_log):
-        """Revert changes from validation — return to View mode with no buttons visible."""
-        text = H.editor_get_section_content(section) or "_Empty_"
+        """Revert changes from validation — return to View mode with no buttons visible. Always use checkpoint as source of truth."""
+        clean_text = H.editor_get_section_content(section) or "_Empty_"
         new_log, status_update = _append_status(current_log, f"🗑️ ({section}) Changes discarded.")
         return (
-            gr.update(value=text, visible=True),  # update and show Viewer
+            gr.update(value=clean_text, visible=True),  # update and show Viewer with clean text from checkpoint
             gr.update(value="", visible=False),   # clear and hide Editor
             gr.update(value="", visible=False),  # clear and hide Validation Box
             None,  # clear pending_plan
@@ -645,6 +645,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(interactive=True),# unlock Section
             status_update,
             new_log,
+            clean_text,  # current_md - resetat la textul curat din checkpoint
         )
 
     # ====== Wiring ======
@@ -776,6 +777,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             rewrite_section,
             mode_radio, section_dropdown, status_strip,
             status_log,
+            current_md,
         ],
     )
 
