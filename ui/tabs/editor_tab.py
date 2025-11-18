@@ -496,9 +496,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 original_text if original_text else current_text,
             )
         
-        text_to_use = _remove_highlight(current_text) if '<span style="color: red;">' in current_text else current_text
-        if not original_text:
-            original_text = text_to_use
+        original_text = H.editor_get_section_content(section)
         
         new_log, status_update = _append_status(current_log, f"🔄 ({section}) Rewriting selected text...")
         
@@ -511,7 +509,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(visible=False),
             status_update,
             current_log,
-            text_to_use,
+            original_text,
             selected_txt,
             selected_idx,
             original_text,
@@ -519,7 +517,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         
         rewritten_text = H.editor_rewrite(section, selected_txt, instructions)
         
-        new_text_with_highlight = _replace_text_with_highlight(text_to_use, start_idx, end_idx, rewritten_text)
+        new_text_with_highlight = _replace_text_with_highlight(original_text, start_idx, end_idx, rewritten_text)
         final_log, final_status = _append_status(new_log, f"✅ ({section}) Rewrite completed.")
         
         yield (
@@ -537,12 +535,13 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             original_text,
         )
 
-    def _rewrite_discard(section, original_text, current_log):
-        """Discard rewrite changes - switch back to Text Box non-interactive."""
+    def _rewrite_discard(section, current_log):
+        """Discard rewrite changes - switch back to Text Box non-interactive. Always use checkpoint as source of truth."""
         new_log, status_update = _append_status(current_log, f"🗑️ ({section}) Rewrite discarded.")
+        clean_text = H.editor_get_section_content(section) or "_Empty_"
         return (
-            gr.update(visible=True, value=original_text, interactive=False),  # editor_tb
-            gr.update(visible=False),  # viewer_md
+            gr.update(visible=True, value=clean_text, interactive=False),  # editor_tb
+            gr.update(visible=False, value=clean_text),  # viewer_md - resetat la textul curat din checkpoint
             gr.update(visible=False),  # rewrite_validate_btn
             gr.update(visible=False),  # rewrite_discard_btn
             gr.update(visible=False),  # rewrite_force_edit_btn
@@ -552,6 +551,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             new_log,  # status_log
             "",  # selected_text
             None,  # selected_indices
+            clean_text,  # current_md - resetat la textul din checkpoint
+            clean_text,  # original_text_before_rewrite - resetat la textul din checkpoint
         )
 
     def _rewrite_force_edit(section, draft_with_highlight, current_log, create_epoch):
@@ -845,7 +846,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     rewrite_discard_btn.click(
         fn=_rewrite_discard,
-        inputs=[selected_section, original_text_before_rewrite, status_log],
+        inputs=[selected_section, status_log],
         outputs=[
             editor_tb,
             viewer_md,
@@ -858,6 +859,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             status_log,
             selected_text,
             selected_indices,
+            current_md,
+            original_text_before_rewrite,
         ],
     )
 
