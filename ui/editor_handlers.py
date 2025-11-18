@@ -290,6 +290,17 @@ def switch_to_create():
 def switch_to_editor():
     print(">>> Returning to Editor tab... (JS trigger here)")
 
+def editor_rewrite(section, selected_text, instructions):
+    """Rewrite selected text based on instructions. Returns rewritten text."""
+    # Dummy implementation for now - just return modified text
+    if not selected_text:
+        return selected_text
+    
+    # For now, just return a dummy response
+    # TODO: Implement actual LLM call for rewriting
+    rewritten = f"[REWRITTEN: {selected_text[:50]}...]"
+    return rewritten
+
 def _section_content_from_checkpoint(checkpoint, name: str) -> str:
     if not checkpoint or not name:
         return ""

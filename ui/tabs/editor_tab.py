@@ -15,6 +15,9 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     current_md = gr.State("")
     pending_plan = gr.State(None)
     status_log = gr.State("")  # pentru append la status_strip
+    selected_text = gr.State("")  # textul selectat de user
+    selected_indices = gr.State(None)  # [start, end] indices pentru selectie
+    original_text_before_rewrite = gr.State("")  # textul original inainte de rewrite
 
     # ---- (0) Empty state message (visible by default) ----
     empty_msg = gr.Markdown(
@@ -45,6 +48,13 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             start_edit_btn = gr.Button("✍️ Start Editing", variant="primary", visible=False)
             
             with gr.Column(visible=False) as rewrite_section:
+                rewrite_selected_preview = gr.Textbox(
+                    label="Selected Text",
+                    value="",
+                    lines=1,
+                    interactive=False,
+                    max_lines=1,
+                )
                 rewrite_instructions_tb = gr.Textbox(
                     label="Rewrite Instructions",
                     placeholder="Enter instructions on how to rewrite this section...",
@@ -52,6 +62,9 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                     interactive=True,
                 )
                 rewrite_btn = gr.Button("🔄 Rewrite", variant="primary")
+                rewrite_validate_btn = gr.Button("✅ Validate", visible=False)
+                rewrite_discard_btn = gr.Button("🗑️ Discard", visible=False)
+                rewrite_force_edit_btn = gr.Button("⚡ Force Edit", visible=False)
             confirm_btn = gr.Button("✅ Validate", visible=False)
             discard_btn = gr.Button("🗑️ Discard", visible=False)
             force_edit_btn = gr.Button("⚡ Force Edit", visible=False)
@@ -142,13 +155,23 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     def _load_section_content(name):
         if not name:
-            return "_Empty_", None, "", gr.update(value="View")
+            return "_Empty_", None, "", gr.update(value="View"), ""
         text = H.editor_get_section_content(name) or "_Empty_"
-        return text, name, text, gr.update(value="View")
+        return text, name, text, gr.update(value="View"), text
 
-    def _toggle_mode(mode, current_log):
+    def _toggle_mode(mode, current_log, current_text):
         # Evită duplicatele: verifică dacă ultimul mesaj este deja "Mode changed to"
         last_msg = f"🔄 Mode changed to {mode}."
+        if mode == "Rewrite":
+            editor_update = gr.update(visible=True, interactive=False, value=current_text) if current_text else gr.update(visible=True, interactive=False)
+            viewer_update = gr.update(visible=False)
+        elif mode == "Manual":
+            editor_update = gr.update(visible=False)
+            viewer_update = gr.update(visible=True, value=current_text) if current_text else gr.update(visible=True)
+        else:  # View mode
+            editor_update = gr.update(visible=False)
+            viewer_update = gr.update(visible=True, value=current_text) if current_text else gr.update(visible=True)
+        
         if current_log:
             lines = current_log.strip().split("\n")
             if lines:
@@ -160,21 +183,27 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                         gr.update(visible=(mode == "Manual")),
                         gr.update(visible=(mode == "Rewrite")),
                         gr.update(value=current_log),
-                        current_log
+                        current_log,
+                        editor_update,
+                        viewer_update,
                     )
                 if "Adapting" in last_line or "Validation completed" in last_line:
                     return (
                         gr.update(visible=(mode == "Manual")),
                         gr.update(visible=(mode == "Rewrite")),
                         gr.update(value=current_log),
-                        current_log
+                        current_log,
+                        editor_update,
+                        viewer_update,
                     )
         new_log, status_update = _append_status(current_log, last_msg)
         return (
             gr.update(visible=(mode == "Manual")),
             gr.update(visible=(mode == "Rewrite")),
             status_update,
-            new_log
+            new_log,
+            editor_update,
+            viewer_update,
         )
 
     def _start_edit(curr_text, section, current_log):
@@ -398,6 +427,210 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             new_log,
         )
 
+    def _format_selected_preview(selected_txt):
+        """Format selected text preview - first 10 chars + ... if longer."""
+        if not selected_txt:
+            return ""
+        if len(selected_txt) <= 10:
+            return selected_txt
+        return selected_txt[:10] + "..."
+
+    def _handle_text_selection(evt: gr.SelectData):
+        """Handle text selection in editor_tb and store selected text and indices."""
+        selected_value = evt.value if hasattr(evt, 'value') else ""
+        selected_index = evt.index if hasattr(evt, 'index') else None
+        preview_text = _format_selected_preview(selected_value)
+        if isinstance(selected_index, (list, tuple)) and len(selected_index) == 2:
+            return selected_value, selected_index, preview_text
+        return selected_value, None, preview_text
+
+    def _replace_text_with_highlight(full_text, start_idx, end_idx, new_text):
+        """Replace selected text with new text and wrap new text in red markdown."""
+        if start_idx is None or end_idx is None:
+            return full_text
+        
+        before = full_text[:start_idx]
+        after = full_text[end_idx:]
+        highlighted_new = f'<span style="color: red;">{new_text}</span>'
+        return before + highlighted_new + after
+
+    def _remove_highlight(text):
+        """Remove red highlighting from text."""
+        import re
+        return re.sub(r'<span style="color: red;">(.*?)</span>', r'\1', text)
+
+    def _rewrite_handler(section, selected_txt, selected_idx, instructions, current_text, current_log, original_text):
+        """Handle rewrite button click - call handler and replace selected text."""
+        if not selected_txt or selected_idx is None:
+            new_log, status_update = _append_status(current_log, f"⚠️ ({section}) No text selected.")
+            return (
+                gr.update(visible=True, interactive=False),
+                gr.update(visible=True, value="⚠️ Please select text first."),
+                gr.update(visible=False),
+                gr.update(visible=False),
+                gr.update(visible=False),
+                gr.update(visible=True),
+                status_update,
+                current_log,
+                current_text,
+                "",
+                None,
+                original_text if original_text else current_text,
+            )
+        
+        start_idx, end_idx = selected_idx if isinstance(selected_idx, (list, tuple)) and len(selected_idx) == 2 else (None, None)
+        if start_idx is None or end_idx is None:
+            new_log, status_update = _append_status(current_log, f"⚠️ ({section}) Invalid selection indices.")
+            return (
+                gr.update(visible=True, interactive=False),
+                gr.update(visible=True, value="⚠️ Invalid selection."),
+                gr.update(visible=False),
+                gr.update(visible=False),
+                gr.update(visible=False),
+                gr.update(visible=True),
+                status_update,
+                current_log,
+                current_text,
+                "",
+                None,
+                original_text if original_text else current_text,
+            )
+        
+        text_to_use = _remove_highlight(current_text) if '<span style="color: red;">' in current_text else current_text
+        if not original_text:
+            original_text = text_to_use
+        
+        new_log, status_update = _append_status(current_log, f"🔄 ({section}) Rewriting selected text...")
+        
+        yield (
+            gr.update(visible=False),
+            gr.update(visible=True, value="🔄 Rewriting..."),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            status_update,
+            current_log,
+            text_to_use,
+            selected_txt,
+            selected_idx,
+            original_text,
+        )
+        
+        rewritten_text = H.editor_rewrite(section, selected_txt, instructions)
+        
+        new_text_with_highlight = _replace_text_with_highlight(text_to_use, start_idx, end_idx, rewritten_text)
+        final_log, final_status = _append_status(new_log, f"✅ ({section}) Rewrite completed.")
+        
+        yield (
+            gr.update(visible=False),
+            gr.update(visible=True, value=new_text_with_highlight),
+            gr.update(visible=True),
+            gr.update(visible=True),
+            gr.update(visible=True),
+            gr.update(visible=True),
+            final_status,
+            final_log,
+            new_text_with_highlight,
+            selected_txt,
+            selected_idx,
+            original_text,
+        )
+
+    def _rewrite_discard(section, original_text, current_log):
+        """Discard rewrite changes - switch back to Text Box non-interactive."""
+        new_log, status_update = _append_status(current_log, f"🗑️ ({section}) Rewrite discarded.")
+        return (
+            gr.update(visible=True, value=original_text, interactive=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=True),
+            status_update,
+            new_log,
+            "",
+            None,
+        )
+
+    def _rewrite_force_edit(section, draft_with_highlight, current_log, create_epoch):
+        """Force edit with rewritten text - remove highlight and update checkpoint."""
+        draft_clean = _remove_highlight(draft_with_highlight)
+        updated_text = H.force_edit(section, draft_clean)
+        new_log, status_update = _append_status(current_log, f"⚡ ({section}) Synced (forced from rewrite).")
+        new_create_epoch = (create_epoch or 0) + 1
+        return (
+            gr.update(value=updated_text, visible=True),
+            status_update,
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(value="View", interactive=True),
+            gr.update(interactive=True),
+            updated_text,
+            new_log,
+            new_create_epoch,
+            "",
+            None,
+        )
+
+    def _rewrite_validate(section, draft_with_highlight, current_log):
+        """Validate rewritten text - remove highlight and start validation."""
+        draft_clean = _remove_highlight(draft_with_highlight)
+        new_log, status_update = _append_status(current_log, f"🔍 ({section}) Validation started (from rewrite).")
+        
+        yield (
+            "",
+            None,
+            gr.update(visible=True),
+            gr.update(value="🔄 Validating...", visible=True),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=True, value=draft_clean, interactive=False),
+            gr.update(interactive=False),
+            gr.update(interactive=False),
+            gr.update(value=new_log, visible=True),
+            new_log,
+        )
+        
+        msg, plan = H.editor_validate(section, draft_clean)
+        final_log, _ = _append_status(new_log, f"✅ ({section}) Validation completed.")
+        
+        yield (
+            msg,
+            plan,
+            gr.update(visible=True),
+            gr.update(value=msg, visible=True),
+            gr.update(visible=True),
+            gr.update(visible=True),
+            gr.update(visible=True),
+            gr.update(visible=True),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=True, value=draft_clean, interactive=False),
+            gr.update(interactive=False),
+            gr.update(interactive=False),
+            gr.update(value=final_log, visible=True),
+            final_log,
+        )
+
     def _discard(section, current_log):
         """Revert changes — unlock Section + Mode."""
         text = H.editor_get_section_content(section) or "_Empty_"
@@ -440,13 +673,19 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     section_dropdown.change(
         fn=_load_section_content,
         inputs=[section_dropdown],
-        outputs=[viewer_md, selected_section, current_md, mode_radio],
+        outputs=[viewer_md, selected_section, current_md, mode_radio, original_text_before_rewrite],
+    )
+
+    editor_tb.select(
+        fn=_handle_text_selection,
+        inputs=None,
+        outputs=[selected_text, selected_indices, rewrite_selected_preview],
     )
 
     mode_radio.change(
         fn=_toggle_mode,
-        inputs=[mode_radio, status_log],
-        outputs=[start_edit_btn, rewrite_section, status_strip, status_log]
+        inputs=[mode_radio, status_log, current_md],
+        outputs=[start_edit_btn, rewrite_section, status_strip, status_log, editor_tb, viewer_md]
     )
 
     start_edit_btn.click(
@@ -575,6 +814,100 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             rewrite_section,
             editor_tb,
             mode_radio, section_dropdown,
+            status_strip,
+            status_log,
+        ],
+        queue=True,
+        show_progress=False,
+    )
+
+    rewrite_btn.click(
+        fn=_rewrite_handler,
+        inputs=[selected_section, selected_text, selected_indices, rewrite_instructions_tb, current_md, status_log, original_text_before_rewrite],
+        outputs=[
+            editor_tb,
+            viewer_md,
+            rewrite_validate_btn,
+            rewrite_discard_btn,
+            rewrite_force_edit_btn,
+            rewrite_btn,
+            status_strip,
+            status_log,
+            current_md,
+            selected_text,
+            selected_indices,
+            original_text_before_rewrite,
+        ],
+        queue=True,
+        show_progress=False,
+    )
+
+    rewrite_discard_btn.click(
+        fn=_rewrite_discard,
+        inputs=[selected_section, original_text_before_rewrite, status_log],
+        outputs=[
+            editor_tb,
+            viewer_md,
+            rewrite_validate_btn,
+            rewrite_discard_btn,
+            rewrite_force_edit_btn,
+            rewrite_btn,
+            rewrite_selected_preview,
+            status_strip,
+            status_log,
+            selected_text,
+            selected_indices,
+        ],
+    )
+
+    rewrite_force_edit_btn.click(
+        fn=_rewrite_force_edit,
+        inputs=[selected_section, current_md, status_log, create_sections_epoch],
+        outputs=[
+            viewer_md,
+            status_strip,
+            editor_tb,
+            validation_title,
+            validation_box,
+            apply_updates_btn,
+            regenerate_btn,
+            continue_btn,
+            discard2_btn,
+            confirm_btn,
+            discard_btn,
+            force_edit_btn,
+            start_edit_btn,
+            rewrite_section,
+            mode_radio,
+            section_dropdown,
+            current_md,
+            status_log,
+            create_sections_epoch,
+            selected_text,
+            selected_indices,
+        ],
+    )
+
+    rewrite_validate_btn.click(
+        fn=_rewrite_validate,
+        inputs=[selected_section, current_md, status_log],
+        outputs=[
+            validation_box,
+            pending_plan,
+            validation_title,
+            validation_box,
+            apply_updates_btn,
+            regenerate_btn,
+            continue_btn,
+            discard2_btn,
+            rewrite_validate_btn,
+            rewrite_discard_btn,
+            rewrite_force_edit_btn,
+            rewrite_btn,
+            viewer_md,
+            editor_tb,
+            mode_radio,
+            section_dropdown,
             status_strip,
             status_log,
         ],
