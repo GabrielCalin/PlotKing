@@ -530,25 +530,27 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         new_log, status_update = _append_status(current_log, f"⚡ ({section}) Synced (forced from rewrite).")
         new_create_epoch = (create_epoch or 0) + 1
         return (
-            gr.update(value=updated_text, visible=True),
-            status_update,
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(value="View", interactive=True),
-            gr.update(interactive=True),
-            updated_text,
-            new_log,
-            new_create_epoch,
-            "",
-            None,
+            gr.update(value=updated_text, visible=True),  # viewer_md
+            status_update,  # status_strip
+            gr.update(visible=False),  # editor_tb
+            gr.update(visible=False),  # validation_title
+            gr.update(visible=False),  # validation_box
+            gr.update(visible=False),  # apply_updates_btn
+            gr.update(visible=False),  # regenerate_btn
+            gr.update(visible=False),  # continue_btn
+            gr.update(visible=False),  # discard2_btn
+            gr.update(visible=False),  # confirm_btn
+            gr.update(visible=False),  # discard_btn
+            gr.update(visible=False),  # force_edit_btn
+            gr.update(visible=False),  # start_edit_btn
+            gr.update(visible=False),  # rewrite_section
+            gr.update(value="View", interactive=True),  # mode_radio
+            gr.update(interactive=True),  # section_dropdown
+            updated_text,  # current_md
+            new_log,  # status_log
+            new_create_epoch,  # create_sections_epoch
+            "",  # selected_text
+            None,  # selected_indices
         )
 
     def _rewrite_validate(section, draft_with_highlight, current_log):
