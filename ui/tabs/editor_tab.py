@@ -541,16 +541,17 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         """Discard rewrite changes - switch back to Text Box non-interactive."""
         new_log, status_update = _append_status(current_log, f"🗑️ ({section}) Rewrite discarded.")
         return (
-            gr.update(visible=True, value=original_text, interactive=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=True),
-            status_update,
-            new_log,
-            "",
-            None,
+            gr.update(visible=True, value=original_text, interactive=False),  # editor_tb
+            gr.update(visible=False),  # viewer_md
+            gr.update(visible=False),  # rewrite_validate_btn
+            gr.update(visible=False),  # rewrite_discard_btn
+            gr.update(visible=False),  # rewrite_force_edit_btn
+            gr.update(visible=True),  # rewrite_btn
+            gr.update(value=""),  # rewrite_selected_preview
+            status_update,  # status_strip
+            new_log,  # status_log
+            "",  # selected_text
+            None,  # selected_indices
         )
 
     def _rewrite_force_edit(section, draft_with_highlight, current_log, create_epoch):
