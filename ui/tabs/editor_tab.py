@@ -559,48 +559,42 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         new_log, status_update = _append_status(current_log, f"🔍 ({section}) Validation started (from rewrite).")
         
         yield (
-            "",
-            None,
-            gr.update(visible=True),
-            gr.update(value="🔄 Validating...", visible=True),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=True, value=draft_clean, interactive=False),
-            gr.update(interactive=False),
-            gr.update(interactive=False),
-            gr.update(value=new_log, visible=True),
-            new_log,
+            "",  # validation_box (Markdown)
+            None,  # pending_plan (State)
+            gr.update(visible=True),  # validation_title (Markdown)
+            gr.update(value="🔄 Validating...", visible=True),  # validation_box (Markdown)
+            gr.update(visible=False),  # apply_updates_btn (Button)
+            gr.update(visible=False),  # regenerate_btn (Button)
+            gr.update(visible=False),  # continue_btn (Button)
+            gr.update(visible=False),  # discard2_btn (Button)
+            gr.update(visible=False),  # rewrite_section (Column)
+            gr.update(visible=True, value=draft_clean),  # viewer_md (Markdown) - nu acceptă interactive!
+            gr.update(interactive=False),  # editor_tb (Textbox)
+            gr.update(interactive=False),  # mode_radio (Radio)
+            gr.update(interactive=False),  # section_dropdown (Dropdown)
+            gr.update(value=new_log, visible=True),  # status_strip (Textbox)
+            new_log,  # status_log (State)
         )
         
         msg, plan = H.editor_validate(section, draft_clean)
         final_log, _ = _append_status(new_log, f"✅ ({section}) Validation completed.")
         
         yield (
-            msg,
-            plan,
-            gr.update(visible=True),
-            gr.update(value=msg, visible=True),
-            gr.update(visible=True),
-            gr.update(visible=True),
-            gr.update(visible=True),
-            gr.update(visible=True),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=True, value=draft_clean, interactive=False),
-            gr.update(interactive=False),
-            gr.update(interactive=False),
-            gr.update(value=final_log, visible=True),
-            final_log,
+            msg,  # validation_box (Markdown)
+            plan,  # pending_plan (State)
+            gr.update(visible=True),  # validation_title (Markdown)
+            gr.update(value=msg, visible=True),  # validation_box (Markdown)
+            gr.update(visible=True),  # apply_updates_btn (Button)
+            gr.update(visible=True),  # regenerate_btn (Button)
+            gr.update(visible=True),  # continue_btn (Button)
+            gr.update(visible=True),  # discard2_btn (Button)
+            gr.update(visible=False),  # rewrite_section (Column)
+            gr.update(visible=True, value=draft_clean),  # viewer_md (Markdown) - nu acceptă interactive!
+            gr.update(interactive=False),  # editor_tb (Textbox)
+            gr.update(interactive=False),  # mode_radio (Radio)
+            gr.update(interactive=False),  # section_dropdown (Dropdown)
+            gr.update(value=final_log, visible=True),  # status_strip (Textbox)
+            final_log,  # status_log (State)
         )
 
     def _discard(section, current_log):
@@ -874,10 +868,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             regenerate_btn,
             continue_btn,
             discard2_btn,
-            rewrite_validate_btn,
-            rewrite_discard_btn,
-            rewrite_force_edit_btn,
-            rewrite_btn,
+            rewrite_section,
             viewer_md,
             editor_tb,
             mode_radio,
