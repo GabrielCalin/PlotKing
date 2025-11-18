@@ -597,8 +597,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             final_log,  # status_log (State)
         )
 
-    def _discard(section, current_log):
-        """Revert changes — unlock Section + Mode."""
+    def _discard_from_manual(section, current_log):
+        """Revert changes from Manual edit mode — unlock Section + Mode, show Start Editing button."""
         text = H.editor_get_section_content(section) or "_Empty_"
         new_log, status_update = _append_status(current_log, f"🗑️ ({section}) Changes discarded.")
         return (
@@ -617,6 +617,31 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(visible=False),   # hide Force Edit
             gr.update(visible=False),   # hide Rewrite Section (will be shown by _toggle_mode if Rewrite mode)
             gr.update(interactive=True),# unlock Mode
+            gr.update(interactive=True),# unlock Section
+            status_update,
+            new_log,
+        )
+
+    def _discard_from_validate(section, current_log):
+        """Revert changes from validation — return to View mode with no buttons visible."""
+        text = H.editor_get_section_content(section) or "_Empty_"
+        new_log, status_update = _append_status(current_log, f"🗑️ ({section}) Changes discarded.")
+        return (
+            gr.update(value=text, visible=True),  # update and show Viewer
+            gr.update(value="", visible=False),   # clear and hide Editor
+            gr.update(value="", visible=False),  # clear and hide Validation Box
+            None,  # clear pending_plan
+            gr.update(visible=False),   # hide Validation Title
+            gr.update(visible=False),   # hide Apply Updates
+            gr.update(visible=False),   # hide Regenerate
+            gr.update(visible=False),   # hide Continue Editing
+            gr.update(visible=False),   # hide Discard2
+            gr.update(visible=False),   # hide Start Editing (View mode - no buttons)
+            gr.update(visible=False),   # hide Validate
+            gr.update(visible=False),   # hide Discard
+            gr.update(visible=False),   # hide Force Edit
+            gr.update(visible=False),   # hide Rewrite Section
+            gr.update(value="View", interactive=True),  # set Mode to View and unlock
             gr.update(interactive=True),# unlock Section
             status_update,
             new_log,
@@ -725,7 +750,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     )
 
     discard_btn.click(
-        fn=_discard,
+        fn=_discard_from_manual,
         inputs=[selected_section, status_log],
         outputs=[
             viewer_md, editor_tb, validation_box, pending_plan,
@@ -740,7 +765,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     )
 
     discard2_btn.click(
-        fn=_discard,
+        fn=_discard_from_validate,
         inputs=[selected_section, status_log],
         outputs=[
             viewer_md, editor_tb, validation_box, pending_plan,
