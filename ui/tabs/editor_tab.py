@@ -428,12 +428,12 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         )
 
     def _format_selected_preview(selected_txt):
-        """Format selected text preview - first 10 chars + ... if longer."""
+        """Format selected text preview - first 25 chars + ... if longer."""
         if not selected_txt:
             return ""
-        if len(selected_txt) <= 10:
+        if len(selected_txt) <= 25:
             return selected_txt
-        return selected_txt[:10] + "..."
+        return selected_txt[:25] + "..."
 
     def _handle_text_selection(evt: gr.SelectData):
         """Handle text selection in editor_tb and store selected text and indices."""
