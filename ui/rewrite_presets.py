@@ -2,7 +2,7 @@ REWRITE_PRESETS = {
     "None": "",
     "Expand": "Rewrite the text by expanding it with more detail, clarity, and context, while keeping all original meaning and events unchanged.",
     "Simplify": "Rewrite the text in a shorter and simpler form, removing redundancy but preserving the original meaning and key ideas.",
-    "Rephrase (Variation)": "Rewrite the text using different wording and structure while preserving meaning, intent, and narrative content.",
+    "Rephrase": "Rewrite the text using different wording and structure while preserving meaning, intent, and narrative content.",
     "Append": "Keep the original text unchanged and add new content at the end that naturally continues the ideas or events.",
     "Fix Grammar": "Rewrite the text with corrected grammar, punctuation, and flow while keeping all wording and meaning as close to the original as possible.",
     "Tone Shift": "Rewrite the text in a {tone} tone while preserving all factual content, plot events, and character intentions.",
