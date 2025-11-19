@@ -5,6 +5,7 @@ import gradio as gr
 import ui.editor_handlers as H
 from utils.timestamp import ts_prefix
 from utils.logger import merge_logs
+from ui.rewrite_presets import REWRITE_PRESETS
 
 
 def render_editor_tab(editor_sections_epoch, create_sections_epoch):
@@ -54,6 +55,12 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                     lines=1,
                     interactive=False,
                     max_lines=1,
+                )
+                preset_dropdown = gr.Dropdown(
+                    label="Presets",
+                    choices=list(REWRITE_PRESETS.keys()),
+                    value="None",
+                    interactive=True,
                 )
                 rewrite_instructions_tb = gr.Textbox(
                     label="Rewrite Instructions",
@@ -469,6 +476,15 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 status_update,
                 new_log,
             )
+            
+    def _update_instructions_from_preset(preset_name):
+        """Update instructions text area based on selected preset."""
+        # "None" is now in REWRITE_PRESETS with value "", so we just get it.
+        # If preset_name is None (e.g. unselected), we default to empty string or do nothing.
+        if preset_name is None:
+             return gr.update()
+        text = REWRITE_PRESETS.get(preset_name, "")
+        return gr.update(value=text)
 
     def _format_selected_preview(selected_txt):
         """Format selected text preview - first 25 chars + ... if longer."""
@@ -737,6 +753,12 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         fn=_handle_text_selection,
         inputs=None,
         outputs=[selected_text, selected_indices, rewrite_selected_preview, rewrite_btn],
+    )
+
+    preset_dropdown.change(
+        fn=_update_instructions_from_preset,
+        inputs=[preset_dropdown],
+        outputs=[rewrite_instructions_tb]
     )
 
     mode_radio.change(
