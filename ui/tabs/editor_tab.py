@@ -406,12 +406,11 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 new_create_epoch,  # bump create_sections_epoch to notify Create tab
             )
 
-    def _continue_edit(section, current_log, current_mode):
+    def _continue_edit(section, current_log, current_mode, current_md):
         """Return to editing mode. If Manual mode, show Validate/Discard/Force Edit. If Rewrite mode, return to Rewrite Section."""
         new_log, status_update = _append_status(current_log, f"🔁 ({section}) Continue editing.")
         
         if current_mode == "Rewrite":
-            clean_text = H.editor_get_section_content(section) or "_Empty_"
             return (
                 gr.update(visible=False),   # hide Validation Title
                 gr.update(visible=False),   # hide Validation Box
@@ -423,7 +422,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 gr.update(visible=False),   # hide Discard
                 gr.update(visible=False),   # hide Force Edit
                 gr.update(visible=True),    # show Rewrite Section
-                gr.update(visible=True, value=clean_text, interactive=False),  # show Editor non-interactive for Rewrite mode
+                gr.update(visible=True, value=current_md),  # show viewer_md with highlighted text
+                gr.update(visible=False),   # hide editor_tb
                 gr.update(value="Rewrite", interactive=False), # keep Mode locked to Rewrite
                 gr.update(interactive=False), # keep Section locked
                 status_update,
@@ -758,12 +758,13 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     continue_btn.click(
         fn=_continue_edit,
-        inputs=[selected_section, status_log, mode_radio],
+        inputs=[selected_section, status_log, mode_radio, current_md],
         outputs=[
             validation_title, validation_box,
             apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
             confirm_btn, discard_btn, force_edit_btn,
             rewrite_section,
+            viewer_md,
             editor_tb,
             mode_radio, section_dropdown,
             status_strip,
