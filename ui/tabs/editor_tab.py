@@ -604,7 +604,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(visible=False),  # continue_btn (Button)
             gr.update(visible=False),  # discard2_btn (Button)
             gr.update(visible=False),  # rewrite_section (Column)
-            gr.update(visible=True, value=draft_clean),  # viewer_md (Markdown) - nu acceptă interactive!
+            gr.update(visible=True, value=draft_with_highlight),  # viewer_md (Markdown) - keep highlights
             gr.update(interactive=False),  # editor_tb (Textbox)
             gr.update(interactive=False),  # mode_radio (Radio)
             gr.update(interactive=False),  # section_dropdown (Dropdown)
@@ -625,7 +625,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(visible=True),  # continue_btn (Button)
             gr.update(visible=True),  # discard2_btn (Button)
             gr.update(visible=False),  # rewrite_section (Column)
-            gr.update(visible=True, value=draft_clean),  # viewer_md (Markdown) - nu acceptă interactive!
+            gr.update(visible=True, value=draft_with_highlight),  # viewer_md (Markdown) - keep highlights
             gr.update(interactive=False),  # editor_tb (Textbox)
             gr.update(interactive=False),  # mode_radio (Radio)
             gr.update(interactive=False),  # section_dropdown (Dropdown)
