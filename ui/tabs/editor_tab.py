@@ -511,13 +511,14 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         
         new_log, status_update = _append_status(current_log, f"🔄 ({section}) Rewriting selected text...")
         
+        # Yield loading state
         yield (
-            gr.update(visible=False),
-            gr.update(visible=True, value="🔄 Rewriting..."),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
+            gr.update(visible=False),  # editor_tb
+            gr.update(visible=True, value="🔄 Rewriting..."),  # viewer_md
+            gr.update(visible=False),  # rewrite_validate_btn
+            gr.update(visible=False),  # rewrite_discard_btn
+            gr.update(visible=False),  # rewrite_force_edit_btn
+            gr.update(visible=False),  # rewrite_btn
             status_update,
             current_log,
             original_text,
@@ -526,25 +527,46 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             original_text,
         )
         
-        rewritten_text = H.editor_rewrite(section, selected_txt, instructions)
+        result = H.editor_rewrite(section, selected_txt, instructions)
         
-        new_text_with_highlight = _replace_text_with_highlight(original_text, start_idx, end_idx, rewritten_text)
-        final_log, final_status = _append_status(new_log, f"✅ ({section}) Rewrite completed.")
-        
-        yield (
-            gr.update(visible=False),
-            gr.update(visible=True, value=new_text_with_highlight),
-            gr.update(visible=True),
-            gr.update(visible=True),
-            gr.update(visible=True),
-            gr.update(visible=True),
-            final_status,
-            final_log,
-            new_text_with_highlight,
-            selected_txt,
-            selected_idx,
-            original_text,
-        )
+        if result.get("success"):
+            rewritten_text = result.get("edited_text", "")
+            new_text_with_highlight = _replace_text_with_highlight(original_text, start_idx, end_idx, rewritten_text)
+            final_log, final_status = _append_status(new_log, f"✅ ({section}) Rewrite completed.")
+            
+            yield (
+                gr.update(visible=False),  # editor_tb
+                gr.update(visible=True, value=new_text_with_highlight),  # viewer_md
+                gr.update(visible=True),   # rewrite_validate_btn
+                gr.update(visible=True),   # rewrite_discard_btn
+                gr.update(visible=True),   # rewrite_force_edit_btn
+                gr.update(visible=True),   # rewrite_btn
+                final_status,
+                final_log,
+                new_text_with_highlight,
+                selected_txt,
+                selected_idx,
+                original_text,
+            )
+        else:
+            message = result.get("message", "Rewrite failed.")
+            final_log, final_status = _append_status(new_log, f"❌ ({section}) Rewrite failed: {message}")
+            
+            # Revert to original text (no highlights)
+            yield (
+                gr.update(visible=False),  # editor_tb
+                gr.update(visible=True, value=original_text),  # viewer_md
+                gr.update(visible=False),  # rewrite_validate_btn
+                gr.update(visible=False),  # rewrite_discard_btn
+                gr.update(visible=False),  # rewrite_force_edit_btn
+                gr.update(visible=True),   # rewrite_btn
+                final_status,
+                final_log,
+                original_text,
+                selected_txt,
+                selected_idx,
+                original_text,
+            )
 
     def _rewrite_discard(section, current_log):
         """Discard rewrite changes - switch back to Text Box non-interactive. Always use checkpoint as source of truth."""

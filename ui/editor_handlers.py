@@ -291,15 +291,48 @@ def switch_to_editor():
     print(">>> Returning to Editor tab... (JS trigger here)")
 
 def editor_rewrite(section, selected_text, instructions):
-    """Rewrite selected text based on instructions. Returns rewritten text."""
-    import random
+    """
+    Rewrite selected text based on instructions using LLM.
+    Returns a dict with success status and result/message.
+    """
+    from pipeline.steps.rewrite_editor.llm import call_llm_rewrite_editor
     
     if not selected_text:
-        return selected_text
+        return {"success": False, "message": "No text selected."}
     
-    random_num = random.randint(1000, 9999)
-    rewritten = f"[REWRITTEN #{random_num}: {selected_text[:50]}...]"
-    return rewritten
+    # Get full section content for context
+    full_content = editor_get_section_content(section)
+    
+    # Calculate context padding
+    context_before = ""
+    context_after = ""
+    
+    if len(selected_text) < 50:
+        try:
+            # Find the selection in the full content
+            # Note: This is a simple find. If the text appears multiple times, 
+            # it might pick the wrong one, but for now we assume uniqueness or first match is close enough.
+            # A more robust solution would require passing indices from the frontend.
+            idx = full_content.find(selected_text)
+            if idx != -1:
+                start = max(0, idx - 25)
+                end = min(len(full_content), idx + len(selected_text) + 25)
+                
+                context_before = full_content[start:idx]
+                context_after = full_content[idx + len(selected_text):end]
+        except Exception:
+            pass
+
+    # Call LLM
+    result = call_llm_rewrite_editor(
+        section_content=full_content,
+        selected_text=selected_text,
+        instructions=instructions,
+        context_before=context_before,
+        context_after=context_after,
+    )
+    
+    return result
 
 def _section_content_from_checkpoint(checkpoint, name: str) -> str:
     if not checkpoint or not name:
