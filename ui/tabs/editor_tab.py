@@ -496,28 +496,52 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     def _handle_text_selection(evt: gr.SelectData):
         """Handle text selection in editor_tb and store selected text and indices."""
-        selected_value = evt.value if hasattr(evt, 'value') else ""
-        selected_index = evt.index if hasattr(evt, 'index') else None
-        preview_text = _format_selected_preview(selected_value)
-        has_selection = bool(selected_value and selected_index)
-        if isinstance(selected_index, (list, tuple)) and len(selected_index) == 2:
-            return selected_value, selected_index, preview_text, gr.update(interactive=has_selection)
-        return selected_value, None, preview_text, gr.update(interactive=False)
+        raw_value = evt.value if hasattr(evt, 'value') else ""
+        raw_index = evt.index if hasattr(evt, 'index') else None
+        
+        if not raw_value or not isinstance(raw_index, (list, tuple)) or len(raw_index) != 2:
+            return "", None, "", gr.update(interactive=False)
+
+        start, end = raw_index
+        
+        # Calculate leading/trailing whitespace
+        l_stripped = raw_value.lstrip()
+        leading_spaces = len(raw_value) - len(l_stripped)
+        
+        stripped_value = raw_value.strip()
+        trailing_spaces = len(raw_value) - len(raw_value.rstrip())
+        
+        # Adjust indices
+        new_start = start + leading_spaces
+        new_end = end - trailing_spaces
+        
+        # If selection was only whitespace, it becomes empty
+        if not stripped_value:
+            return "", None, "", gr.update(interactive=False)
+            
+        preview_text = _format_selected_preview(stripped_value)
+        return stripped_value, [new_start, new_end], preview_text, gr.update(interactive=True)
 
     def _replace_text_with_highlight(full_text, start_idx, end_idx, new_text):
-        """Replace selected text with new text and wrap new text in red markdown."""
+        """Replace selected text with new text and wrap new text in red markdown (line by line)."""
         if start_idx is None or end_idx is None:
             return full_text
         
         before = full_text[:start_idx]
         after = full_text[end_idx:]
-        highlighted_new = f'<span style="color: red;">{new_text}</span>'
+        
+        # Wrap each line individually to ensure highlighting persists across newlines
+        lines = new_text.split('\n')
+        highlighted_lines = [f'<span style="color: red;">{line}</span>' if line.strip() else line for line in lines]
+        highlighted_new = '\n'.join(highlighted_lines)
+        
         return before + highlighted_new + after
 
     def _remove_highlight(text):
         """Remove red highlighting from text."""
         import re
-        return re.sub(r'<span style="color: red;">(.*?)</span>', r'\1', text)
+        # Remove span tags but keep content
+        return re.sub(r'<span style="color: red;">(.*?)</span>', r'\1', text, flags=re.DOTALL)
 
     def _rewrite_handler(section, selected_txt, selected_idx, instructions, current_text, current_log, original_text):
         """Handle rewrite button click - call handler and replace selected text."""
