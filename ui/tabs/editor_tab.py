@@ -441,6 +441,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 gr.update(visible=True),    # show Discard
                 gr.update(visible=True),    # show Force Edit
                 gr.update(visible=False),   # hide Rewrite Section
+                gr.update(visible=False),   # hide viewer_md
                 gr.update(visible=True, interactive=True),  # show Editor and enable editing
                 gr.update(interactive=False), # keep Mode locked
                 gr.update(interactive=False), # keep Section locked
