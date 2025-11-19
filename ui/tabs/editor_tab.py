@@ -223,9 +223,21 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             new_log,
         )
 
-    def _confirm_edit(section, draft, current_log):
+    def _confirm_edit(section, draft, current_log, current_mode, current_md):
         """Send text for validation — shows Validation Result in place of buttons."""
         new_log, status_update = _append_status(current_log, f"🔍 ({section}) Validation started.")
+        
+        # Determine visibility and text based on mode
+        if current_mode == "Rewrite":
+            editor_visible = False
+            viewer_visible = True
+            draft_clean = _remove_highlight(current_md) if current_md else draft
+            viewer_text = current_md if current_md else draft
+        else:  # Manual mode
+            editor_visible = True
+            viewer_visible = False
+            draft_clean = draft
+            viewer_text = draft
         
         # Yield imediat cu butoanele ascunse și log-ul "Validation started"
         yield (
@@ -242,15 +254,16 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(visible=False),   # hide Force Edit
             gr.update(visible=False),   # hide Start Editing
             gr.update(visible=False),   # hide Rewrite Section
-            gr.update(visible=True, interactive=False),  # keep Editor visible but disable editing
+            gr.update(visible=viewer_visible, value=viewer_text),  # show/hide viewer_md based on mode
+            gr.update(visible=editor_visible, interactive=False),  # show/hide Editor based on mode
             gr.update(interactive=False), # keep Mode locked
             gr.update(interactive=False), # lock Section dropdown
             gr.update(value=new_log, visible=True),  # show Process Log with "Validation started"
             new_log,  # status_log state
         )
         
-        # Apelează validarea (blocant)
-        msg, plan = H.editor_validate(section, draft)
+        # Apelează validarea (blocant) - folosim draft_clean (fără highlight-uri)
+        msg, plan = H.editor_validate(section, draft_clean)
         final_log, _ = _append_status(new_log, f"✅ ({section}) Validation completed.")
         
         # Yield cu rezultatul validării
@@ -268,7 +281,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(visible=False),   # hide Force Edit
             gr.update(visible=False),   # hide Start Editing
             gr.update(visible=False),   # hide Rewrite Section
-            gr.update(visible=True, interactive=False),  # keep Editor visible but disable editing
+            gr.update(visible=viewer_visible, value=viewer_text),  # show/hide viewer_md based on mode
+            gr.update(visible=editor_visible, interactive=False),  # show/hide Editor based on mode
             gr.update(interactive=False), # keep Mode locked
             gr.update(interactive=False), # keep Section locked
             gr.update(value=final_log, visible=True),  # show Process Log with "Validation completed"
@@ -722,7 +736,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     confirm_btn.click(
         fn=_confirm_edit,
-        inputs=[selected_section, editor_tb, status_log],
+        inputs=[selected_section, editor_tb, status_log, mode_radio, current_md],
         outputs=[
             validation_box, pending_plan,
             validation_title, validation_box,
@@ -730,6 +744,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             confirm_btn, discard_btn, force_edit_btn,
             start_edit_btn,
             rewrite_section,
+            viewer_md,
             editor_tb,
             mode_radio, section_dropdown,
             status_strip,
@@ -820,7 +835,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     regenerate_btn.click(
         fn=_confirm_edit,
-        inputs=[selected_section, editor_tb, status_log],
+        inputs=[selected_section, editor_tb, status_log, mode_radio, current_md],
         outputs=[
             validation_box, pending_plan,
             validation_title, validation_box,
@@ -828,6 +843,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             confirm_btn, discard_btn, force_edit_btn,
             start_edit_btn,
             rewrite_section,
+            viewer_md,
             editor_tb,
             mode_radio, section_dropdown,
             status_strip,
