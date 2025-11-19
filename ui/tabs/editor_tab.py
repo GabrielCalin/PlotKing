@@ -310,11 +310,18 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             new_create_epoch,  # bump create_sections_epoch to notify Create tab
         )
 
-    def _apply_updates(section, draft, plan, current_log, create_epoch):
+    def _apply_updates(section, draft, plan, current_log, create_epoch, current_mode, current_md):
         """
         Aplică modificările și rulează pipeline-ul de editare dacă există secțiuni impactate.
         Este generator dacă există plan, altfel returnează direct.
         """
+        # In Rewrite mode, use current_md (without highlights) instead of draft from editor_tb
+        if current_mode == "Rewrite" and current_md:
+            draft_clean = _remove_highlight(current_md)
+            draft_to_save = draft_clean
+        else:
+            draft_to_save = draft
+        
         if plan and isinstance(plan, dict) and plan.get("impacted_sections"):
             base_log = current_log
             current_epoch = create_epoch or 0
@@ -322,7 +329,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             # Yield imediat cu draft-ul salvat pentru a actualiza markdown-ul
             new_log, status_update = _append_status(current_log, f"✅ ({section}) Changes saved. Adapting impacted sections...")
             yield (
-                gr.update(value=draft, visible=True),  # afișează draft-ul salvat imediat
+                gr.update(value=draft_to_save, visible=True),  # afișează draft-ul salvat imediat
                 status_update,  # update Process Log
                 gr.update(visible=False),   # hide Editor
                 gr.update(visible=False),   # hide Validation Title
@@ -335,12 +342,12 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 gr.update(visible=False),   # hide Rewrite Section
                 gr.update(value="View", interactive=False),  # set Mode to View and lock
                 gr.update(interactive=True),  # allow Section change
-                draft,  # update current_md state with draft
+                draft_to_save,  # update current_md state with draft (without highlights)
                 new_log,  # update status_log state
                 current_epoch,  # bump create_sections_epoch
             )
             
-            for result in H.editor_apply(section, draft, plan):
+            for result in H.editor_apply(section, draft_to_save, plan):
                 if isinstance(result, tuple) and len(result) == 8:
                     expanded_plot, chapters_overview, chapters_full, current_text, dropdown, counter, status_log_text, validation_text = result
                     
@@ -391,7 +398,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             )
         else:
             # Nu există plan sau secțiuni impactate, doar salvează modificarea
-            result = H.editor_apply(section, draft, plan)
+            result = H.editor_apply(section, draft_to_save, plan)
             # editor_apply poate fi generator sau returnează tuple
             if hasattr(result, '__iter__') and not isinstance(result, (str, tuple)):
                 # Este generator, dar nu ar trebui să fie în acest caz
@@ -402,7 +409,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             new_create_epoch = (create_epoch or 0) + 1  # Bump create_sections_epoch AFTER save completes
 
             yield (
-                gr.update(value=draft, visible=True),  # update and show Viewer with draft
+                gr.update(value=draft_to_save, visible=True),  # update and show Viewer with draft (without highlights)
                 gr.update(value=new_log, visible=True),  # update Process Log
                 gr.update(visible=False),   # hide Editor
                 gr.update(visible=False),   # hide Validation Title
@@ -415,7 +422,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 gr.update(visible=False),   # hide Rewrite Section
                 gr.update(value="View", interactive=True), # reset Mode to View and unlock
                 gr.update(interactive=True), # unlock Section
-                draft,  # update current_md state with draft
+                draft_to_save,  # update current_md state with draft (without highlights)
                 new_log,  # update status_log state
                 new_create_epoch,  # bump create_sections_epoch to notify Create tab
             )
@@ -756,7 +763,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     apply_updates_btn.click(
         fn=_apply_updates,
-        inputs=[section_dropdown, editor_tb, pending_plan, status_log, create_sections_epoch],
+        inputs=[section_dropdown, editor_tb, pending_plan, status_log, create_sections_epoch, mode_radio, current_md],
         outputs=[
             viewer_md, status_strip,
             editor_tb,
