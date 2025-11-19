@@ -406,26 +406,47 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 new_create_epoch,  # bump create_sections_epoch to notify Create tab
             )
 
-    def _continue_edit(section, current_log):
-        """Return to editing mode with Validate/Discard/Force Edit buttons."""
+    def _continue_edit(section, current_log, current_mode):
+        """Return to editing mode. If Manual mode, show Validate/Discard/Force Edit. If Rewrite mode, return to Rewrite Section."""
         new_log, status_update = _append_status(current_log, f"🔁 ({section}) Continue editing.")
-        return (
-            gr.update(visible=False),   # hide Validation Title
-            gr.update(visible=False),   # hide Validation Box
-            gr.update(visible=False),   # hide Apply Updates
-            gr.update(visible=False),   # hide Regenerate
-            gr.update(visible=False),   # hide Continue Editing
-            gr.update(visible=False),   # hide Discard2
-            gr.update(visible=True),    # show Validate
-            gr.update(visible=True),    # show Discard
-            gr.update(visible=True),    # show Force Edit
-            gr.update(visible=False),   # hide Rewrite Section
-            gr.update(visible=True, interactive=True),  # show Editor and enable editing
-            gr.update(interactive=False), # keep Mode locked
-            gr.update(interactive=False), # keep Section locked
-            status_update,
-            new_log,
-        )
+        
+        if current_mode == "Rewrite":
+            clean_text = H.editor_get_section_content(section) or "_Empty_"
+            return (
+                gr.update(visible=False),   # hide Validation Title
+                gr.update(visible=False),   # hide Validation Box
+                gr.update(visible=False),   # hide Apply Updates
+                gr.update(visible=False),   # hide Regenerate
+                gr.update(visible=False),   # hide Continue Editing
+                gr.update(visible=False),   # hide Discard2
+                gr.update(visible=False),   # hide Validate
+                gr.update(visible=False),   # hide Discard
+                gr.update(visible=False),   # hide Force Edit
+                gr.update(visible=True),    # show Rewrite Section
+                gr.update(visible=True, value=clean_text, interactive=False),  # show Editor non-interactive for Rewrite mode
+                gr.update(value="Rewrite", interactive=False), # keep Mode locked to Rewrite
+                gr.update(interactive=False), # keep Section locked
+                status_update,
+                new_log,
+            )
+        else:
+            return (
+                gr.update(visible=False),   # hide Validation Title
+                gr.update(visible=False),   # hide Validation Box
+                gr.update(visible=False),   # hide Apply Updates
+                gr.update(visible=False),   # hide Regenerate
+                gr.update(visible=False),   # hide Continue Editing
+                gr.update(visible=False),   # hide Discard2
+                gr.update(visible=True),    # show Validate
+                gr.update(visible=True),    # show Discard
+                gr.update(visible=True),    # show Force Edit
+                gr.update(visible=False),   # hide Rewrite Section
+                gr.update(visible=True, interactive=True),  # show Editor and enable editing
+                gr.update(interactive=False), # keep Mode locked
+                gr.update(interactive=False), # keep Section locked
+                status_update,
+                new_log,
+            )
 
     def _format_selected_preview(selected_txt):
         """Format selected text preview - first 25 chars + ... if longer."""
@@ -737,7 +758,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     continue_btn.click(
         fn=_continue_edit,
-        inputs=[selected_section, status_log],
+        inputs=[selected_section, status_log, mode_radio],
         outputs=[
             validation_title, validation_box,
             apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
