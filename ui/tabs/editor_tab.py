@@ -155,9 +155,17 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     def _toggle_mode(mode, current_log, current_text):
         # Evită duplicatele: verifică dacă ultimul mesaj este deja "Mode changed to"
         last_msg = f"🔄 Mode changed to {mode}."
+        
+        # Default updates
+        rewrite_btn_upd = gr.update()
+        rewrite_action_upd = gr.update()
+        
         if mode == "Rewrite":
             editor_update = gr.update(visible=True, interactive=False, value=current_text) if current_text else gr.update(visible=True, interactive=False)
             viewer_update = gr.update(visible=False)
+            # Reset buttons when entering Rewrite mode
+            rewrite_btn_upd = gr.update(visible=True, interactive=False) # Disabled until selection
+            rewrite_action_upd = gr.update(visible=False)
         elif mode == "Manual":
             editor_update = gr.update(visible=False)
             viewer_update = gr.update(visible=True, value=current_text) if current_text else gr.update(visible=True)
@@ -179,6 +187,10 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                         current_log,
                         editor_update,
                         viewer_update,
+                        rewrite_btn_upd,
+                        rewrite_action_upd,
+                        rewrite_action_upd,
+                        rewrite_action_upd,
                     )
                 if "Adapting" in last_line or "Validation completed" in last_line:
                     return (
@@ -188,6 +200,10 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                         current_log,
                         editor_update,
                         viewer_update,
+                        rewrite_btn_upd,
+                        rewrite_action_upd,
+                        rewrite_action_upd,
+                        rewrite_action_upd,
                     )
         new_log, status_update = append_status(current_log, last_msg)
         return (
@@ -197,6 +213,10 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             new_log,
             editor_update,
             viewer_update,
+            rewrite_btn_upd,
+            rewrite_action_upd,
+            rewrite_action_upd,
+            rewrite_action_upd,
         )
 
     # ====== Dispatchers ======
@@ -253,7 +273,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     mode_radio.change(
         fn=_toggle_mode,
         inputs=[mode_radio, status_log, current_md],
-        outputs=[start_edit_btn, rewrite_section, status_strip, status_log, editor_tb, viewer_md]
+        outputs=[start_edit_btn, rewrite_section, status_strip, status_log, editor_tb, viewer_md, rewrite_btn, rewrite_validate_btn, rewrite_discard_btn, rewrite_force_edit_btn]
     )
 
     start_edit_btn.click(
