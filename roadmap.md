@@ -6,9 +6,6 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## 🧭 Phase 2 — User Experience & Creativity Tools
 
-8. **AI Editing on Selected Text**  
-   - Enable users to **select a portion of text** and apply quick AI edits (rewrite, expand, simplify, etc.).
-
 9. **AI Chat per Chapter**  
    - Add an interactive chat panel to discuss or request changes for a specific chapter.  
    - A supervising LLM ensures narrative consistency and, when necessary, re-writes dependent chapters.
@@ -122,8 +119,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 | Feature | Status |
 |----------|--------|
-| **AI Editing on Selected Text** | ⏳ In Progress |
-| **AI Chat per Chapter** | ⏳ Planned |
+| **AI Chat per Chapter** | ⏳ In Progress |
 | **Add Empty Chapters (Writer Assist Mode)** | ⏳ Planned |
 | **Stop Edit Pipeline** | ⏳ Planned |
 | **Draft Review System** | ⏳ Planned |
