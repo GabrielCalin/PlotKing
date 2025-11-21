@@ -12,6 +12,8 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
     if current_mode == "Rewrite" and current_md:
         draft_clean = remove_highlight(current_md)
         draft_to_save = draft_clean
+    elif current_mode == "Chat" and current_md:
+        draft_to_save = current_md
     else:
         draft_to_save = draft
     
