@@ -114,9 +114,12 @@ def chat_handler(section, message, history, current_text, initial_text, current_
             current_text,
         )
 
+
+PLOT_KING_GREETING = "Hello! I'm Plot King, your friendly creative sidekick. How can I help you today?"
+
 def clear_chat(current_log):
     """Resets the chat history to the initial greeting."""
-    initial_greeting = [{"role": "assistant", "content": "Hello! I'm Plot King. How can I help you edit this section?"}]
+    initial_greeting = [{"role": "assistant", "content": PLOT_KING_GREETING}]
     new_log, status_update = append_status(current_log, "🧹 Chat cleared.")
     return initial_greeting, new_log, status_update, initial_greeting
 

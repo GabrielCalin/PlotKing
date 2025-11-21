@@ -28,7 +28,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     original_text_before_rewrite = gr.State("")  # textul original inainte de rewrite
     
     # Chat States
-    chat_history = gr.State([{"role": "assistant", "content": "Hello! I'm Plot King. How can I help you edit this section?"}])
+    chat_history = gr.State([{"role": "assistant", "content": Chat.PLOT_KING_GREETING}])
     initial_text_before_chat = gr.State("")
 
     # ---- (0) Empty state message (visible by default) ----
@@ -88,7 +88,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             with gr.Column(visible=False) as chat_section:
                 chatbot = gr.Chatbot(
                     label="Plot King",
-                    value=[{"role": "assistant", "content": "Hello! I'm Plot King. How can I help you edit this section?"}],
+                    value=[{"role": "assistant", "content": Chat.PLOT_KING_GREETING}],
                     height=300,
                     elem_id="editor-chatbot",
                     avatar_images=(None, "https://api.dicebear.com/7.x/bottts/svg?seed=PlotKing"),
@@ -184,7 +184,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             return "_Empty_", None, "", gr.update(value="View"), "", [], ""
         text = H.editor_get_section_content(name) or "_Empty_"
         # Reset chat history when loading new section
-        initial_greeting = [{"role": "assistant", "content": "Hello! I'm Plot King. How can I help you edit this section?"}]
+        initial_greeting = [{"role": "assistant", "content": Chat.PLOT_KING_GREETING}]
         return text, name, text, gr.update(value="View"), text, initial_greeting, text
 
     def _toggle_mode(mode, current_log, current_text):
