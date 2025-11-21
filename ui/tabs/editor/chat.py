@@ -1,7 +1,6 @@
 # ui/tabs/editor/chat.py
 import gradio as gr
 import difflib
-from markdownify import markdownify as md
 import ui.editor_handlers as H
 from ui.tabs.editor.utils import append_status
 from pipeline.steps.chat_editor.llm import call_llm_chat
@@ -9,11 +8,13 @@ from pipeline.steps.chat_editor.llm import call_llm_chat
 def chat_handler(section, message, history, current_text, initial_text, current_log):
     """
     Handles the chat interaction with the Plot King.
+    Uses OpenAI-style messages format: [{'role': 'user', 'content': '...'}, ...]
     """
     if not message:
         return (
             gr.update(value=""), # clear input
             history,
+            history, # chatbot update
             gr.update(), # viewer_md
             gr.update(), # validate_btn
             gr.update(), # discard_btn
@@ -24,24 +25,16 @@ def chat_handler(section, message, history, current_text, initial_text, current_
             current_text, # current_md
         )
 
-    # Append user message to history immediately for UI responsiveness
-    new_history = history + [[message, None]]
+    # Append user message to history
+    new_history = history + [{"role": "user", "content": message}]
     
-    # Prepare conversation history for LLM (excluding the current new message which is passed separately)
-    # Format for LLM: [{"role": "user", "content": "msg"}, {"role": "assistant", "content": "msg"}]
-    llm_history = []
-    for user_msg, bot_msg in history:
-        if user_msg:
-            llm_history.append({"role": "user", "content": user_msg})
-        if bot_msg:
-            llm_history.append({"role": "assistant", "content": bot_msg})
-
     new_log, status_update = append_status(current_log, f"💬 ({section}) Asking Plot King...")
     
     # Yield loading state
     yield (
         gr.update(value=""), # clear input
         new_history,
+        new_history, # chatbot update
         gr.update(), # viewer_md
         gr.update(), # validate_btn
         gr.update(), # discard_btn
@@ -54,19 +47,21 @@ def chat_handler(section, message, history, current_text, initial_text, current_
 
     # Call LLM
     try:
+        # Pass the full history (including the new message) to the LLM
+        # The LLM step expects a list of dicts, which matches our new format
         result = call_llm_chat(
             section_name=section,
             initial_content=initial_text,
             current_content=current_text,
-            conversation_history=llm_history,
-            user_message=message
+            conversation_history=new_history, # Pass full history including current msg
+            user_message=message # Still pass this if the LLM step treats it specially, but usually history is enough
         )
         
         response_text = result.get("response", "I'm speechless!")
         new_content = result.get("new_content")
         
-        # Update history with bot response
-        new_history[-1][1] = response_text
+        # Append bot response to history
+        new_history.append({"role": "assistant", "content": response_text})
         
         if new_content:
             # Edits were made
@@ -74,6 +69,7 @@ def chat_handler(section, message, history, current_text, initial_text, current_
             yield (
                 gr.update(value=""),
                 new_history,
+                new_history, # chatbot update
                 gr.update(value=new_content), # viewer_md updated with new content
                 gr.update(visible=True), # validate_btn
                 gr.update(visible=True), # discard_btn
@@ -89,6 +85,7 @@ def chat_handler(section, message, history, current_text, initial_text, current_
             yield (
                 gr.update(value=""),
                 new_history,
+                new_history, # chatbot update
                 gr.update(), # viewer_md unchanged
                 gr.update(), # validate_btn unchanged
                 gr.update(), # discard_btn unchanged
@@ -101,11 +98,12 @@ def chat_handler(section, message, history, current_text, initial_text, current_
             
     except Exception as e:
         error_msg = f"Error talking to Plot King: {str(e)}"
-        new_history[-1][1] = error_msg
+        new_history.append({"role": "assistant", "content": error_msg})
         final_log, final_status = append_status(new_log, f"❌ ({section}) Chat error: {str(e)}")
         yield (
             gr.update(value=""),
             new_history,
+            new_history, # chatbot update
             gr.update(),
             gr.update(),
             gr.update(),
@@ -117,30 +115,43 @@ def chat_handler(section, message, history, current_text, initial_text, current_
         )
 
 def clear_chat(current_log):
-    """Resets the chat history."""
+    """Resets the chat history to the initial greeting."""
+    initial_greeting = [{"role": "assistant", "content": "Hello! I'm Plot King. How can I help you edit this section?"}]
     new_log, status_update = append_status(current_log, "🧹 Chat cleared.")
-    return [], new_log, status_update
+    return initial_greeting, new_log, status_update, initial_greeting
 
 def diff_handler(current_text, initial_text, diff_btn_label):
     """
     Toggles between Draft view and Diff view.
+    Uses inline diff (Red for removed, Green for added).
     """
     if diff_btn_label == "Diff":
-        # Calculate Diff
-        # We use difflib to get HTML diff, then convert to markdown
-        diff = difflib.HtmlDiff().make_file(
-            initial_text.splitlines(),
-            current_text.splitlines(),
-            fromdesc="Original",
-            todesc="Draft",
-            context=True,
-            numlines=3
-        )
-        # Convert HTML diff to Markdown
-        markdown_diff = md(diff)
+        # Generate inline diff
+        diff = difflib.ndiff(initial_text.splitlines(keepends=True), current_text.splitlines(keepends=True))
+        
+        html_diff = []
+        for line in diff:
+            if line.startswith("- "):
+                # Deleted line - Red background
+                content = line[2:].rstrip()
+                html_diff.append(f'<div style="background-color: #ffeef0; color: #b31d28; text-decoration: line-through; padding: 2px 5px; display: block;">{content}</div>')
+            elif line.startswith("+ "):
+                # Added line - Green background
+                content = line[2:].rstrip()
+                html_diff.append(f'<div style="background-color: #e6ffed; color: #22863a; padding: 2px 5px; display: block;">{content}</div>')
+            elif line.startswith("? "):
+                # Metadata line - skip
+                continue
+            else:
+                # Unchanged line - plain text (or slightly dimmed)
+                content = line[2:].rstrip()
+                # Use pre-wrap to preserve spacing if needed, or just div
+                html_diff.append(f'<div style="padding: 2px 5px;">{content}</div>')
+        
+        final_html = "".join(html_diff)
         
         return (
-            gr.update(value=markdown_diff), # viewer_md shows diff
+            gr.update(value=final_html), # viewer_md shows diff
             gr.update(value="Show Draft"), # Toggle button label
         )
     else:

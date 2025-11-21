@@ -28,7 +28,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     original_text_before_rewrite = gr.State("")  # textul original inainte de rewrite
     
     # Chat States
-    chat_history = gr.State([])
+    chat_history = gr.State([{"role": "assistant", "content": "Hello! I'm Plot King. How can I help you edit this section?"}])
     initial_text_before_chat = gr.State("")
 
     # ---- (0) Empty state message (visible by default) ----
@@ -88,10 +88,12 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             with gr.Column(visible=False) as chat_section:
                 chatbot = gr.Chatbot(
                     label="Plot King",
+                    value=[{"role": "assistant", "content": "Hello! I'm Plot King. How can I help you edit this section?"}],
                     height=300,
                     elem_id="editor-chatbot",
                     avatar_images=(None, "https://api.dicebear.com/7.x/bottts/svg?seed=PlotKing"),
                     bubble_full_width=False,
+                    type="messages"
                 )
                 chat_input = gr.Textbox(
                     label="Message Plot King",
@@ -99,7 +101,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                     lines=2,
                 )
                 with gr.Row():
-                    chat_send_btn = gr.Button("Send", variant="primary")
+                    chat_send_btn = gr.Button("Send", variant="primary", interactive=False)
                     chat_clear_btn = gr.Button("Clear")
                 
                 with gr.Row(visible=False) as chat_actions_row_1:
@@ -182,7 +184,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             return "_Empty_", None, "", gr.update(value="View"), "", [], ""
         text = H.editor_get_section_content(name) or "_Empty_"
         # Reset chat history when loading new section
-        return text, name, text, gr.update(value="View"), text, [], text
+        initial_greeting = [{"role": "assistant", "content": "Hello! I'm Plot King. How can I help you edit this section?"}]
+        return text, name, text, gr.update(value="View"), text, initial_greeting, text
 
     def _toggle_mode(mode, current_log, current_text):
         # Evită duplicatele: verifică dacă ultimul mesaj este deja "Mode changed to"
@@ -321,6 +324,13 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         fn=_toggle_mode,
         inputs=[mode_radio, status_log, current_md],
         outputs=[start_edit_btn, rewrite_section, chat_section, status_strip, status_log, editor_tb, viewer_md, rewrite_btn, rewrite_validate_btn, rewrite_discard_btn, rewrite_force_edit_btn]
+    )
+    
+    # Chat Input Change Event to toggle Send button
+    chat_input.change(
+        fn=lambda x: gr.update(interactive=bool(x.strip())),
+        inputs=[chat_input],
+        outputs=[chat_send_btn]
     )
 
     start_edit_btn.click(
@@ -562,6 +572,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         outputs=[
             chat_input,
             chat_history,
+            chatbot, # Update chatbot component
             viewer_md,
             chat_actions_row_1, # validate/discard row
             chat_discard_btn, # redundant but for safety if handled individually
@@ -581,6 +592,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         outputs=[
             chat_input,
             chat_history,
+            chatbot, # Update chatbot component
             viewer_md,
             chat_actions_row_1,
             chat_discard_btn,
@@ -596,7 +608,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     chat_clear_btn.click(
         fn=Chat.clear_chat,
         inputs=[status_log],
-        outputs=[chat_history, status_log, status_strip]
+        outputs=[chat_history, status_log, status_strip, chatbot]
     )
     
     chat_diff_btn.click(
