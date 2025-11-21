@@ -1,5 +1,6 @@
 /* Fixează headerul și action bar-ul de sus */
-.sticky-header, .sticky-bar {
+.sticky-header,
+.sticky-bar {
   position: sticky;
   top: 0;
   background: var(--color-background-primary, #fff);
@@ -18,9 +19,17 @@
 }
 
 @keyframes glowPulse {
-  0% { box-shadow: 0 0 0px rgba(0, 200, 255, 0.0); }
-  50% { box-shadow: 0 0 10px rgba(0, 200, 255, 0.6); }
-  100% { box-shadow: 0 0 0px rgba(0, 200, 255, 0.0); }
+  0% {
+    box-shadow: 0 0 0px rgba(0, 200, 255, 0.0);
+  }
+
+  50% {
+    box-shadow: 0 0 10px rgba(0, 200, 255, 0.6);
+  }
+
+  100% {
+    box-shadow: 0 0 0px rgba(0, 200, 255, 0.0);
+  }
 }
 
 /* Status strip */
@@ -47,4 +56,40 @@
 #editor-empty p {
   font-size: 1.5rem !important;
   margin: 0.5rem 0 !important;
+}
+
+/* Chatbot Font Size Adjustment - Aggressive Targeting */
+#editor-chatbot {
+  font-size: 0.85rem !important;
+}
+
+/* Target the message bubbles directly */
+#editor-chatbot .message-wrap .message {
+  font-size: 0.85rem !important;
+  line-height: 1.4 !important;
+}
+
+/* Target markdown content within messages */
+#editor-chatbot .message-wrap .message .prose {
+  font-size: 0.85rem !important;
+}
+
+#editor-chatbot .message-wrap .message .prose p {
+  font-size: 0.85rem !important;
+}
+
+/* Target user and bot specific classes if they exist */
+#editor-chatbot .user-message,
+#editor-chatbot .bot-message {
+  font-size: 0.85rem !important;
+}
+
+/* Target the input area as requested */
+#editor-chatbot textarea {
+  font-size: 0.85rem !important;
+}
+
+/* General container override */
+#editor-chatbot .gradio-container {
+  font-size: 0.85rem !important;
 }
