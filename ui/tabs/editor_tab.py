@@ -13,7 +13,7 @@ from ui.tabs.editor.utils import (
 import ui.tabs.editor.manual as Manual
 import ui.tabs.editor.rewrite as Rewrite
 import ui.tabs.editor.validate as Validate
-
+import ui.tabs.editor.chat as Chat
 
 def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     """Render the Editor tab (manual editing mode only)."""
@@ -26,6 +26,10 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     selected_text = gr.State("")  # textul selectat de user
     selected_indices = gr.State(None)  # [start, end] indices pentru selectie
     original_text_before_rewrite = gr.State("")  # textul original inainte de rewrite
+    
+    # Chat States
+    chat_history = gr.State([])
+    initial_text_before_chat = gr.State("")
 
     # ---- (0) Empty state message (visible by default) ----
     empty_msg = gr.Markdown(
@@ -48,7 +52,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
             mode_radio = gr.Radio(
                 label="Editing Mode",
-                choices=["View", "Manual", "Rewrite"],
+                choices=["View", "Manual", "Rewrite", "Chat"],
                 value="View",
                 interactive=True,
             )
@@ -79,6 +83,33 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 rewrite_validate_btn = gr.Button("✅ Validate", visible=False)
                 rewrite_discard_btn = gr.Button("🗑️ Discard", visible=False)
                 rewrite_force_edit_btn = gr.Button("⚡ Force Edit", visible=False)
+            
+            # Chat Section
+            with gr.Column(visible=False) as chat_section:
+                chatbot = gr.Chatbot(
+                    label="Plot King",
+                    height=300,
+                    elem_id="editor-chatbot",
+                    avatar_images=(None, "https://api.dicebear.com/7.x/bottts/svg?seed=PlotKing"),
+                    bubble_full_width=False,
+                )
+                chat_input = gr.Textbox(
+                    label="Message Plot King",
+                    placeholder="Ask for suggestions or request edits...",
+                    lines=2,
+                )
+                with gr.Row():
+                    chat_send_btn = gr.Button("Send", variant="primary")
+                    chat_clear_btn = gr.Button("Clear")
+                
+                with gr.Row(visible=False) as chat_actions_row_1:
+                    chat_validate_btn = gr.Button("✅ Validate")
+                    chat_discard_btn = gr.Button("🗑️ Discard")
+                
+                with gr.Row(visible=False) as chat_actions_row_2:
+                    chat_force_edit_btn = gr.Button("⚡ Force Edit")
+                    chat_diff_btn = gr.Button("Diff")
+
             confirm_btn = gr.Button("✅ Validate", visible=False)
             discard_btn = gr.Button("🗑️ Discard", visible=False)
             force_edit_btn = gr.Button("⚡ Force Edit", visible=False)
@@ -148,9 +179,10 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     def _load_section_content(name):
         if not name:
-            return "_Empty_", None, "", gr.update(value="View"), ""
+            return "_Empty_", None, "", gr.update(value="View"), "", [], ""
         text = H.editor_get_section_content(name) or "_Empty_"
-        return text, name, text, gr.update(value="View"), text
+        # Reset chat history when loading new section
+        return text, name, text, gr.update(value="View"), text, [], text
 
     def _toggle_mode(mode, current_log, current_text):
         # Evită duplicatele: verifică dacă ultimul mesaj este deja "Mode changed to"
@@ -159,6 +191,9 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         # Default updates
         rewrite_btn_upd = gr.update()
         rewrite_action_upd = gr.update()
+        
+        # Chat updates defaults
+        chat_section_upd = gr.update(visible=False)
         
         if mode == "Rewrite":
             editor_update = gr.update(visible=True, interactive=False, value=current_text) if current_text else gr.update(visible=True, interactive=False)
@@ -169,6 +204,10 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         elif mode == "Manual":
             editor_update = gr.update(visible=False)
             viewer_update = gr.update(visible=True, value=current_text) if current_text else gr.update(visible=True)
+        elif mode == "Chat":
+            editor_update = gr.update(visible=False)
+            viewer_update = gr.update(visible=True, value=current_text) if current_text else gr.update(visible=True)
+            chat_section_upd = gr.update(visible=True)
         else:  # View mode
             editor_update = gr.update(visible=False)
             viewer_update = gr.update(visible=True, value=current_text) if current_text else gr.update(visible=True)
@@ -183,6 +222,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                     return (
                         gr.update(visible=(mode == "Manual")),
                         gr.update(visible=(mode == "Rewrite")),
+                        chat_section_upd,
                         gr.update(value=current_log),
                         current_log,
                         editor_update,
@@ -196,6 +236,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                     return (
                         gr.update(visible=(mode == "Manual")),
                         gr.update(visible=(mode == "Rewrite")),
+                        chat_section_upd,
                         gr.update(value=current_log),
                         current_log,
                         editor_update,
@@ -209,6 +250,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         return (
             gr.update(visible=(mode == "Manual")),
             gr.update(visible=(mode == "Rewrite")),
+            chat_section_upd,
             status_update,
             new_log,
             editor_update,
@@ -227,6 +269,9 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             # In Rewrite mode, draft is actually current_md (with highlights)
             # We use current_md because editor_tb is hidden/not used for input in Rewrite mode
             yield from Rewrite.confirm_edit(section, current_md, current_log)
+        elif current_mode == "Chat":
+            # Should not happen via main confirm button usually, but if so:
+            yield from Chat.validate_handler(section, current_md, current_log)
         else:
             # Manual mode
             yield from Manual.confirm_edit(section, draft, current_log)
@@ -235,6 +280,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         """Dispatch continue_edit to appropriate module based on mode."""
         if current_mode == "Rewrite":
             return Rewrite.continue_edit(section, current_log, current_md)
+        elif current_mode == "Chat":
+            return Chat.continue_edit(section, current_log, current_md)
         else:
             return Manual.continue_edit(section, current_log)
 
@@ -255,7 +302,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     section_dropdown.change(
         fn=_load_section_content,
         inputs=[section_dropdown],
-        outputs=[viewer_md, selected_section, current_md, mode_radio, original_text_before_rewrite],
+        outputs=[viewer_md, selected_section, current_md, mode_radio, original_text_before_rewrite, chat_history, initial_text_before_chat],
     )
 
     editor_tb.select(
@@ -273,7 +320,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     mode_radio.change(
         fn=_toggle_mode,
         inputs=[mode_radio, status_log, current_md],
-        outputs=[start_edit_btn, rewrite_section, status_strip, status_log, editor_tb, viewer_md, rewrite_btn, rewrite_validate_btn, rewrite_discard_btn, rewrite_force_edit_btn]
+        outputs=[start_edit_btn, rewrite_section, chat_section, status_strip, status_log, editor_tb, viewer_md, rewrite_btn, rewrite_validate_btn, rewrite_discard_btn, rewrite_force_edit_btn]
     )
 
     start_edit_btn.click(
@@ -331,7 +378,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         ],
         queue=True,
     )
-
+    
     continue_btn.click(
         fn=_continue_edit_dispatcher,
         inputs=[selected_section, status_log, mode_radio, current_md],
@@ -345,6 +392,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             mode_radio, section_dropdown,
             status_strip,
             status_log,
+            chat_section, # Added output
         ],
     )
 
@@ -504,6 +552,105 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         ],
         queue=True,
         show_progress=False,
+    )
+    
+    # Chat Event Handlers
+    
+    chat_send_btn.click(
+        fn=Chat.chat_handler,
+        inputs=[selected_section, chat_input, chat_history, current_md, initial_text_before_chat, status_log],
+        outputs=[
+            chat_input,
+            chat_history,
+            viewer_md,
+            chat_actions_row_1, # validate/discard row
+            chat_discard_btn, # redundant but for safety if handled individually
+            chat_actions_row_2, # force/diff row
+            chat_diff_btn,
+            status_log,
+            status_strip,
+            current_md,
+        ],
+        queue=True
+    )
+    
+    # Also trigger send on Enter in chat_input
+    chat_input.submit(
+        fn=Chat.chat_handler,
+        inputs=[selected_section, chat_input, chat_history, current_md, initial_text_before_chat, status_log],
+        outputs=[
+            chat_input,
+            chat_history,
+            viewer_md,
+            chat_actions_row_1,
+            chat_discard_btn,
+            chat_actions_row_2,
+            chat_diff_btn,
+            status_log,
+            status_strip,
+            current_md,
+        ],
+        queue=True
+    )
+    
+    chat_clear_btn.click(
+        fn=Chat.clear_chat,
+        inputs=[status_log],
+        outputs=[chat_history, status_log, status_strip]
+    )
+    
+    chat_diff_btn.click(
+        fn=Chat.diff_handler,
+        inputs=[current_md, initial_text_before_chat, chat_diff_btn],
+        outputs=[viewer_md, chat_diff_btn]
+    )
+    
+    chat_validate_btn.click(
+        fn=Chat.validate_handler,
+        inputs=[selected_section, current_md, status_log],
+        outputs=[
+            chat_section,
+            validation_title,
+            validation_box,
+            apply_updates_btn,
+            regenerate_btn,
+            continue_btn,
+            discard2_btn,
+            viewer_md,
+            status_log,
+            status_strip
+        ]
+    )
+    
+    chat_discard_btn.click(
+        fn=Chat.discard_handler,
+        inputs=[selected_section, status_log],
+        outputs=[
+            viewer_md,
+            chat_actions_row_1,
+            chat_discard_btn,
+            chat_actions_row_2,
+            chat_diff_btn,
+            current_md,
+            status_log,
+            status_strip
+        ]
+    )
+    
+    chat_force_edit_btn.click(
+        fn=Chat.force_edit_handler,
+        inputs=[selected_section, current_md, status_log, create_sections_epoch],
+        outputs=[
+            viewer_md,
+            chat_actions_row_1,
+            chat_discard_btn,
+            chat_actions_row_2,
+            chat_diff_btn,
+            current_md,
+            status_log,
+            status_strip,
+            create_sections_epoch
+        ]
     )
 
     return section_dropdown
