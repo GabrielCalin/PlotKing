@@ -123,32 +123,50 @@ def clear_chat(current_log):
 def diff_handler(current_text, initial_text, diff_btn_label):
     """
     Toggles between Draft view and Diff view.
-    Uses inline diff (Red for removed, Green for added).
+    Uses word-level inline diff (Red for removed, Green for added).
     """
     if diff_btn_label == "Diff":
-        # Generate inline diff
-        diff = difflib.ndiff(initial_text.splitlines(keepends=True), current_text.splitlines(keepends=True))
+        import re
         
-        html_diff = []
-        for line in diff:
-            if line.startswith("- "):
-                # Deleted line - Red background
-                content = line[2:].rstrip()
-                html_diff.append(f'<div style="background-color: #ffeef0; color: #b31d28; text-decoration: line-through; padding: 2px 5px; display: block;">{content}</div>')
-            elif line.startswith("+ "):
-                # Added line - Green background
-                content = line[2:].rstrip()
-                html_diff.append(f'<div style="background-color: #e6ffed; color: #22863a; padding: 2px 5px; display: block;">{content}</div>')
-            elif line.startswith("? "):
-                # Metadata line - skip
-                continue
-            else:
-                # Unchanged line - plain text (or slightly dimmed)
-                content = line[2:].rstrip()
-                # Use pre-wrap to preserve spacing if needed, or just div
-                html_diff.append(f'<div style="padding: 2px 5px;">{content}</div>')
+        # Tokenize text into words and whitespace
+        # This regex splits by keeping delimiters (whitespace)
+        def tokenize(text):
+            return re.split(r'(\s+)', text)
+
+        initial_tokens = tokenize(initial_text)
+        current_tokens = tokenize(current_text)
         
-        final_html = "".join(html_diff)
+        matcher = difflib.SequenceMatcher(None, initial_tokens, current_tokens)
+        
+        html_parts = []
+        
+        # Style constants
+        STYLE_DEL = 'background-color: #ffeef0; color: #b31d28; text-decoration: line-through;'
+        STYLE_INS = 'background-color: #e6ffed; color: #22863a;'
+        
+        for opcode, a0, a1, b0, b1 in matcher.get_opcodes():
+            if opcode == 'equal':
+                # Unchanged text
+                html_parts.append("".join(initial_tokens[a0:a1]))
+            elif opcode == 'delete':
+                # Deleted text
+                deleted_text = "".join(initial_tokens[a0:a1])
+                html_parts.append(f'<span style="{STYLE_DEL}">{deleted_text}</span>')
+            elif opcode == 'insert':
+                # Inserted text
+                inserted_text = "".join(current_tokens[b0:b1])
+                html_parts.append(f'<span style="{STYLE_INS}">{inserted_text}</span>')
+            elif opcode == 'replace':
+                # Replaced text (delete + insert)
+                deleted_text = "".join(initial_tokens[a0:a1])
+                inserted_text = "".join(current_tokens[b0:b1])
+                html_parts.append(f'<span style="{STYLE_DEL}">{deleted_text}</span>')
+                html_parts.append(f'<span style="{STYLE_INS}">{inserted_text}</span>')
+        
+        final_html = "".join(html_parts)
+        
+        # Wrap in a container to preserve whitespace and styling
+        final_html = f'<div style="white-space: pre-wrap; font-family: monospace, sans-serif;">{final_html}</div>'
         
         return (
             gr.update(value=final_html), # viewer_md shows diff
