@@ -200,7 +200,8 @@ def validate_handler(section, current_text, current_log):
         gr.update(visible=True, value=current_text), # viewer_md
         new_log,
         status_update,
-        None # pending_plan placeholder
+        None, # pending_plan placeholder
+        gr.update(value="⚖️ Diff") # chat_diff_btn reset
     )
     
     msg, plan = H.editor_validate(section, current_text)
@@ -217,7 +218,8 @@ def validate_handler(section, current_text, current_log):
         gr.update(visible=True, value=current_text), # viewer_md
         final_log,
         final_status,
-        plan # pending_plan
+        plan, # pending_plan
+        gr.update(value="⚖️ Diff") # chat_diff_btn reset
     )
 
 def discard_handler(section, current_log):

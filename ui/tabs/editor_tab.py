@@ -632,6 +632,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             status_log,
             status_strip,
             pending_plan, # Added output
+            chat_diff_btn, # Reset diff button label
         ]
     )
     
