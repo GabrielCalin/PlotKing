@@ -23,6 +23,8 @@ def chat_handler(section, message, history, current_text, initial_text, current_
             current_log,
             gr.update(), # status_strip
             current_text, # current_md
+            gr.update(), # chat_input (no change)
+            gr.update(), # chat_clear_btn (no change)
         )
 
     # Append user message to history
@@ -32,7 +34,7 @@ def chat_handler(section, message, history, current_text, initial_text, current_
     
     # Yield loading state
     yield (
-        gr.update(value=""), # clear input
+        gr.update(value="", interactive=False), # clear input and disable
         new_history,
         new_history, # chatbot update
         gr.update(), # viewer_md
@@ -43,6 +45,8 @@ def chat_handler(section, message, history, current_text, initial_text, current_
         new_log,
         status_update,
         current_text,
+        gr.update(interactive=False), # chat_input disable
+        gr.update(interactive=False), # chat_clear_btn disable
     )
 
     # Call LLM
@@ -67,7 +71,7 @@ def chat_handler(section, message, history, current_text, initial_text, current_
             # Edits were made
             final_log, final_status = append_status(new_log, f"✅ ({section}) Plot King made edits.")
             yield (
-                gr.update(value=""),
+                gr.update(value="", interactive=True),
                 new_history,
                 new_history, # chatbot update
                 gr.update(value=new_content), # viewer_md updated with new content
@@ -78,12 +82,14 @@ def chat_handler(section, message, history, current_text, initial_text, current_
                 final_log,
                 final_status,
                 new_content, # update current_md
+                gr.update(interactive=True), # chat_input enable
+                gr.update(interactive=True), # chat_clear_btn enable
             )
         else:
             # No edits, just chat
             final_log, final_status = append_status(new_log, f"✅ ({section}) Plot King replied.")
             yield (
-                gr.update(value=""),
+                gr.update(value="", interactive=True),
                 new_history,
                 new_history, # chatbot update
                 gr.update(), # viewer_md unchanged
@@ -94,6 +100,8 @@ def chat_handler(section, message, history, current_text, initial_text, current_
                 final_log,
                 final_status,
                 current_text, # current_md unchanged
+                gr.update(interactive=True), # chat_input enable
+                gr.update(interactive=True), # chat_clear_btn enable
             )
             
     except Exception as e:
@@ -101,7 +109,7 @@ def chat_handler(section, message, history, current_text, initial_text, current_
         new_history.append({"role": "assistant", "content": error_msg})
         final_log, final_status = append_status(new_log, f"❌ ({section}) Chat error: {str(e)}")
         yield (
-            gr.update(value=""),
+            gr.update(value="", interactive=True),
             new_history,
             new_history, # chatbot update
             gr.update(),
@@ -112,6 +120,8 @@ def chat_handler(section, message, history, current_text, initial_text, current_
             final_log,
             final_status,
             current_text,
+            gr.update(interactive=True), # chat_input enable
+            gr.update(interactive=True), # chat_clear_btn enable
         )
 
 

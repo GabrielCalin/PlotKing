@@ -581,6 +581,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             status_log,
             status_strip,
             current_md,
+            chat_input, # Added output
+            chat_clear_btn, # Added output
         ],
         queue=True
     )
@@ -601,6 +603,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             status_log,
             status_strip,
             current_md,
+            chat_input, # Added output
+            chat_clear_btn, # Added output
         ],
         queue=True
     )
