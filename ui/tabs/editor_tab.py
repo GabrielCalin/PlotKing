@@ -273,7 +273,6 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             # We use current_md because editor_tb is hidden/not used for input in Rewrite mode
             yield from Rewrite.confirm_edit(section, current_md, current_log)
         elif current_mode == "Chat":
-            # Should not happen via main confirm button usually, but if so:
             yield from Chat.validate_handler(section, current_md, current_log)
         else:
             # Manual mode
