@@ -611,7 +611,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     
     chat_clear_btn.click(
         fn=Chat.clear_chat,
-        inputs=[status_log],
+        inputs=[selected_section, status_log],
         outputs=[chat_history, status_log, status_strip, chatbot]
     )
     
