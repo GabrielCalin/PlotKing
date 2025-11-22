@@ -630,7 +630,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             discard2_btn,
             viewer_md,
             status_log,
-            status_strip
+            status_strip,
+            pending_plan, # Added output
         ]
     )
     

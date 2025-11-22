@@ -199,7 +199,8 @@ def validate_handler(section, current_text, current_log):
         gr.update(visible=False), # discard2_btn
         gr.update(visible=True, value=current_text), # viewer_md
         new_log,
-        status_update
+        status_update,
+        None # pending_plan placeholder
     )
     
     msg, plan = H.editor_validate(section, current_text)
@@ -215,7 +216,8 @@ def validate_handler(section, current_text, current_log):
         gr.update(visible=True), # discard2_btn
         gr.update(visible=True, value=current_text), # viewer_md
         final_log,
-        final_status
+        final_status,
+        plan # pending_plan
     )
 
 def discard_handler(section, current_log):
