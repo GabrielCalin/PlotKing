@@ -101,8 +101,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                     lines=2,
                 )
                 with gr.Row():
-                    chat_send_btn = gr.Button("Send", variant="primary", interactive=False)
-                    chat_clear_btn = gr.Button("Clear")
+                    chat_send_btn = gr.Button("📩 Send", variant="primary", interactive=False)
+                    chat_clear_btn = gr.Button("🧹 Clear")
                 
                 with gr.Row(visible=False) as chat_actions_row_1:
                     chat_validate_btn = gr.Button("✅ Validate")
@@ -110,7 +110,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 
                 with gr.Row(visible=False) as chat_actions_row_2:
                     chat_force_edit_btn = gr.Button("⚡ Force Edit")
-                    chat_diff_btn = gr.Button("Diff")
+                    chat_diff_btn = gr.Button("⚖️ Diff")
 
             confirm_btn = gr.Button("✅ Validate", visible=False)
             discard_btn = gr.Button("🗑️ Discard", visible=False)

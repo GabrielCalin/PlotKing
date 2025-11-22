@@ -74,7 +74,7 @@ def chat_handler(section, message, history, current_text, initial_text, current_
                 gr.update(visible=True), # validate_btn
                 gr.update(visible=True), # discard_btn
                 gr.update(visible=True), # force_edit_btn
-                gr.update(visible=True, value="Diff"), # diff_btn
+                gr.update(visible=True, value="⚖️ Diff"), # diff_btn
                 final_log,
                 final_status,
                 new_content, # update current_md
@@ -128,7 +128,7 @@ def diff_handler(current_text, initial_text, diff_btn_label):
     Toggles between Draft view and Diff view.
     Uses word-level inline diff (Red for removed, Green for added).
     """
-    if diff_btn_label == "Diff":
+    if diff_btn_label == "⚖️ Diff":
         import re
         
         # Tokenize text into words and whitespace
@@ -173,13 +173,13 @@ def diff_handler(current_text, initial_text, diff_btn_label):
         
         return (
             gr.update(value=final_html), # viewer_md shows diff
-            gr.update(value="Show Draft"), # Toggle button label
+            gr.update(value="📝 Show Draft"), # Toggle button label
         )
     else:
         # Revert to Draft view
         return (
             gr.update(value=current_text), # viewer_md shows draft
-            gr.update(value="Diff"), # Toggle button label
+            gr.update(value="⚖️ Diff"), # Toggle button label
         )
 
 def validate_handler(section, current_text, current_log):
@@ -232,7 +232,7 @@ def discard_handler(section, current_log):
         gr.update(visible=False), # validate_btn
         gr.update(visible=False), # discard_btn
         gr.update(visible=False), # force_edit_btn
-        gr.update(visible=False, value="Diff"), # diff_btn (reset label too)
+        gr.update(visible=False, value="⚖️ Diff"), # diff_btn (reset label too)
         clean_text, # current_md
         new_log,
         status_update
@@ -251,7 +251,7 @@ def force_edit_handler(section, current_text, current_log, create_epoch):
         gr.update(visible=False), # validate_btn
         gr.update(visible=False), # discard_btn
         gr.update(visible=False), # force_edit_btn
-        gr.update(visible=False, value="Diff"), # diff_btn
+        gr.update(visible=False, value="⚖️ Diff"), # diff_btn
         updated_text, # current_md
         new_log,
         status_update,
