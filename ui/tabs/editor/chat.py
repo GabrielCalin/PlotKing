@@ -286,8 +286,8 @@ def continue_edit(section, current_log, current_md):
         gr.update(visible=False),   # hide Rewrite Section
         gr.update(visible=True, value=current_md),  # show viewer_md
         gr.update(visible=False),   # hide editor_tb
-        gr.update(value="Chat", interactive=False), # keep Mode locked to Chat
-        gr.update(interactive=False), # keep Section locked
+        gr.update(value="Chat", interactive=True), # unlock Mode
+        gr.update(interactive=True), # unlock Section
         status_update,
         new_log,
         gr.update(visible=True),    # SHOW Chat Section
