@@ -40,9 +40,9 @@ YOU MUST FOLLOW THESE RULES EXACTLY:
   "response": "Chat-style reply to the user."
 }
 
-3. If you do NOT make edits:
-   - Set "new_content" to null.
-   - Do NOT omit the field.
+3. If the user asks for ANY change (replace, modify, fix, rewrite, remove, adjust),
+   you MUST produce a complete updated "new_content".
+   Only set "new_content": null when the user message does NOT request edits.
 
 4. If you DO make edits:
    - "new_content" MUST contain the COMPLETE updated chapter.
