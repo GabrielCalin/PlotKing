@@ -36,8 +36,8 @@ YOU MUST FOLLOW THESE RULES EXACTLY:
 
 2. The JSON structure must be:
 {
-  "response": "Chat-style reply to the user.",
-  "new_content": "FULL updated chapter content OR null"
+  "new_content": "FULL updated chapter content OR null",
+  "response": "Chat-style reply to the user."
 }
 
 3. If you do NOT make edits:
@@ -71,7 +71,7 @@ YOU MUST FOLLOW THESE RULES EXACTLY:
      - "this segment"
 
 7. NEVER invent additional JSON fields.
-   Only "response" and "new_content" are allowed.
+   Only "new_content" and "response" are allowed.
 
 8. NEVER include explanation, meta-comments, or debug text inside "new_content".
    new_content MUST contain ONLY the story content.
@@ -210,12 +210,12 @@ def call_llm_chat(
                 return result
             except Exception:
                 return {
-                    "response": content,
-                    "new_content": None
+                    "new_content": None,
+                    "response": content
                 }
 
     except Exception as e:
         return {
-            "response": f"Plot King tripped over a narrative cable! Error: {e}",
-            "new_content": None
+            "new_content": None,
+            "response": f"Plot King tripped over a narrative cable! Error: {e}"
         }
