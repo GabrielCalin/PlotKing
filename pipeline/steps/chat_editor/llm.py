@@ -37,11 +37,12 @@ YOU MUST FOLLOW THESE RULES EXACTLY:
 2. The JSON structure must be:
 {
   "response": "Chat-style reply to the user.",
-  "new_content": "FULL updated chapter content (ONLY if edits were made)"
+  "new_content": "FULL updated chapter content OR null"
 }
 
 3. If you do NOT make edits:
-   - Omit the "new_content" field entirely OR set it to null.
+   - Set "new_content" to null.
+   - Do NOT omit the field.
 
 4. If you DO make edits:
    - "new_content" MUST contain the COMPLETE updated chapter.
@@ -70,7 +71,7 @@ YOU MUST FOLLOW THESE RULES EXACTLY:
      - "this segment"
 
 7. NEVER invent additional JSON fields.
-   Only "response" and optionally "new_content" are allowed.
+   Only "response" and "new_content" are allowed.
 
 8. NEVER include explanation, meta-comments, or debug text inside "new_content".
    new_content MUST contain ONLY the story content.
