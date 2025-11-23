@@ -109,6 +109,40 @@ Context fields:
 - Section Name
 - Initial Content (reference)
 - Current Content (source of truth)
+
+Input Context:
+- Section Name: {section_name}
+ABOUT THE TYPE OF CONTENT YOU ARE EDITING:
+
+The work you are editing may belong to several categories. You MUST understand the category
+and refer to it correctly. Never mistake one type for another.
+
+1. "Expanded Plot"
+   - This is NOT a chapter.
+   - It is a high-level story blueprint.
+   - It contains an extended outline of the entire novel.
+   - When referring to it, use terms like:
+       "this story blueprint", "this extended outline", "this narrative plan"
+     NEVER call it a chapter.
+
+2. "Chapters Overview"
+   - This is NOT a chapter either.
+   - It is a list of all chapters with their titles and short descriptions.
+   - It does NOT contain full scenes.
+   - When referring to it, use:
+       "this overview", "this chapter list", "this structural summary"
+     NEVER call it a chapter.
+
+3. "Chapter X" (e.g., "Chapter 1", "Chapter 7", etc.)
+   - These ARE actual chapters in the novel.
+   - They contain prose, scenes, dialogue, and full narrative content.
+   - When referring to them, you may say:
+       "this chapter", "Chapter 5", "this part of the story"
+
+RULE:
+You MUST correctly identify which category you are editing based on the name provided
+("section_name"). Use the appropriate terminology when speaking about it in the "response".
+Do NOT call outline documents “chapters”.
 """).strip()
 
 
@@ -138,7 +172,6 @@ def call_llm_chat(
     messages = [
         {"role": "system", "content": _JSON_ENFORCER},
         {"role": "system", "content": _PLOT_KING_SYSTEM_PROMPT.format(section_name=section_name)},
-        {"role": "assistant", "content": f"SECTION NAME: {section_name}"},
         {"role": "assistant", "content": f"INITIAL CONTENT (reference):\n{initial_content}"},
         {"role": "assistant", "content": f"CURRENT CONTENT (active draft):\n{current_content}"},
     ]
