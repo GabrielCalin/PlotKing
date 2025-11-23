@@ -98,7 +98,9 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 chat_input = gr.Textbox(
                     label="Message Plot King",
                     placeholder="Ask for suggestions or request edits...",
-                    lines=2,
+                    lines=1,
+                    max_lines=10,
+                    interactive=True
                 )
                 with gr.Row():
                     chat_send_btn = gr.Button("📩 Send", variant="primary", interactive=False, scale=1, min_width=0)
