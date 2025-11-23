@@ -112,6 +112,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                     chat_force_edit_btn = gr.Button("⚡ Force Edit", scale=1, min_width=0)
                     chat_diff_btn = gr.Button("⚖️ Diff", scale=1, min_width=0)
 
+            # Manual Mode Section
             confirm_btn = gr.Button("✅ Validate", visible=False)
             discard_btn = gr.Button("🗑️ Discard", visible=False)
             force_edit_btn = gr.Button("⚡ Force Edit", visible=False)
@@ -266,17 +267,50 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     # ====== Dispatchers ======
 
-    def _confirm_edit_dispatcher(section, draft, current_log, current_mode, current_md):
-        """Dispatch confirm_edit to appropriate module based on mode."""
-        if current_mode == "Rewrite":
-            # In Rewrite mode, draft is actually current_md (with highlights)
-            # We use current_md because editor_tb is hidden/not used for input in Rewrite mode
-            yield from Rewrite.confirm_edit(section, current_md, current_log)
-        elif current_mode == "Chat":
-            yield from Chat.validate_handler(section, current_md, current_log)
+    def _regenerate_dispatcher(section, editor_text, current_log, mode, current_md):
+        """
+        Handles 'Regenerate' button click.
+        Re-runs validation logic based on the current mode and updates ONLY the Validation UI.
+        """
+        # 1. Common "Loading" State
+        new_log, status_update = append_status(current_log, f"🔄 ({section}) Regenerating validation...")
+        
+        yield (
+            gr.update(value="🔄 Validating..."), # validation_box
+            None, # pending_plan
+            gr.update(visible=True), # validation_title
+            gr.update(visible=False), # apply_updates_btn
+            gr.update(visible=False), # regenerate_btn
+            gr.update(visible=False), # continue_btn
+            gr.update(visible=False), # discard2_btn
+            status_update, # status_strip
+            new_log # status_log
+        )
+        
+        # 2. Determine text to validate
+        text_to_validate = ""
+        if mode == "Manual":
+            text_to_validate = editor_text
         else:
-            # Manual mode
-            yield from Manual.confirm_edit(section, draft, current_log)
+            # Chat and Rewrite modes use current_md state
+            text_to_validate = current_md
+            
+        # 3. Run Validation Logic
+        msg, plan = H.editor_validate(section, text_to_validate)
+        final_log, final_status = append_status(new_log, f"✅ ({section}) Validation completed.")
+        
+        # 4. Common "Done" State
+        yield (
+            gr.update(value=msg), # validation_box
+            plan, # pending_plan
+            gr.update(visible=True), # validation_title
+            gr.update(visible=True), # apply_updates_btn
+            gr.update(visible=True), # regenerate_btn
+            gr.update(visible=True), # continue_btn
+            gr.update(visible=True), # discard2_btn
+            final_status, # status_strip
+            final_log # status_log
+        )
 
     def _continue_edit_dispatcher(section, current_log, current_mode, current_md):
         """Dispatch continue_edit to appropriate module based on mode."""
@@ -351,8 +385,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     )
 
     confirm_btn.click(
-        fn=_confirm_edit_dispatcher,
-        inputs=[selected_section, editor_tb, status_log, mode_radio, current_md],
+        fn=Manual.confirm_edit,
+        inputs=[selected_section, editor_tb, status_log],
         outputs=[
             validation_box, pending_plan,
             validation_title, validation_box,
@@ -451,18 +485,16 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     )
 
     regenerate_btn.click(
-        fn=_confirm_edit_dispatcher,
+        fn=_regenerate_dispatcher,
         inputs=[selected_section, editor_tb, status_log, mode_radio, current_md],
         outputs=[
-            validation_box, pending_plan,
-            validation_title, validation_box,
-            apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
-            confirm_btn, discard_btn, force_edit_btn,
-            start_edit_btn,
-            rewrite_section,
-            viewer_md,
-            editor_tb,
-            mode_radio, section_dropdown,
+            validation_box,
+            pending_plan,
+            validation_title,
+            apply_updates_btn,
+            regenerate_btn,
+            continue_btn,
+            discard2_btn,
             status_strip,
             status_log,
         ],
