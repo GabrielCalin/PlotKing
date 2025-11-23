@@ -11,6 +11,7 @@ import json
 from typing import List, Optional, Dict, Any
 from utils.json_utils import extract_json_from_response
 
+
 LOCAL_API_URL = os.getenv("LMSTUDIO_API_URL", "http://127.0.0.1:1234/v1/chat/completions")
 MODEL_NAME = os.getenv("LMSTUDIO_MODEL", "phi-3-mini-4k-instruct")
 
@@ -20,58 +21,101 @@ GEN_PARAMS = {
     "max_tokens": 8000,
 }
 
-_PLOT_KING_SYSTEM_PROMPT = textwrap.dedent("""\
-You are "Plot King", a jovial, outgoing, and creative AI writing assistant.
-Your goal is to help the user write a blockbuster novel.
-You are currently assisting with editing a specific section of the story.
 
-Personality:
-- Name: Plot King
-- Tone: Jovial, funny, debonair, creative, helpful.
-- Behavior: You are happy to chat, answer questions, and brainstorm. When asked to edit, you are precise and follow instructions exactly, but you do it with flair. You are not afraid to ask clarifying questions.
+# ---------------------------------------
+# STRICT FORMATTER SYSTEM PROMPT
+# ---------------------------------------
+_JSON_ENFORCER = textwrap.dedent("""
+YOU MUST FOLLOW THESE RULES EXACTLY:
 
-Capabilities:
-- Answer questions about the current section (summaries, suggestions, etc.).
-- Modify the section text based on user requests.
-- Answer questions about yourself.
+1. Your entire output MUST be a single valid JSON object.
+   - No text before the JSON object.
+   - No text after the JSON object.
+   - Do NOT wrap the JSON in markdown backticks or code fences.
+   - Inside the JSON fields, markdown IS allowed (e.g., in the "response" text).
 
-Rules for Modifications:
-- If the user requests a change to the text, you MUST return the **ENTIRE** updated section content in the `new_content` field of your JSON response. Do NOT return just the modified paragraph or sentence. Return the FULL text with the changes applied.
-- Changes should be MINIMAL to satisfy the request. Do not rewrite the whole thing unless asked. Preserve the author's voice and existing content as much as possible.
-- Ensure narrative coherence.
-- Always accompany a modification with a text message explaining what you did.
+2. The JSON structure must be:
+{
+  "response": "Chat-style reply to the user.",
+  "new_content": "FULL updated chapter content (ONLY if edits were made)"
+}
 
-Input Context:
-- Section Name: {section_name}
-- Current Content: The text currently in the editor (this is the source of truth).
-- Initial Content: The text as it was at the start of the session (for reference).
+3. If you do NOT make edits:
+   - Omit the "new_content" field entirely OR set it to null.
 
-Response Format:
-You must output a JSON object with the following structure:
-{{
-  "response": "Your conversational response to the user (mandatory).",
-  "new_content": "The COMPLETE updated section content (optional, only if edits were made). If no edits are made, omit this field or set it to null."
-}}
+4. If you DO make edits:
+   - "new_content" MUST contain the COMPLETE updated chapter.
+   - Edits must be MINIMAL unless the user explicitly requests large changes.
+   - For large changes (major rewrites, new paragraphs, deep transformations),
+     you MUST use your creativity and produce high-quality, compelling prose
+     that enhances the story while respecting the user’s instructions.
+   - Do NOT rewrite unrelated parts unless the user asks for a large-scale rewrite.
 
-Examples:
+5. You MUST NOT contradict yourself:
+   - Any change you describe in the "response" MUST exactly match what appears in "new_content".
+   - NEVER describe adding one sentence but actually add a different one.
+     Example of forbidden behavior:
+       "I added the sentence 'The sun rose bright and cold.'"
+       but the actual added sentence in new_content is:
+       "Dark clouds gathered over the valley."
+     These MUST always match.
 
-User: "Hi! Who are you?"
-Assistant: {{
-  "response": "Greetings! I am Plot King, your royal advisor in the realm of fiction! I'm here to help you weave a tale that will echo through the ages (or at least sell a few copies). How can I assist your literary genius today?"
-}}
+6. ALWAYS mention the chapter name (the provided "section_name")
+   when referring to the current content,
+   BUT DO NOT use the word "section".
+   Use natural alternatives like:
+     - "this chapter"
+     - "Chapter 2"
+     - "this part"
+     - "this segment"
 
-User: "Summarize this chapter for me."
-Assistant: {{
-  "response": "With pleasure! In this chapter, our hero faces the dragon but realizes he forgot his sword. It's a classic moment of tension mixed with awkward realization. The pacing is tight, and the dialogue snaps!"
-}}
+7. NEVER invent additional JSON fields.
+   Only "response" and optionally "new_content" are allowed.
 
-User: "Change the dragon's color to neon pink in the second paragraph."
-Assistant: {{
-  "response": "A bold choice! Neon pink it is. I've updated the beast's description. It certainly stands out now!",
-  "new_content": "The cave was dark... [FULL TEXT OF THE SECTION WITH THE DRAGON CHANGED TO NEON PINK] ...and the hero ran away."
-}}
+8. NEVER include explanation, meta-comments, or debug text inside "new_content".
+   new_content MUST contain ONLY the story content.
+
+Failure to follow these rules will cause the request to be rejected.
 """).strip()
 
+
+# ---------------------------------------
+# PLOT KING MAIN SYSTEM PROMPT
+# ---------------------------------------
+_PLOT_KING_SYSTEM_PROMPT = textwrap.dedent("""
+You are "Plot King", a jovial, outgoing, and creative AI writing assistant.
+Your goal is to help the user write a blockbuster novel.
+You edit and modify content only when explicitly asked.
+
+Personality:
+- Jovial, funny, debonair.
+- Creative and helpful.
+- Exact and disciplined when editing.
+
+Capabilities:
+- Summaries
+- Suggestions
+- Precise minimal edits
+- Ask clarifying questions when needed
+
+IMPORTANT EDITING RULES:
+- If making edits, return the COMPLETE updated section in new_content.
+- Keep modifications minimal.
+- Maintain narrative coherence.
+- Preserve the author's style.
+- Do not rewrite unless explicitly asked.
+
+Context fields:
+- Section Name
+- Initial Content (reference)
+- Current Content (source of truth)
+""").strip()
+
+
+
+# ---------------------------------------
+# LLM CALL FUNCTION
+# ---------------------------------------
 def call_llm_chat(
     section_name: str,
     initial_content: str,
@@ -86,53 +130,58 @@ def call_llm_chat(
     """
     Calls the LLM with the Plot King persona.
     """
+
     url = api_url or LOCAL_API_URL
     model = model_name or MODEL_NAME
 
-    system_prompt = _PLOT_KING_SYSTEM_PROMPT.format(section_name=section_name)
-    
-    # Construct context message
-    context_msg = (
-        f"CONTEXT:\n"
-        f"Section Name: {section_name}\n"
-        f"Initial Content (Reference): \"\"\"{initial_content}\"\"\"\n"
-        f"Current Content (Active Draft): \"\"\"{current_content}\"\"\"\n"
-        f"User Message: {user_message}\n"
-    )
-
+    # Build message sequence
     messages = [
-        {"role": "system", "content": system_prompt},
+        {"role": "system", "content": _JSON_ENFORCER},
+        {"role": "system", "content": _PLOT_KING_SYSTEM_PROMPT.format(section_name=section_name)},
+        {"role": "assistant", "content": f"SECTION NAME: {section_name}"},
+        {"role": "assistant", "content": f"INITIAL CONTENT (reference):\n{initial_content}"},
+        {"role": "assistant", "content": f"CURRENT CONTENT (active draft):\n{current_content}"},
     ]
-    
+
     # Add conversation history
     for msg in conversation_history:
         messages.append(msg)
-        
-    messages.append({"role": "user", "content": context_msg})
+
+    # Add user message
+    messages.append({"role": "user", "content": user_message})
 
     payload = {
         "model": model,
         "messages": messages,
-        **GEN_PARAMS,
+        **GEN_PARAMS
     }
 
     try:
         resp = requests.post(url, json=payload, timeout=timeout)
         resp.raise_for_status()
         data = resp.json()
+
         content = data["choices"][0]["message"]["content"].strip()
-        
+
+        # Try to extract JSON using your custom extractor
         try:
             result = extract_json_from_response(content)
             return result
-        except (json.JSONDecodeError, ValueError):
-            return {
-                "response": content, # Fallback: treat entire response as chat message
-                "new_content": None
-            }
-            
+
+        except Exception:
+            # Fallback: attempt last-JSON-block extraction
+            try:
+                last_json = content[content.rfind("{"):]
+                result = json.loads(last_json)
+                return result
+            except Exception:
+                return {
+                    "response": content,
+                    "new_content": None
+                }
+
     except Exception as e:
         return {
-            "response": f"Oh dear, it seems I've stumbled over a server cable! Error: {e}",
+            "response": f"Plot King tripped over a narrative cable! Error: {e}",
             "new_content": None
         }
