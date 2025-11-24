@@ -6,15 +6,11 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## 🧭 Phase 2 — User Experience & Creativity Tools
 
-10. **Add Empty Chapters (Writer Assist Mode)**  
-   - Let users insert blank chapters manually.  
-   - Intended to help writers start or continue their own text with AI assistance.
-
-11. **Stop Edit Pipeline**  
+10. **Stop Edit Pipeline**  
    - Allow users to stop/cancel the edit pipeline while it's running.  
    - Gracefully handle partial completion and preserve any completed edits.
 
-12. **Draft Review System**  
+11. **Draft Review System**  
    - When the edit pipeline finishes, all changes are saved as drafts.  
    - User is presented with choices: **revert all**, **accept all**, **regenerate partial**, and **accept partial**.  
    - View changes with change coloring (added/deleted/modified text highlighting).
@@ -23,13 +19,13 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## 🎨 Phase 3 — Presentation and Export
 
-13. **Export to EPUB**  
+12. **Export to EPUB**  
    - Export full books as `.epub` files with metadata. 
 
-14. **Public GitHub Repository**  
+13. **Public GitHub Repository**  
    - Make the project public and document setup, dependencies, and contribution flow.
 
-15. **Generate EPUB Cover Image**  
+14. **Generate EPUB Cover Image**  
    - Automatically create covers based on title, genre, and plot.  
    - Optional integration with **ComfyUI** or external image workflows.
 
@@ -37,10 +33,14 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## ✍️ Phase 4 — Story Growth and Structure Control
 
-16. **AI Chat for Refined Plot**  
+15. **AI Chat for Refined Plot**  
    - Generate a refined plot based on an interactive chat conversation.  
    - Users can discuss plot improvements, character arcs, and story structure through natural conversation.  
    - The AI generates an updated plot that incorporates the discussion points.
+
+16. **Add Empty Chapters (Writer Assist Mode)**  
+   - Let users insert blank chapters manually.  
+   - Intended to help writers start or continue their own text with AI assistance.
 
 17. **Infill Chapters**  
    - Add the ability to insert a new chapter **between existing ones** to fill narrative gaps.  
@@ -69,6 +69,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 21. **Automatic Translation**  
    - Add automatic **multi-language translation** for full books or chapters.  
    - Universal model-agnostic design, with export to any supported language.  
+   - **Main Language System**: There will be a main language, and translated versions will only allow either re-generation from scratch or generation with minimal changes + manual edits.  
 
 ---
 
@@ -83,28 +84,44 @@ This document outlines the planned development milestones for the **AI Story Gen
    - Extendable to modify **key objects** or **locations** across chapters.  
    - System ensures consistency by updating references in future (and optionally past) chapters.
 
-24. **Import Ebooks**  
+24. **Visual Plot Design**  
+   - A new tab to visualize main events, characters, etc. (e.g., circles for plot items).  
+   - Allows easy definition of parallel narrative threads and their intersections.  
+   - Helps in understanding and defining the story structure visually.
+
+25. **Import Ebooks**  
    - Add the ability to import existing ebooks (EPUB, MOBI, etc.) into the system.  
    - Parse imported books into chapters and structure.  
    - Users can then expand or modify the imported book using all available editing tools.
+
+26. **Book Continuations**  
+   - Support for book sequels (Part 2).  
+   - Support for copying the narrative style of another book (Persona definitions).
+
+27. **Global Draft System**  
+   - Switch between edit modes and add to a 'draft', validating only at the end.  
+   - Edit and chat with the validator based on results.  
+   - Support for undo/redo + quick save project.
 
 ---
 
 ## 🧠 Phase 7 — Experimental & Research Features
 
-25. **Book Comparison System**  
+28. **Book Comparison System**  
    - Compare multiple books via pairwise evaluation (e.g., 4-book tournament → semifinals → final).  
-   - Criteria: writing quality, consistency, emotional impact, etc.
+   - Criteria: writing quality, consistency, emotional impact, etc.  
+   - **Version History**: Support for multiple book generations stored and selectable as part of the same project.  
+   - Project save structure will save all versions (preferably in different files for speed). Comparison runs between these versions.
 
-26. **Generate Audio Book**  
+29. **Generate Audio Book**  
    - Convert generated chapters to **narrated audio** using text-to-speech (TTS).  
    - Voices adjustable by tone, gender, and style (narrative, dramatic, cinematic).  
    - Export as MP3/FLAC or integrated audio player in UI.
 
-27. **Graphic Story Generation**  
+30. **Graphic Story Generation**  
    - Enrich stories with AI-generated illustrations per chapter.
 
-28. **Embedded LLMs & Research-Driven Non-Fiction Mode**  
+31. **Embedded LLMs & Research-Driven Non-Fiction Mode**  
    - Add support for embedded or local assistant models to perform factual research before writing.  
    - Ideal for **biographies, essays, or technical non-fiction** where factual correctness is essential.  
    - *Low priority / experimental feature.*
@@ -115,13 +132,13 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 | Feature | Status |
 |----------|--------|
-| **Add Empty Chapters (Writer Assist Mode)** | ⏳ Planned |
 | **Stop Edit Pipeline** | ⏳ In Progress |
 | **Draft Review System** | ⏳ Planned |
 | **Export to EPUB** | 🔜 Future |
 | **Public GitHub Repository** | 🔜 Future |
 | **Generate EPUB Cover Image** | 🔜 Future |
 | **AI Chat for Refined Plot** | 🔜 Future |
+| **Add Empty Chapters (Writer Assist Mode)** | ⏳ Planned |
 | **Infill Chapters** | 🔜 Future |
 | **Outfill Chapters** | 🔜 Future |
 | **Settings Tab** | 🔜 Future |
@@ -129,7 +146,10 @@ This document outlines the planned development milestones for the **AI Story Gen
 | **Automatic Translation** | 🔜 Future |
 | **Advanced Cross-Chapter Chat** | 🔜 Future |
 | **Character & Object Modification** | 🔜 Future |
+| **Visual Plot Design** | 🔜 Future |
 | **Import Ebooks** | 🔜 Future |
+| **Book Continuations** | 🔜 Future |
+| **Global Draft System** | 🔜 Future |
 | **Book Comparison System** | 🔬 Experimental |
 | **Generate Audio Book** | 🔬 Experimental |
 | **Graphic Story Generation** | 🔬 Experimental |
