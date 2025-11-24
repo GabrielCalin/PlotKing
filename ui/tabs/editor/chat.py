@@ -136,50 +136,90 @@ def clear_chat(section, current_log):
 def diff_handler(current_text, initial_text, diff_btn_label):
     """
     Toggles between Draft view and Diff view.
-    Uses word-level inline diff (Red for removed, Green for added).
+    Uses paragraph-level diffing with inline word-level diffs for modifications.
     """
     if diff_btn_label == "⚖️ Diff":
         import re
         
-        # Tokenize text into words and whitespace
-        # This regex splits by keeping delimiters (whitespace)
-        def tokenize(text):
+        # 1. Tokenize by paragraphs (splitting by double newlines)
+        def tokenize_paragraphs(text):
+            return re.split(r'(\n\n+)', text)
+
+        # 2. Tokenize by words (keeping whitespace)
+        def tokenize_words(text):
             return re.split(r'(\s+)', text)
 
-        initial_tokens = tokenize(initial_text)
-        current_tokens = tokenize(current_text)
+        initial_paras = tokenize_paragraphs(initial_text)
+        current_paras = tokenize_paragraphs(current_text)
         
-        matcher = difflib.SequenceMatcher(None, initial_tokens, current_tokens)
+        matcher = difflib.SequenceMatcher(None, initial_paras, current_paras)
         
         html_parts = []
         
-        # Style constants
-        STYLE_DEL = 'background-color: #ffeef0; color: #b31d28; text-decoration: line-through;'
-        STYLE_INS = 'background-color: #e6ffed; color: #22863a;'
+        # CSS classes are defined in editor.css
+        # .diff-view, .diff-del, .diff-ins, .diff-del-word, .diff-ins-word
         
         for opcode, a0, a1, b0, b1 in matcher.get_opcodes():
             if opcode == 'equal':
-                # Unchanged text
-                html_parts.append("".join(initial_tokens[a0:a1]))
+                # Unchanged paragraphs
+                for i in range(a0, a1):
+                    html_parts.append(initial_paras[i])
+            
             elif opcode == 'delete':
-                # Deleted text
-                deleted_text = "".join(initial_tokens[a0:a1])
-                html_parts.append(f'<span style="{STYLE_DEL}">{deleted_text}</span>')
+                # Deleted paragraphs
+                for i in range(a0, a1):
+                    # Wrap entire paragraph in delete style
+                    html_parts.append(f'<div class="diff-del">{initial_paras[i]}</div>')
+            
             elif opcode == 'insert':
-                # Inserted text
-                inserted_text = "".join(current_tokens[b0:b1])
-                html_parts.append(f'<span style="{STYLE_INS}">{inserted_text}</span>')
+                # Inserted paragraphs
+                for i in range(b0, b1):
+                    # Wrap entire paragraph in insert style
+                    html_parts.append(f'<div class="diff-ins">{current_paras[i]}</div>')
+            
             elif opcode == 'replace':
-                # Replaced text (delete + insert)
-                deleted_text = "".join(initial_tokens[a0:a1])
-                inserted_text = "".join(current_tokens[b0:b1])
-                html_parts.append(f'<span style="{STYLE_DEL}">{deleted_text}</span>')
-                html_parts.append(f'<span style="{STYLE_INS}">{inserted_text}</span>')
+                # Replaced paragraphs
+                # If it's a 1-to-1 replacement, try word-level diff
+                if (a1 - a0) == 1 and (b1 - b0) == 1:
+                    p_old = initial_paras[a0]
+                    p_new = current_paras[b0]
+                    
+                    # Check if it's just a newline change (which happens with the split)
+                    if not p_old.strip() and not p_new.strip():
+                         html_parts.append(p_new)
+                         continue
+
+                    w_matcher = difflib.SequenceMatcher(None, tokenize_words(p_old), tokenize_words(p_new))
+                    
+                    para_html = []
+                    for w_opcode, wa0, wa1, wb0, wb1 in w_matcher.get_opcodes():
+                        if w_opcode == 'equal':
+                            para_html.append("".join(tokenize_words(p_old)[wa0:wa1]))
+                        elif w_opcode == 'delete':
+                            del_text = "".join(tokenize_words(p_old)[wa0:wa1])
+                            para_html.append(f'<span class="diff-del-word">{del_text}</span>')
+                        elif w_opcode == 'insert':
+                            ins_text = "".join(tokenize_words(p_new)[wb0:wb1])
+                            para_html.append(f'<span class="diff-ins-word">{ins_text}</span>')
+                        elif w_opcode == 'replace':
+                            del_text = "".join(tokenize_words(p_old)[wa0:wa1])
+                            ins_text = "".join(tokenize_words(p_new)[wb0:wb1])
+                            para_html.append(f'<span class="diff-del-word">{del_text}</span>')
+                            para_html.append(f'<span class="diff-ins-word">{ins_text}</span>')
+                    
+                    html_parts.append("".join(para_html))
+                else:
+                    # Block replacement (too different or multi-paragraph)
+                    # Show old block as deleted, new block as inserted
+                    for i in range(a0, a1):
+                        html_parts.append(f'<div class="diff-del">{initial_paras[i]}</div>')
+                    for i in range(b0, b1):
+                        html_parts.append(f'<div class="diff-ins">{current_paras[i]}</div>')
         
         final_html = "".join(html_parts)
         
-        # Wrap in a container to preserve whitespace and styling
-        final_html = f'<div style="white-space: pre-wrap; font-family: monospace, sans-serif;">{final_html}</div>'
+        # Wrap in container with class
+        final_html = f'<div class="diff-view">{final_html}</div>'
         
         return (
             gr.update(value=final_html), # viewer_md shows diff

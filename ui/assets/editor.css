@@ -102,3 +102,41 @@
 #chat-input textarea:placeholder-shown {
   overflow-y: hidden !important;
 }
+/* Diff View Styling */
+.diff-view {
+  white-space: pre-wrap;
+  font-family: inherit; /* Use app font, not monospace */
+  line-height: 1.6;
+  color: var(--body-text-color);
+}
+
+.diff-del {
+  background-color: #ffeef0;
+  color: #b31d28;
+  display: block; /* Ensure paragraphs are blocks */
+  text-decoration: none; /* Don't strike through whole blocks, too messy */
+  border-left: 3px solid #b31d28;
+  padding-left: 8px;
+  margin: 4px 0;
+}
+
+.diff-ins {
+  background-color: #e6ffed;
+  color: #22863a;
+  display: block;
+  border-left: 3px solid #22863a;
+  padding-left: 8px;
+  margin: 4px 0;
+}
+
+.diff-del-word {
+  background-color: #ffeef0;
+  color: #b31d28;
+  text-decoration: line-through;
+}
+
+.diff-ins-word {
+  background-color: #e6ffed;
+  color: #22863a;
+  font-weight: 500;
+}
