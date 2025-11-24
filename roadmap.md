@@ -6,10 +6,6 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## 🧭 Phase 2 — User Experience & Creativity Tools
 
-10. **Stop Edit Pipeline**  
-   - Allow users to stop/cancel the edit pipeline while it's running.  
-   - Gracefully handle partial completion and preserve any completed edits.
-
 11. **Draft Review System**  
    - When the edit pipeline finishes, all changes are saved as drafts.  
    - User is presented with choices: **revert all**, **accept all**, **regenerate partial**, and **accept partial**.  
@@ -132,8 +128,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 | Feature | Status |
 |----------|--------|
-| **Stop Edit Pipeline** | ⏳ In Progress |
-| **Draft Review System** | ⏳ Planned |
+| **Draft Review System** | ⏳ In Progress |
 | **Export to EPUB** | 🔜 Future |
 | **Public GitHub Repository** | 🔜 Future |
 | **Generate EPUB Cover Image** | 🔜 Future |
