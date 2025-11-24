@@ -6,10 +6,6 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## 🧭 Phase 2 — User Experience & Creativity Tools
 
-9. **AI Chat per Chapter**  
-   - Add an interactive chat panel to discuss or request changes for a specific chapter.  
-   - A supervising LLM ensures narrative consistency and, when necessary, re-writes dependent chapters.
-
 10. **Add Empty Chapters (Writer Assist Mode)**  
    - Let users insert blank chapters manually.  
    - Intended to help writers start or continue their own text with AI assistance.
@@ -119,9 +115,8 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 | Feature | Status |
 |----------|--------|
-| **AI Chat per Chapter** | ⏳ In Progress |
 | **Add Empty Chapters (Writer Assist Mode)** | ⏳ Planned |
-| **Stop Edit Pipeline** | ⏳ Planned |
+| **Stop Edit Pipeline** | ⏳ In Progress |
 | **Draft Review System** | ⏳ Planned |
 | **Export to EPUB** | 🔜 Future |
 | **Public GitHub Repository** | 🔜 Future |
