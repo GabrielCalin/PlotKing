@@ -648,6 +648,13 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         inputs=[selected_section, status_log],
         outputs=[chat_history, status_log, status_strip, chatbot]
     )
+
+    chatbot.clear(
+        fn=Chat.clear_chat,
+        inputs=[selected_section, status_log],
+        outputs=[chat_history, status_log, status_strip, chatbot]
+    )
+
     
     chat_diff_btn.click(
         fn=Chat.diff_handler,
