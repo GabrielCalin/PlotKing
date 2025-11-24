@@ -89,7 +89,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 chatbot = gr.Chatbot(
                     label="Plot King",
                     value=[{"role": "assistant", "content": Chat.PLOT_KING_GREETING}],
-                    height=300,
+                    height=350,
                     elem_id="editor-chatbot",
                     avatar_images=(None, "https://api.dicebear.com/7.x/bottts/svg?seed=PlotKing"),
                     bubble_full_width=False,
@@ -141,7 +141,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             viewer_md = gr.Markdown(
                 value="_Nothing selected_",
                 elem_id="editor-viewer",
-                height=600,
+                height=850,
             )
             editor_tb = gr.Textbox(
                 label="Edit Section",
