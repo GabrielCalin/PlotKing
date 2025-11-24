@@ -429,9 +429,9 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     )
 
     stop_updates_btn.click(
-        fn=lambda: {"stop": True},
+        fn=lambda: ({"stop": True}, gr.update(interactive=False)),
         inputs=None,
-        outputs=[stop_signal],
+        outputs=[stop_signal, stop_updates_btn],
         queue=False
     )
     

@@ -34,7 +34,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
             gr.update(visible=False),   # hide Validation Title
             gr.update(visible=False),   # hide Validation Box
             gr.update(visible=False),   # hide Apply Updates
-            gr.update(visible=True),    # SHOW Stop Button
+            gr.update(visible=True, interactive=True),    # SHOW Stop Button (interactive)
             gr.update(visible=False),   # hide Regenerate
             gr.update(visible=False),   # hide Continue Editing
             gr.update(visible=False),   # hide Discard2
@@ -83,7 +83,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
             new_log += "\n"
         
         if stop_signal and stop_signal.get("stop"):
-             new_log, status_update = append_status(new_log, f"🛑 ({section}) Process terminated.")
+             new_log, status_update = append_status(new_log, f"🛑 ({section}) Process terminated by user.")
         else:
              new_log, status_update = append_status(new_log, f"✅ ({section}) Synced and sections adapted.")
 
