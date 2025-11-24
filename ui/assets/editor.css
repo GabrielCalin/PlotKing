@@ -93,3 +93,12 @@
 #editor-chatbot .gradio-container {
   font-size: 0.85rem !important;
 }
+
+/* Chat Input Scrollbar Fix */
+#chat-input textarea {
+  overflow-y: auto !important;
+}
+
+#chat-input textarea:placeholder-shown {
+  overflow-y: hidden !important;
+}

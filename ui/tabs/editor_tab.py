@@ -100,7 +100,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                     placeholder="Ask for suggestions or request edits...",
                     lines=1,
                     max_lines=10,
-                    interactive=True
+                    interactive=True,
+                    elem_id="chat-input",
                 )
                 with gr.Row():
                     chat_send_btn = gr.Button("📩 Send", variant="primary", interactive=False, scale=1, min_width=0)
