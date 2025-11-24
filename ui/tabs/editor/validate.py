@@ -3,14 +3,28 @@ import ui.editor_handlers as H
 from utils.logger import merge_logs
 from ui.tabs.editor.utils import append_status, remove_highlight
 
-def apply_updates(section, draft, plan, current_log, create_epoch, current_mode, current_md, stop_signal):
+_stop_flag = False
+
+def request_stop():
+    global _stop_flag
+    _stop_flag = True
+    return gr.update(interactive=False)
+
+def clear_stop():
+    global _stop_flag
+    _stop_flag = False
+
+def should_stop():
+    global _stop_flag
+    return _stop_flag
+
+def apply_updates(section, draft, plan, current_log, create_epoch, current_mode, current_md):
     """
     Aplică modificările și rulează pipeline-ul de editare dacă există secțiuni impactate.
     Este generator dacă există plan, altfel returnează direct.
     """
     # Reset stop signal at start
-    if stop_signal:
-        stop_signal["stop"] = False
+    clear_stop()
 
     # In Rewrite mode, use current_md (without highlights) instead of draft from editor_tb
     if current_mode == "Rewrite" and current_md:
@@ -49,7 +63,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
         
         for result in H.editor_apply(section, draft_to_save, plan):
             # Check for stop signal
-            if stop_signal and stop_signal.get("stop"):
+            if should_stop():
                 new_log, status_update = append_status(new_log, f"🛑 ({section}) Update stopped by user.")
                 break
 
@@ -82,7 +96,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
         if new_log and not new_log.endswith("\n"):
             new_log += "\n"
         
-        if stop_signal and stop_signal.get("stop"):
+        if should_stop():
              new_log, status_update = append_status(new_log, f"🛑 ({section}) Process terminated by user.")
         else:
              new_log, status_update = append_status(new_log, f"✅ ({section}) Synced and sections adapted.")

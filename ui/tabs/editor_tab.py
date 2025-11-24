@@ -27,7 +27,6 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     selected_indices = gr.State(None)  # [start, end] indices pentru selectie
     selected_indices = gr.State(None)  # [start, end] indices pentru selectie
     original_text_before_rewrite = gr.State("")  # textul original inainte de rewrite
-    stop_signal = gr.State({"stop": False})  # Signal to stop updates
     
     # Chat States
     chat_history = gr.State([{"role": "assistant", "content": Chat.PLOT_KING_GREETING}])
@@ -412,7 +411,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     apply_updates_btn.click(
         fn=Validate.apply_updates,
-        inputs=[section_dropdown, editor_tb, pending_plan, status_log, create_sections_epoch, mode_radio, current_md, stop_signal],
+        inputs=[section_dropdown, editor_tb, pending_plan, status_log, create_sections_epoch, mode_radio, current_md],
         outputs=[
             viewer_md, status_strip,
             editor_tb,
@@ -429,9 +428,9 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     )
 
     stop_updates_btn.click(
-        fn=lambda: ({"stop": True}, gr.update(interactive=False)),
+        fn=Validate.request_stop,
         inputs=None,
-        outputs=[stop_signal, stop_updates_btn],
+        outputs=[stop_updates_btn],
         queue=False
     )
     
