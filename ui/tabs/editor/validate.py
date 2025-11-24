@@ -3,11 +3,15 @@ import ui.editor_handlers as H
 from utils.logger import merge_logs
 from ui.tabs.editor.utils import append_status, remove_highlight
 
-def apply_updates(section, draft, plan, current_log, create_epoch, current_mode, current_md):
+def apply_updates(section, draft, plan, current_log, create_epoch, current_mode, current_md, stop_signal):
     """
     Aplică modificările și rulează pipeline-ul de editare dacă există secțiuni impactate.
     Este generator dacă există plan, altfel returnează direct.
     """
+    # Reset stop signal at start
+    if stop_signal:
+        stop_signal["stop"] = False
+
     # In Rewrite mode, use current_md (without highlights) instead of draft from editor_tb
     if current_mode == "Rewrite" and current_md:
         draft_clean = remove_highlight(current_md)
@@ -30,6 +34,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
             gr.update(visible=False),   # hide Validation Title
             gr.update(visible=False),   # hide Validation Box
             gr.update(visible=False),   # hide Apply Updates
+            gr.update(visible=True),    # SHOW Stop Button
             gr.update(visible=False),   # hide Regenerate
             gr.update(visible=False),   # hide Continue Editing
             gr.update(visible=False),   # hide Discard2
@@ -43,6 +48,11 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
         )
         
         for result in H.editor_apply(section, draft_to_save, plan):
+            # Check for stop signal
+            if stop_signal and stop_signal.get("stop"):
+                new_log, status_update = append_status(new_log, f"🛑 ({section}) Update stopped by user.")
+                break
+
             if isinstance(result, tuple) and len(result) == 8:
                 expanded_plot, chapters_overview, chapters_full, current_text, dropdown, counter, status_log_text, validation_text = result
                 
@@ -56,6 +66,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
                     gr.update(visible=False),   # hide Validation Title
                     gr.update(visible=False),   # hide Validation Box
                     gr.update(visible=False),   # hide Apply Updates
+                    gr.update(visible=True),    # keep Stop Button visible
                     gr.update(visible=False),   # hide Regenerate
                     gr.update(visible=False),   # hide Continue Editing
                     gr.update(visible=False),   # hide Discard2
@@ -70,7 +81,11 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
         
         if new_log and not new_log.endswith("\n"):
             new_log += "\n"
-        new_log, status_update = append_status(new_log, f"✅ ({section}) Synced and sections adapted.")
+        
+        if stop_signal and stop_signal.get("stop"):
+             new_log, status_update = append_status(new_log, f"🛑 ({section}) Process terminated.")
+        else:
+             new_log, status_update = append_status(new_log, f"✅ ({section}) Synced and sections adapted.")
 
         current_epoch += 1  # Bump create_sections_epoch at final yield too
         yield (
@@ -80,6 +95,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
             gr.update(visible=False),   # hide Validation Title
             gr.update(visible=False),   # hide Validation Box
             gr.update(visible=False),   # hide Apply Updates
+            gr.update(visible=False),   # HIDE Stop Button
             gr.update(visible=False),   # hide Regenerate
             gr.update(visible=False),   # hide Continue Editing
             gr.update(visible=False),   # hide Discard2
@@ -110,6 +126,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
             gr.update(visible=False),   # hide Validation Title
             gr.update(visible=False),   # hide Validation Box
             gr.update(visible=False),   # hide Apply Updates
+            gr.update(visible=False),   # hide Stop Button
             gr.update(visible=False),   # hide Regenerate
             gr.update(visible=False),   # hide Continue Editing
             gr.update(visible=False),   # hide Discard2

@@ -25,7 +25,9 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     status_log = gr.State("")  # pentru append la status_strip
     selected_text = gr.State("")  # textul selectat de user
     selected_indices = gr.State(None)  # [start, end] indices pentru selectie
+    selected_indices = gr.State(None)  # [start, end] indices pentru selectie
     original_text_before_rewrite = gr.State("")  # textul original inainte de rewrite
+    stop_signal = gr.State({"stop": False})  # Signal to stop updates
     
     # Chat States
     chat_history = gr.State([{"role": "assistant", "content": Chat.PLOT_KING_GREETING}])
@@ -130,6 +132,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
             with gr.Row(elem_classes=["validation-row"]):
                 apply_updates_btn = gr.Button("✅ Apply", scale=1, min_width=0, visible=False)
+                stop_updates_btn = gr.Button("🛑 Stop", variant="stop", scale=1, min_width=0, visible=False)
                 regenerate_btn = gr.Button("🔄 Regenerate", scale=1, min_width=0, visible=False)
 
             with gr.Row(elem_classes=["validation-row"]):
@@ -409,12 +412,12 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     apply_updates_btn.click(
         fn=Validate.apply_updates,
-        inputs=[section_dropdown, editor_tb, pending_plan, status_log, create_sections_epoch, mode_radio, current_md],
+        inputs=[section_dropdown, editor_tb, pending_plan, status_log, create_sections_epoch, mode_radio, current_md, stop_signal],
         outputs=[
             viewer_md, status_strip,
             editor_tb,
             validation_title, validation_box,
-            apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
+            apply_updates_btn, stop_updates_btn, regenerate_btn, continue_btn, discard2_btn,
             start_edit_btn,
             rewrite_section,
             mode_radio, section_dropdown,
@@ -423,6 +426,13 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             create_sections_epoch,  # bump create_sections_epoch to notify Create tab
         ],
         queue=True,
+    )
+
+    stop_updates_btn.click(
+        fn=lambda: {"stop": True},
+        inputs=None,
+        outputs=[stop_signal],
+        queue=False
     )
     
     continue_btn.click(
