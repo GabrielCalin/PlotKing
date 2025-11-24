@@ -9,6 +9,7 @@ from ui.rewrite_presets import REWRITE_PRESETS
 from ui.tabs.editor.utils import (
     append_status,
     update_instructions_from_preset,
+    diff_handler,
 )
 import ui.tabs.editor.manual as Manual
 import ui.tabs.editor.rewrite as Rewrite
@@ -666,7 +667,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     
     chat_diff_btn.click(
-        fn=Chat.diff_handler,
+        fn=diff_handler,
         inputs=[current_md, initial_text_before_chat, chat_diff_btn],
         outputs=[viewer_md, chat_diff_btn]
     )
