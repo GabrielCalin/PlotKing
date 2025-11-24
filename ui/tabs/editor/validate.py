@@ -64,7 +64,6 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
         for result in H.editor_apply(section, draft_to_save, plan):
             # Check for stop signal
             if should_stop():
-                new_log, status_update = append_status(new_log, f"🛑 ({section}) Update stopped by user.")
                 break
 
             if isinstance(result, tuple) and len(result) == 8:
@@ -97,7 +96,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
             new_log += "\n"
         
         if should_stop():
-             new_log, status_update = append_status(new_log, f"🛑 ({section}) Process terminated by user.")
+             new_log, status_update = append_status(new_log, f"🛑 ({section}) Adaptive editing pipeline stopped!")
         else:
              new_log, status_update = append_status(new_log, f"✅ ({section}) Synced and sections adapted.")
 
