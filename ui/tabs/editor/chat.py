@@ -235,9 +235,6 @@ def diff_handler(current_text, initial_text, diff_btn_label):
         
         final_html = "".join(html_parts)
         
-        # Wrap in container with class
-        final_html = f'<div class="diff-view">{final_html}</div>'
-        
         return (
             gr.update(value=final_html), # viewer_md shows diff
             gr.update(value="📝 Show Draft"), # Toggle button label
