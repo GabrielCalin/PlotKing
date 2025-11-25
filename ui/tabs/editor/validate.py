@@ -128,10 +128,10 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
     current_epoch += 1
     
     # Final yield: Show Draft Review Panel
-    # Here we DO want to ensure the viewer shows the draft of the current section
     viewer_content = drafts.get(section, draft_to_save)
     yield (
-        gr.update(value=viewer_content, visible=True),
+        gr.update(), # viewer_md - NO CHANGE
+
         gr.update(value=new_log, visible=True),
         gr.update(visible=False),
         gr.update(visible=False),
