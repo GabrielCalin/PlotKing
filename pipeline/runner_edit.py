@@ -54,16 +54,20 @@ def run_edit_pipeline_stream(
         impacted_sections: Lista de nume de secțiuni impactate
     
     Yields:
-        (expanded_plot, chapters_overview, chapters_full, current_text, dropdown, counter, status_log, validation_text)
+        (expanded_plot, chapters_overview, chapters_full, current_text, dropdown, counter, status_log, validation_text, drafts_dict)
     """
     clear_stop()
     
     checkpoint = get_checkpoint()
     if not checkpoint:
-        yield "", "", [], "", gr.update(choices=[]), "_Error_", "⚠️ No checkpoint found.", ""
+        yield "", "", [], "", gr.update(choices=[]), "_Error_", "⚠️ No checkpoint found.", "", {}
         return
     
+    # Initialize state from checkpoint (temporary state)
     state = PipelineContext.from_checkpoint(checkpoint)
+    
+    # Dictionary to store drafts: {section_name: new_content}
+    drafts = {}
     
     # Creează un log nou doar pentru edit pipeline (nu modificăm state.status_log existent)
     edit_log = []
@@ -84,9 +88,10 @@ def run_edit_pipeline_stream(
         "_Adapting sections..._",
         "\n".join(edit_log),
         state.validation_text,
+        drafts
     )
     
-    if (yield from _maybe_pause_pipeline("edit pipeline start", state)):
+    if (yield from _maybe_pause_pipeline("edit pipeline start", state, drafts)):
         return
     
     # 1. Edit Expanded Plot dacă e impactat
@@ -103,6 +108,7 @@ def run_edit_pipeline_stream(
                 "_Adapting Expanded Plot..._",
                 "\n".join(edit_log),
                 state.validation_text,
+                drafts
             )
             
             original_plot = state.expanded_plot or ""
@@ -113,8 +119,9 @@ def run_edit_pipeline_stream(
                 diff_summary=diff_summary,
                 edited_section=edited_section,
             )
+            drafts["Expanded Plot"] = state.expanded_plot
             log_ui(edit_log, "✅ Expanded Plot adapted.")
-            save_checkpoint(state.__dict__)
+            # DO NOT SAVE CHECKPOINT
             
             yield (
                 state.expanded_plot or "",
@@ -125,9 +132,10 @@ def run_edit_pipeline_stream(
                 "_Expanded Plot adapted_",
                 "\n".join(edit_log),
                 state.validation_text,
+                drafts
             )
             
-            if (yield from _maybe_pause_pipeline("expanded plot adaptation", state)):
+            if (yield from _maybe_pause_pipeline("expanded plot adaptation", state, drafts)):
                 return
     
     # 2. Edit Chapters Overview dacă e impactat
@@ -144,6 +152,7 @@ def run_edit_pipeline_stream(
                 "_Adapting Chapters Overview..._",
                 "\n".join(edit_log),
                 state.validation_text,
+                drafts
             )
             
             original_overview = state.chapters_overview or ""
@@ -154,8 +163,9 @@ def run_edit_pipeline_stream(
                 diff_summary=diff_summary,
                 edited_section=edited_section,
             )
+            drafts["Chapters Overview"] = state.chapters_overview
             log_ui(edit_log, "✅ Chapters Overview adapted.")
-            save_checkpoint(state.__dict__)
+            # DO NOT SAVE CHECKPOINT
             
             yield (
                 state.expanded_plot or "",
@@ -166,9 +176,10 @@ def run_edit_pipeline_stream(
                 "_Chapters Overview adapted_",
                 "\n".join(edit_log),
                 state.validation_text,
+                drafts
             )
             
-            if (yield from _maybe_pause_pipeline("chapters overview adaptation", state)):
+            if (yield from _maybe_pause_pipeline("chapters overview adaptation", state, drafts)):
                 return
     
     # 3. Edit capitolele impactate
@@ -196,6 +207,7 @@ def run_edit_pipeline_stream(
             f"_Adapting {chapter_name}..._",
             "\n".join(edit_log),
             state.validation_text,
+            drafts
         )
         
         original_chapter = state.chapters_full[chapter_num - 1] or ""
@@ -209,8 +221,9 @@ def run_edit_pipeline_stream(
         )
         
         state.chapters_full[chapter_num - 1] = edited_chapter
+        drafts[chapter_name] = edited_chapter
         log_ui(edit_log, f"✅ {chapter_name} adapted.")
-        save_checkpoint(state.__dict__)
+        # DO NOT SAVE CHECKPOINT
         
         yield (
             state.expanded_plot or "",
@@ -221,9 +234,10 @@ def run_edit_pipeline_stream(
             f"_{chapter_name} adapted_",
             "\n".join(edit_log),
             state.validation_text,
+            drafts
         )
         
-        if (yield from _maybe_pause_pipeline(f"{chapter_name} adaptation", state)):
+        if (yield from _maybe_pause_pipeline(f"{chapter_name} adaptation", state, drafts)):
             return
     
     # Finalizare
@@ -232,7 +246,7 @@ def run_edit_pipeline_stream(
     dropdown_final = gr.update(choices=final_choices)
     counter_final = f"✅ Adaptation complete for {len(impacted_sections)} section(s)"
     
-    save_checkpoint(state.__dict__)
+    # DO NOT SAVE CHECKPOINT
     
     yield (
         state.expanded_plot or "",
@@ -243,14 +257,15 @@ def run_edit_pipeline_stream(
         counter_final,
         "\n".join(edit_log),
         state.validation_text,
+        drafts
     )
 
 
-def _maybe_pause_pipeline(step_label: str, state: PipelineContext):
+def _maybe_pause_pipeline(step_label: str, state: PipelineContext, drafts: dict):
     """Helper pentru pauză pipeline (similar cu runner.py)."""
     if not is_stop_requested():
         return False
-    save_checkpoint(state.__dict__)
+    # DO NOT SAVE CHECKPOINT
     log_ui(state.status_log, f"🛑 Stop requested — pipeline paused after {step_label}.")
     yield (
         state.expanded_plot or "",
@@ -261,6 +276,7 @@ def _maybe_pause_pipeline(step_label: str, state: PipelineContext):
         "_Paused_",
         "\n".join(state.status_log),
         state.validation_text,
+        drafts
     )
     return True
 

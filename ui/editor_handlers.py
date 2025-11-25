@@ -206,31 +206,16 @@ def editor_validate(section, draft):
 def editor_apply(section, draft, plan):
     """
     Aplică modificarea și rulează pipeline-ul de editare dacă există secțiuni impactate.
-    Returnează (saved_text, preview_text) și rulează pipeline-ul de editare.
+    Returnează drafts (dict) și rulează pipeline-ul de editare.
     """
-    from pipeline.state_manager import get_checkpoint, save_checkpoint
+    from pipeline.state_manager import get_checkpoint
     
     checkpoint = get_checkpoint()
     if not checkpoint:
-        return draft, draft
+        return {section: draft}
     
-    # Salvează modificarea user-ului în checkpoint
-    updated_checkpoint = checkpoint.copy()
-    if section == "Expanded Plot":
-        updated_checkpoint["expanded_plot"] = draft
-    elif section == "Chapters Overview":
-        updated_checkpoint["chapters_overview"] = draft
-    elif section.startswith("Chapter "):
-        try:
-            chapter_num = int(section.split(" ")[1])
-            chapters_full = list(updated_checkpoint.get("chapters_full", []))
-            if 1 <= chapter_num <= len(chapters_full):
-                chapters_full[chapter_num - 1] = draft
-                updated_checkpoint["chapters_full"] = chapters_full
-        except (ValueError, IndexError):
-            pass
-    
-    save_checkpoint(updated_checkpoint)
+    # Initialize drafts with the user's manual edit
+    drafts = {section: draft}
     
     # Dacă există plan cu secțiuni impactate, rulează pipeline-ul de editare
     if plan and isinstance(plan, dict):
@@ -241,16 +226,33 @@ def editor_apply(section, draft, plan):
         
         if impacted:
             from pipeline.runner_edit import run_edit_pipeline_stream
-            yield from run_edit_pipeline_stream(
+            
+            # Yield initial drafts (just the user edit)
+            yield drafts
+            
+            for result in run_edit_pipeline_stream(
                 edited_section=edited_section,
                 diff_data=diff_data,
                 impact_data=impact_data,
                 impacted_sections=impacted,
-            )
+            ):
+                # result is a tuple, the last element is the drafts dict
+                if isinstance(result, tuple) and len(result) >= 9:
+                    pipeline_drafts = result[8]
+                    # Update our drafts with what the pipeline produced
+                    drafts.update(pipeline_drafts)
+                    
+                    # Yield the full result from pipeline (caller expects this structure)
+                    # We pass drafts as part of the result or handle it in the caller
+                    # The caller (validate.py) expects specific tuple unpacking
+                    yield result
+                else:
+                    # Fallback or error state
+                    yield result
             return
     
-    # Dacă nu există plan sau nu sunt secțiuni impactate, doar returnează textul
-    return draft, draft
+    # Dacă nu există plan sau nu sunt secțiuni impactate, doar returnează draft-ul inițial
+    return drafts
 
 def force_edit(section, draft):
     """Aplică modificarea direct în checkpoint, fără validare."""
