@@ -43,7 +43,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
     # Yield initial status
     new_log, status_update = append_status(current_log, f"✅ ({section}) Starting update pipeline...")
     yield (
-        gr.update(visible=True), # viewer
+        gr.update(value=draft_to_save, visible=True), # viewer - show initial draft
         status_update, # status_strip
         gr.update(visible=False), # editor
         gr.update(visible=False), # validation_title
@@ -57,12 +57,13 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
         gr.update(visible=False), # rewrite_section
         gr.update(value="View", interactive=False), # mode_radio
         gr.update(interactive=True), # section_dropdown
-        gr.update(), # current_md
+        draft_to_save, # current_md - update with draft
         new_log, # status_log
         current_epoch, # create_sections_epoch
         gr.update(visible=False), # draft_review_panel
         gr.update(choices=[], value=[]), # draft_section_list
-        {} # current_drafts
+        {}, # current_drafts
+        gr.update(visible=True, value="⚖️ Diff") # view_diff_btn - SHOW and reset label
     )
 
     # Call editor_apply which now yields drafts
@@ -82,8 +83,13 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
             current_epoch += 1
             drafts.update(pipeline_drafts)
             
+            # Determine content to show in viewer:
+            # If the currently selected section is in the drafts, show it.
+            # Otherwise keep what's there (or show draft_to_save if it was the initial one)
+            viewer_content = drafts.get(section, draft_to_save)
+            
             yield (
-                gr.update(visible=True), 
+                gr.update(value=viewer_content, visible=True), # Update viewer with latest draft content
                 gr.update(value=new_log, visible=True),
                 gr.update(visible=False),
                 gr.update(visible=False),
@@ -97,12 +103,13 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
                 gr.update(visible=False),
                 gr.update(value="View", interactive=False),
                 gr.update(interactive=True),
-                gr.update(),
+                viewer_content, # current_md
                 new_log,
                 current_epoch,
                 gr.update(visible=False),
                 gr.update(choices=list(drafts.keys()), value=list(drafts.keys())),
-                drafts
+                drafts,
+                gr.update(visible=True) # view_diff_btn
             )
     
     if new_log and not new_log.endswith("\n"):
@@ -116,8 +123,9 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
     current_epoch += 1
     
     # Final yield: Show Draft Review Panel
+    viewer_content = drafts.get(section, draft_to_save)
     yield (
-        gr.update(visible=True),
+        gr.update(value=viewer_content, visible=True),
         gr.update(value=new_log, visible=True),
         gr.update(visible=False),
         gr.update(visible=False),
@@ -131,22 +139,23 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
         gr.update(visible=False),
         gr.update(value="View", interactive=True),
         gr.update(interactive=True),
-        gr.update(),
+        viewer_content, # current_md
         new_log,
         current_epoch,
         gr.update(visible=True), # SHOW Draft Review Panel
         gr.update(choices=list(drafts.keys()), value=list(drafts.keys())), # Populate list
-        drafts # Update state
+        drafts, # Update state
+        gr.update(visible=True, value="⚖️ Diff") # view_diff_btn
     )
 
 def draft_accept_all(current_drafts, current_log, create_epoch):
     """Save all drafts to checkpoint."""
     if not current_drafts:
-        return gr.update(visible=False), gr.update(visible=False), current_log, create_epoch, {}
+        return gr.update(visible=False), gr.update(visible=False), current_log, create_epoch, {}, gr.update(visible=False)
 
     checkpoint = get_checkpoint()
     if not checkpoint:
-        return gr.update(visible=False), gr.update(visible=False), current_log, create_epoch, {}
+        return gr.update(visible=False), gr.update(visible=False), current_log, create_epoch, {}, gr.update(visible=False)
 
     updated_checkpoint = checkpoint.copy()
     for section, content in current_drafts.items():
@@ -174,7 +183,8 @@ def draft_accept_all(current_drafts, current_log, create_epoch):
         status_update,
         new_log,
         new_epoch,
-        {} # Clear drafts
+        {}, # Clear drafts
+        gr.update(visible=False) # Hide diff button
     )
 
 def draft_revert_all(current_log):
@@ -184,13 +194,14 @@ def draft_revert_all(current_log):
         gr.update(visible=False), # Hide draft panel
         status_update,
         new_log,
-        {} # Clear drafts
+        {}, # Clear drafts
+        gr.update(visible=False) # Hide diff button
     )
 
 def draft_accept_selected(selected_sections, current_drafts, current_log, create_epoch):
     """Save selected drafts to checkpoint."""
     if not current_drafts or not selected_sections:
-        return gr.update(), gr.update(), current_log, create_epoch, current_drafts
+        return gr.update(), gr.update(), current_log, create_epoch, current_drafts, gr.update()
 
     checkpoint = get_checkpoint()
     updated_checkpoint = checkpoint.copy()
@@ -228,7 +239,8 @@ def draft_accept_selected(selected_sections, current_drafts, current_log, create
             status_update,
             new_log,
             new_epoch,
-            {}
+            {},
+            gr.update(visible=False) # Hide diff button
         )
     else:
         # Update list
@@ -238,7 +250,8 @@ def draft_accept_selected(selected_sections, current_drafts, current_log, create
             status_update,
             new_log,
             new_epoch,
-            remaining_drafts
+            remaining_drafts,
+            gr.update(visible=True) # Keep diff button
         )
 
 def draft_regenerate_selected(selected_sections, current_drafts, plan, section, current_log, create_epoch):
@@ -277,7 +290,8 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
         status_update,
         new_log,
         current_epoch,
-        drafts
+        drafts,
+        gr.update(visible=True) # Keep diff button
     )
     
     edited_section = plan.get("edited_section", section)
@@ -303,12 +317,17 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
             # Update drafts with NEW values for regenerated sections
             drafts.update(pipeline_drafts)
             
+            # Update viewer if current section is affected
+            viewer_content = drafts.get(section, "")
+            viewer_update = gr.update(value=viewer_content) if viewer_content else gr.update()
+            
             yield (
                 gr.update(visible=False),
                 gr.update(value=new_log, visible=True),
                 new_log,
                 current_epoch,
-                drafts
+                drafts,
+                gr.update(visible=True)
             )
 
     if should_stop():
@@ -321,7 +340,8 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
         status_update,
         new_log,
         current_epoch,
-        drafts
+        drafts,
+        gr.update(visible=True)
     )
 
 def discard_from_validate(section, current_log):

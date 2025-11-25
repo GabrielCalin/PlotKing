@@ -25,4 +25,11 @@ class PipelineContext:
 
     @classmethod
     def from_checkpoint(cls, checkpoint: dict):
-        return cls(**checkpoint)
+        # Create a shallow copy first
+        data = checkpoint.copy()
+        # Deep copy mutable lists to prevent modifying the original checkpoint in memory
+        if "chapters_full" in data and isinstance(data["chapters_full"], list):
+            data["chapters_full"] = list(data["chapters_full"])
+        if "status_log" in data and isinstance(data["status_log"], list):
+            data["status_log"] = list(data["status_log"])
+        return cls(**data)

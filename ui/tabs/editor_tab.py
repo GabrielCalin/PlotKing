@@ -165,7 +165,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 height=850,
             )
             with gr.Row(visible=True) as viewer_controls:
-                view_diff_btn = gr.Button("⚖️ Toggle Diff View", size="sm")
+                view_diff_btn = gr.Button("⚖️ Diff", size="sm", visible=False)
             editor_tb = gr.Textbox(
                 label="Edit Section",
                 lines=35,
@@ -444,23 +444,14 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         draft_content = drafts[section]
         original_content = H.editor_get_section_content(section) or ""
         
-        if "Diff" in btn_label:
-            # Show Diff
-            from ui.tabs.editor.utils import diff_handler
-            # diff_handler expects (current, original, btn)
-            # We want to show what changed in draft vs original
-            # So draft is "current", original is "original"
-            # But diff_handler logic might be inverted depending on usage.
-            # Usually diff(new, old) -> shows changes in new relative to old.
-            
-            # Let's check utils.py diff_handler signature
-            # It takes (current_text, original_text, btn)
-            # And returns (viewer_update, btn_update)
-            
-            return diff_handler(draft_content, original_content, btn_label)
-        else:
-            # Show Draft (Clean)
-            return gr.update(value=draft_content), "⚖️ Toggle Diff View"
+        # Use diff_handler with custom labels for the Draft system
+        from ui.tabs.editor.utils import diff_handler
+        return diff_handler(
+            draft_content, 
+            original_content, 
+            btn_label, 
+            diff_label="⚖️ Diff"
+        )
 
     view_diff_btn.click(
         fn=draft_diff_handler,
@@ -485,6 +476,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             draft_review_panel, # Added
             draft_section_list, # Added
             current_drafts, # Added
+            view_diff_btn, # Added
         ],
         queue=True,
     )
@@ -676,25 +668,25 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     btn_draft_accept_all.click(
         fn=Validate.draft_accept_all,
         inputs=[current_drafts, status_log, create_sections_epoch],
-        outputs=[draft_review_panel, status_strip, status_log, create_sections_epoch, current_drafts]
+        outputs=[draft_review_panel, status_strip, status_log, create_sections_epoch, current_drafts, view_diff_btn]
     )
     
     btn_draft_revert.click(
         fn=Validate.draft_revert_all,
         inputs=[status_log],
-        outputs=[draft_review_panel, status_strip, status_log, current_drafts]
+        outputs=[draft_review_panel, status_strip, status_log, current_drafts, view_diff_btn]
     )
     
     btn_draft_accept_selected.click(
         fn=Validate.draft_accept_selected,
         inputs=[draft_section_list, current_drafts, status_log, create_sections_epoch],
-        outputs=[draft_review_panel, draft_section_list, status_strip, status_log, create_sections_epoch, current_drafts]
+        outputs=[draft_review_panel, draft_section_list, status_strip, status_log, create_sections_epoch, current_drafts, view_diff_btn]
     )
     
     btn_draft_regenerate.click(
         fn=Validate.draft_regenerate_selected,
         inputs=[draft_section_list, current_drafts, pending_plan, selected_section, status_log, create_sections_epoch],
-        outputs=[draft_review_panel, status_strip, status_log, create_sections_epoch, current_drafts],
+        outputs=[draft_review_panel, status_strip, status_log, create_sections_epoch, current_drafts, view_diff_btn],
         queue=True
     )
     

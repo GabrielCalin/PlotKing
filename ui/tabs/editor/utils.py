@@ -61,13 +61,13 @@ def remove_highlight(text):
     # Remove span tags but keep content
     return re.sub(r'<span style="color: red;">(.*?)</span>', r'\1', text, flags=re.DOTALL)
 
-def diff_handler(current_text, initial_text, diff_btn_label):
+def diff_handler(current_text, initial_text, diff_btn_label, show_label="📝 Show Draft", diff_label="⚖️ Diff"):
     """
     Toggles between Draft view and Diff view.
     Uses paragraph-level diffing with inline word-level diffs for modifications.
     Ignores whitespace-only changes to prevent visual noise.
     """
-    if diff_btn_label == "⚖️ Diff":
+    if diff_btn_label == diff_label:
         
         # 1. Tokenize by paragraphs (splitting by single newlines), filtering empty strings
         def tokenize_paragraphs(text):
@@ -164,11 +164,11 @@ def diff_handler(current_text, initial_text, diff_btn_label):
         
         return (
             gr.update(value=final_html), # viewer_md shows diff
-            gr.update(value="📝 Show Draft"), # Toggle button label
+            gr.update(value=show_label), # Toggle button label
         )
     else:
         # Revert to Draft view
         return (
             gr.update(value=current_text), # viewer_md shows draft
-            gr.update(value="⚖️ Diff"), # Toggle button label
+            gr.update(value=diff_label), # Toggle button label
         )
