@@ -208,7 +208,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     def _load_section_content(name, drafts):
         if not name:
-            return "_Empty_", None, "", gr.update(value="View"), "", [], ""
+            return "_Empty_", None, "", gr.update(value="View"), "", [], "", gr.update()
         
         # Check if we have a draft for this section
         if drafts and name in drafts:
