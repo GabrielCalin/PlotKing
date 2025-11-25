@@ -671,20 +671,20 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     # Draft Review Handlers
     btn_draft_accept_all.click(
         fn=Validate.draft_accept_all,
-        inputs=[current_drafts, status_log, create_sections_epoch],
-        outputs=[draft_review_panel, status_strip, status_log, create_sections_epoch, current_drafts, view_diff_btn]
+        inputs=[selected_section, current_drafts, status_log, create_sections_epoch],
+        outputs=[draft_review_panel, status_strip, status_log, create_sections_epoch, current_drafts, view_diff_btn, viewer_md]
     )
     
     btn_draft_revert.click(
         fn=Validate.draft_revert_all,
-        inputs=[status_log],
-        outputs=[draft_review_panel, status_strip, status_log, current_drafts, view_diff_btn]
+        inputs=[selected_section, status_log],
+        outputs=[draft_review_panel, status_strip, status_log, current_drafts, view_diff_btn, viewer_md]
     )
     
     btn_draft_accept_selected.click(
         fn=Validate.draft_accept_selected,
-        inputs=[draft_section_list, current_drafts, status_log, create_sections_epoch],
-        outputs=[draft_review_panel, draft_section_list, status_strip, status_log, create_sections_epoch, current_drafts, view_diff_btn]
+        inputs=[selected_section, draft_section_list, current_drafts, status_log, create_sections_epoch],
+        outputs=[draft_review_panel, draft_section_list, status_strip, status_log, create_sections_epoch, current_drafts, view_diff_btn, viewer_md]
     )
     
     btn_draft_regenerate.click(
