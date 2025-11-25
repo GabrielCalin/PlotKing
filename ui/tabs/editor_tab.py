@@ -147,11 +147,11 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                     interactive=True
                 )
                 with gr.Row():
-                    btn_draft_accept_all = gr.Button("✅ Accept All", variant="primary", scale=1)
-                    btn_draft_revert = gr.Button("❌ Revert All", variant="stop", scale=1)
+                    btn_draft_accept_all = gr.Button("✅ Accept All", variant="primary", scale=1, min_width=0)
+                    btn_draft_revert = gr.Button("❌ Revert All", variant="stop", scale=1, min_width=0)
                 with gr.Row():
-                    btn_draft_accept_selected = gr.Button("✔️ Accept Selected", scale=1)
-                    btn_draft_regenerate = gr.Button("🔄 Regenerate Selected", scale=1)
+                    btn_draft_accept_selected = gr.Button("✔️ Accept Selected", scale=1, min_width=0)
+                    btn_draft_regenerate = gr.Button("🔄 Regenerate Selected", scale=1, min_width=0)
 
             with gr.Row(elem_classes=["validation-row"]):
                 continue_btn = gr.Button("🔁 Back", scale=1, min_width=0, visible=False)
@@ -218,7 +218,11 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             
         # Reset chat history when loading new section
         initial_greeting = [{"role": "assistant", "content": Chat.PLOT_KING_GREETING}]
-        return text, name, text, gr.update(value="View"), text, initial_greeting, text
+        
+        # Reset diff button to default state
+        diff_btn_update = gr.update(value="⚖️ Diff")
+        
+        return text, name, text, gr.update(value="View"), text, initial_greeting, text, diff_btn_update
 
     def _toggle_mode(mode, current_log, current_text):
         # Evită duplicatele: verifică dacă ultimul mesaj este deja "Mode changed to"
@@ -370,7 +374,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     section_dropdown.change(
         fn=_load_section_content,
         inputs=[section_dropdown, current_drafts],
-        outputs=[viewer_md, selected_section, current_md, mode_radio, original_text_before_rewrite, chat_history, initial_text_before_chat],
+        outputs=[viewer_md, selected_section, current_md, mode_radio, original_text_before_rewrite, chat_history, initial_text_before_chat, view_diff_btn],
     )
 
     editor_tb.select(
