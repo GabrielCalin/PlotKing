@@ -320,7 +320,8 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
         new_log,
         current_epoch,
         drafts,
-        gr.update(visible=True) # Keep diff button
+        gr.update(visible=True), # Keep diff button
+        gr.update(visible=True) # Show stop button
     )
     
     from pipeline.runner_edit import run_edit_pipeline_stream
@@ -353,7 +354,8 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
                 new_log,
                 current_epoch,
                 drafts,
-                gr.update(visible=True)
+                gr.update(visible=True),
+                gr.update(visible=True) # Keep stop button visible
             )
 
     if should_stop():
@@ -372,7 +374,8 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
         new_log,
         current_epoch,
         drafts,
-        gr.update(visible=True)
+        gr.update(visible=True),
+        gr.update(visible=False) # Hide stop button
     )
 
 def discard_from_validate(section, current_log):
