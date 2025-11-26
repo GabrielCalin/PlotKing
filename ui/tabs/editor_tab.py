@@ -140,18 +140,31 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             # Draft Review Panel
             with gr.Column(visible=False) as draft_review_panel:
                 gr.Markdown("### 📝 Draft Review")
-                draft_section_list = gr.CheckboxGroup(
-                    label="Drafts to Apply",
+                
+                # Original Draft (the manually edited section) - now a checkbox
+                gr.Markdown("**Original Draft**")
+                original_draft_checkbox = gr.CheckboxGroup(
+                    label="Originally Edited Section",
                     choices=[],
                     value=[],
                     interactive=True
                 )
+                
+                # Auto-Generated Drafts (impacted sections)
+                gr.Markdown("**Auto-Generated Drafts**")
+                generated_drafts_list = gr.CheckboxGroup(
+                    label="AI-Generated Sections",
+                    choices=[],
+                    value=[],
+                    interactive=True
+                )
+                
                 with gr.Row():
                     btn_draft_accept_all = gr.Button("✅ Accept All", variant="primary", scale=1, min_width=0)
                     btn_draft_revert = gr.Button("❌ Revert All", variant="stop", scale=1, min_width=0)
                 with gr.Row():
-                    btn_draft_accept_selected = gr.Button("✔️ Accept Selected", scale=1, min_width=0)
-                    btn_draft_regenerate = gr.Button("🔄 Regenerate Selected", scale=1, min_width=0)
+                    btn_draft_accept_selected = gr.Button("✔️ Accept Selected", scale=1, min_width=0, interactive=False)
+                    btn_draft_regenerate = gr.Button("🔄 Regenerate Selected", scale=1, min_width=0, interactive=False)
 
             with gr.Row(elem_classes=["validation-row"]):
                 continue_btn = gr.Button("🔁 Back", scale=1, min_width=0, visible=False)
@@ -223,6 +236,20 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         diff_btn_update = gr.update(value="⚖️ Diff")
         
         return text, name, text, gr.update(value="View"), text, initial_greeting, text, diff_btn_update
+
+    def _update_draft_buttons(original_selected, generated_selected):
+        """Enable/disable draft action buttons based on selections."""
+        # Accept Selected: enabled if ANY checkbox is selected
+        any_selected = bool(original_selected or generated_selected)
+        
+        # Regenerate Selected: enabled only if auto-generated drafts are selected
+        can_regenerate = bool(generated_selected)
+        
+        return (
+            gr.update(interactive=any_selected),  # btn_draft_accept_selected
+            gr.update(interactive=can_regenerate)  # btn_draft_regenerate
+        )
+
 
     def _toggle_mode(mode, current_log, current_text):
         # Evită duplicatele: verifică dacă ultimul mesaj este deja "Mode changed to"
@@ -478,7 +505,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             status_log,
             create_sections_epoch,  # bump create_sections_epoch to notify Create tab
             draft_review_panel, # Added
-            draft_section_list, # Added
+            original_draft_checkbox, # Added
+            generated_drafts_list, # Added
             current_drafts, # Added
             view_diff_btn, # Added
         ],
@@ -538,7 +566,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             status_log,
             current_md,
             draft_review_panel, # Added
-            draft_section_list, # Added
+            generated_drafts_list, # Added
             current_drafts, # Added
         ],
     )
@@ -683,16 +711,30 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     
     btn_draft_accept_selected.click(
         fn=Validate.draft_accept_selected,
-        inputs=[selected_section, draft_section_list, current_drafts, status_log, create_sections_epoch],
-        outputs=[draft_review_panel, draft_section_list, status_strip, status_log, create_sections_epoch, current_drafts, view_diff_btn, viewer_md]
+        inputs=[selected_section, original_draft_checkbox, generated_drafts_list, current_drafts, status_log, create_sections_epoch],
+        outputs=[draft_review_panel, status_strip, status_log, create_sections_epoch, current_drafts, view_diff_btn, viewer_md]
     )
     
     btn_draft_regenerate.click(
         fn=Validate.draft_regenerate_selected,
-        inputs=[draft_section_list, current_drafts, pending_plan, selected_section, status_log, create_sections_epoch],
-        outputs=[draft_review_panel, status_strip, status_log, create_sections_epoch, current_drafts, view_diff_btn],
+        inputs=[generated_drafts_list, current_drafts, pending_plan, selected_section, status_log, create_sections_epoch],
+        outputs=[draft_review_panel, original_draft_checkbox, generated_drafts_list, status_strip, status_log, create_sections_epoch, current_drafts, view_diff_btn],
         queue=True
     )
+    
+    # Change handlers for checkboxes to enable/disable buttons
+    original_draft_checkbox.change(
+        fn=_update_draft_buttons,
+        inputs=[original_draft_checkbox, generated_drafts_list],
+        outputs=[btn_draft_accept_selected, btn_draft_regenerate]
+    )
+    
+    generated_drafts_list.change(
+        fn=_update_draft_buttons,
+        inputs=[original_draft_checkbox, generated_drafts_list],
+        outputs=[btn_draft_accept_selected, btn_draft_regenerate]
+    )
+
     
     # Chat Event Handlers
     

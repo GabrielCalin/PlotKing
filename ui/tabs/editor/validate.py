@@ -61,7 +61,8 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
         new_log, # status_log
         current_epoch, # create_sections_epoch
         gr.update(visible=False), # draft_review_panel
-        gr.update(choices=[], value=[]), # draft_section_list
+        gr.update(choices=[], value=[]), # original_draft_checkbox
+        gr.update(choices=[], value=[]), # generated_drafts_list
         {}, # current_drafts
         gr.update(visible=True, value="⚖️ Diff") # view_diff_btn - SHOW and reset label
     )
@@ -86,12 +87,11 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
             # Determine content to show in viewer:
             # User requested NOT to update viewer during generation for other sections.
             # We only updated it initially.
-            # However, we still need to define viewer_content for the current_md state update if we want to keep it consistent.
-            # Since we are not updating the viewer, we can just use the current draft for the section we are editing, 
-            # or simply keep the current_md as is (but we don't have access to the *actual* current_md value in the loop easily without passing it through).
-            # Actually, we can just use drafts.get(section, draft_to_save) to keep the state tracking the *current section's* draft.
             
             viewer_content = drafts.get(section, draft_to_save)
+            
+            # Split drafts for UI
+            generated_drafts = [s for s in drafts.keys() if s != section]
 
             yield (
                 gr.update(), # viewer_md - NO CHANGE
@@ -111,8 +111,9 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
                 viewer_content, # current_md - keep updating state just in case
                 new_log,
                 current_epoch,
-                gr.update(visible=False),
-                gr.update(choices=list(drafts.keys()), value=list(drafts.keys())),
+                gr.update(visible=False), # draft_review_panel
+                gr.update(choices=[section], value=[section]), # original_draft_checkbox - auto-select
+                gr.update(choices=generated_drafts, value=generated_drafts), # generated_drafts_list - auto-select
                 drafts,
                 gr.update(visible=True) # view_diff_btn
             )
@@ -128,7 +129,12 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
     current_epoch += 1
     
     # Final yield: Show Draft Review Panel
+    # Split drafts into original (the edited section) and generated (impacted sections)
     viewer_content = drafts.get(section, draft_to_save)
+    
+    # Separate original draft from generated drafts
+    generated_drafts = [s for s in drafts.keys() if s != section]
+    
     yield (
         gr.update(), # viewer_md - NO CHANGE
 
@@ -149,7 +155,8 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
         new_log,
         current_epoch,
         gr.update(visible=True), # SHOW Draft Review Panel
-        gr.update(choices=list(drafts.keys()), value=list(drafts.keys())), # Populate list
+        gr.update(choices=[section], value=[section]), # original_draft_checkbox - auto-select
+        gr.update(choices=generated_drafts, value=generated_drafts), # generated_drafts_list - auto-select all
         drafts, # Update state
         gr.update(visible=True, value="⚖️ Diff") # view_diff_btn
     )
@@ -213,17 +220,23 @@ def draft_revert_all(current_section, current_log):
         gr.update(value=fresh_content) # Update viewer with fresh content
     )
 
-def draft_accept_selected(current_section, selected_sections, current_drafts, current_log, create_epoch):
-    """Save selected drafts to checkpoint."""
-    if not current_drafts or not selected_sections:
-        return gr.update(), gr.update(), current_log, create_epoch, current_drafts, gr.update(), gr.update()
+def draft_accept_selected(current_section, original_selected, generated_selected, current_drafts, current_log, create_epoch):
+    """Save selected drafts to checkpoint, discard unselected, and close panel."""
+    if not current_drafts:
+        return gr.update(visible=False), gr.update(), current_log, create_epoch, {}, gr.update(visible=False), gr.update()
 
     checkpoint = get_checkpoint()
     updated_checkpoint = checkpoint.copy()
     
-    remaining_drafts = current_drafts.copy()
+    # Combine selections from both checkboxes
+    sections_to_save = set()
+    if original_selected:
+        sections_to_save.update(original_selected)
+    if generated_selected:
+        sections_to_save.update(generated_selected)
     
-    for section in selected_sections:
+    # Only save what user actually selected
+    for section in sections_to_save:
         if section in current_drafts:
             content = current_drafts[section]
             if section == "Expanded Plot":
@@ -239,47 +252,26 @@ def draft_accept_selected(current_section, selected_sections, current_drafts, cu
                         updated_checkpoint["chapters_full"] = chapters_full
                 except (ValueError, IndexError):
                     pass
-            del remaining_drafts[section]
 
     save_checkpoint(updated_checkpoint)
     
-    new_log, status_update = append_status(current_log, f"✅ Accepted {len(selected_sections)} drafts.")
+    # Count how many selected
+    new_log, status_update = append_status(current_log, f"✅ Accepted {len(sections_to_save)} drafts. Unselected drafts discarded.")
     new_epoch = (create_epoch or 0) + 1
     
-    # Get content for viewer. 
-    # If current section was accepted, we show fresh checkpoint content.
-    # If it was NOT accepted (and still in remaining_drafts), we show the draft.
-    # If it was NOT accepted (and not in drafts - unlikely if we are here), show checkpoint.
-    
-    if current_section in remaining_drafts:
-        viewer_val = remaining_drafts[current_section]
-    else:
-        viewer_val = H.editor_get_section_content(current_section) or ""
+    # Get fresh content for viewer (checkpoint content)
+    viewer_val = H.editor_get_section_content(current_section) or ""
 
-    if not remaining_drafts:
-        # All done
-        return (
-            gr.update(visible=False),
-            gr.update(choices=[], value=[]),
-            status_update,
-            new_log,
-            new_epoch,
-            {},
-            gr.update(visible=False), # Hide diff button
-            gr.update(value=viewer_val) # Update viewer
-        )
-    else:
-        # Update list
-        return (
-            gr.update(visible=True),
-            gr.update(choices=list(remaining_drafts.keys()), value=list(remaining_drafts.keys())),
-            status_update,
-            new_log,
-            new_epoch,
-            remaining_drafts,
-            gr.update(visible=True), # Keep diff button
-            gr.update(value=viewer_val) # Update viewer
-        )
+    # ALWAYS close the panel and clear drafts
+    return (
+        gr.update(visible=False), # Hide panel
+        status_update,
+        new_log,
+        new_epoch,
+        {}, # Clear ALL drafts
+        gr.update(visible=False), # Hide diff button
+        gr.update(value=viewer_val) # Update viewer
+    )
 
 def draft_regenerate_selected(selected_sections, current_drafts, plan, section, current_log, create_epoch):
     """Regenerate selected sections."""
@@ -312,8 +304,13 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
     
     new_log, status_update = append_status(current_log, f"🔄 Regenerating {len(filtered_impacted)} sections...")
     
+    # Prepare initial UI updates
+    generated_drafts = [s for s in drafts.keys() if s != section]
+    
     yield (
         gr.update(visible=False), # Hide draft panel during regen
+        gr.update(choices=[section], value=[section]), # original_draft_checkbox
+        gr.update(choices=generated_drafts, value=generated_drafts), # generated_drafts_list
         status_update,
         new_log,
         current_epoch,
@@ -344,12 +341,13 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
             # Update drafts with NEW values for regenerated sections
             drafts.update(pipeline_drafts)
             
-            # Update viewer if current section is affected
-            viewer_content = drafts.get(section, "")
-            viewer_update = gr.update(value=viewer_content) if viewer_content else gr.update()
+            # Update generated drafts list
+            generated_drafts = [s for s in drafts.keys() if s != section]
             
             yield (
                 gr.update(visible=False),
+                gr.update(choices=[section], value=[section]), # original_draft_checkbox
+                gr.update(choices=generated_drafts, value=generated_drafts), # generated_drafts_list
                 gr.update(value=new_log, visible=True),
                 new_log,
                 current_epoch,
@@ -361,9 +359,13 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
          new_log, status_update = append_status(new_log, f"🛑 Regeneration stopped.")
     else:
          new_log, status_update = append_status(new_log, f"✅ Regeneration complete.")
-         
+    
+    # Final update - show panel again
+    generated_drafts = [s for s in drafts.keys() if s != section]
     yield (
         gr.update(visible=True), # Show panel again
+        gr.update(choices=[section], value=[section]), # original_draft_checkbox
+        gr.update(choices=generated_drafts, value=generated_drafts), # generated_drafts_list
         status_update,
         new_log,
         current_epoch,
@@ -396,6 +398,7 @@ def discard_from_validate(section, current_log):
         new_log,
         clean_text,  # current_md - resetat la textul curat din checkpoint
         gr.update(visible=False), # hide draft panel
-        gr.update(choices=[], value=[]), # clear draft list
+        gr.update(choices=[], value=[]), # clear original_draft_checkbox
+        gr.update(choices=[], value=[]), # clear generated_drafts_list
         {} # clear drafts
     )
