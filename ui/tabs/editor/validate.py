@@ -304,12 +304,17 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
     
     new_log, status_update = append_status(current_log, f"🔄 Regenerating {len(filtered_impacted)} sections...")
     
+    edited_section = plan.get("edited_section", section)
+    diff_data = plan.get("diff_data", {})
+    impact_data = plan.get("impact_data", {})
+    
     # Prepare initial UI updates
-    generated_drafts = [s for s in drafts.keys() if s != section]
+    # Use edited_section as the source of truth for the original draft
+    generated_drafts = [s for s in drafts.keys() if s != edited_section]
     
     yield (
         gr.update(visible=False), # Hide draft panel during regen
-        gr.update(choices=[section], value=[section]), # original_draft_checkbox
+        gr.update(choices=[edited_section], value=[edited_section]), # original_draft_checkbox
         gr.update(choices=generated_drafts, value=generated_drafts), # generated_drafts_list
         status_update,
         new_log,
@@ -317,10 +322,6 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
         drafts,
         gr.update(visible=True) # Keep diff button
     )
-    
-    edited_section = plan.get("edited_section", section)
-    diff_data = plan.get("diff_data", {})
-    impact_data = plan.get("impact_data", {})
     
     from pipeline.runner_edit import run_edit_pipeline_stream
     
@@ -342,11 +343,11 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
             drafts.update(pipeline_drafts)
             
             # Update generated drafts list
-            generated_drafts = [s for s in drafts.keys() if s != section]
+            generated_drafts = [s for s in drafts.keys() if s != edited_section]
             
             yield (
                 gr.update(visible=False),
-                gr.update(choices=[section], value=[section]), # original_draft_checkbox
+                gr.update(choices=[edited_section], value=[edited_section]), # original_draft_checkbox
                 gr.update(choices=generated_drafts, value=generated_drafts), # generated_drafts_list
                 gr.update(value=new_log, visible=True),
                 new_log,
@@ -358,13 +359,14 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
     if should_stop():
          new_log, status_update = append_status(new_log, f"🛑 Regeneration stopped.")
     else:
-         new_log, status_update = append_status(new_log, f"✅ Regeneration complete.")
+         # No redundant "Regeneration complete" message, as pipeline already logs completion
+         pass
     
     # Final update - show panel again
-    generated_drafts = [s for s in drafts.keys() if s != section]
+    generated_drafts = [s for s in drafts.keys() if s != edited_section]
     yield (
         gr.update(visible=True), # Show panel again
-        gr.update(choices=[section], value=[section]), # original_draft_checkbox
+        gr.update(choices=[edited_section], value=[edited_section]), # original_draft_checkbox
         gr.update(choices=generated_drafts, value=generated_drafts), # generated_drafts_list
         status_update,
         new_log,
