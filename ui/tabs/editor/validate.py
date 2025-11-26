@@ -19,6 +19,17 @@ def should_stop():
     global _stop_flag
     return _stop_flag
 
+def _get_generated_drafts_list(plan, drafts, exclude_section):
+    """Helper to generate the list of auto-generated drafts from plan and current drafts."""
+    impacted_sections = plan.get("impacted_sections", [])
+    generated_drafts = [s for s in impacted_sections if s != exclude_section]
+    # Ensure any other drafts are also included (just in case)
+    for s in drafts.keys():
+        if s != exclude_section and s not in generated_drafts:
+            generated_drafts.append(s)
+    return generated_drafts
+
+
 def apply_updates(section, draft, plan, current_log, create_epoch, current_mode, current_md):
     """
     Aplică modificările și rulează pipeline-ul de editare dacă există secțiuni impactate.
@@ -90,8 +101,8 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
             
             viewer_content = drafts.get(section, draft_to_save)
             
-            # Split drafts for UI
-            generated_drafts = [s for s in drafts.keys() if s != section]
+            # Split drafts for UI - use plan to show ALL impacted sections even if not generated yet
+            generated_drafts = _get_generated_drafts_list(plan, drafts, section)
 
             yield (
                 gr.update(), # viewer_md - NO CHANGE
@@ -133,7 +144,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
     viewer_content = drafts.get(section, draft_to_save)
     
     # Separate original draft from generated drafts
-    generated_drafts = [s for s in drafts.keys() if s != section]
+    generated_drafts = _get_generated_drafts_list(plan, drafts, section)
     
     yield (
         gr.update(), # viewer_md - NO CHANGE
@@ -158,7 +169,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
         gr.update(choices=[section], value=[section]), # original_draft_checkbox - auto-select
         gr.update(choices=generated_drafts, value=generated_drafts), # generated_drafts_list - auto-select all
         drafts, # Update state
-        gr.update(visible=True, value="⚖️ Diff") # view_diff_btn
+        gr.update(visible=True, value="⚖️ Diff", interactive=True) # view_diff_btn - ENABLED
     )
 
 def draft_accept_all(current_section, current_drafts, current_log, create_epoch):
@@ -313,7 +324,7 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
     
     # Prepare initial UI updates
     # Use edited_section as the source of truth for the original draft
-    generated_drafts = [s for s in drafts.keys() if s != edited_section]
+    generated_drafts = _get_generated_drafts_list(plan, drafts, edited_section)
     
     yield (
         gr.update(visible=False), # Hide draft panel during regen
@@ -324,7 +335,7 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
         current_epoch,
         drafts,
         gr.update(visible=True), # Keep diff button
-        gr.update(visible=True) # Show stop button
+        gr.update(visible=True, interactive=True) # Show and ENABLE stop button
     )
     
     from pipeline.runner_edit import run_edit_pipeline_stream
@@ -347,7 +358,7 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
             drafts.update(pipeline_drafts)
             
             # Update generated drafts list
-            generated_drafts = [s for s in drafts.keys() if s != edited_section]
+            generated_drafts = _get_generated_drafts_list(plan, drafts, edited_section)
             
             yield (
                 gr.update(visible=False),
@@ -371,7 +382,8 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
          pass
     
     # Final update - show panel again
-    generated_drafts = [s for s in drafts.keys() if s != edited_section]
+    generated_drafts = _get_generated_drafts_list(plan, drafts, edited_section)
+
     yield (
         gr.update(visible=True), # Show panel again
         gr.update(choices=[edited_section], value=[edited_section]), # original_draft_checkbox
@@ -380,7 +392,7 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
         new_log,
         current_epoch,
         drafts,
-        gr.update(visible=True),
+        gr.update(visible=True, interactive=True), # view_diff_btn - ENABLED
         gr.update(visible=False) # Hide stop button
     )
 

@@ -233,7 +233,10 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         initial_greeting = [{"role": "assistant", "content": Chat.PLOT_KING_GREETING}]
         
         # Reset diff button to default state
-        diff_btn_update = gr.update(value="⚖️ Diff")
+        if drafts and name in drafts:
+            diff_btn_update = gr.update(value="⚖️ Diff", interactive=True)
+        else:
+            diff_btn_update = gr.update(value="No Draft", interactive=False)
         
         return text, name, text, gr.update(value="View"), text, initial_greeting, text, diff_btn_update
 
