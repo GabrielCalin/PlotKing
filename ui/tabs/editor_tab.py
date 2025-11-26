@@ -568,6 +568,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             draft_review_panel, # Added
             generated_drafts_list, # Added
             current_drafts, # Added
+            view_diff_btn, # Added
         ],
     )
 
@@ -700,19 +701,19 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     btn_draft_accept_all.click(
         fn=Validate.draft_accept_all,
         inputs=[selected_section, current_drafts, status_log, create_sections_epoch],
-        outputs=[draft_review_panel, status_strip, status_log, create_sections_epoch, current_drafts, view_diff_btn, viewer_md]
+        outputs=[draft_review_panel, status_strip, status_log, create_sections_epoch, current_drafts, view_diff_btn, viewer_md, current_md]
     )
     
     btn_draft_revert.click(
         fn=Validate.draft_revert_all,
         inputs=[selected_section, status_log],
-        outputs=[draft_review_panel, status_strip, status_log, current_drafts, view_diff_btn, viewer_md]
+        outputs=[draft_review_panel, status_strip, status_log, current_drafts, view_diff_btn, viewer_md, current_md]
     )
     
     btn_draft_accept_selected.click(
         fn=Validate.draft_accept_selected,
         inputs=[selected_section, original_draft_checkbox, generated_drafts_list, current_drafts, status_log, create_sections_epoch],
-        outputs=[draft_review_panel, status_strip, status_log, create_sections_epoch, current_drafts, view_diff_btn, viewer_md]
+        outputs=[draft_review_panel, status_strip, status_log, create_sections_epoch, current_drafts, view_diff_btn, viewer_md, current_md]
     )
     
     btn_draft_regenerate.click(

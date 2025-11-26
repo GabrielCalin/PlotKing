@@ -201,7 +201,8 @@ def draft_accept_all(current_section, current_drafts, current_log, create_epoch)
         new_epoch,
         {}, # Clear drafts
         gr.update(visible=False), # Hide diff button
-        gr.update(value=fresh_content) # Update viewer with fresh content
+        gr.update(value=fresh_content), # Update viewer with fresh content
+        fresh_content # Update current_md
     )
 
 def draft_revert_all(current_section, current_log):
@@ -217,7 +218,8 @@ def draft_revert_all(current_section, current_log):
         new_log,
         {}, # Clear drafts
         gr.update(visible=False), # Hide diff button
-        gr.update(value=fresh_content) # Update viewer with fresh content
+        gr.update(value=fresh_content), # Update viewer with fresh content
+        fresh_content # Update current_md
     )
 
 def draft_accept_selected(current_section, original_selected, generated_selected, current_drafts, current_log, create_epoch):
@@ -270,7 +272,8 @@ def draft_accept_selected(current_section, original_selected, generated_selected
         new_epoch,
         {}, # Clear ALL drafts
         gr.update(visible=False), # Hide diff button
-        gr.update(value=viewer_val) # Update viewer
+        gr.update(value=viewer_val), # Update viewer
+        viewer_val # Update current_md
     )
 
 def draft_regenerate_selected(selected_sections, current_drafts, plan, section, current_log, create_epoch):
@@ -407,6 +410,8 @@ def discard_from_validate(section, current_log):
         clean_text,  # current_md - resetat la textul curat din checkpoint
         gr.update(visible=False), # hide draft panel
         gr.update(choices=[], value=[]), # clear original_draft_checkbox
+        gr.update(choices=[], value=[]), # clear original_draft_checkbox
         gr.update(choices=[], value=[]), # clear generated_drafts_list
-        {} # clear drafts
+        {}, # clear drafts
+        gr.update(visible=False) # hide view_diff_btn
     )
