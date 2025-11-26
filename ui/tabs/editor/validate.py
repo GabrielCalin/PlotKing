@@ -358,6 +358,9 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
                 gr.update(visible=True) # Keep stop button visible
             )
 
+    if new_log and not new_log.endswith("\n"):
+        new_log += "\n"
+
     if should_stop():
          new_log, status_update = append_status(new_log, f"🛑 Regeneration stopped.")
     else:
