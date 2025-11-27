@@ -80,15 +80,10 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
 
     # Call editor_apply which now yields drafts
     for result in H.editor_apply(section, draft_to_save, plan):
-        if should_stop():
-            break
-
         if isinstance(result, dict):
             # Initial drafts yield (just the user edit)
             drafts.update(result)
-            continue
-
-        if isinstance(result, tuple) and len(result) >= 9:
+        elif isinstance(result, tuple) and len(result) >= 9:
             expanded_plot, chapters_overview, chapters_full, current_text, dropdown, counter, status_log_text, validation_text, pipeline_drafts = result
             
             new_log = merge_logs(base_log, status_log_text)
@@ -128,6 +123,10 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
                 drafts,
                 gr.update(visible=True) # view_diff_btn
             )
+            
+            # Check stop after processing and saving results
+            if should_stop():
+                break
     
     if new_log and not new_log.endswith("\n"):
         new_log += "\n"
@@ -346,9 +345,6 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
         impact_data=impact_data,
         impacted_sections=filtered_impacted,
     ):
-        if should_stop():
-            break
-            
         if isinstance(result, tuple) and len(result) >= 9:
             expanded_plot, chapters_overview, chapters_full, current_text, dropdown, counter, status_log_text, validation_text, pipeline_drafts = result
             
@@ -371,6 +367,10 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
                 gr.update(visible=True),
                 gr.update(visible=True) # Keep stop button visible
             )
+            
+            # Check stop after processing and saving results
+            if should_stop():
+                break
 
     if new_log and not new_log.endswith("\n"):
         new_log += "\n"
