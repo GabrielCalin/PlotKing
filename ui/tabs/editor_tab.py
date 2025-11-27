@@ -160,11 +160,11 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 )
                 
                 with gr.Row():
-                    btn_draft_accept_all = gr.Button("✅ Accept All", variant="primary", scale=1, min_width=0)
-                    btn_draft_revert = gr.Button("❌ Revert All", variant="stop", scale=1, min_width=0)
+                    btn_draft_accept_all = gr.Button("✅ Accept All", size="sm", variant="primary", scale=1, min_width=0)
+                    btn_draft_revert = gr.Button("❌ Revert All", size="sm", variant="stop", scale=1, min_width=0)
                 with gr.Row():
-                    btn_draft_accept_selected = gr.Button("✔️ Accept Selected", scale=1, min_width=0, interactive=False)
-                    btn_draft_regenerate = gr.Button("🔄 Regenerate Selected", scale=1, min_width=0, interactive=False)
+                    btn_draft_accept_selected = gr.Button("✔️ Accept Selected", size="sm", scale=1, min_width=0, interactive=False)
+                    btn_draft_regenerate = gr.Button("🔄 Regenerate Selected", size="sm", scale=1, min_width=0, interactive=False)
 
             with gr.Row(elem_classes=["validation-row"]):
                 continue_btn = gr.Button("🔁 Back", scale=1, min_width=0, visible=False)
