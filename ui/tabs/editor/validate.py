@@ -75,7 +75,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
         gr.update(choices=[], value=[]), # original_draft_checkbox
         gr.update(choices=[], value=[]), # generated_drafts_list
         {}, # current_drafts
-        gr.update(visible=True, value="⚖️ Diff") # view_diff_btn - SHOW and reset label
+        gr.update(visible=True, value="⚖️ Diff", interactive=True) # view_diff_btn - SHOW, reset label, and ENABLE
     )
 
     # Call editor_apply which now yields drafts
@@ -168,7 +168,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
         gr.update(choices=[section], value=[section]), # original_draft_checkbox - auto-select
         gr.update(choices=generated_drafts, value=generated_drafts), # generated_drafts_list - auto-select all
         drafts, # Update state
-        gr.update(visible=True, value="⚖️ Diff", interactive=True) # view_diff_btn - ENABLED
+        gr.update(visible=True, value="⚖️ Diff") # view_diff_btn - ENABLED
     )
 
 def draft_accept_all(current_section, current_drafts, current_log, create_epoch):
