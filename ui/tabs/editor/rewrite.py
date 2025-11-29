@@ -222,4 +222,5 @@ def continue_edit(section, current_log, current_md):
         status_update,
         new_log,
         gr.update(visible=False),   # hide Chat Section
+        gr.update(visible=False),   # status_row (hidden)
     )
