@@ -230,8 +230,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     def _load_section_content(name, drafts):
         if not name:
             return "_Empty_", None, "", gr.update(value="View"), "", [], "", \
-                   gr.update(visible=True), gr.update(value="**Viewing:** Checkpoint"), \
-                   gr.update(interactive=False), gr.update(visible=False), gr.update(visible=False), "Checkpoint"
+                   gr.update(visible=True), gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), \
+                   gr.update(interactive=False, visible=False), gr.update(visible=False), gr.update(visible=False), "Checkpoint"
         
         # Check if we have a draft for this section
         has_draft = drafts and name in drafts
@@ -239,17 +239,17 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         if has_draft:
             text = drafts[name]
             view_state = "Draft"
-            label = "**Viewing:** Draft"
-            # Buttons: Checkpoint (enabled), Draft (visible), Diff (visible)
-            btn_cp_upd = gr.update(interactive=True)
+            label = "**Viewing:** <span style='color:red;'>Draft</span>"
+            # Buttons: Checkpoint (visible, enabled), Draft (visible), Diff (visible)
+            btn_cp_upd = gr.update(visible=True, interactive=True)
             btn_dr_upd = gr.update(visible=True, interactive=True)
             btn_df_upd = gr.update(visible=True, interactive=True)
         else:
             text = H.editor_get_section_content(name) or "_Empty_"
             view_state = "Checkpoint"
-            label = "**Viewing:** Checkpoint"
-            # Buttons: Checkpoint (enabled), Draft (hidden), Diff (hidden)
-            btn_cp_upd = gr.update(interactive=True)
+            label = "**Viewing:** <span style='color:red;'>Checkpoint</span>"
+            # Buttons: Checkpoint (HIDDEN - no point showing only C), Draft (hidden), Diff (hidden)
+            btn_cp_upd = gr.update(visible=False)
             btn_dr_upd = gr.update(visible=False)
             btn_df_upd = gr.update(visible=False)
             
@@ -418,23 +418,23 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     def _handle_view_switch(view_type, section, drafts):
         if not section:
-            return gr.update(), "**Viewing:** Checkpoint", "Checkpoint"
+            return gr.update(), "**Viewing:** <span style='color:red;'>Checkpoint</span>", "Checkpoint"
             
         original_text = H.editor_get_section_content(section) or ""
         draft_text = drafts.get(section, "") if drafts else ""
         
         if view_type == "Checkpoint":
-            return original_text, "**Viewing:** Checkpoint", "Checkpoint"
+            return original_text, "**Viewing:** <span style='color:red;'>Checkpoint</span>", "Checkpoint"
         elif view_type == "Draft":
-            return draft_text, "**Viewing:** Draft", "Draft"
+            return draft_text, "**Viewing:** <span style='color:red;'>Draft</span>", "Draft"
         elif view_type == "Diff":
             # Reuse diff_handler logic from utils to get HTML
             # diff_handler returns (viewer_update, btn_update)
             # We call it with diff_btn_label="⚖️ Diff" (which matches diff_label) to get the diff HTML
             diff_res, _ = diff_handler(draft_text, original_text, "⚖️ Diff", diff_label="⚖️ Diff")
             # diff_res is a gr.update(value=html)
-            return diff_res['value'], "**Viewing:** Diff", "Diff"
-        return original_text, "**Viewing:** Checkpoint", "Checkpoint"
+            return diff_res['value'], "**Viewing:** <span style='color:red;'>Diff</span>", "Diff"
+        return original_text, "**Viewing:** <span style='color:red;'>Checkpoint</span>", "Checkpoint"
 
     btn_checkpoint.click(
         fn=lambda s, d: _handle_view_switch("Checkpoint", s, d),
