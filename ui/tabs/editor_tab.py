@@ -603,7 +603,6 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             draft_review_panel, # Added
             generated_drafts_list, # Added
             current_drafts, # Added
-            current_drafts, # Added
             status_row, # Added: show status row
             status_label, # Added
             btn_checkpoint, # Added

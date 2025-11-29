@@ -504,10 +504,7 @@ def discard_from_validate(section, current_log):
         new_log,
         clean_text,  # current_md - resetat la textul curat din checkpoint
         gr.update(visible=False), # hide draft panel
-        gr.update(choices=[], value=[]), # clear original_draft_checkbox
-        gr.update(choices=[], value=[]), # clear original_draft_checkbox
         gr.update(choices=[], value=[]), # clear generated_drafts_list
-        {}, # clear drafts
         {}, # clear drafts
         gr.update(visible=True), # status_row
         gr.update(value="**Viewing:** Checkpoint"), # status_label
