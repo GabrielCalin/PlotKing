@@ -761,7 +761,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     btn_draft_regenerate.click(
         fn=Validate.draft_regenerate_selected,
         inputs=[generated_drafts_list, current_drafts, pending_plan, selected_section, status_log, create_sections_epoch],
-        outputs=[draft_review_panel, original_draft_checkbox, generated_drafts_list, status_strip, status_log, create_sections_epoch, current_drafts, status_row, status_label, btn_checkpoint, btn_draft, btn_diff, current_view_state, stop_updates_btn],
+        outputs=[draft_review_panel, original_draft_checkbox, generated_drafts_list, status_strip, status_log, create_sections_epoch, current_drafts, status_row, stop_updates_btn],
         queue=True
     )
     

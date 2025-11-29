@@ -402,11 +402,6 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
         current_epoch,
         drafts,
         gr.update(visible=True), # status_row
-        gr.update(value="**Viewing:** <span style='color:red;'>Draft</span>"), # status_label
-        gr.update(interactive=True), # btn_checkpoint
-        gr.update(visible=True, interactive=True), # btn_draft
-        gr.update(visible=True, interactive=True), # btn_diff
-        "Draft", # current_view_state
         gr.update(visible=True, interactive=True) # Show and ENABLE stop button
     )
     
@@ -438,11 +433,6 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
                 current_epoch,
                 drafts,
                 gr.update(visible=True), # status_row
-                gr.update(value="**Viewing:** <span style='color:red;'>Draft</span>"), # status_label
-                gr.update(interactive=True), # btn_checkpoint
-                gr.update(visible=True, interactive=True), # btn_draft
-                gr.update(visible=True, interactive=True), # btn_diff
-                "Draft", # current_view_state
                 gr.update(visible=True) # Keep stop button visible
             )
             
@@ -471,11 +461,6 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
         current_epoch,
         drafts,
         gr.update(visible=True), # status_row
-        gr.update(value="**Viewing:** <span style='color:red;'>Draft</span>"), # status_label
-        gr.update(interactive=True), # btn_checkpoint
-        gr.update(visible=True, interactive=True), # btn_draft
-        gr.update(visible=True, interactive=True), # btn_diff
-        "Draft", # current_view_state
         gr.update(visible=False) # Hide stop button
     )
 
