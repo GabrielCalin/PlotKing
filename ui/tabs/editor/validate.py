@@ -21,6 +21,8 @@ def should_stop():
 
 def _get_generated_drafts_list(plan, drafts, exclude_section):
     """Helper to generate the list of auto-generated drafts from plan and current drafts."""
+    if not plan:
+        return []
     impacted_sections = plan.get("impacted_sections", [])
     generated_drafts = [s for s in impacted_sections if s != exclude_section]
     # Ensure any other drafts are also included (just in case)
@@ -28,6 +30,30 @@ def _get_generated_drafts_list(plan, drafts, exclude_section):
         if s != exclude_section and s not in generated_drafts:
             generated_drafts.append(s)
     return generated_drafts
+
+def _save_section_to_checkpoint(section, content):
+    """Helper to save a single section's content to checkpoint. Returns True if saved successfully."""
+    checkpoint = get_checkpoint()
+    if not checkpoint:
+        return False
+    
+    updated_checkpoint = checkpoint.copy()
+    if section == "Expanded Plot":
+        updated_checkpoint["expanded_plot"] = content
+    elif section == "Chapters Overview":
+        updated_checkpoint["chapters_overview"] = content
+    elif section.startswith("Chapter "):
+        try:
+            chapter_num = int(section.split(" ")[1])
+            chapters_full = list(updated_checkpoint.get("chapters_full", []))
+            if 1 <= chapter_num <= len(chapters_full):
+                chapters_full[chapter_num - 1] = content
+                updated_checkpoint["chapters_full"] = chapters_full
+        except (ValueError, IndexError):
+            return False
+    
+    save_checkpoint(updated_checkpoint)
+    return True
 
 
 def apply_updates(section, draft, plan, current_log, create_epoch, current_mode, current_md):
@@ -50,6 +76,53 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
     base_log = current_log
     current_epoch = create_epoch or 0
     drafts = {}
+
+    # If no plan (no major plot changes), save directly to checkpoint
+    if not plan:
+        # Reuse draft_accept_selected to save and get common return values
+        draft_panel, status_strip_upd, status_log_val, epoch_val, drafts_dict, status_row_upd, status_label_upd, btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, viewer_upd, current_md_val = draft_accept_selected(
+            current_section=section,
+            original_selected=[section],
+            generated_selected=[],
+            current_drafts={section: draft_to_save},
+            current_log=current_log,
+            create_epoch=create_epoch
+        )
+        
+        # Update log message to be more specific for this case
+        new_log, status_update = append_status(current_log, f"✅ ({section}) Changes saved directly to checkpoint (no major plot changes detected).")
+        
+        # Return all 27 values expected by apply_updates
+        yield (
+            viewer_upd, # viewer_md - from draft_accept_selected
+            status_update, # status_strip - updated message
+            gr.update(visible=False), # editor_tb
+            gr.update(visible=False), # validation_title
+            gr.update(visible=False), # validation_box
+            gr.update(visible=False), # apply_updates_btn
+            gr.update(visible=False), # stop_updates_btn - HIDDEN (no pipeline)
+            gr.update(visible=False), # regenerate_btn
+            gr.update(visible=False), # continue_btn
+            gr.update(visible=False), # discard2_btn
+            gr.update(visible=False), # start_edit_btn
+            gr.update(visible=False), # rewrite_section
+            gr.update(value="View", interactive=True), # mode_radio
+            gr.update(interactive=True), # section_dropdown
+            current_md_val, # current_md - from draft_accept_selected
+            new_log, # status_log - updated message
+            epoch_val, # create_sections_epoch - from draft_accept_selected
+            gr.update(visible=False), # draft_review_panel - HIDDEN (no drafts to review)
+            gr.update(choices=[], value=[]), # original_draft_checkbox
+            gr.update(choices=[], value=[]), # generated_drafts_list
+            drafts_dict, # current_drafts - from draft_accept_selected (should be {})
+            status_row_upd, # status_row - from draft_accept_selected
+            status_label_upd, # status_label - from draft_accept_selected
+            btn_cp_upd, # btn_checkpoint - from draft_accept_selected
+            btn_dr_upd, # btn_draft - from draft_accept_selected
+            btn_df_upd, # btn_diff - from draft_accept_selected
+            view_state # current_view_state - from draft_accept_selected
+        )
+        return
 
     # Yield initial status
     new_log, status_update = append_status(current_log, f"✅ ({section}) Starting update pipeline...")
@@ -192,28 +265,8 @@ def draft_accept_all(current_section, current_drafts, current_log, create_epoch)
         return gr.update(visible=False), gr.update(visible=False), current_log, create_epoch, {}, gr.update(visible=True), gr.update(value="**Viewing:** Checkpoint"), gr.update(interactive=True), gr.update(visible=False), gr.update(visible=False), "Checkpoint", gr.update()
 
 
-    checkpoint = get_checkpoint()
-    if not checkpoint:
-        return gr.update(visible=False), gr.update(visible=False), current_log, create_epoch, {}, gr.update(visible=True), gr.update(value="**Viewing:** Checkpoint"), gr.update(interactive=True), gr.update(visible=False), gr.update(visible=False), "Checkpoint", gr.update()
-
-
-    updated_checkpoint = checkpoint.copy()
     for section, content in current_drafts.items():
-        if section == "Expanded Plot":
-            updated_checkpoint["expanded_plot"] = content
-        elif section == "Chapters Overview":
-            updated_checkpoint["chapters_overview"] = content
-        elif section.startswith("Chapter "):
-            try:
-                chapter_num = int(section.split(" ")[1])
-                chapters_full = list(updated_checkpoint.get("chapters_full", []))
-                if 1 <= chapter_num <= len(chapters_full):
-                    chapters_full[chapter_num - 1] = content
-                    updated_checkpoint["chapters_full"] = chapters_full
-            except (ValueError, IndexError):
-                pass
-    
-    save_checkpoint(updated_checkpoint)
+        _save_section_to_checkpoint(section, content)
     
     new_log, status_update = append_status(current_log, "✅ All drafts accepted and saved.")
     new_epoch = (create_epoch or 0) + 1
@@ -265,9 +318,6 @@ def draft_accept_selected(current_section, original_selected, generated_selected
         return gr.update(visible=False), gr.update(), current_log, create_epoch, {}, gr.update(visible=True), gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), "Checkpoint", gr.update()
 
 
-    checkpoint = get_checkpoint()
-    updated_checkpoint = checkpoint.copy()
-    
     # Combine selections from both checkboxes
     sections_to_save = set()
     if original_selected:
@@ -278,22 +328,7 @@ def draft_accept_selected(current_section, original_selected, generated_selected
     # Only save what user actually selected
     for section in sections_to_save:
         if section in current_drafts:
-            content = current_drafts[section]
-            if section == "Expanded Plot":
-                updated_checkpoint["expanded_plot"] = content
-            elif section == "Chapters Overview":
-                updated_checkpoint["chapters_overview"] = content
-            elif section.startswith("Chapter "):
-                try:
-                    chapter_num = int(section.split(" ")[1])
-                    chapters_full = list(updated_checkpoint.get("chapters_full", []))
-                    if 1 <= chapter_num <= len(chapters_full):
-                        chapters_full[chapter_num - 1] = content
-                        updated_checkpoint["chapters_full"] = chapters_full
-                except (ValueError, IndexError):
-                    pass
-
-    save_checkpoint(updated_checkpoint)
+            _save_section_to_checkpoint(section, current_drafts[section])
     
     # Count how many selected
     new_log, status_update = append_status(current_log, f"✅ Accepted {len(sections_to_save)} drafts. Unselected drafts discarded.")
