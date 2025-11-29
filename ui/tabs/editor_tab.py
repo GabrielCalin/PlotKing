@@ -34,6 +34,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     # Chat States
     chat_history = gr.State([{"role": "assistant", "content": Chat.PLOT_KING_GREETING}])
     initial_text_before_chat = gr.State("")
+    current_view_state = gr.State("Checkpoint") # Checkpoint, Draft, Diff
 
     # ---- (0) Empty state message (visible by default) ----
     empty_msg = gr.Markdown(
@@ -172,13 +173,20 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
         # ---- (1b) Right Column: Viewer / Editor ----
         with gr.Column(scale=3):
+            # Status Row (New)
+            with gr.Row(elem_classes=["editor-status-row"], visible=True) as status_row:
+                status_label = gr.Markdown("**Viewing:** Checkpoint")
+                with gr.Row(elem_classes=["editor-status-buttons"]):
+                    btn_checkpoint = gr.Button("C", size="sm", elem_classes=["status-btn"], interactive=True)
+                    btn_draft = gr.Button("D", size="sm", elem_classes=["status-btn"], visible=False)
+                    btn_diff = gr.Button("⚖️", size="sm", elem_classes=["status-btn"], visible=False)
+
             viewer_md = gr.Markdown(
                 value="_Nothing selected_",
                 elem_id="editor-viewer",
                 height=850,
             )
-            with gr.Row(visible=True) as viewer_controls:
-                view_diff_btn = gr.Button("⚖️ Diff", size="sm", visible=False)
+            # Old viewer_controls removed
             editor_tb = gr.Textbox(
                 label="Edit Section",
                 lines=35,
@@ -221,24 +229,35 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     def _load_section_content(name, drafts):
         if not name:
-            return "_Empty_", None, "", gr.update(value="View"), "", [], "", gr.update()
+            return "_Empty_", None, "", gr.update(value="View"), "", [], "", \
+                   gr.update(visible=True), gr.update(value="**Viewing:** Checkpoint"), \
+                   gr.update(interactive=False), gr.update(visible=False), gr.update(visible=False), "Checkpoint"
         
         # Check if we have a draft for this section
-        if drafts and name in drafts:
+        has_draft = drafts and name in drafts
+        
+        if has_draft:
             text = drafts[name]
+            view_state = "Draft"
+            label = "**Viewing:** Draft"
+            # Buttons: Checkpoint (enabled), Draft (visible), Diff (visible)
+            btn_cp_upd = gr.update(interactive=True)
+            btn_dr_upd = gr.update(visible=True, interactive=True)
+            btn_df_upd = gr.update(visible=True, interactive=True)
         else:
             text = H.editor_get_section_content(name) or "_Empty_"
+            view_state = "Checkpoint"
+            label = "**Viewing:** Checkpoint"
+            # Buttons: Checkpoint (enabled), Draft (hidden), Diff (hidden)
+            btn_cp_upd = gr.update(interactive=True)
+            btn_dr_upd = gr.update(visible=False)
+            btn_df_upd = gr.update(visible=False)
             
         # Reset chat history when loading new section
         initial_greeting = [{"role": "assistant", "content": Chat.PLOT_KING_GREETING}]
         
-        # Reset diff button to default state
-        if drafts and name in drafts:
-            diff_btn_update = gr.update(value="⚖️ Diff", interactive=True)
-        else:
-            diff_btn_update = gr.update(value="No Draft", interactive=False)
-        
-        return text, name, text, gr.update(value="View"), text, initial_greeting, text, diff_btn_update
+        return text, name, text, gr.update(value="View"), text, initial_greeting, text, \
+               gr.update(visible=True), gr.update(value=label), btn_cp_upd, btn_dr_upd, btn_df_upd, view_state
 
     def _update_draft_buttons(original_selected, generated_selected):
         """Enable/disable draft action buttons based on selections."""
@@ -268,27 +287,28 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         if mode == "Rewrite":
             editor_update = gr.update(visible=True, interactive=False, value=current_text) if current_text else gr.update(visible=True, interactive=False)
             viewer_update = gr.update(visible=False)
-            # Reset buttons when entering Rewrite mode
-            rewrite_btn_upd = gr.update(visible=True, interactive=False) # Disabled until selection
+            status_row_upd = gr.update(visible=False)
+            rewrite_btn_upd = gr.update(visible=True, interactive=False)
             rewrite_action_upd = gr.update(visible=False)
         elif mode == "Manual":
-            editor_update = gr.update(visible=False)
-            viewer_update = gr.update(visible=True, value=current_text) if current_text else gr.update(visible=True)
+            editor_update = gr.update(visible=False) # Keep existing
+            viewer_update = gr.update(visible=True, value=current_text) if current_text else gr.update(visible=True) # Keep existing
+            status_row_upd = gr.update(visible=True) # Viewer is visible
         elif mode == "Chat":
             editor_update = gr.update(visible=False)
             viewer_update = gr.update(visible=True, value=current_text) if current_text else gr.update(visible=True)
             chat_section_upd = gr.update(visible=True)
+            status_row_upd = gr.update(visible=True)
         else:  # View mode
             editor_update = gr.update(visible=False)
             viewer_update = gr.update(visible=True, value=current_text) if current_text else gr.update(visible=True)
+            status_row_upd = gr.update(visible=True)
         
         if current_log:
             lines = current_log.strip().split("\n")
             if lines:
-                # Extrage mesajul din ultima linie (fără timestamp)
                 last_line = lines[-1]
-                if last_msg in last_line:
-                    # Mesajul există deja, nu adăugăm din nou
+                if last_msg in last_line or "Adapting" in last_line or "Validation completed" in last_line:
                     return (
                         gr.update(visible=(mode == "Manual")),
                         gr.update(visible=(mode == "Rewrite")),
@@ -301,21 +321,9 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                         rewrite_action_upd,
                         rewrite_action_upd,
                         rewrite_action_upd,
+                        status_row_upd, # Added
                     )
-                if "Adapting" in last_line or "Validation completed" in last_line:
-                    return (
-                        gr.update(visible=(mode == "Manual")),
-                        gr.update(visible=(mode == "Rewrite")),
-                        chat_section_upd,
-                        gr.update(value=current_log),
-                        current_log,
-                        editor_update,
-                        viewer_update,
-                        rewrite_btn_upd,
-                        rewrite_action_upd,
-                        rewrite_action_upd,
-                        rewrite_action_upd,
-                    )
+
         new_log, status_update = append_status(current_log, last_msg)
         return (
             gr.update(visible=(mode == "Manual")),
@@ -329,6 +337,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             rewrite_action_upd,
             rewrite_action_upd,
             rewrite_action_upd,
+            status_row_upd, # Added
         )
 
     # ====== Dispatchers ======
@@ -404,9 +413,46 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     section_dropdown.change(
         fn=_load_section_content,
         inputs=[section_dropdown, current_drafts],
-        outputs=[viewer_md, selected_section, current_md, mode_radio, original_text_before_rewrite, chat_history, initial_text_before_chat, view_diff_btn],
+        outputs=[viewer_md, selected_section, current_md, mode_radio, original_text_before_rewrite, chat_history, initial_text_before_chat, status_row, status_label, btn_checkpoint, btn_draft, btn_diff, current_view_state],
     )
 
+    def _handle_view_switch(view_type, section, drafts):
+        if not section:
+            return gr.update(), "**Viewing:** Checkpoint", "Checkpoint"
+            
+        original_text = H.editor_get_section_content(section) or ""
+        draft_text = drafts.get(section, "") if drafts else ""
+        
+        if view_type == "Checkpoint":
+            return original_text, "**Viewing:** Checkpoint", "Checkpoint"
+        elif view_type == "Draft":
+            return draft_text, "**Viewing:** Draft", "Draft"
+        elif view_type == "Diff":
+            # Reuse diff_handler logic from utils to get HTML
+            # diff_handler returns (viewer_update, btn_update)
+            # We call it with diff_btn_label="⚖️ Diff" (which matches diff_label) to get the diff HTML
+            diff_res, _ = diff_handler(draft_text, original_text, "⚖️ Diff", diff_label="⚖️ Diff")
+            # diff_res is a gr.update(value=html)
+            return diff_res['value'], "**Viewing:** Diff", "Diff"
+        return original_text, "**Viewing:** Checkpoint", "Checkpoint"
+
+    btn_checkpoint.click(
+        fn=lambda s, d: _handle_view_switch("Checkpoint", s, d),
+        inputs=[selected_section, current_drafts],
+        outputs=[viewer_md, status_label, current_view_state]
+    )
+    
+    btn_draft.click(
+        fn=lambda s, d: _handle_view_switch("Draft", s, d),
+        inputs=[selected_section, current_drafts],
+        outputs=[viewer_md, status_label, current_view_state]
+    )
+    
+    btn_diff.click(
+        fn=lambda s, d: _handle_view_switch("Diff", s, d),
+        inputs=[selected_section, current_drafts],
+        outputs=[viewer_md, status_label, current_view_state]
+    )
     editor_tb.select(
         fn=Rewrite.handle_text_selection,
         inputs=None,
@@ -422,7 +468,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     mode_radio.change(
         fn=_toggle_mode,
         inputs=[mode_radio, status_log, current_md],
-        outputs=[start_edit_btn, rewrite_section, chat_section, status_strip, status_log, editor_tb, viewer_md, rewrite_btn, rewrite_validate_btn, rewrite_discard_btn, rewrite_force_edit_btn]
+        outputs=[start_edit_btn, rewrite_section, chat_section, status_strip, status_log, editor_tb, viewer_md, rewrite_btn, rewrite_validate_btn, rewrite_discard_btn, rewrite_force_edit_btn, status_row]
     )
     
     # Chat Input Change Event to toggle Send button
@@ -433,7 +479,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     )
 
     start_edit_btn.click(
-        fn=Manual.start_edit,
+        fn=lambda *args: (*Manual.start_edit(*args), gr.update(visible=False)), # Wrap to hide status row
         inputs=[current_md, selected_section, status_log],
         outputs=[
             start_edit_btn,
@@ -447,6 +493,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             section_dropdown,
             status_strip,
             status_log,
+            status_row, # Added
         ],
     )
 
@@ -465,32 +512,10 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             mode_radio, section_dropdown,
             status_strip,
             status_log,
+            status_row, # Added
         ],
         queue=True,
         show_progress=False,
-    )
-
-    def draft_diff_handler(section, drafts, btn_label):
-        """Toggle between Draft and Diff view for the current section."""
-        if not section or not drafts or section not in drafts:
-            return gr.update(), btn_label
-            
-        draft_content = drafts[section]
-        original_content = H.editor_get_section_content(section) or ""
-        
-        # Use diff_handler with custom labels for the Draft system
-        from ui.tabs.editor.utils import diff_handler
-        return diff_handler(
-            draft_content, 
-            original_content, 
-            btn_label, 
-            diff_label="⚖️ Diff"
-        )
-
-    view_diff_btn.click(
-        fn=draft_diff_handler,
-        inputs=[selected_section, current_drafts, view_diff_btn],
-        outputs=[viewer_md, view_diff_btn]
     )
 
     apply_updates_btn.click(
@@ -511,7 +536,12 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             original_draft_checkbox, # Added
             generated_drafts_list, # Added
             current_drafts, # Added
-            view_diff_btn, # Added
+            status_row, # Added
+            status_label, # Added
+            btn_checkpoint, # Added
+            btn_draft, # Added
+            btn_diff, # Added
+            current_view_state, # Added
         ],
         queue=True,
     )
@@ -537,6 +567,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             status_strip,
             status_log,
             chat_section, # Added output
+            status_row, # Added
         ],
     )
 
@@ -552,6 +583,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             rewrite_section,
             mode_radio, section_dropdown, status_strip,
             status_log,
+            status_row, # Added
         ],
     )
 
@@ -571,7 +603,13 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             draft_review_panel, # Added
             generated_drafts_list, # Added
             current_drafts, # Added
-            view_diff_btn, # Added
+            current_drafts, # Added
+            status_row, # Added: show status row
+            status_label, # Added
+            btn_checkpoint, # Added
+            btn_draft, # Added
+            btn_diff, # Added
+            current_view_state, # Added
         ],
     )
 
@@ -586,6 +624,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             current_md,  # update current_md state
             status_log,
             create_sections_epoch,  # bump create_sections_epoch to notify Create tab
+            status_row, # Added
         ],
     )
 
@@ -673,6 +712,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             create_sections_epoch,
             selected_text,
             selected_indices,
+            status_row, # Added
         ],
     )
 
@@ -704,25 +744,25 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     btn_draft_accept_all.click(
         fn=Validate.draft_accept_all,
         inputs=[selected_section, current_drafts, status_log, create_sections_epoch],
-        outputs=[draft_review_panel, status_strip, status_log, create_sections_epoch, current_drafts, view_diff_btn, viewer_md, current_md]
+        outputs=[draft_review_panel, status_strip, status_log, create_sections_epoch, current_drafts, status_row, status_label, btn_checkpoint, btn_draft, btn_diff, current_view_state, viewer_md, current_md]
     )
     
     btn_draft_revert.click(
         fn=Validate.draft_revert_all,
         inputs=[selected_section, status_log],
-        outputs=[draft_review_panel, status_strip, status_log, current_drafts, view_diff_btn, viewer_md, current_md]
+        outputs=[draft_review_panel, status_strip, status_log, current_drafts, status_row, status_label, btn_checkpoint, btn_draft, btn_diff, current_view_state, viewer_md, current_md]
     )
     
     btn_draft_accept_selected.click(
         fn=Validate.draft_accept_selected,
         inputs=[selected_section, original_draft_checkbox, generated_drafts_list, current_drafts, status_log, create_sections_epoch],
-        outputs=[draft_review_panel, status_strip, status_log, create_sections_epoch, current_drafts, view_diff_btn, viewer_md, current_md]
+        outputs=[draft_review_panel, status_strip, status_log, create_sections_epoch, current_drafts, status_row, status_label, btn_checkpoint, btn_draft, btn_diff, current_view_state, viewer_md, current_md]
     )
     
     btn_draft_regenerate.click(
         fn=Validate.draft_regenerate_selected,
         inputs=[generated_drafts_list, current_drafts, pending_plan, selected_section, status_log, create_sections_epoch],
-        outputs=[draft_review_panel, original_draft_checkbox, generated_drafts_list, status_strip, status_log, create_sections_epoch, current_drafts, view_diff_btn, stop_updates_btn],
+        outputs=[draft_review_panel, original_draft_checkbox, generated_drafts_list, status_strip, status_log, create_sections_epoch, current_drafts, status_row, status_label, btn_checkpoint, btn_draft, btn_diff, current_view_state, stop_updates_btn],
         queue=True
     )
     

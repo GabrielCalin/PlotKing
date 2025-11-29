@@ -75,7 +75,12 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
         gr.update(choices=[], value=[]), # original_draft_checkbox
         gr.update(choices=[], value=[]), # generated_drafts_list
         {}, # current_drafts
-        gr.update(visible=True, value="⚖️ Diff", interactive=True) # view_diff_btn - SHOW, reset label, and ENABLE
+        gr.update(visible=True), # status_row - SHOW
+        gr.update(value="**Viewing:** Draft"), # status_label
+        gr.update(interactive=True), # btn_checkpoint
+        gr.update(visible=True, interactive=True), # btn_draft
+        gr.update(visible=True, interactive=True), # btn_diff
+        "Draft" # current_view_state
     )
 
     # Call editor_apply which now yields drafts
@@ -121,7 +126,12 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
                 gr.update(choices=[section], value=[section]), # original_draft_checkbox - auto-select
                 gr.update(choices=generated_drafts, value=generated_drafts), # generated_drafts_list - auto-select
                 drafts,
-                gr.update(visible=True) # view_diff_btn
+                gr.update(visible=True), # status_row
+                gr.update(value="**Viewing:** Draft"), # status_label
+                gr.update(interactive=True), # btn_checkpoint
+                gr.update(visible=True, interactive=True), # btn_draft
+                gr.update(visible=True, interactive=True), # btn_diff
+                "Draft" # current_view_state
             )
             
             # Check stop after processing and saving results
@@ -168,17 +178,24 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
         gr.update(choices=[section], value=[section]), # original_draft_checkbox - auto-select
         gr.update(choices=generated_drafts, value=generated_drafts), # generated_drafts_list - auto-select all
         drafts, # Update state
-        gr.update(visible=True, value="⚖️ Diff") # view_diff_btn - ENABLED
+        gr.update(visible=True), # status_row
+        gr.update(value="**Viewing:** Draft"), # status_label
+        gr.update(interactive=True), # btn_checkpoint
+        gr.update(visible=True, interactive=True), # btn_draft
+        gr.update(visible=True, interactive=True), # btn_diff
+        "Draft" # current_view_state
     )
 
 def draft_accept_all(current_section, current_drafts, current_log, create_epoch):
     """Save all drafts to checkpoint."""
     if not current_drafts:
-        return gr.update(visible=False), gr.update(visible=False), current_log, create_epoch, {}, gr.update(visible=False), gr.update()
+        return gr.update(visible=False), gr.update(visible=False), current_log, create_epoch, {}, gr.update(visible=True), gr.update(value="**Viewing:** Checkpoint"), gr.update(interactive=True), gr.update(visible=False), gr.update(visible=False), "Checkpoint", gr.update()
+
 
     checkpoint = get_checkpoint()
     if not checkpoint:
-        return gr.update(visible=False), gr.update(visible=False), current_log, create_epoch, {}, gr.update(visible=False), gr.update()
+        return gr.update(visible=False), gr.update(visible=False), current_log, create_epoch, {}, gr.update(visible=True), gr.update(value="**Viewing:** Checkpoint"), gr.update(interactive=True), gr.update(visible=False), gr.update(visible=False), "Checkpoint", gr.update()
+
 
     updated_checkpoint = checkpoint.copy()
     for section, content in current_drafts.items():
@@ -210,7 +227,12 @@ def draft_accept_all(current_section, current_drafts, current_log, create_epoch)
         new_log,
         new_epoch,
         {}, # Clear drafts
-        gr.update(visible=False), # Hide diff button
+        gr.update(visible=True), # status_row
+        gr.update(value="**Viewing:** Checkpoint"), # status_label
+        gr.update(interactive=True), # btn_checkpoint
+        gr.update(visible=False), # btn_draft
+        gr.update(visible=False), # btn_diff
+        "Checkpoint", # current_view_state
         gr.update(value=fresh_content), # Update viewer with fresh content
         fresh_content # Update current_md
     )
@@ -227,7 +249,12 @@ def draft_revert_all(current_section, current_log):
         status_update,
         new_log,
         {}, # Clear drafts
-        gr.update(visible=False), # Hide diff button
+        gr.update(visible=True), # status_row
+        gr.update(value="**Viewing:** Checkpoint"), # status_label
+        gr.update(interactive=True), # btn_checkpoint
+        gr.update(visible=False), # btn_draft
+        gr.update(visible=False), # btn_diff
+        "Checkpoint", # current_view_state
         gr.update(value=fresh_content), # Update viewer with fresh content
         fresh_content # Update current_md
     )
@@ -235,7 +262,8 @@ def draft_revert_all(current_section, current_log):
 def draft_accept_selected(current_section, original_selected, generated_selected, current_drafts, current_log, create_epoch):
     """Save selected drafts to checkpoint, discard unselected, and close panel."""
     if not current_drafts:
-        return gr.update(visible=False), gr.update(), current_log, create_epoch, {}, gr.update(visible=False), gr.update()
+        return gr.update(visible=False), gr.update(), current_log, create_epoch, {}, gr.update(visible=True), gr.update(value="**Viewing:** Checkpoint"), gr.update(interactive=True), gr.update(visible=False), gr.update(visible=False), "Checkpoint", gr.update()
+
 
     checkpoint = get_checkpoint()
     updated_checkpoint = checkpoint.copy()
@@ -281,7 +309,12 @@ def draft_accept_selected(current_section, original_selected, generated_selected
         new_log,
         new_epoch,
         {}, # Clear ALL drafts
-        gr.update(visible=False), # Hide diff button
+        gr.update(visible=True), # status_row
+        gr.update(value="**Viewing:** Checkpoint"), # status_label
+        gr.update(interactive=True), # btn_checkpoint
+        gr.update(visible=False), # btn_draft
+        gr.update(visible=False), # btn_diff
+        "Checkpoint", # current_view_state
         gr.update(value=viewer_val), # Update viewer
         viewer_val # Update current_md
     )
@@ -333,7 +366,12 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
         new_log,
         current_epoch,
         drafts,
-        gr.update(visible=True), # Keep diff button
+        gr.update(visible=True), # status_row
+        gr.update(value="**Viewing:** Draft"), # status_label
+        gr.update(interactive=True), # btn_checkpoint
+        gr.update(visible=True, interactive=True), # btn_draft
+        gr.update(visible=True, interactive=True), # btn_diff
+        "Draft", # current_view_state
         gr.update(visible=True, interactive=True) # Show and ENABLE stop button
     )
     
@@ -364,7 +402,12 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
                 new_log,
                 current_epoch,
                 drafts,
-                gr.update(visible=True),
+                gr.update(visible=True), # status_row
+                gr.update(value="**Viewing:** Draft"), # status_label
+                gr.update(interactive=True), # btn_checkpoint
+                gr.update(visible=True, interactive=True), # btn_draft
+                gr.update(visible=True, interactive=True), # btn_diff
+                "Draft", # current_view_state
                 gr.update(visible=True) # Keep stop button visible
             )
             
@@ -392,7 +435,12 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
         new_log,
         current_epoch,
         drafts,
-        gr.update(visible=True, interactive=True), # view_diff_btn - ENABLED
+        gr.update(visible=True), # status_row
+        gr.update(value="**Viewing:** Draft"), # status_label
+        gr.update(interactive=True), # btn_checkpoint
+        gr.update(visible=True, interactive=True), # btn_draft
+        gr.update(visible=True, interactive=True), # btn_diff
+        "Draft", # current_view_state
         gr.update(visible=False) # Hide stop button
     )
 
@@ -425,5 +473,11 @@ def discard_from_validate(section, current_log):
         gr.update(choices=[], value=[]), # clear original_draft_checkbox
         gr.update(choices=[], value=[]), # clear generated_drafts_list
         {}, # clear drafts
-        gr.update(visible=False) # hide view_diff_btn
+        {}, # clear drafts
+        gr.update(visible=True), # status_row
+        gr.update(value="**Viewing:** Checkpoint"), # status_label
+        gr.update(interactive=True), # btn_checkpoint
+        gr.update(visible=False), # btn_draft
+        gr.update(visible=False), # btn_diff
+        "Checkpoint" # current_view_state
     )

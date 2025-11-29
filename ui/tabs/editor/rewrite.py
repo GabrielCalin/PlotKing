@@ -143,6 +143,7 @@ def rewrite_force_edit(section, draft_with_highlight, current_log, create_epoch)
         new_create_epoch,  # create_sections_epoch
         "",  # selected_text
         None,  # selected_indices
+        gr.update(visible=True), # status_row (visible)
     )
 
 def rewrite_validate(section, draft_with_highlight, current_log):

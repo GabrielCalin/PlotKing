@@ -102,10 +102,12 @@
 #chat-input textarea:placeholder-shown {
   overflow-y: hidden !important;
 }
+
 /* Diff View Styling */
 .diff-view {
   white-space: pre-wrap;
-  font-family: inherit; /* Use app font, not monospace */
+  font-family: inherit;
+  /* Use app font, not monospace */
   line-height: 1.6;
   color: var(--body-text-color);
 }
@@ -113,8 +115,10 @@
 .diff-del {
   background-color: #ffeef0;
   color: #b31d28;
-  display: block; /* Ensure paragraphs are blocks */
-  text-decoration: none; /* Don't strike through whole blocks, too messy */
+  display: block;
+  /* Ensure paragraphs are blocks */
+  text-decoration: none;
+  /* Don't strike through whole blocks, too messy */
   border-left: 3px solid #b31d28;
   padding-left: 8px;
   margin: 4px 0;
@@ -139,4 +143,44 @@
   background-color: #e6ffed;
   color: #22863a;
   font-weight: 500;
+}
+
+/* Status Row above Viewer */
+.editor-status-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding-bottom: 8px !important;
+  border-bottom: 1px solid var(--block-border-color);
+  margin-bottom: 8px !important;
+}
+
+.editor-status-row>.editor-status-buttons {
+  display: flex !important;
+  gap: 4px !important;
+  margin-left: auto !important;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  white-space: nowrap;
+}
+
+.status-btn {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 4px !important;
+  min-width: auto !important;
+  height: auto !important;
+  font-size: 0.9rem !important;
+  opacity: 0.65;
+  transition: opacity 0.15s;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.status-btn:hover {
+  opacity: 1;
 }

@@ -50,6 +50,7 @@ def confirm_edit(section, draft, current_log):
         gr.update(interactive=False), # lock Section dropdown
         gr.update(value=new_log, visible=True),  # show Process Log with "Validation started"
         new_log,  # status_log state
+        gr.update(visible=False), # status_row (hidden)
     )
     
     # Apelează validarea (blocant) - folosim draft_clean (fără highlight-uri)
@@ -77,6 +78,7 @@ def confirm_edit(section, draft, current_log):
         gr.update(interactive=False), # keep Section locked
         gr.update(value=final_log, visible=True),  # show Process Log with "Validation completed"
         final_log,  # status_log state
+        gr.update(visible=False), # status_row (hidden)
     )
 
 def force_edit(section, draft, current_log, create_epoch):
@@ -98,6 +100,7 @@ def force_edit(section, draft, current_log, create_epoch):
         updated_text,  # update current_md state with the new text
         new_log,
         new_create_epoch,  # bump create_sections_epoch to notify Create tab
+        gr.update(visible=True), # status_row (visible)
     )
 
 def discard_from_manual(section, current_log):
@@ -123,6 +126,7 @@ def discard_from_manual(section, current_log):
         gr.update(interactive=True),# unlock Section
         status_update,
         new_log,
+        gr.update(visible=True), # status_row (visible)
     )
 
 def continue_edit(section, current_log):
@@ -147,4 +151,5 @@ def continue_edit(section, current_log):
         status_update,
         new_log,
         gr.update(visible=False),   # hide Chat Section
+        gr.update(visible=False),   # status_row (hidden)
     )
