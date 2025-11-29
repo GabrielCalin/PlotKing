@@ -262,7 +262,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
 def draft_accept_all(current_section, current_drafts, current_log, create_epoch):
     """Save all drafts to checkpoint."""
     if not current_drafts:
-        return gr.update(visible=False), gr.update(visible=False), current_log, create_epoch, {}, gr.update(visible=True), gr.update(value="**Viewing:** Checkpoint"), gr.update(interactive=True), gr.update(visible=False), gr.update(visible=False), "Checkpoint", gr.update()
+        return gr.update(visible=False), gr.update(visible=False), current_log, create_epoch, {}, gr.update(visible=True), gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), gr.update(interactive=True), gr.update(visible=False), gr.update(visible=False), "Checkpoint", gr.update()
 
 
     for section, content in current_drafts.items():
@@ -402,7 +402,7 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
         current_epoch,
         drafts,
         gr.update(visible=True), # status_row
-        gr.update(value="**Viewing:** Draft"), # status_label
+        gr.update(value="**Viewing:** <span style='color:red;'>Draft</span>"), # status_label
         gr.update(interactive=True), # btn_checkpoint
         gr.update(visible=True, interactive=True), # btn_draft
         gr.update(visible=True, interactive=True), # btn_diff
@@ -438,7 +438,7 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
                 current_epoch,
                 drafts,
                 gr.update(visible=True), # status_row
-                gr.update(value="**Viewing:** Draft"), # status_label
+                gr.update(value="**Viewing:** <span style='color:red;'>Draft</span>"), # status_label
                 gr.update(interactive=True), # btn_checkpoint
                 gr.update(visible=True, interactive=True), # btn_draft
                 gr.update(visible=True, interactive=True), # btn_diff
@@ -471,7 +471,7 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
         current_epoch,
         drafts,
         gr.update(visible=True), # status_row
-        gr.update(value="**Viewing:** Draft"), # status_label
+        gr.update(value="**Viewing:** <span style='color:red;'>Draft</span>"), # status_label
         gr.update(interactive=True), # btn_checkpoint
         gr.update(visible=True, interactive=True), # btn_draft
         gr.update(visible=True, interactive=True), # btn_diff
@@ -507,7 +507,7 @@ def discard_from_validate(section, current_log):
         gr.update(choices=[], value=[]), # clear generated_drafts_list
         {}, # clear drafts
         gr.update(visible=True), # status_row
-        gr.update(value="**Viewing:** Checkpoint"), # status_label
+        gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), # status_label
         gr.update(interactive=True), # btn_checkpoint
         gr.update(visible=False), # btn_draft
         gr.update(visible=False), # btn_diff
