@@ -113,11 +113,11 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                     chat_clear_btn = gr.Button("🧹 Clear", scale=1, min_width=0)
                 
                 with gr.Row(visible=False) as chat_actions_row_1:
-                    chat_validate_btn = gr.Button("✅ Validate", scale=1, min_width=0)
                     chat_discard_btn = gr.Button("🗑️ Discard", scale=1, min_width=0)
+                    chat_force_edit_btn = gr.Button("⚡ Force Edit", scale=1, min_width=0)
                 
                 with gr.Row(visible=False) as chat_actions_row_2:
-                    chat_force_edit_btn = gr.Button("⚡ Force Edit", scale=1, min_width=0)
+                    chat_validate_btn = gr.Button("✅ Validate", scale=1, min_width=0)
 
             # Manual Mode Section
             confirm_btn = gr.Button("✅ Validate", visible=False)
