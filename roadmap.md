@@ -120,21 +120,21 @@ This document outlines the planned development milestones for the **AI Story Gen
 | Feature | Status |
 |----------|--------|
 | **Export to EPUB** | ⏳ In Progress |
-| **Public GitHub Repository** | 🔜 Future |
-| **Generate EPUB Cover Image** | 🔜 Future |
-| **AI Chat for Refined Plot** | 🔜 Future |
+| **Public GitHub Repository** | ⏳ Planned |
+| **Generate EPUB Cover Image** | ⏳ Planned |
+| **AI Chat for Refined Plot** | ⏳ Planned |
 | **Add Empty Chapters (Writer Assist Mode)** | ⏳ Planned |
-| **Infill Chapters** | 🔜 Future |
-| **Outfill Chapters** | 🔜 Future |
-| **Settings Tab** | 🔜 Future |
-| **Model Selection per Task** | 🔜 Future |
-| **Automatic Translation** | 🔜 Future |
-| **Advanced Cross-Chapter Chat** | 🔜 Future |
-| **Character & Object Modification** | 🔜 Future |
-| **Visual Plot Design** | 🔜 Future |
-| **Import Ebooks** | 🔜 Future |
-| **Book Continuations** | 🔜 Future |
-| **Global Draft System** | 🔜 Future |
+| **Infill Chapters** | ⏳ Planned |
+| **Outfill Chapters** | ⏳ Planned |
+| **Settings Tab** | ⏳ Planned |
+| **Model Selection per Task** | ⏳ Planned |
+| **Automatic Translation** | ⏳ Planned |
+| **Advanced Cross-Chapter Chat** | ⏳ Planned |
+| **Character & Object Modification** | ⏳ Planned |
+| **Visual Plot Design** | ⏳ Planned |
+| **Import Ebooks** | ⏳ Planned |
+| **Book Continuations** | ⏳ Planned |
+| **Global Draft System** | ⏳ Planned |
 | **Book Comparison System** | 🔬 Experimental |
 | **Generate Audio Book** | 🔬 Experimental |
 | **Graphic Story Generation** | 🔬 Experimental |
@@ -142,5 +142,5 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ---
 
-**Last updated:** November 2025  
+**Last updated:** December 2025  
 **Maintained by:** Gabriel C.
