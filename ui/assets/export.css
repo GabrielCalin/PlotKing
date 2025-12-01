@@ -30,8 +30,8 @@
 }
 
 #fetch-btn {
-    height: 42px !important;
-    /* Match standard input height roughly */
+    height: 50px !important;
+    /* Increased to better match input box height */
     margin-bottom: 0px !important;
 }
 

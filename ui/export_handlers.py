@@ -60,15 +60,27 @@ def export_book_handler(title, author, cover_image_path, current_log):
         book.add_author(author)
 
         # Cover Image
+        cover_page = None
         if cover_image_path and os.path.exists(cover_image_path):
             # EbookLib expects the image content, or we can use set_cover
-            # set_cover(file_name, content, create_page=True)
-            # We need to read the file
+            # set_cover(file_name, content, create_page=True) -> create_page=True creates a cover page but sometimes it's better to control it.
+            # We will use set_cover for metadata and create our own internal page if needed, or rely on create_page=False and do it manually.
+            # Let's do it manually to ensure it's in the content flow as requested.
+            
             with open(cover_image_path, 'rb') as f:
                 cover_content = f.read()
             ext = os.path.splitext(cover_image_path)[1]
             cover_file_name = f"cover{ext}"
-            book.set_cover(cover_file_name, cover_content)
+            
+            # This adds the image file to the manifest and sets it as cover in metadata
+            book.set_cover(cover_file_name, cover_content, create_page=False)
+            
+            # Create internal cover page
+            cover_html_content = f'<div style="text-align: center; padding: 0; margin: 0;"><img src="{cover_file_name}" alt="Cover" style="max-width: 100%; height: auto;" /></div>'
+            cover_page = epub.EpubHtml(title="Cover", file_name="cover_page.xhtml", lang='en')
+            cover_page.content = cover_html_content
+            book.add_item(cover_page)
+            
             new_log += "\n" + ts_prefix("🖼️ Cover image added.")
         else:
             new_log += "\n" + ts_prefix("ℹ️ No cover image provided or file not found.")
@@ -84,8 +96,11 @@ def export_book_handler(title, author, cover_image_path, current_log):
         chapters_full = checkpoint.get("chapters_full", [])
         epub_chapters = []
         
-        # Add Title Page to spine first
-        book.spine = ['nav', title_page]
+        # Add items to spine
+        book.spine = ['nav']
+        if cover_page:
+            book.spine.append(cover_page)
+        book.spine.append(title_page)
 
         if not chapters_full:
              new_log += "\n" + ts_prefix("⚠️ No chapters found in checkpoint. Exporting empty book.")
