@@ -34,7 +34,7 @@ def fetch_title_handler(current_log):
         final_log = new_log + "\n" + ts_prefix(f"❌ Error fetching title: {e}")
         return "", final_log.strip()
 
-def export_book_handler(title, author, cover_image_path, current_log):
+def export_book_handler(title, author, cover_image_path, font_family, font_size, current_log):
     """
     Handler for the 'Export' button.
     Generates an EPUB file.
@@ -129,6 +129,9 @@ def export_book_handler(title, author, cover_image_path, current_log):
             # but keeping it as is (H2) is safer to match the source.
             c.content = html_content
             
+            # Add CSS link
+            c.add_item(epub.EpubItem(uid="style_nav", file_name="style/nav.css", media_type="text/css"))
+            
             book.add_item(c)
             epub_chapters.append(c)
             book.spine.append(c)
@@ -143,7 +146,17 @@ def export_book_handler(title, author, cover_image_path, current_log):
         book.add_item(epub.EpubNav())
 
         # Define CSS
-        style = 'body { font-family: Times, serif; } h1 { text-align: center; }'
+        style = f'''
+        body {{ 
+            font-family: {font_family}; 
+            font-size: {font_size};
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }} 
+        h1 {{ text-align: center; }}
+        p {{ margin-bottom: 1em; }}
+        '''
         nav_css = epub.EpubItem(uid="style_nav", file_name="style/nav.css", media_type="text/css", content=style)
         book.add_item(nav_css)
 

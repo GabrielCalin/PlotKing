@@ -41,6 +41,29 @@ def render_export_tab(editor_sections_epoch, create_sections_epoch):
                 
                 author_input = gr.Textbox(label="Author Name", placeholder="Enter author name...", elem_id="export-author", lines=1)
                 
+                with gr.Row():
+                    font_family_dropdown = gr.Dropdown(
+                        label="Font Family",
+                        choices=[
+                            ("Georgia (Recommended)", "Georgia, serif"),
+                            ("Times New Roman (Classic)", "Times New Roman, Times, serif"),
+                            ("Garamond (Elegant)", "Garamond, serif"),
+                            ("Palatino (Professional)", "Palatino, serif"),
+                            ("Merriweather (Modern Serif)", "Merriweather, serif"),
+                            ("Arial (Clean)", "Arial, sans-serif"),
+                            ("Verdana (Readable)", "Verdana, sans-serif"),
+                            ("Open Sans (Modern)", "Open Sans, sans-serif"),
+                        ],
+                        value="Georgia, serif",
+                        interactive=True
+                    )
+                    font_size_dropdown = gr.Dropdown(
+                        label="Font Size",
+                        choices=["10pt", "11pt", "12pt", "13pt", "14pt", "16pt", "18pt"],
+                        value="12pt",
+                        interactive=True
+                    )
+                
                 cover_image = gr.Image(label="Cover Image", type="filepath", height=300, elem_id="export-cover")
                 
             with gr.Column(scale=1):
@@ -87,7 +110,7 @@ def render_export_tab(editor_sections_epoch, create_sections_epoch):
     # Export Book
     export_btn.click(
         fn=H.export_book_handler,
-        inputs=[title_input, author_input, cover_image, export_log],
+        inputs=[title_input, author_input, cover_image, font_family_dropdown, font_size_dropdown, export_log],
         outputs=[download_btn, export_status]
     ).then(
         fn=lambda log: log, # Update state
