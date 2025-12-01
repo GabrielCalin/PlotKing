@@ -3,3 +3,4 @@ gradio>=4.0.0
 markdownify>=0.11.6
 json-repair
 EbookLib>=0.17.1
+markdown>=3.0

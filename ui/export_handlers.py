@@ -1,6 +1,7 @@
 # ui/export_handlers.py
 import os
 import gradio as gr
+import markdown
 from ebooklib import epub
 from pipeline.state_manager import get_checkpoint
 from pipeline.steps.title_fetcher.llm import fetch_title_llm
@@ -106,20 +107,27 @@ def export_book_handler(title, author, cover_image_path, current_log):
              new_log += "\n" + ts_prefix("⚠️ No chapters found in checkpoint. Exporting empty book.")
 
         for i, chapter_content in enumerate(chapters_full):
-            chapter_title = f"Chapter {i+1}"
+            # Extract title from markdown (first H2)
+            lines = chapter_content.split('\n')
+            chapter_title = f"Chapter {i+1}" # Default
+            
+            # Find first line starting with "## "
+            for line in lines:
+                if line.strip().startswith("## "):
+                    chapter_title = line.strip().replace("## ", "").strip()
+                    break
+            
             chapter_file_name = f"chapter_{i+1}.xhtml"
             
-            # Simple formatting: convert newlines to <p> or <br>
-            # Assuming chapter_content is markdown or plain text.
-            # For better results, we might want to use markdownify or similar, but let's do simple replacement for now.
-            # Or just wrap in <pre> or use a simple markdown to html converter if available.
-            # The requirements have markdownify, but that's html->md. We need md->html.
-            # Let's just wrap paragraphs in <p>.
-            
-            formatted_content = "".join([f"<p>{line}</p>" for line in chapter_content.split('\n') if line.strip()])
+            # Convert markdown to HTML
+            # We use extra extensions for better rendering if needed, but basic is fine for now.
+            html_content = markdown.markdown(chapter_content)
             
             c = epub.EpubHtml(title=chapter_title, file_name=chapter_file_name, lang='en')
-            c.content = f"<h1>{chapter_title}</h1>{formatted_content}"
+            # We don't add an extra H1 title here because the content likely already has the title as H2
+            # If the user wants the title to be H1 in the epub, we could replace the first H2 with H1 in the HTML,
+            # but keeping it as is (H2) is safer to match the source.
+            c.content = html_content
             
             book.add_item(c)
             epub_chapters.append(c)
