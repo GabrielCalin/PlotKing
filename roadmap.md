@@ -6,9 +6,6 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## 🎨 Phase 3 — Presentation and Export
 
-12. **Export to EPUB**  
-   - Export full books as `.epub` files with metadata. 
-
 13. **Public GitHub Repository**  
    - Make the project public and document setup, dependencies, and contribution flow.
 
@@ -135,8 +132,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 | Feature | Status |
 |----------|--------|
-| **Export to EPUB** | ⏳ In Progress |
-| **Public GitHub Repository** | ⏳ Planned |
+| **Public GitHub Repository** | ⏳ In Progress |
 | **Major Code Refactor** | ⏳ Planned |
 | **Generate EPUB Cover Image** | ⏳ Planned |
 | **AI Chat for Refined Plot** | ⏳ Planned |
