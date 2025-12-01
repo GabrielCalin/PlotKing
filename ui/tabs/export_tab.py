@@ -1,0 +1,90 @@
+# ui/tabs/export_tab.py
+import gradio as gr
+import ui.export_handlers as H
+import ui.editor_handlers as EditorH # For checking project state
+
+def render_export_tab(editor_sections_epoch, create_sections_epoch):
+    """
+    Render the Export tab.
+    """
+    
+    # State
+    export_log = gr.State("")
+    
+    # ---- (0) Empty state message (visible by default) ----
+    empty_msg = gr.Markdown(
+        "📚 **Nothing to export yet!**  \n"
+        "Your story world is still blank — go craft one in the *Create* tab! ✨",
+        elem_id="export-empty",
+        visible=True,
+    )
+
+    # ---- (1) Main Layout ----
+    with gr.Column(visible=False) as export_main:
+        gr.Markdown("## 📤 Export Book")
+        
+        with gr.Row():
+            with gr.Column(scale=2):
+                with gr.Row():
+                    title_input = gr.Textbox(label="Book Title", placeholder="Enter book title...", scale=4)
+                    fetch_title_btn = gr.Button("🤖 Fetch Title", scale=1)
+                
+                author_input = gr.Textbox(label="Author Name", placeholder="Enter author name...")
+                
+                cover_image = gr.Image(label="Cover Image", type="filepath", height=300)
+                
+            with gr.Column(scale=1):
+                export_status = gr.Textbox(label="Process Log", lines=15, interactive=False)
+                
+        with gr.Row():
+            export_btn = gr.Button("📦 Export EPUB", variant="primary", scale=2)
+            download_btn = gr.DownloadButton("⬇️ Download EPUB", visible=False, scale=1)
+
+    # ====== Helper functions ======
+    def _refresh_export_tab(_):
+        """Check if we have content to export."""
+        sections = EditorH.editor_list_sections()
+        if not sections:
+             return gr.update(visible=True), gr.update(visible=False)
+        return gr.update(visible=False), gr.update(visible=True)
+
+    # ====== Wiring ======
+    
+    # Sync visibility with other tabs
+    editor_sections_epoch.change(
+        fn=_refresh_export_tab,
+        inputs=[editor_sections_epoch],
+        outputs=[empty_msg, export_main]
+    )
+    
+    create_sections_epoch.change(
+        fn=_refresh_export_tab,
+        inputs=[create_sections_epoch],
+        outputs=[empty_msg, export_main]
+    )
+
+    # Fetch Title
+    fetch_title_btn.click(
+        fn=H.fetch_title_handler,
+        inputs=[export_log],
+        outputs=[title_input, export_status]
+    ).then(
+        fn=lambda log: log, # Update state
+        inputs=[export_status],
+        outputs=[export_log]
+    )
+
+    # Export Book
+    export_btn.click(
+        fn=H.export_book_handler,
+        inputs=[title_input, author_input, cover_image, export_log],
+        outputs=[download_btn, export_status]
+    ).then(
+        fn=lambda log: log, # Update state
+        inputs=[export_status],
+        outputs=[export_log]
+    ).then(
+        fn=lambda path: gr.update(visible=True, value=path) if path else gr.update(visible=False),
+        inputs=[download_btn],
+        outputs=[download_btn]
+    )

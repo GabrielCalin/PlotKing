@@ -1,0 +1,144 @@
+# ui/export_handlers.py
+import os
+import gradio as gr
+from ebooklib import epub
+from pipeline.state_manager import get_checkpoint
+from pipeline.steps.title_fetcher.llm import fetch_title_llm
+from utils.timestamp import ts_prefix
+
+def fetch_title_handler(current_log):
+    """
+    Handler for the 'Fetch Title' button.
+    """
+    checkpoint = get_checkpoint()
+    if not checkpoint:
+        new_log = (current_log or "") + "\n" + ts_prefix("⚠️ No checkpoint found. Cannot fetch title.")
+        return "", new_log.strip()
+
+    expanded_plot = checkpoint.get("expanded_plot", "")
+    if not expanded_plot:
+        new_log = (current_log or "") + "\n" + ts_prefix("⚠️ No expanded plot found. Cannot fetch title.")
+        return "", new_log.strip()
+
+    new_log = (current_log or "") + "\n" + ts_prefix("🤖 Fetching title from AI...")
+    # Return intermediate log update (though Gradio might not show it if we don't yield, but this is a simple return)
+    # For better UX, we could yield, but let's keep it simple for now or use a generator if needed.
+    # Since this is a button click, we can just return the final result.
+    
+    try:
+        title = fetch_title_llm(expanded_plot)
+        final_log = new_log + "\n" + ts_prefix(f"✅ Title fetched: {title}")
+        return title, final_log.strip()
+    except Exception as e:
+        final_log = new_log + "\n" + ts_prefix(f"❌ Error fetching title: {e}")
+        return "", final_log.strip()
+
+def export_book_handler(title, author, cover_image_path, current_log):
+    """
+    Handler for the 'Export' button.
+    Generates an EPUB file.
+    """
+    checkpoint = get_checkpoint()
+    if not checkpoint:
+        return None, (current_log or "") + "\n" + ts_prefix("⚠️ No checkpoint found. Cannot export.")
+
+    if not title or not title.strip():
+        return None, (current_log or "") + "\n" + ts_prefix("⚠️ Title is required.")
+    
+    if not author or not author.strip():
+        return None, (current_log or "") + "\n" + ts_prefix("⚠️ Author is required.")
+
+    new_log = (current_log or "") + "\n" + ts_prefix(f"📚 Starting export for '{title}' by {author}...")
+    
+    try:
+        book = epub.EpubBook()
+
+        # Metadata
+        book.set_identifier(f"id_{title.lower().replace(' ', '_')}")
+        book.set_title(title)
+        book.set_language('en')
+        book.add_author(author)
+
+        # Cover Image
+        if cover_image_path and os.path.exists(cover_image_path):
+            # EbookLib expects the image content, or we can use set_cover
+            # set_cover(file_name, content, create_page=True)
+            # We need to read the file
+            with open(cover_image_path, 'rb') as f:
+                cover_content = f.read()
+            ext = os.path.splitext(cover_image_path)[1]
+            cover_file_name = f"cover{ext}"
+            book.set_cover(cover_file_name, cover_content)
+            new_log += "\n" + ts_prefix("🖼️ Cover image added.")
+        else:
+            new_log += "\n" + ts_prefix("ℹ️ No cover image provided or file not found.")
+
+        # Title Page (Manual creation if needed, but EbookLib might handle basic metadata)
+        # Let's add a simple title page chapter
+        title_page_content = f"<h1>{title}</h1><h2>by {author}</h2>"
+        title_page = epub.EpubHtml(title="Title Page", file_name="title.xhtml", lang='en')
+        title_page.content = title_page_content
+        book.add_item(title_page)
+
+        # Chapters
+        chapters_full = checkpoint.get("chapters_full", [])
+        epub_chapters = []
+        
+        # Add Title Page to spine first
+        book.spine = ['nav', title_page]
+
+        if not chapters_full:
+             new_log += "\n" + ts_prefix("⚠️ No chapters found in checkpoint. Exporting empty book.")
+
+        for i, chapter_content in enumerate(chapters_full):
+            chapter_title = f"Chapter {i+1}"
+            chapter_file_name = f"chapter_{i+1}.xhtml"
+            
+            # Simple formatting: convert newlines to <p> or <br>
+            # Assuming chapter_content is markdown or plain text.
+            # For better results, we might want to use markdownify or similar, but let's do simple replacement for now.
+            # Or just wrap in <pre> or use a simple markdown to html converter if available.
+            # The requirements have markdownify, but that's html->md. We need md->html.
+            # Let's just wrap paragraphs in <p>.
+            
+            formatted_content = "".join([f"<p>{line}</p>" for line in chapter_content.split('\n') if line.strip()])
+            
+            c = epub.EpubHtml(title=chapter_title, file_name=chapter_file_name, lang='en')
+            c.content = f"<h1>{chapter_title}</h1>{formatted_content}"
+            
+            book.add_item(c)
+            epub_chapters.append(c)
+            book.spine.append(c)
+
+        # Table of Contents
+        book.toc = (epub.Link("title.xhtml", "Title Page", "title"),
+                    (epub.Section("Chapters"), epub_chapters))
+
+        # Navigation
+        book.add_item(epub.EpubNcx())
+        book.add_item(epub.EpubNav())
+
+        # Define CSS
+        style = 'body { font-family: Times, serif; } h1 { text-align: center; }'
+        nav_css = epub.EpubItem(uid="style_nav", file_name="style/nav.css", media_type="text/css", content=style)
+        book.add_item(nav_css)
+
+        # Output Directory
+        output_dir = "exports"
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Safe filename
+        safe_title = "".join([c for c in title if c.isalnum() or c in (' ', '-', '_')]).strip().replace(' ', '_')
+        output_filename = f"{safe_title}.epub"
+        output_path = os.path.join(output_dir, output_filename)
+
+        epub.write_epub(output_path, book, {})
+        
+        final_log = new_log + "\n" + ts_prefix(f"✅ Export successful: {output_path}")
+        
+        # Return the absolute path for the download button
+        return os.path.abspath(output_path), final_log.strip()
+
+    except Exception as e:
+        final_log = new_log + "\n" + ts_prefix(f"❌ Export failed: {e}")
+        return None, final_log.strip()

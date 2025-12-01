@@ -5,6 +5,7 @@ import gradio as gr
 from ui import load_css
 from ui.tabs.create_tab import render_create_tab
 from ui.tabs.editor_tab import render_editor_tab
+from ui.tabs.export_tab import render_export_tab
 import ui.handlers as H  # <-- necesar pentru list_projects() în demo.load()
 
 
@@ -33,6 +34,12 @@ def create_interface(pipeline_fn, refine_fn):
 
             with gr.Tab("✏️ Edit"):
                 render_editor_tab(
+                    editor_sections_epoch=editor_sections_epoch,
+                    create_sections_epoch=create_sections_epoch
+                )
+
+            with gr.Tab("📤 Export"):
+                render_export_tab(
                     editor_sections_epoch=editor_sections_epoch,
                     create_sections_epoch=create_sections_epoch
                 )

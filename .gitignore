@@ -40,6 +40,7 @@ Thumbs.db           # Windows thumbnail cache
 # 6️⃣  Local folders to ignore
 # ------------------------------------------------------------------
 Projects/
+exports/
 
 # ------------------------------------------------------------------
 # End of file
