@@ -24,15 +24,82 @@
     resize: none !important;
 }
 
-/* Align Fetch button with Title input */
-.title-row {
-    align-items: flex-end !important;
+/* Wrapper Styles (copied from style.css) */
+.plot-wrapper {
+    border: 1px solid var(--block-border-color);
+    border-radius: var(--block-radius);
+    overflow: hidden;
+    height: auto !important;
+    margin-bottom: 8px;
 }
 
+.plot-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+    background-color: var(--block-label-background-fill);
+    padding: 4px 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-bottom: 1px solid var(--block-border-color);
+}
+
+.plot-header> :first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.plot-header>.plot-buttons {
+    margin-left: auto;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 3px;
+    white-space: nowrap;
+}
+
+.plot-buttons button {
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 4px !important;
+    min-width: auto !important;
+    height: auto !important;
+    font-size: 0.9rem !important;
+    opacity: 0.65;
+    transition: opacity 0.15s;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: right !important;
+}
+
+.plot-buttons button:hover {
+    opacity: 1;
+}
+
+/* Remove top margin from input inside wrapper */
+.plot-wrapper .gr-textbox {
+    margin-top: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+}
+
+/* Specific fix for the fetch button text alignment */
 #fetch-btn {
-    height: 50px !important;
-    /* Increased to better match input box height */
-    margin-bottom: 0px !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    color: var(--body-text-color);
+}
+
+/* Ensure title label looks like a label */
+#title-label p {
+    margin: 0 !important;
+    font-size: 0.85rem !important;
+    color: var(--block-label-text-color);
 }
 
 /* Process Log Height */

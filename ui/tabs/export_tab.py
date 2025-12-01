@@ -25,9 +25,19 @@ def render_export_tab(editor_sections_epoch, create_sections_epoch):
         
         with gr.Row(elem_id="export-content-row", equal_height=True):
             with gr.Column(scale=2):
-                with gr.Row(elem_classes=["title-row"]):
-                    title_input = gr.Textbox(label="Book Title", placeholder="Enter book title...", scale=4, elem_id="export-title", lines=1)
-                    fetch_title_btn = gr.Button("🤖 Fetch Title", scale=1, elem_id="fetch-btn")
+                with gr.Column(elem_classes=["plot-wrapper"]):
+                    with gr.Row(elem_classes=["plot-header"]):
+                        gr.Markdown("Book Title", elem_id="title-label")
+                        with gr.Row(elem_classes=["plot-buttons"]):
+                            fetch_title_btn = gr.Button("🤖 Fetch", size="sm", elem_id="fetch-btn")
+                    title_input = gr.Textbox(
+                        label=None,
+                        show_label=False,
+                        placeholder="Enter book title...",
+                        elem_id="export-title",
+                        lines=1,
+                        max_lines=1
+                    )
                 
                 author_input = gr.Textbox(label="Author Name", placeholder="Enter author name...", elem_id="export-author", lines=1)
                 
