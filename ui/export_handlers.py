@@ -134,8 +134,9 @@ def export_book_handler(title, author, cover_image_path, current_log):
             book.spine.append(c)
 
         # Table of Contents
-        book.toc = (epub.Link("title.xhtml", "Title Page", "title"),
-                    (epub.Section("Chapters"), epub_chapters))
+        # Flattened structure: Title Page -> Chapters
+        book.toc = [epub.Link("title.xhtml", "Title Page", "title")]
+        book.toc.extend(epub_chapters)
 
         # Navigation
         book.add_item(epub.EpubNcx())

@@ -24,9 +24,9 @@ def fetch_title_llm(expanded_plot: str,
     You are a creative editor. Your task is to determine the title of a book based on its plot summary.
     
     Instructions:
-    1. Analyze the provided Expanded Plot.
-    2. If a title is explicitly mentioned (e.g., "Title: ..."), extract it.
-    3. If no title is mentioned, invent a creative and fitting title based on the plot's content, themes, and genre.
+    1. **PRIORITY 1: EXTRACT**. Look for an explicit title mentioned in the Expanded Plot. It is USUALLY at the beginning (e.g. first line, "Title: ...", or a Markdown header like "# The Lost World"), but it could be mentioned elsewhere.
+    2. If you find a clear title anywhere in the text, EXTRACT it exactly as is (removing "Title:" or "#" markers).
+    3. **PRIORITY 2: INVENT**. ONLY if no title is explicitly mentioned in the text, invent a creative and fitting title based on the plot's content, themes, and genre.
     4. Return ONLY the title as plain text. Do not include quotes, "Title:", or any other text.
     
     Expanded Plot:
