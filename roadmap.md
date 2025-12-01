@@ -79,17 +79,25 @@ This document outlines the planned development milestones for the **AI Story Gen
    - Extendable to modify **key objects** or **locations** across chapters.  
    - System ensures consistency by updating references in future (and optionally past) chapters.
 
-27. **Visual Plot Design**  
+27. **Automated Tests (UI Scenario Based)**  
+   - Implement automated UI tests based on user scenarios.  
+   - Test critical workflows end-to-end to ensure reliability and prevent regressions.
+
+28. **Switch from Gradio Frontend**  
+   - Migrate from Gradio to a more flexible frontend framework.  
+   - Improve UI/UX capabilities and performance.
+
+29. **Visual Plot Design**  
    - A new tab to visualize main events, characters, etc. (e.g., circles for plot items).  
    - Allows easy definition of parallel narrative threads and their intersections.  
    - Helps in understanding and defining the story structure visually.
 
-28. **Import Ebooks**  
+30. **Import Ebooks**  
    - Add the ability to import existing ebooks (EPUB, MOBI, etc.) into the system.  
    - Parse imported books into chapters and structure.  
    - Users can then expand or modify the imported book using all available editing tools.
 
-29. **Book Continuations**  
+31. **Book Continuations**  
    - Support for book sequels (Part 2).  
    - Support for copying the narrative style of another book (Persona definitions).
 
@@ -97,31 +105,36 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## 🧠 Phase 7 — Experimental & Research Features
 
-30. **Book Comparison System**  
+33. **Book Comparison System**  
    - Compare multiple books via pairwise evaluation (e.g., 4-book tournament → semifinals → final).  
    - Criteria: writing quality, consistency, emotional impact, etc.  
    - **Version History**: Support for multiple book generations stored and selectable as part of the same project.  
    - Project save structure will save all versions (preferably in different files for speed). Comparison runs between these versions.
 
-31. **Generate Audio Book**  
+34. **Advanced Custom Templating for EPUB Format**  
+   - Implement advanced custom templating for EPUB format.  
+   - Either build from scratch or use an existing templating library.  
+   - Allow users to customize EPUB output with custom styles, layouts, and formatting.
+
+35. **Generate Audio Book**  
    - Convert generated chapters to **narrated audio** using text-to-speech (TTS).  
    - Voices adjustable by tone, gender, and style (narrative, dramatic, cinematic).  
    - Export as MP3/FLAC or integrated audio player in UI.
 
-32. **Graphic Story Generation**  
+36. **Graphic Story Generation**  
    - Enrich stories with AI-generated illustrations per chapter.
 
-33. **Embedded LLMs & Research-Driven Non-Fiction Mode**  
+37. **Embedded LLMs & Research-Driven Non-Fiction Mode**  
    - Add support for embedded or local assistant models to perform factual research before writing.  
    - Ideal for **biographies, essays, or technical non-fiction** where factual correctness is essential.  
    - *Low priority / experimental feature.*
 
-34. **REST API**  
+38. **REST API**  
    - Provide a REST API for programmatic access to the story generation system.  
    - Enable integration with external tools and automation workflows.  
    - *Low priority / experimental feature.*
 
-35. **Custom Blocks (ComfyUI-style)**  
+39. **Custom Blocks (ComfyUI-style)**  
    - Implement a visual node-based interface similar to ComfyUI for workflow customization.  
    - Allow users to create custom processing blocks and connect them visually.  
    - *Low priority / experimental feature.*
@@ -145,10 +158,13 @@ This document outlines the planned development milestones for the **AI Story Gen
 | **Automatic Translation** | ⏳ Planned |
 | **Advanced Cross-Chapter Chat** | ⏳ Planned |
 | **Character & Object Modification** | ⏳ Planned |
+| **Automated Tests (UI Scenario Based)** | ⏳ Planned |
+| **Switch from Gradio Frontend** | ⏳ Planned |
 | **Visual Plot Design** | ⏳ Planned |
 | **Import Ebooks** | ⏳ Planned |
 | **Book Continuations** | ⏳ Planned |
 | **Book Comparison System** | 🔬 Experimental |
+| **Advanced Custom Templating for EPUB Format** | 🔬 Experimental |
 | **Generate Audio Book** | 🔬 Experimental |
 | **Graphic Story Generation** | 🔬 Experimental |
 | **Embedded LLMs / Research Non-Fiction Mode** | 🔬 Experimental |
