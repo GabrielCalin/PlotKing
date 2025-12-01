@@ -4,15 +4,6 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ---
 
-## 🧭 Phase 2 — User Experience & Creativity Tools
-
-11. **Draft Review System**  
-   - When the edit pipeline finishes, all changes are saved as drafts.  
-   - User is presented with choices: **revert all**, **accept all**, **regenerate partial**, and **accept partial**.  
-   - View changes with change coloring (added/deleted/modified text highlighting).
-
----
-
 ## 🎨 Phase 3 — Presentation and Export
 
 12. **Export to EPUB**  
@@ -128,8 +119,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 | Feature | Status |
 |----------|--------|
-| **Draft Review System** | ⏳ In Progress |
-| **Export to EPUB** | 🔜 Future |
+| **Export to EPUB** | ⏳ In Progress |
 | **Public GitHub Repository** | 🔜 Future |
 | **Generate EPUB Cover Image** | 🔜 Future |
 | **AI Chat for Refined Plot** | 🔜 Future |
