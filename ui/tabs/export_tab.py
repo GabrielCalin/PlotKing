@@ -23,18 +23,18 @@ def render_export_tab(editor_sections_epoch, create_sections_epoch):
     with gr.Column(visible=False) as export_main:
         gr.Markdown("## 📤 Export Book")
         
-        with gr.Row():
+        with gr.Row(elem_id="export-content-row", equal_height=True):
             with gr.Column(scale=2):
-                with gr.Row():
-                    title_input = gr.Textbox(label="Book Title", placeholder="Enter book title...", scale=4)
-                    fetch_title_btn = gr.Button("🤖 Fetch Title", scale=1)
+                with gr.Row(elem_classes=["title-row"]):
+                    title_input = gr.Textbox(label="Book Title", placeholder="Enter book title...", scale=4, elem_id="export-title", lines=1)
+                    fetch_title_btn = gr.Button("🤖 Fetch Title", scale=1, elem_id="fetch-btn")
                 
-                author_input = gr.Textbox(label="Author Name", placeholder="Enter author name...")
+                author_input = gr.Textbox(label="Author Name", placeholder="Enter author name...", elem_id="export-author", lines=1)
                 
-                cover_image = gr.Image(label="Cover Image", type="filepath", height=300)
+                cover_image = gr.Image(label="Cover Image", type="filepath", height=300, elem_id="export-cover")
                 
             with gr.Column(scale=1):
-                export_status = gr.Textbox(label="Process Log", lines=15, interactive=False)
+                export_status = gr.Textbox(label="Process Log", lines=20, interactive=False, elem_id="export-log")
                 
         with gr.Row():
             export_btn = gr.Button("📦 Export EPUB", variant="primary", scale=2)

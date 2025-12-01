@@ -1,0 +1,43 @@
+/* Export Tab Styles */
+
+/* Empty state message - centered and larger font (matching editor-empty) */
+#export-empty {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 60vh !important;
+    text-align: center !important;
+    font-size: 1.5rem !important;
+    line-height: 1.6 !important;
+    color: #666 !important;
+}
+
+#export-empty p {
+    font-size: 1.5rem !important;
+    margin: 0.5rem 0 !important;
+}
+
+/* Hide scrollbars for Title and Author inputs */
+#export-title textarea,
+#export-author textarea {
+    overflow: hidden !important;
+    resize: none !important;
+}
+
+/* Align Fetch button with Title input */
+.title-row {
+    align-items: flex-end !important;
+}
+
+#fetch-btn {
+    height: 42px !important;
+    /* Match standard input height roughly */
+    margin-bottom: 0px !important;
+}
+
+/* Process Log Height */
+#export-log textarea {
+    height: 100% !important;
+    min-height: 450px !important;
+    /* Approximate height of left column elements */
+}

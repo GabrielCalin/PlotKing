@@ -10,7 +10,7 @@ import ui.handlers as H  # <-- necesar pentru list_projects() în demo.load()
 
 
 def create_interface(pipeline_fn, refine_fn):
-    with gr.Blocks(title="BookKing - AI Story Builder", css=load_css("style.css", "editor.css")) as demo:
+    with gr.Blocks(title="BookKing - AI Story Builder", css=load_css("style.css", "editor.css", "export.css")) as demo:
         # === Header aplicație (în afara tab-urilor) ===
         with gr.Row(elem_id="bk-header"):
             gr.HTML("<div id='bk-title'>📖 BookKing – AI Story Builder</div>")
