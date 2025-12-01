@@ -188,7 +188,7 @@ def validate_handler(section, current_text, current_log, current_drafts):
         gr.update(visible=False), # regenerate_btn
         gr.update(visible=False), # continue_btn
         gr.update(visible=False), # discard2_btn
-        gr.update(visible=True, value=draft_to_validate), # viewer_md - show draft if exists
+        gr.update(), # viewer_md - NO CHANGE
         new_log,
         status_update,
         None, # pending_plan placeholder
@@ -205,7 +205,7 @@ def validate_handler(section, current_text, current_log, current_drafts):
         gr.update(visible=True), # regenerate_btn
         gr.update(visible=True), # continue_btn
         gr.update(visible=True), # discard2_btn
-        gr.update(visible=True, value=draft_to_validate), # viewer_md - show draft if exists
+        gr.update(), # viewer_md - NO CHANGE
         final_log,
         final_status,
         plan, # pending_plan
