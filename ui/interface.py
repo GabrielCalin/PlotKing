@@ -31,7 +31,7 @@ def create_interface(pipeline_fn, refine_fn):
                     create_sections_epoch=create_sections_epoch
                 )
 
-            with gr.Tab("✏️ Editor"):
+            with gr.Tab("✏️ Edit"):
                 render_editor_tab(
                     editor_sections_epoch=editor_sections_epoch,
                     create_sections_epoch=create_sections_epoch
