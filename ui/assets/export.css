@@ -101,10 +101,3 @@
     font-size: 0.85rem !important;
     color: var(--block-label-text-color);
 }
-
-/* Process Log Height */
-#export-log textarea {
-    height: 100% !important;
-    min-height: 450px !important;
-    /* Approximate height of left column elements */
-}

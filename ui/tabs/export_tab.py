@@ -67,7 +67,7 @@ def render_export_tab(editor_sections_epoch, create_sections_epoch):
                 cover_image = gr.Image(label="Cover Image", type="filepath", height=300, elem_id="export-cover")
                 
             with gr.Column(scale=1):
-                export_status = gr.Textbox(label="Process Log", lines=20, interactive=False, elem_id="export-log")
+                export_status = gr.Textbox(label="Process Log", lines=30, interactive=False, elem_id="export-log")
                 
         with gr.Row():
             export_btn = gr.Button("📦 Export EPUB", variant="primary", scale=2)
