@@ -118,7 +118,6 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 
                 with gr.Row(visible=False) as chat_actions_row_2:
                     chat_force_edit_btn = gr.Button("⚡ Force Edit", scale=1, min_width=0)
-                    chat_diff_btn = gr.Button("⚖️ Diff", scale=1, min_width=0)
 
             # Manual Mode Section
             confirm_btn = gr.Button("✅ Validate", visible=False)
@@ -392,7 +391,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         if current_mode == "Rewrite":
             return Rewrite.continue_edit(section, current_log, current_md)
         elif current_mode == "Chat":
-            return Chat.continue_edit(section, current_log, current_md)
+            return Chat.continue_edit(section, current_log)
         else:
             return Manual.continue_edit(section, current_log)
 
@@ -520,7 +519,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     apply_updates_btn.click(
         fn=Validate.apply_updates,
-        inputs=[section_dropdown, editor_tb, pending_plan, status_log, create_sections_epoch, mode_radio, current_md],
+        inputs=[section_dropdown, editor_tb, pending_plan, status_log, create_sections_epoch, mode_radio, current_md, current_drafts],
         outputs=[
             viewer_md, status_strip,
             editor_tb,
@@ -783,7 +782,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     
     chat_send_btn.click(
         fn=Chat.chat_handler,
-        inputs=[selected_section, chat_input, chat_history, current_md, initial_text_before_chat, status_log],
+        inputs=[selected_section, chat_input, chat_history, current_md, initial_text_before_chat, status_log, current_drafts],
         outputs=[
             chat_input,
             chat_history,
@@ -792,12 +791,18 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             chat_actions_row_1, # validate/discard row
             chat_discard_btn, # redundant but for safety if handled individually
             chat_actions_row_2, # force/diff row
-            chat_diff_btn,
             status_log,
             status_strip,
             current_md,
             chat_input, # Added output
             chat_clear_btn, # Added output
+            current_drafts, # Added output
+            status_row, # Added output
+            status_label, # Added output
+            btn_checkpoint, # Added output
+            btn_draft, # Added output
+            btn_diff, # Added output
+            current_view_state, # Added output
         ],
         queue=True
     )
@@ -805,7 +810,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     # Also trigger send on Enter in chat_input
     chat_input.submit(
         fn=Chat.chat_handler,
-        inputs=[selected_section, chat_input, chat_history, current_md, initial_text_before_chat, status_log],
+        inputs=[selected_section, chat_input, chat_history, current_md, initial_text_before_chat, status_log, current_drafts],
         outputs=[
             chat_input,
             chat_history,
@@ -814,12 +819,18 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             chat_actions_row_1,
             chat_discard_btn,
             chat_actions_row_2,
-            chat_diff_btn,
             status_log,
             status_strip,
             current_md,
             chat_input, # Added output
             chat_clear_btn, # Added output
+            current_drafts, # Added output
+            status_row, # Added output
+            status_label, # Added output
+            btn_checkpoint, # Added output
+            btn_draft, # Added output
+            btn_diff, # Added output
+            current_view_state, # Added output
         ],
         queue=True
     )
@@ -837,15 +848,9 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     )
 
     
-    chat_diff_btn.click(
-        fn=diff_handler,
-        inputs=[current_md, initial_text_before_chat, chat_diff_btn],
-        outputs=[viewer_md, chat_diff_btn]
-    )
-    
     chat_validate_btn.click(
         fn=Chat.validate_handler,
-        inputs=[selected_section, current_md, status_log],
+        inputs=[selected_section, current_md, status_log, current_drafts],
         outputs=[
             chat_section,
             validation_title,
@@ -858,38 +863,49 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             status_log,
             status_strip,
             pending_plan, # Added output
-            chat_diff_btn, # Reset diff button label
         ]
     )
     
     chat_discard_btn.click(
         fn=Chat.discard_handler,
-        inputs=[selected_section, status_log],
+        inputs=[selected_section, status_log, current_drafts],
         outputs=[
             viewer_md,
             chat_actions_row_1,
             chat_discard_btn,
             chat_actions_row_2,
-            chat_diff_btn,
             current_md,
             status_log,
-            status_strip
+            status_strip,
+            current_drafts, # Added output
+            status_row, # Added output
+            status_label, # Added output
+            btn_checkpoint, # Added output
+            btn_draft, # Added output
+            btn_diff, # Added output
+            current_view_state, # Added output
         ]
     )
     
     chat_force_edit_btn.click(
         fn=Chat.force_edit_handler,
-        inputs=[selected_section, current_md, status_log, create_sections_epoch],
+        inputs=[selected_section, current_md, status_log, create_sections_epoch, current_drafts],
         outputs=[
             viewer_md,
             chat_actions_row_1,
             chat_discard_btn,
             chat_actions_row_2,
-            chat_diff_btn,
             current_md,
             status_log,
             status_strip,
-            create_sections_epoch
+            create_sections_epoch,
+            current_drafts, # Added output
+            status_row, # Added output
+            status_label, # Added output
+            btn_checkpoint, # Added output
+            btn_draft, # Added output
+            btn_diff, # Added output
+            current_view_state, # Added output
         ]
     )
 

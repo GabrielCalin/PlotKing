@@ -56,10 +56,12 @@ def _save_section_to_checkpoint(section, content):
     return True
 
 
-def apply_updates(section, draft, plan, current_log, create_epoch, current_mode, current_md):
+def apply_updates(section, draft, plan, current_log, create_epoch, current_mode, current_md, current_drafts):
     """
     Aplică modificările și rulează pipeline-ul de editare dacă există secțiuni impactate.
     Este generator dacă există plan, altfel returnează direct.
+    For Chat mode, current_md already contains the draft, so we use it directly.
+    current_drafts is used to preserve existing drafts state (for other sections) and update it after apply.
     """
     # Reset stop signal at start
     clear_stop()
@@ -75,7 +77,8 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
     
     base_log = current_log
     current_epoch = create_epoch or 0
-    drafts = {}
+    # Start with existing drafts to preserve drafts for other sections
+    drafts = (current_drafts or {}).copy()
 
     # If no plan (no major plot changes), save directly to checkpoint
     if not plan:
@@ -147,7 +150,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
         gr.update(visible=False), # draft_review_panel
         gr.update(choices=[], value=[]), # original_draft_checkbox
         gr.update(choices=[], value=[]), # generated_drafts_list
-        {}, # current_drafts
+        drafts, # current_drafts - preserve existing drafts
         gr.update(visible=True), # status_row - SHOW
         gr.update(value="**Viewing:** <span style='color:red;'>Draft</span>"), # status_label
         gr.update(visible=True, interactive=True), # btn_checkpoint - VISIBLE
