@@ -88,7 +88,13 @@ def export_book_handler(title, author, cover_image_path, font_family, font_size,
 
         # Title Page (Manual creation if needed, but EbookLib might handle basic metadata)
         # Let's add a simple title page chapter
-        title_page_content = f"<h1>{title}</h1><h2>by {author}</h2>"
+        # Style: Title centered, Author smaller and slightly to the right (but still centered-ish or offset)
+        title_page_content = f"""
+        <div style="text-align: center; margin-top: 20%;">
+            <h1 style="font-size: 2.5em; margin-bottom: 0.5em;">{title}</h1>
+            <h2 style="font-size: 1.2em; font-weight: normal; margin-left: 10%; color: #444;">by {author}</h2>
+        </div>
+        """
         title_page = epub.EpubHtml(title="Title Page", file_name="title.xhtml", lang='en')
         title_page.content = title_page_content
         book.add_item(title_page)
