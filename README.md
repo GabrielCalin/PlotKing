@@ -2,7 +2,7 @@
 
 # PlotKing - AI Story Builder
 
-PlotKing is an interactive **AI Book Generator** and story builder that helps writers generate, validate, and refine novels. The application takes a short plot description and transforms it into a complete book using local LLM deployments.
+PlotKing is an interactive **AI Book Generator** and story builder that helps writers generate, validate, refine, and export novels. The application takes a short plot description and transforms it into a complete book using local LLM deployments.
 
 ![alt text](images/image.png)
 
@@ -10,8 +10,8 @@ PlotKing is an interactive **AI Book Generator** and story builder that helps wr
 
 PlotKing follows a structured pipeline to ensure high-quality output:
 
-1.  **Create**: You define the core idea, genre, and structure. The AI expands this into a detailed plot and chapter overview.
-2.  **Edit**: You review the generated content. You can rewrite sections, chat with the AI for suggestions, or manually edit text. The unique **Validation System** ensures your changes don't break the story's continuity.
+1.  **Create**: You define the core idea, genre, and structure. The AI expands this into a detailed plot, chapter overview, and full chapters.
+2.  **Edit**: You review the generated content. You can rewrite sections with AI, chat with the AI for suggestions, or manually edit text. The unique **Validation System** ensures your changes don't break the story's continuity.
 3.  **Export**: Once satisfied, you export your novel to a formatted EPUB file, ready for reading or publishing.
 
 ---
@@ -20,8 +20,8 @@ PlotKing follows a structured pipeline to ensure high-quality output:
 
 ### 1. Create: From Idea to Structure
 The creation process is broken down into logical steps to maintain coherence:
--   **Plot Expansion**: Turn a one-sentence idea into a rich, multi-paragraph synopsis.
--   **Chapter Outline**: The system generates a roadmap of chapters based on the expanded plot.
+-   **Plot Expansion**: Turn a short idea into a rich, multi-paragraph synopsis.
+-   **Chapter Outline**: The system generates an outline of chapters based on the expanded plot.
 -   **Full Generation**: Each chapter is written individually, with the AI referencing the plot and previous chapters to maintain context.
 -   **Automatic Validation**: After generating a chapter, a separate AI agent reads it to ensure it matches the outline. If it fails, it auto-regenerates until it passes.
 
@@ -35,18 +35,25 @@ The Editor tab is where the magic happens. It's not just a text box; it's a suit
 -   **Chat**: Converse with "Plot King" to brainstorm ideas or request changes for the current section.
 
 #### 🛡️ Validation System & Drafts
-When you make changes (manually or via AI), PlotKing doesn't just overwrite your work. It creates a **Draft**.
+When you make changes (manually or via AI), PlotKing doesn't just overwrite your work. It creates **Drafts**.
 -   **Impact Analysis**: The system analyzes how your change affects future chapters.
 -   **Auto-Generated Drafts**: If your change alters the plot significantly, the AI suggests updates for subsequent chapters to maintain continuity.
--   **Draft Review**: You can compare the **Checkpoint** (original) vs. **Draft** (new) side-by-side using the **Diff View** ⚖️.
--   **Selective Apply**: You choose which AI suggestions to keep and which to discard.
+-   **Draft Review**: You can compare the **Checkpoint** (original) vs. **Draft** (new) using the **comparison view** ⚖️.
+-   **Selective Apply**: You choose which AI suggestions to keep and which to discard or regenerate.
 
 ### 3. Export: Publish Ready
 Turn your project into a finished product:
 -   **EPUB Generation**: Creates a professional e-book file compatible with most readers.
--   **Metadata Fetching**: AI can suggest a title and author name based on your story content.
+-   **Metadata Fetching**: AI can suggest a title based on your story content.
 -   **Customization**: Choose fonts (Georgia, Palatino, etc.) and set font sizes for the output file.
 -   **Cover Art**: Upload a custom cover image to be embedded in the EPUB.
+
+### 4. Project Management
+Keep your stories organized:
+-   **Save**: Persist your current progress, including plot and chapters.
+-   **Load**: Switch between different story projects easily.
+-   **New**: Start a fresh project from scratch.
+-   **Delete**: Remove unwanted projects.
 
 ---
 
