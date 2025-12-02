@@ -1,8 +1,8 @@
 **The code in this repository is proudly and entirely written using AI**
 
-# BookKing - AI Story Builder
+# PlotKing - AI Story Builder
 
-BookKing is an interactive AI-powered application that helps writers generate, validate, and refine novels. The application takes a short plot description and transforms it into a complete book using local LLM deployments.
+PlotKing is an interactive AI-powered application that helps writers generate, validate, and refine novels. The application takes a short plot description and transforms it into a complete book using local LLM deployments.
 
 ![alt text](images/image.png)
 
@@ -41,7 +41,7 @@ The application requires:
 
 ## Running a Local LLM with LM Studio
 
-BookKing is designed to work seamlessly with **local LLM deployments**, and **[LM Studio](https://lmstudio.ai/)** provides an easy way to run models locally without internet dependency.
+PlotKing is designed to work seamlessly with **local LLM deployments**, and **[LM Studio](https://lmstudio.ai/)** provides an easy way to run models locally without internet dependency.
 
 ### 🔹 Step 1: Install LM Studio
 1. Download and install LM Studio for your operating system:  
@@ -72,7 +72,7 @@ In **LM Studio** while the model is loaded:
 
 ## Future Work
 
-BookKing is an evolving project.  
+PlotKing is an evolving project.  
 Upcoming features, experimental ideas, and long-term development milestones are documented in the [Roadmap](./roadmap.md).
 
 Check it out to see what’s planned next — from interactive editing tools and story infill/outfill features to multi-model support and visual story generation.
