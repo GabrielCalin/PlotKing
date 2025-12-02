@@ -10,10 +10,10 @@ import ui.handlers as H  # <-- necesar pentru list_projects() în demo.load()
 
 
 def create_interface(pipeline_fn, refine_fn):
-    with gr.Blocks(title="BookKing - AI Story Builder", css=load_css("style.css", "editor.css", "export.css")) as demo:
+    with gr.Blocks(title="PlotKing - AI Story Builder", css=load_css("style.css", "editor.css", "export.css")) as demo:
         # === Header aplicație (în afara tab-urilor) ===
         with gr.Row(elem_id="bk-header"):
-            gr.HTML("<div id='bk-title'>📖 BookKing – AI Story Builder</div>")
+            gr.HTML("<div id='bk-title'>📖 PlotKing – AI Story Builder</div>")
             current_project_label = gr.HTML("<div id='bk-project'>(No project loaded)</div>")
 
         # Două state-uri separate pentru sincronizare bidirecțională:
