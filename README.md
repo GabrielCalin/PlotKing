@@ -71,6 +71,12 @@ The application requires:
 -   Access to a local LLM API (default: `http://localhost:1234/v1/chat/completions`)
 -   Additional dependencies listed in `requirements.txt`
 
+### LLM Support
+
+**Current Status**: PlotKing currently supports only local LLM deployments with a predefined API endpoint: `http://127.0.0.1:1234/v1/chat/completions`. This endpoint follows the OpenAI-compatible API format, making it compatible with tools like LM Studio.
+
+**Future Plans**: Support for customizable API endpoints and cloud providers (OpenAI, Anthropic, etc.) is planned for future releases.
+
 ## Getting Started
 
 1.  Install dependencies: `pip install -r requirements.txt`
