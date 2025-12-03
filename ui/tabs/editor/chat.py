@@ -16,9 +16,11 @@ def chat_handler(section, message, history, current_text, initial_text, current_
             history,
             history, # chatbot update
             gr.update(), # viewer_md
-            gr.update(), # validate_btn
-            gr.update(), # discard_btn
-            gr.update(), # force_edit_btn
+            gr.update(), # chat_actions_row_1
+            gr.update(), # chat_discard_btn
+            gr.update(), # chat_force_edit_btn
+            gr.update(), # chat_actions_row_2
+            gr.update(), # chat_validate_btn
             current_log,
             gr.update(), # status_strip
             current_text, # current_md
@@ -46,9 +48,11 @@ def chat_handler(section, message, history, current_text, initial_text, current_
         new_history,
         new_history, # chatbot update
         gr.update(), # viewer_md
-        gr.update(), # validate_btn
-        gr.update(), # discard_btn
-        gr.update(), # force_edit_btn
+        gr.update(), # chat_actions_row_1
+        gr.update(), # chat_discard_btn
+        gr.update(), # chat_force_edit_btn
+        gr.update(), # chat_actions_row_2
+        gr.update(), # chat_validate_btn
         new_log,
         status_update,
         current_text,
@@ -90,9 +94,11 @@ def chat_handler(section, message, history, current_text, initial_text, current_
                 new_history,
                 new_history, # chatbot update
                 gr.update(value=new_content), # viewer_md updated with new content
-                gr.update(visible=True), # validate_btn
-                gr.update(visible=True), # discard_btn
-                gr.update(visible=True), # force_edit_btn
+                gr.update(visible=True), # chat_actions_row_1
+                gr.update(visible=True), # chat_discard_btn
+                gr.update(visible=True), # chat_force_edit_btn
+                gr.update(visible=True), # chat_actions_row_2
+                gr.update(visible=True), # chat_validate_btn
                 final_log,
                 final_status,
                 new_content, # update current_md
@@ -114,9 +120,11 @@ def chat_handler(section, message, history, current_text, initial_text, current_
                 new_history,
                 new_history, # chatbot update
                 gr.update(), # viewer_md unchanged
-                gr.update(), # validate_btn unchanged
-                gr.update(), # discard_btn unchanged
-                gr.update(), # force_edit_btn unchanged
+                gr.update(), # chat_actions_row_1
+                gr.update(), # chat_discard_btn
+                gr.update(), # chat_force_edit_btn
+                gr.update(), # chat_actions_row_2
+                gr.update(), # chat_validate_btn
                 final_log,
                 final_status,
                 current_text, # current_md unchanged
@@ -140,9 +148,11 @@ def chat_handler(section, message, history, current_text, initial_text, current_
             new_history,
             new_history, # chatbot update
             gr.update(),
-            gr.update(), # validate_btn
-            gr.update(), # discard_btn
-            gr.update(), # force_edit_btn
+            gr.update(), # chat_actions_row_1
+            gr.update(), # chat_discard_btn
+            gr.update(), # chat_force_edit_btn
+            gr.update(), # chat_actions_row_2
+            gr.update(), # chat_validate_btn
             final_log,
             final_status,
             current_text,
@@ -225,9 +235,11 @@ def discard_handler(section, current_log, current_drafts):
     
     return (
         gr.update(value=clean_text), # viewer_md
-        gr.update(visible=False), # validate_btn - hide (no active changes)
-        gr.update(visible=False), # discard_btn - hide (no active changes)
-        gr.update(visible=False), # force_edit_btn - hide (no active changes)
+        gr.update(visible=False), # chat_actions_row_1
+        gr.update(visible=False), # chat_discard_btn
+        gr.update(visible=False), # chat_force_edit_btn
+        gr.update(visible=False), # chat_actions_row_2
+        gr.update(visible=False), # chat_validate_btn
         clean_text, # current_md
         new_log,
         status_update,
@@ -255,9 +267,11 @@ def force_edit_handler(section, current_text, current_log, create_epoch, current
     
     return (
         gr.update(value=updated_text), # viewer_md
-        gr.update(visible=False), # validate_btn - hide (no active changes)
-        gr.update(visible=False), # discard_btn - hide (no active changes)
-        gr.update(visible=False), # force_edit_btn - hide (no active changes)
+        gr.update(visible=False), # chat_actions_row_1
+        gr.update(visible=False), # chat_discard_btn
+        gr.update(visible=False), # chat_force_edit_btn
+        gr.update(visible=False), # chat_actions_row_2
+        gr.update(visible=False), # chat_validate_btn
         updated_text, # current_md
         new_log,
         status_update,
@@ -364,7 +378,9 @@ def create_chat_handlers(components, states):
             components["viewer_md"],
             components["chat_actions_row_1"], # validate/discard row
             chat_discard_btn, # redundant but for safety if handled individually
+            chat_force_edit_btn, # redundant but for safety if handled individually
             components["chat_actions_row_2"], # force/diff row
+            chat_validate_btn,
             status_log,
             components["status_strip"],
             current_md,
@@ -391,7 +407,9 @@ def create_chat_handlers(components, states):
             components["viewer_md"],
             components["chat_actions_row_1"], # validate/discard row
             chat_discard_btn, # redundant but for safety if handled individually
+            chat_force_edit_btn, # redundant but for safety if handled individually
             components["chat_actions_row_2"], # force/diff row
+            chat_validate_btn,
             status_log,
             components["status_strip"],
             current_md,
@@ -407,18 +425,6 @@ def create_chat_handlers(components, states):
         ],
     )
     
-    # We need to add handlers for clear, discard, force_edit, validate if they exist in the UI but weren't fully wired in the snippet I saw or if I missed them.
-    # Looking at editor_tab.py, I only saw chat_send_btn wired. 
-    # Wait, I need to check if other buttons were wired in editor_tab.py.
-    # In the snippet of editor_tab.py I read (lines 1-800), I saw:
-    # chat_send_btn.click(...)
-    # I did NOT see chat_clear_btn.click, chat_discard_btn.click, etc.
-    # Let me double check editor_tab.py content again or assume they were further down or not wired yet.
-    # The user said "impreuna cu handlerele (clicks etc) in fisierele deja existente".
-    # If they were not wired in editor_tab.py, I should wire them now if the handlers exist in chat.py.
-    # chat.py has: clear_chat, validate_handler, discard_handler, force_edit_handler.
-    # So I should wire them.
-    
     chat_clear_btn.click(
         fn=clear_chat,
         inputs=[selected_section, status_log],
@@ -430,9 +436,11 @@ def create_chat_handlers(components, states):
         inputs=[selected_section, status_log, current_drafts],
         outputs=[
             components["viewer_md"],
-            chat_validate_btn,
+            components["chat_actions_row_1"],
             chat_discard_btn,
             chat_force_edit_btn,
+            components["chat_actions_row_2"],
+            chat_validate_btn,
             current_md,
             status_log,
             components["status_strip"],
@@ -451,9 +459,11 @@ def create_chat_handlers(components, states):
         inputs=[selected_section, current_md, status_log, create_sections_epoch, current_drafts],
         outputs=[
             components["viewer_md"],
-            chat_validate_btn,
+            components["chat_actions_row_1"],
             chat_discard_btn,
             chat_force_edit_btn,
+            components["chat_actions_row_2"],
+            chat_validate_btn,
             current_md,
             status_log,
             components["status_strip"],
