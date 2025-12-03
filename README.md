@@ -108,6 +108,13 @@ In **LM Studio** while the model is loaded:
 2.  Enable **“FlashAttention”**
 3.  Restart the model to apply changes.
 
+## Contributing
+
+We would love your help building PlotKing! To make collaboration effective, please adhere to the following:
+
+- **Keep Pull Requests Focused**: Each Pull Request should address a single issue or add one specific feature. Please do not mix bug fixes, new features, and code refactoring in the same PR.
+- **Target the develop Branch**: All Pull Requests must be opened against the `dev` branch. PRs opened against the `master` branch will be closed.
+
 ## Future Work
 
 PlotKing is an evolving project.
