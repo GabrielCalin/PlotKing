@@ -2,9 +2,9 @@
 
 # PlotKing - AI Story Builder
 
-PlotKing is an interactive **AI Book Generator** and story builder that helps writers generate, validate, refine, and export novels. The application takes a short plot description and transforms it into a complete book using local LLM deployments.
+PlotKing is an interactive **AI Book Generator** that helps writers generate, validate, refine, and export novels. The application takes a short plot description and transforms it into a complete book using local LLM deployments.
 
-![alt text](images/image.png)
+
 
 ## 🚀 How It Works (General Flow)
 
@@ -19,6 +19,7 @@ PlotKing follows a structured pipeline to ensure high-quality output:
 ## ✨ Key Features
 
 ### 1. Create: From Idea to Structure
+![Create](images/create.png)
 The creation process is broken down into logical steps to maintain coherence:
 -   **Plot Expansion**: Turn a short idea into a rich, multi-paragraph synopsis.
 -   **Chapter Outline**: The system generates an outline of chapters based on the expanded plot.
@@ -26,6 +27,7 @@ The creation process is broken down into logical steps to maintain coherence:
 -   **Automatic Validation**: After generating a chapter, a separate AI agent reads it to ensure it matches the outline. If it fails, it auto-regenerates until it passes.
 
 ### 2. Edit: Advanced AI-Assisted Writing
+![Edit](images/edit.png)
 The Editor tab is where the magic happens. It's not just a text box; it's a suite of tools:
 
 #### 🛠️ Editing Modes
@@ -35,6 +37,8 @@ The Editor tab is where the magic happens. It's not just a text box; it's a suit
 -   **Chat**: Converse with "Plot King" to brainstorm ideas or request changes for the current section.
 
 #### 🛡️ Validation System & Drafts
+![Validation](images/validation.png)
+
 When you make changes (manually or via AI), PlotKing doesn't just overwrite your work. It creates **Drafts**.
 -   **Impact Analysis**: The system analyzes how your change affects future chapters.
 -   **Auto-Generated Drafts**: If your change alters the plot significantly, the AI suggests updates for subsequent chapters to maintain continuity.
@@ -42,6 +46,7 @@ When you make changes (manually or via AI), PlotKing doesn't just overwrite your
 -   **Selective Apply**: You choose which AI suggestions to keep and which to discard or regenerate.
 
 ### 3. Export: Publish Ready
+![Export](images/export.png)
 Turn your project into a finished product:
 -   **EPUB Generation**: Creates a professional e-book file compatible with most readers.
 -   **Metadata Fetching**: AI can suggest a title based on your story content.
