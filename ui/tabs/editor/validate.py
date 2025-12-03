@@ -83,7 +83,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
     # If no plan (no major plot changes), save directly to checkpoint
     if not plan:
         # Reuse draft_accept_selected to save and get common return values
-        draft_panel, status_strip_upd, status_log_val, epoch_val, drafts_dict, status_row_upd, status_label_upd, btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, viewer_upd, current_md_val = draft_accept_selected(
+        draft_panel, status_strip_upd, status_log_val, epoch_val, drafts_dict, status_row_upd, status_label_upd, btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, viewer_upd, current_md_val, mode_radio_upd = draft_accept_selected(
             current_section=section,
             original_selected=[section],
             generated_selected=[],
@@ -95,7 +95,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
         # Update log message to be more specific for this case
         new_log, status_update = append_status(current_log, f"✅ ({section}) Changes saved directly to checkpoint (no major plot changes detected).")
         
-        # Return all 27 values expected by apply_updates
+        # Return all values expected by apply_updates
         yield (
             viewer_upd, # viewer_md - from draft_accept_selected
             status_update, # status_strip - updated message
@@ -109,7 +109,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
             gr.update(visible=False), # discard2_btn
             gr.update(visible=False), # start_edit_btn
             gr.update(visible=False), # rewrite_section
-            gr.update(value="View", interactive=True), # mode_radio
+            mode_radio_upd, # mode_radio - re-enabled
             gr.update(interactive=True), # section_dropdown
             current_md_val, # current_md - from draft_accept_selected
             new_log, # status_log - updated message
@@ -142,7 +142,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
         gr.update(visible=False), # discard2_btn
         gr.update(visible=False), # start_edit_btn
         gr.update(visible=False), # rewrite_section
-        gr.update(value="View", interactive=False), # mode_radio
+        gr.update(value="View", interactive=False), # mode_radio - DISABLED
         gr.update(interactive=True), # section_dropdown
         draft_to_save, # current_md - update with draft
         new_log, # status_log
@@ -193,7 +193,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
                 gr.update(visible=False),
                 gr.update(visible=False),
                 gr.update(visible=False),
-                gr.update(value="View", interactive=False),
+                gr.update(value="View", interactive=False), # mode_radio - DISABLED
                 gr.update(interactive=True),
                 viewer_content, # current_md - keep updating state just in case
                 new_log,
@@ -245,7 +245,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
         gr.update(visible=False),
         gr.update(visible=False),
         gr.update(visible=False),
-        gr.update(value="View", interactive=True),
+        gr.update(value="View", interactive=False), # mode_radio - DISABLED during review
         gr.update(interactive=True),
         viewer_content, # current_md
         new_log,
@@ -265,7 +265,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
 def draft_accept_all(current_section, current_drafts, current_log, create_epoch):
     """Save all drafts to checkpoint."""
     if not current_drafts:
-        return gr.update(visible=False), gr.update(visible=False), current_log, create_epoch, {}, gr.update(visible=True), gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), gr.update(interactive=True), gr.update(visible=False), gr.update(visible=False), "Checkpoint", gr.update()
+        return gr.update(visible=False), gr.update(visible=False), current_log, create_epoch, {}, gr.update(visible=True), gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), gr.update(interactive=True), gr.update(visible=False), gr.update(visible=False), "Checkpoint", gr.update(), gr.update(interactive=True)
 
 
     for section, content in current_drafts.items():
@@ -290,7 +290,8 @@ def draft_accept_all(current_section, current_drafts, current_log, create_epoch)
         gr.update(visible=False), # btn_diff
         "Checkpoint", # current_view_state
         gr.update(value=fresh_content), # Update viewer with fresh content
-        fresh_content # Update current_md
+        fresh_content, # Update current_md
+        gr.update(interactive=True) # mode_radio - ENABLED
     )
 
 def draft_revert_all(current_section, current_log):
@@ -312,13 +313,14 @@ def draft_revert_all(current_section, current_log):
         gr.update(visible=False), # btn_diff
         "Checkpoint", # current_view_state
         gr.update(value=fresh_content), # Update viewer with fresh content
-        fresh_content # Update current_md
+        fresh_content, # Update current_md
+        gr.update(interactive=True) # mode_radio - ENABLED
     )
 
 def draft_accept_selected(current_section, original_selected, generated_selected, current_drafts, current_log, create_epoch):
     """Save selected drafts to checkpoint, discard unselected, and close panel."""
     if not current_drafts:
-        return gr.update(visible=False), gr.update(), current_log, create_epoch, {}, gr.update(visible=True), gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), "Checkpoint", gr.update()
+        return gr.update(visible=False), gr.update(), current_log, create_epoch, {}, gr.update(visible=True), gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), "Checkpoint", gr.update(), gr.update(interactive=True)
 
 
     # Combine selections from both checkboxes
@@ -354,7 +356,8 @@ def draft_accept_selected(current_section, original_selected, generated_selected
         gr.update(visible=False), # btn_diff
         "Checkpoint", # current_view_state
         gr.update(value=viewer_val), # Update viewer
-        viewer_val # Update current_md
+        viewer_val, # Update current_md
+        gr.update(interactive=True) # mode_radio - ENABLED
     )
 
 def draft_regenerate_selected(selected_sections, current_drafts, plan, section, current_log, create_epoch):
@@ -735,19 +738,19 @@ def create_validate_handlers(components, states):
     btn_draft_accept_all.click(
         fn=draft_accept_all,
         inputs=[selected_section, current_drafts, status_log, create_sections_epoch],
-        outputs=[components["draft_review_panel"], components["status_strip"], status_log, create_sections_epoch, current_drafts, components["status_row"], components["status_label"], components["btn_checkpoint"], components["btn_draft"], components["btn_diff"], states["current_view_state"], components["viewer_md"], current_md]
+        outputs=[components["draft_review_panel"], components["status_strip"], status_log, create_sections_epoch, current_drafts, components["status_row"], components["status_label"], components["btn_checkpoint"], components["btn_draft"], components["btn_diff"], states["current_view_state"], components["viewer_md"], current_md, mode_radio]
     )
     
     btn_draft_revert.click(
         fn=draft_revert_all,
         inputs=[selected_section, status_log],
-        outputs=[components["draft_review_panel"], components["status_strip"], status_log, current_drafts, components["status_row"], components["status_label"], components["btn_checkpoint"], components["btn_draft"], components["btn_diff"], states["current_view_state"], components["viewer_md"], current_md]
+        outputs=[components["draft_review_panel"], components["status_strip"], status_log, current_drafts, components["status_row"], components["status_label"], components["btn_checkpoint"], components["btn_draft"], components["btn_diff"], states["current_view_state"], components["viewer_md"], current_md, mode_radio]
     )
     
     btn_draft_accept_selected.click(
         fn=draft_accept_selected,
         inputs=[selected_section, original_draft_checkbox, generated_drafts_list, current_drafts, status_log, create_sections_epoch],
-        outputs=[components["draft_review_panel"], components["status_strip"], status_log, create_sections_epoch, current_drafts, components["status_row"], components["status_label"], components["btn_checkpoint"], components["btn_draft"], components["btn_diff"], states["current_view_state"], components["viewer_md"], current_md]
+        outputs=[components["draft_review_panel"], components["status_strip"], status_log, create_sections_epoch, current_drafts, components["status_row"], components["status_label"], components["btn_checkpoint"], components["btn_draft"], components["btn_diff"], states["current_view_state"], components["viewer_md"], current_md, mode_radio]
     )
     
     btn_draft_regenerate.click(
