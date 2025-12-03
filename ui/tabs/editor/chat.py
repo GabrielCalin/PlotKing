@@ -351,6 +351,7 @@ def create_chat_handlers(components, states):
     chat_discard_btn = components["chat_discard_btn"]
     chat_force_edit_btn = components["chat_force_edit_btn"]
     chat_validate_btn = components["chat_validate_btn"]
+    chatbot = components["chatbot"]
     
     # Shared components
     selected_section = states["selected_section"]
@@ -426,6 +427,12 @@ def create_chat_handlers(components, states):
     )
     
     chat_clear_btn.click(
+        fn=clear_chat,
+        inputs=[selected_section, status_log],
+        outputs=[chat_history, status_log, components["status_strip"], components["chatbot"]]
+    )
+
+    chatbot.clear(
         fn=clear_chat,
         inputs=[selected_section, status_log],
         outputs=[chat_history, status_log, components["status_strip"], components["chatbot"]]
