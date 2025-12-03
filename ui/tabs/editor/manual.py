@@ -153,3 +153,97 @@ def continue_edit(section, current_log):
         gr.update(visible=False),   # hide Chat Section
         gr.update(visible=False),   # status_row (hidden)
     )
+
+def create_manual_ui():
+    """Create UI components for Manual mode."""
+    start_edit_btn = gr.Button("✍️ Start Editing", variant="primary", visible=False)
+    confirm_btn = gr.Button("✅ Validate", visible=False)
+    discard_btn = gr.Button("🗑️ Discard", visible=False)
+    force_edit_btn = gr.Button("⚡ Force Edit", visible=False)
+    
+    return start_edit_btn, confirm_btn, discard_btn, force_edit_btn
+
+def create_manual_handlers(components, states):
+    """Wire events for Manual mode components."""
+    start_edit_btn = components["start_edit_btn"]
+    confirm_btn = components["confirm_btn"]
+    discard_btn = components["discard_btn"]
+    force_edit_btn = components["force_edit_btn"]
+    
+    # Shared components
+    current_md = states["current_md"]
+    selected_section = states["selected_section"]
+    status_log = states["status_log"]
+    editor_tb = components["editor_tb"]
+    create_sections_epoch = states["create_sections_epoch"]
+    
+    start_edit_btn.click(
+        fn=lambda *args: (*start_edit(*args), gr.update(visible=False)), # Wrap to hide status row
+        inputs=[current_md, selected_section, status_log],
+        outputs=[
+            start_edit_btn,
+            components["rewrite_section"],
+            confirm_btn,
+            discard_btn,
+            force_edit_btn,
+            components["viewer_md"],
+            editor_tb,
+            components["mode_radio"],
+            components["section_dropdown"],
+            components["status_strip"],
+            status_log,
+            components["status_row"],
+        ],
+    )
+
+    confirm_btn.click(
+        fn=confirm_edit,
+        inputs=[selected_section, editor_tb, status_log],
+        outputs=[
+            components["validation_box"], states["pending_plan"],
+            components["validation_title"], components["validation_box"],
+            components["apply_updates_btn"], components["regenerate_btn"], components["continue_btn"], components["discard2_btn"],
+            confirm_btn, discard_btn, force_edit_btn,
+            start_edit_btn,
+            components["rewrite_section"],
+            components["viewer_md"],
+            editor_tb,
+            components["mode_radio"], components["section_dropdown"],
+            components["status_strip"],
+            status_log,
+            components["status_row"],
+        ],
+        queue=True,
+        show_progress=False,
+    )
+
+    discard_btn.click(
+        fn=discard_from_manual,
+        inputs=[selected_section, status_log],
+        outputs=[
+            components["viewer_md"], editor_tb, components["validation_box"], states["pending_plan"],
+            components["validation_title"],
+            components["apply_updates_btn"], components["regenerate_btn"], components["continue_btn"], components["discard2_btn"],
+            start_edit_btn,
+            confirm_btn, discard_btn, force_edit_btn,
+            components["rewrite_section"],
+            components["mode_radio"], components["section_dropdown"], components["status_strip"],
+            status_log,
+            components["status_row"],
+        ],
+    )
+
+    force_edit_btn.click(
+        fn=force_edit,
+        inputs=[selected_section, editor_tb, status_log, create_sections_epoch],
+        outputs=[
+            components["viewer_md"], components["status_strip"], editor_tb,
+            confirm_btn, discard_btn, force_edit_btn, start_edit_btn,
+            components["rewrite_section"],
+            components["mode_radio"], components["section_dropdown"],
+            current_md,  # update current_md state
+            status_log,
+            create_sections_epoch,  # bump create_sections_epoch to notify Create tab
+            components["status_row"],
+        ],
+    )

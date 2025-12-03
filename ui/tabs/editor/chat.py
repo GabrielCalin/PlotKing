@@ -295,3 +295,193 @@ def continue_edit(section, current_log):
         gr.update(visible=True),    # SHOW Chat Section
         gr.update(visible=True),    # status_row - show (draft exists after validate)
     )
+
+def create_chat_ui():
+    """Create UI components for Chat mode."""
+    with gr.Column(visible=False) as chat_section:
+        chatbot = gr.Chatbot(
+            label="Plot King",
+            value=[{"role": "assistant", "content": PLOT_KING_GREETING}],
+            height=350,
+            elem_id="editor-chatbot",
+            avatar_images=(None, "https://api.dicebear.com/7.x/bottts/svg?seed=PlotKing"),
+            bubble_full_width=False,
+            type="messages"
+        )
+        chat_input = gr.Textbox(
+            label="Message Plot King",
+            placeholder="Ask for suggestions or request edits...",
+            lines=1,
+            max_lines=10,
+            interactive=True,
+            elem_id="chat-input",
+        )
+        with gr.Row():
+            chat_send_btn = gr.Button("📩 Send", variant="primary", interactive=False, scale=1, min_width=0)
+            chat_clear_btn = gr.Button("🧹 Clear", scale=1, min_width=0)
+        
+        with gr.Row(visible=False) as chat_actions_row_1:
+            chat_discard_btn = gr.Button("🗑️ Discard", scale=1, min_width=0)
+            chat_force_edit_btn = gr.Button("⚡ Force Edit", scale=1, min_width=0)
+        
+        with gr.Row(visible=False) as chat_actions_row_2:
+            chat_validate_btn = gr.Button("✅ Validate", scale=1, min_width=0)
+
+    return chat_section, chatbot, chat_input, chat_send_btn, chat_clear_btn, chat_actions_row_1, chat_discard_btn, chat_force_edit_btn, chat_actions_row_2, chat_validate_btn
+
+def create_chat_handlers(components, states):
+    """Wire events for Chat mode components."""
+    chat_input = components["chat_input"]
+    chat_send_btn = components["chat_send_btn"]
+    chat_clear_btn = components["chat_clear_btn"]
+    chat_discard_btn = components["chat_discard_btn"]
+    chat_force_edit_btn = components["chat_force_edit_btn"]
+    chat_validate_btn = components["chat_validate_btn"]
+    
+    # Shared components
+    selected_section = states["selected_section"]
+    chat_history = states["chat_history"]
+    current_md = states["current_md"]
+    initial_text_before_chat = states["initial_text_before_chat"]
+    status_log = states["status_log"]
+    current_drafts = states["current_drafts"]
+    create_sections_epoch = states["create_sections_epoch"]
+    
+    # Chat Input Change Event to toggle Send button
+    chat_input.change(
+        fn=lambda x: gr.update(interactive=bool(x.strip())),
+        inputs=[chat_input],
+        outputs=[chat_send_btn]
+    )
+
+    chat_send_btn.click(
+        fn=chat_handler,
+        inputs=[selected_section, chat_input, chat_history, current_md, initial_text_before_chat, status_log, current_drafts],
+        outputs=[
+            chat_input,
+            chat_history,
+            components["chatbot"], # Update chatbot component
+            components["viewer_md"],
+            components["chat_actions_row_1"], # validate/discard row
+            chat_discard_btn, # redundant but for safety if handled individually
+            components["chat_actions_row_2"], # force/diff row
+            status_log,
+            components["status_strip"],
+            current_md,
+            chat_input, # Added output
+            chat_clear_btn, # Added output
+            current_drafts, # Added output
+            components["status_row"], # Added output
+            components["status_label"],
+            components["btn_checkpoint"],
+            components["btn_draft"],
+            components["btn_diff"],
+            states["current_view_state"],
+        ],
+    )
+    
+    # Also trigger send on Enter in chat_input
+    chat_input.submit(
+        fn=chat_handler,
+        inputs=[selected_section, chat_input, chat_history, current_md, initial_text_before_chat, status_log, current_drafts],
+        outputs=[
+            chat_input,
+            chat_history,
+            components["chatbot"], # Update chatbot component
+            components["viewer_md"],
+            components["chat_actions_row_1"], # validate/discard row
+            chat_discard_btn, # redundant but for safety if handled individually
+            components["chat_actions_row_2"], # force/diff row
+            status_log,
+            components["status_strip"],
+            current_md,
+            chat_input, # Added output
+            chat_clear_btn, # Added output
+            current_drafts, # Added output
+            components["status_row"], # Added output
+            components["status_label"],
+            components["btn_checkpoint"],
+            components["btn_draft"],
+            components["btn_diff"],
+            states["current_view_state"],
+        ],
+    )
+    
+    # We need to add handlers for clear, discard, force_edit, validate if they exist in the UI but weren't fully wired in the snippet I saw or if I missed them.
+    # Looking at editor_tab.py, I only saw chat_send_btn wired. 
+    # Wait, I need to check if other buttons were wired in editor_tab.py.
+    # In the snippet of editor_tab.py I read (lines 1-800), I saw:
+    # chat_send_btn.click(...)
+    # I did NOT see chat_clear_btn.click, chat_discard_btn.click, etc.
+    # Let me double check editor_tab.py content again or assume they were further down or not wired yet.
+    # The user said "impreuna cu handlerele (clicks etc) in fisierele deja existente".
+    # If they were not wired in editor_tab.py, I should wire them now if the handlers exist in chat.py.
+    # chat.py has: clear_chat, validate_handler, discard_handler, force_edit_handler.
+    # So I should wire them.
+    
+    chat_clear_btn.click(
+        fn=clear_chat,
+        inputs=[selected_section, status_log],
+        outputs=[chat_history, status_log, components["status_strip"], components["chatbot"]]
+    )
+    
+    chat_discard_btn.click(
+        fn=discard_handler,
+        inputs=[selected_section, status_log, current_drafts],
+        outputs=[
+            components["viewer_md"],
+            chat_validate_btn,
+            chat_discard_btn,
+            chat_force_edit_btn,
+            current_md,
+            status_log,
+            components["status_strip"],
+            current_drafts,
+            components["status_row"],
+            components["status_label"],
+            components["btn_checkpoint"],
+            components["btn_draft"],
+            components["btn_diff"],
+            states["current_view_state"],
+        ]
+    )
+    
+    chat_force_edit_btn.click(
+        fn=force_edit_handler,
+        inputs=[selected_section, current_md, status_log, create_sections_epoch, current_drafts],
+        outputs=[
+            components["viewer_md"],
+            chat_validate_btn,
+            chat_discard_btn,
+            chat_force_edit_btn,
+            current_md,
+            status_log,
+            components["status_strip"],
+            create_sections_epoch,
+            current_drafts,
+            components["status_row"],
+            components["status_label"],
+            components["btn_checkpoint"],
+            components["btn_draft"],
+            components["btn_diff"],
+            states["current_view_state"],
+        ]
+    )
+    
+    chat_validate_btn.click(
+        fn=validate_handler,
+        inputs=[selected_section, current_md, status_log, current_drafts],
+        outputs=[
+            components["chat_section"],
+            components["validation_title"],
+            components["validation_box"],
+            components["apply_updates_btn"],
+            components["regenerate_btn"],
+            components["continue_btn"],
+            components["discard2_btn"],
+            components["viewer_md"],
+            status_log,
+            components["status_strip"],
+            states["pending_plan"],
+        ]
+    )

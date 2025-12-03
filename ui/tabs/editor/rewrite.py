@@ -1,6 +1,7 @@
 import gradio as gr
 import ui.editor_handlers as H
-from ui.tabs.editor.utils import append_status, replace_text_with_highlight, remove_highlight, format_selected_preview
+from ui.rewrite_presets import REWRITE_PRESETS
+from ui.tabs.editor.utils import append_status, replace_text_with_highlight, remove_highlight, format_selected_preview, update_instructions_from_preset
 
 def handle_text_selection(evt: gr.SelectData):
     """Handle text selection in editor_tb and store selected text and indices."""
@@ -223,4 +224,160 @@ def continue_edit(section, current_log, current_md):
         new_log,
         gr.update(visible=False),   # hide Chat Section
         gr.update(visible=False),   # status_row (hidden)
+    )
+
+def create_rewrite_ui():
+    """Create UI components for Rewrite mode."""
+    with gr.Column(visible=False) as rewrite_section:
+        rewrite_selected_preview = gr.Textbox(
+            label="Selected Text",
+            value="",
+            lines=1,
+            interactive=False,
+            max_lines=1,
+        )
+        preset_dropdown = gr.Dropdown(
+            label="Presets",
+            choices=list(REWRITE_PRESETS.keys()),
+            value="None",
+            interactive=True,
+        )
+        rewrite_instructions_tb = gr.Textbox(
+            label="Rewrite Instructions",
+            placeholder="Enter instructions on how to rewrite this section...",
+            lines=3,
+            interactive=True,
+        )
+        rewrite_btn = gr.Button("🔄 Rewrite", variant="primary", interactive=False)
+        rewrite_validate_btn = gr.Button("✅ Validate", visible=False)
+        rewrite_discard_btn = gr.Button("🗑️ Discard", visible=False)
+        rewrite_force_edit_btn = gr.Button("⚡ Force Edit", visible=False)
+        
+    return rewrite_section, rewrite_selected_preview, preset_dropdown, rewrite_instructions_tb, rewrite_btn, rewrite_validate_btn, rewrite_discard_btn, rewrite_force_edit_btn
+
+def create_rewrite_handlers(components, states):
+    """Wire events for Rewrite mode components."""
+    rewrite_section = components["rewrite_section"]
+    rewrite_selected_preview = components["rewrite_selected_preview"]
+    preset_dropdown = components["preset_dropdown"]
+    rewrite_instructions_tb = components["rewrite_instructions_tb"]
+    rewrite_btn = components["rewrite_btn"]
+    rewrite_validate_btn = components["rewrite_validate_btn"]
+    rewrite_discard_btn = components["rewrite_discard_btn"]
+    rewrite_force_edit_btn = components["rewrite_force_edit_btn"]
+    
+    # Shared components
+    editor_tb = components["editor_tb"]
+    selected_text = states["selected_text"]
+    selected_indices = states["selected_indices"]
+    selected_section = states["selected_section"]
+    current_md = states["current_md"]
+    status_log = states["status_log"]
+    original_text_before_rewrite = states["original_text_before_rewrite"]
+    create_sections_epoch = states["create_sections_epoch"]
+    
+    editor_tb.select(
+        fn=handle_text_selection,
+        inputs=None,
+        outputs=[selected_text, selected_indices, rewrite_selected_preview, rewrite_btn],
+    )
+
+    preset_dropdown.change(
+        fn=update_instructions_from_preset,
+        inputs=[preset_dropdown],
+        outputs=[rewrite_instructions_tb]
+    )
+
+    rewrite_btn.click(
+        fn=rewrite_handler,
+        inputs=[selected_section, selected_text, selected_indices, rewrite_instructions_tb, current_md, status_log, original_text_before_rewrite],
+        outputs=[
+            editor_tb,
+            components["viewer_md"],
+            rewrite_validate_btn,
+            rewrite_discard_btn,
+            rewrite_force_edit_btn,
+            rewrite_btn,
+            components["status_strip"],
+            status_log,
+            current_md,
+            selected_text,
+            selected_indices,
+            original_text_before_rewrite,
+        ],
+        queue=True,
+        show_progress=False,
+    )
+
+    rewrite_discard_btn.click(
+        fn=rewrite_discard,
+        inputs=[selected_section, status_log],
+        outputs=[
+            editor_tb,
+            components["viewer_md"],
+            rewrite_validate_btn,
+            rewrite_discard_btn,
+            rewrite_force_edit_btn,
+            rewrite_btn,
+            rewrite_selected_preview,
+            components["status_strip"],
+            status_log,
+            selected_text,
+            selected_indices,
+            current_md,
+            original_text_before_rewrite,
+        ],
+    )
+
+    rewrite_force_edit_btn.click(
+        fn=rewrite_force_edit,
+        inputs=[selected_section, current_md, status_log, create_sections_epoch],
+        outputs=[
+            components["viewer_md"],
+            components["status_strip"],
+            editor_tb,
+            components["validation_title"],
+            components["validation_box"],
+            components["apply_updates_btn"],
+            components["regenerate_btn"],
+            components["continue_btn"],
+            components["discard2_btn"],
+            components["confirm_btn"],
+            components["discard_btn"],
+            components["force_edit_btn"],
+            components["start_edit_btn"],
+            rewrite_section,
+            components["mode_radio"],
+            components["section_dropdown"],
+            current_md,
+            status_log,
+            create_sections_epoch,
+            selected_text,
+            selected_indices,
+            components["status_row"],
+        ],
+    )
+
+    rewrite_validate_btn.click(
+        fn=rewrite_validate,
+        inputs=[selected_section, current_md, status_log],
+        outputs=[
+            components["validation_box"],
+            states["pending_plan"],
+            components["validation_title"],
+            components["validation_box"],
+            components["apply_updates_btn"],
+            components["regenerate_btn"],
+            components["continue_btn"],
+            components["discard2_btn"],
+            rewrite_section,
+            components["viewer_md"],
+            editor_tb,
+            components["mode_radio"],
+            components["section_dropdown"],
+            components["status_strip"],
+            status_log,
+        ],
+        queue=True,
+        show_progress=False,
     )

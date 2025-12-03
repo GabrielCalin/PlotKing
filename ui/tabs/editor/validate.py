@@ -501,3 +501,271 @@ def discard_from_validate(section, current_log):
         gr.update(visible=False), # btn_diff
         "Checkpoint" # current_view_state
     )
+
+def update_draft_buttons(original_selected, generated_selected):
+    """Enable/disable draft action buttons based on selections."""
+    # Accept Selected: enabled if ANY checkbox is selected
+    any_selected = bool(original_selected or generated_selected)
+    
+    # Regenerate Selected: enabled only if auto-generated drafts are selected
+    can_regenerate = bool(generated_selected)
+    
+    return (
+        gr.update(interactive=any_selected),  # btn_draft_accept_selected
+        gr.update(interactive=can_regenerate)  # btn_draft_regenerate
+    )
+
+def regenerate_dispatcher(section, editor_text, current_log, mode, current_md):
+    """
+    Handles 'Regenerate' button click.
+    Re-runs validation logic based on the current mode and updates ONLY the Validation UI.
+    """
+    # 1. Common "Loading" State
+    new_log, status_update = append_status(current_log, f"🔄 ({section}) Regenerating validation...")
+    
+    yield (
+        gr.update(value="🔄 Validating..."), # validation_box
+        None, # pending_plan
+        gr.update(visible=True), # validation_title
+        gr.update(visible=False), # apply_updates_btn
+        gr.update(visible=False), # regenerate_btn
+        gr.update(visible=False), # continue_btn
+        gr.update(visible=False), # discard2_btn
+        status_update, # status_strip
+        new_log # status_log
+    )
+    
+    # 2. Determine text to validate
+    text_to_validate = ""
+    if mode == "Manual":
+        text_to_validate = editor_text
+    else:
+        # Chat and Rewrite modes use current_md state
+        text_to_validate = current_md
+        
+    # 3. Run Validation Logic
+    msg, plan = H.editor_validate(section, text_to_validate)
+    final_log, final_status = append_status(new_log, f"✅ ({section}) Validation completed.")
+    
+    # 4. Common "Done" State
+    yield (
+        gr.update(value=msg), # validation_box
+        plan, # pending_plan
+        gr.update(visible=True), # validation_title
+        gr.update(visible=True), # apply_updates_btn
+        gr.update(visible=True), # regenerate_btn
+        gr.update(visible=True), # continue_btn
+        gr.update(visible=True), # discard2_btn
+        final_status, # status_strip
+        final_log # status_log
+    )
+
+def create_validate_ui():
+    """Create UI components for Validation and Draft Review."""
+    # Validation Result
+    validation_title = gr.Markdown("🔎 **Validation Result**", visible=False)
+    validation_box = gr.Markdown(
+        value="Validation results will appear here after confirming edits.",
+        height=400,
+        visible=False,
+    )
+
+    with gr.Row(elem_classes=["validation-row"]):
+        apply_updates_btn = gr.Button("✅ Apply", scale=1, min_width=0, visible=False)
+        stop_updates_btn = gr.Button("🛑 Stop", variant="stop", scale=1, min_width=0, visible=False)
+        regenerate_btn = gr.Button("🔄 Regenerate", scale=1, min_width=0, visible=False)
+    
+    # Draft Review Panel
+    with gr.Column(visible=False) as draft_review_panel:
+        gr.Markdown("### 📝 Draft Review")
+        
+        # Original Draft (the manually edited section) - now a checkbox
+        gr.Markdown("**Original Draft**")
+        original_draft_checkbox = gr.CheckboxGroup(
+            label="Originally Edited Section",
+            choices=[],
+            value=[],
+            interactive=True
+        )
+        
+        # Auto-Generated Drafts (impacted sections)
+        gr.Markdown("**Auto-Generated Drafts**")
+        generated_drafts_list = gr.CheckboxGroup(
+            label="AI-Generated Sections",
+            choices=[],
+            value=[],
+            interactive=True
+        )
+        
+        with gr.Row():
+            btn_draft_accept_all = gr.Button("✅ Accept All", size="sm", variant="primary", scale=1, min_width=0)
+            btn_draft_revert = gr.Button("❌ Revert All", size="sm", variant="stop", scale=1, min_width=0)
+        with gr.Row():
+            btn_draft_accept_selected = gr.Button("✔️ Accept Selected", size="sm", scale=1, min_width=0, interactive=False)
+            btn_draft_regenerate = gr.Button("🔄 Regenerate Selected", size="sm", scale=1, min_width=0, interactive=False)
+
+    with gr.Row(elem_classes=["validation-row"]):
+        continue_btn = gr.Button("🔁 Back", scale=1, min_width=0, visible=False)
+        discard2_btn = gr.Button("🗑️ Discard", scale=1, min_width=0, visible=False)
+        
+    return validation_title, validation_box, apply_updates_btn, stop_updates_btn, regenerate_btn, draft_review_panel, original_draft_checkbox, generated_drafts_list, btn_draft_accept_all, btn_draft_revert, btn_draft_accept_selected, btn_draft_regenerate, continue_btn, discard2_btn
+
+def create_validate_handlers(components, states):
+    """Wire events for Validation and Draft Review components."""
+    apply_updates_btn = components["apply_updates_btn"]
+    stop_updates_btn = components["stop_updates_btn"]
+    regenerate_btn = components["regenerate_btn"]
+    continue_btn = components["continue_btn"]
+    discard2_btn = components["discard2_btn"]
+    btn_draft_accept_all = components["btn_draft_accept_all"]
+    btn_draft_revert = components["btn_draft_revert"]
+    btn_draft_accept_selected = components["btn_draft_accept_selected"]
+    btn_draft_regenerate = components["btn_draft_regenerate"]
+    original_draft_checkbox = components["original_draft_checkbox"]
+    generated_drafts_list = components["generated_drafts_list"]
+    
+    # Shared components
+    section_dropdown = components["section_dropdown"]
+    editor_tb = components["editor_tb"]
+    pending_plan = states["pending_plan"]
+    status_log = states["status_log"]
+    create_sections_epoch = states["create_sections_epoch"]
+    mode_radio = components["mode_radio"]
+    current_md = states["current_md"]
+    current_drafts = states["current_drafts"]
+    selected_section = states["selected_section"]
+    
+    apply_updates_btn.click(
+        fn=apply_updates,
+        inputs=[section_dropdown, editor_tb, pending_plan, status_log, create_sections_epoch, mode_radio, current_md, current_drafts],
+        outputs=[
+            components["viewer_md"], components["status_strip"],
+            editor_tb,
+            components["validation_title"], components["validation_box"],
+            apply_updates_btn, stop_updates_btn, regenerate_btn, continue_btn, discard2_btn,
+            components["start_edit_btn"],
+            components["rewrite_section"],
+            mode_radio, section_dropdown,
+            current_md,  # update current_md state
+            status_log,
+            create_sections_epoch,  # bump create_sections_epoch to notify Create tab
+            components["draft_review_panel"], # Added
+            original_draft_checkbox, # Added
+            generated_drafts_list, # Added
+            current_drafts, # Added
+            components["status_row"], # Added
+            components["status_label"], # Added
+            components["btn_checkpoint"], # Added
+            components["btn_draft"], # Added
+            components["btn_diff"], # Added
+            states["current_view_state"], # Added
+        ],
+        queue=True,
+    )
+
+    stop_updates_btn.click(
+        fn=request_stop,
+        inputs=None,
+        outputs=[stop_updates_btn],
+        queue=False
+    )
+    
+    continue_btn.click(
+        fn=components["_continue_edit_dispatcher"], # Passed from main file
+        inputs=[selected_section, status_log, mode_radio, current_md],
+        outputs=[
+            components["validation_title"], components["validation_box"],
+            apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
+            components["confirm_btn"], components["discard_btn"], components["force_edit_btn"],
+            components["rewrite_section"],
+            components["viewer_md"],
+            editor_tb,
+            mode_radio, section_dropdown,
+            components["status_strip"],
+            status_log,
+            components["chat_section"], # Added output
+            components["status_row"], # Added
+        ],
+    )
+
+    discard2_btn.click(
+        fn=discard_from_validate,
+        inputs=[selected_section, status_log],
+        outputs=[
+            components["viewer_md"], editor_tb, components["validation_box"], pending_plan,
+            components["validation_title"],
+            apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
+            components["start_edit_btn"],
+            components["confirm_btn"], components["discard_btn"], components["force_edit_btn"],
+            components["rewrite_section"],
+            mode_radio, section_dropdown, components["status_strip"],
+            status_log,
+            current_md,
+            components["draft_review_panel"], # Added
+            generated_drafts_list, # Added
+            current_drafts, # Added
+            components["status_row"], # Added: show status row
+            components["status_label"], # Added
+            components["btn_checkpoint"], # Added
+            components["btn_draft"], # Added
+            components["btn_diff"], # Added
+            states["current_view_state"], # Added
+        ],
+    )
+
+    regenerate_btn.click(
+        fn=regenerate_dispatcher,
+        inputs=[selected_section, editor_tb, status_log, mode_radio, current_md],
+        outputs=[
+            components["validation_box"],
+            pending_plan,
+            components["validation_title"],
+            apply_updates_btn,
+            regenerate_btn,
+            continue_btn,
+            discard2_btn,
+            components["status_strip"],
+            status_log,
+        ],
+        queue=True,
+        show_progress=False,
+    )
+    
+    # Draft Review Handlers
+    btn_draft_accept_all.click(
+        fn=draft_accept_all,
+        inputs=[selected_section, current_drafts, status_log, create_sections_epoch],
+        outputs=[components["draft_review_panel"], components["status_strip"], status_log, create_sections_epoch, current_drafts, components["status_row"], components["status_label"], components["btn_checkpoint"], components["btn_draft"], components["btn_diff"], states["current_view_state"], components["viewer_md"], current_md]
+    )
+    
+    btn_draft_revert.click(
+        fn=draft_revert_all,
+        inputs=[selected_section, status_log],
+        outputs=[components["draft_review_panel"], components["status_strip"], status_log, current_drafts, components["status_row"], components["status_label"], components["btn_checkpoint"], components["btn_draft"], components["btn_diff"], states["current_view_state"], components["viewer_md"], current_md]
+    )
+    
+    btn_draft_accept_selected.click(
+        fn=draft_accept_selected,
+        inputs=[selected_section, original_draft_checkbox, generated_drafts_list, current_drafts, status_log, create_sections_epoch],
+        outputs=[components["draft_review_panel"], components["status_strip"], status_log, create_sections_epoch, current_drafts, components["status_row"], components["status_label"], components["btn_checkpoint"], components["btn_draft"], components["btn_diff"], states["current_view_state"], components["viewer_md"], current_md]
+    )
+    
+    btn_draft_regenerate.click(
+        fn=draft_regenerate_selected,
+        inputs=[generated_drafts_list, current_drafts, pending_plan, selected_section, status_log, create_sections_epoch],
+        outputs=[components["draft_review_panel"], original_draft_checkbox, generated_drafts_list, components["status_strip"], status_log, create_sections_epoch, current_drafts, components["status_row"], stop_updates_btn],
+        queue=True
+    )
+    
+    # Change handlers for checkboxes to enable/disable buttons
+    original_draft_checkbox.change(
+        fn=update_draft_buttons,
+        inputs=[original_draft_checkbox, generated_drafts_list],
+        outputs=[btn_draft_accept_selected, btn_draft_regenerate]
+    )
+    
+    generated_drafts_list.change(
+        fn=update_draft_buttons,
+        inputs=[original_draft_checkbox, generated_drafts_list],
+        outputs=[btn_draft_accept_selected, btn_draft_regenerate]
+    )
