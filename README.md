@@ -37,7 +37,8 @@ The Editor tab is where the magic happens. It's not just a text box; it's a suit
 -   **Chat**: Converse with "Plot King" to brainstorm ideas or request changes for the current section.
 
 #### 🛡️ Validation System & Drafts
-![Validation](images/validation.png)
+![Validation](images/validation.png) 
+![Validation2](images/validation2.png)
 
 When you make changes (manually or via AI), PlotKing doesn't just overwrite your work. It creates **Drafts**.
 -   **Impact Analysis**: The system analyzes how your change affects future chapters.
