@@ -6,9 +6,6 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## 🎨 Phase 3 — Presentation and Export
 
-13. **Public GitHub Repository**  
-   - Make the project public and document setup, dependencies, and contribution flow.
-
 14. **Major Code Refactor**  
    - Draft manager improvements.  
    - Dedicated checkpoint class.  
@@ -145,8 +142,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 | Feature | Status |
 |----------|--------|
-| **Public GitHub Repository** | ⏳ In Progress |
-| **Major Code Refactor** | ⏳ Planned |
+| **Major Code Refactor** | ⏳ In Progress |
 | **Generate EPUB Cover Image** | ⏳ Planned |
 | **AI Chat for Refined Plot** | ⏳ Planned |
 | **Global Draft System** | ⏳ Planned |
