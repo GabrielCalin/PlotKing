@@ -2,6 +2,7 @@ import gradio as gr
 import ui.editor_handlers as H
 from ui.rewrite_presets import REWRITE_PRESETS
 from ui.tabs.editor.utils import append_status, replace_text_with_highlight, remove_highlight, format_selected_preview, update_instructions_from_preset
+from ui.tabs.editor.constants import Components, States
 
 def handle_text_selection(evt: gr.SelectData):
     """Handle text selection in editor_tb and store selected text and indices."""
@@ -257,24 +258,24 @@ def create_rewrite_ui():
 
 def create_rewrite_handlers(components, states):
     """Wire events for Rewrite mode components."""
-    rewrite_section = components["rewrite_section"]
-    rewrite_selected_preview = components["rewrite_selected_preview"]
-    preset_dropdown = components["preset_dropdown"]
-    rewrite_instructions_tb = components["rewrite_instructions_tb"]
-    rewrite_btn = components["rewrite_btn"]
-    rewrite_validate_btn = components["rewrite_validate_btn"]
-    rewrite_discard_btn = components["rewrite_discard_btn"]
-    rewrite_force_edit_btn = components["rewrite_force_edit_btn"]
+    rewrite_section = components[Components.REWRITE_SECTION]
+    rewrite_selected_preview = components[Components.REWRITE_SELECTED_PREVIEW]
+    preset_dropdown = components[Components.PRESET_DROPDOWN]
+    rewrite_instructions_tb = components[Components.REWRITE_INSTRUCTIONS_TB]
+    rewrite_btn = components[Components.REWRITE_BTN]
+    rewrite_validate_btn = components[Components.REWRITE_VALIDATE_BTN]
+    rewrite_discard_btn = components[Components.REWRITE_DISCARD_BTN]
+    rewrite_force_edit_btn = components[Components.REWRITE_FORCE_EDIT_BTN]
     
     # Shared components
-    editor_tb = components["editor_tb"]
-    selected_text = states["selected_text"]
-    selected_indices = states["selected_indices"]
-    selected_section = states["selected_section"]
-    current_md = states["current_md"]
-    status_log = states["status_log"]
-    original_text_before_rewrite = states["original_text_before_rewrite"]
-    create_sections_epoch = states["create_sections_epoch"]
+    editor_tb = components[Components.EDITOR_TB]
+    selected_text = states[States.SELECTED_TEXT]
+    selected_indices = states[States.SELECTED_INDICES]
+    selected_section = states[States.SELECTED_SECTION]
+    current_md = states[States.CURRENT_MD]
+    status_log = states[States.STATUS_LOG]
+    original_text_before_rewrite = states[States.ORIGINAL_TEXT_BEFORE_REWRITE]
+    create_sections_epoch = states[States.CREATE_SECTIONS_EPOCH]
     
     editor_tb.select(
         fn=handle_text_selection,
@@ -293,12 +294,12 @@ def create_rewrite_handlers(components, states):
         inputs=[selected_section, selected_text, selected_indices, rewrite_instructions_tb, current_md, status_log, original_text_before_rewrite],
         outputs=[
             editor_tb,
-            components["viewer_md"],
+            components[Components.VIEWER_MD],
             rewrite_validate_btn,
             rewrite_discard_btn,
             rewrite_force_edit_btn,
             rewrite_btn,
-            components["status_strip"],
+            components[Components.STATUS_STRIP],
             status_log,
             current_md,
             selected_text,
@@ -314,13 +315,13 @@ def create_rewrite_handlers(components, states):
         inputs=[selected_section, status_log],
         outputs=[
             editor_tb,
-            components["viewer_md"],
+            components[Components.VIEWER_MD],
             rewrite_validate_btn,
             rewrite_discard_btn,
             rewrite_force_edit_btn,
             rewrite_btn,
             rewrite_selected_preview,
-            components["status_strip"],
+            components[Components.STATUS_STRIP],
             status_log,
             selected_text,
             selected_indices,
@@ -333,28 +334,28 @@ def create_rewrite_handlers(components, states):
         fn=rewrite_force_edit,
         inputs=[selected_section, current_md, status_log, create_sections_epoch],
         outputs=[
-            components["viewer_md"],
-            components["status_strip"],
+            components[Components.VIEWER_MD],
+            components[Components.STATUS_STRIP],
             editor_tb,
-            components["validation_title"],
-            components["validation_box"],
-            components["apply_updates_btn"],
-            components["regenerate_btn"],
-            components["continue_btn"],
-            components["discard2_btn"],
-            components["confirm_btn"],
-            components["discard_btn"],
-            components["force_edit_btn"],
-            components["start_edit_btn"],
+            components[Components.VALIDATION_TITLE],
+            components[Components.VALIDATION_BOX],
+            components[Components.APPLY_UPDATES_BTN],
+            components[Components.REGENERATE_BTN],
+            components[Components.CONTINUE_BTN],
+            components[Components.DISCARD2_BTN],
+            components[Components.CONFIRM_BTN],
+            components[Components.DISCARD_BTN],
+            components[Components.FORCE_EDIT_BTN],
+            components[Components.START_EDIT_BTN],
             rewrite_section,
-            components["mode_radio"],
-            components["section_dropdown"],
+            components[Components.MODE_RADIO],
+            components[Components.SECTION_DROPDOWN],
             current_md,
             status_log,
             create_sections_epoch,
             selected_text,
             selected_indices,
-            components["status_row"],
+            components[Components.STATUS_ROW],
         ],
     )
 
@@ -362,20 +363,20 @@ def create_rewrite_handlers(components, states):
         fn=rewrite_validate,
         inputs=[selected_section, current_md, status_log],
         outputs=[
-            components["validation_box"],
-            states["pending_plan"],
-            components["validation_title"],
-            components["validation_box"],
-            components["apply_updates_btn"],
-            components["regenerate_btn"],
-            components["continue_btn"],
-            components["discard2_btn"],
+            components[Components.VALIDATION_BOX],
+            states[States.PENDING_PLAN],
+            components[Components.VALIDATION_TITLE],
+            components[Components.VALIDATION_BOX],
+            components[Components.APPLY_UPDATES_BTN],
+            components[Components.REGENERATE_BTN],
+            components[Components.CONTINUE_BTN],
+            components[Components.DISCARD2_BTN],
             rewrite_section,
-            components["viewer_md"],
+            components[Components.VIEWER_MD],
             editor_tb,
-            components["mode_radio"],
-            components["section_dropdown"],
-            components["status_strip"],
+            components[Components.MODE_RADIO],
+            components[Components.SECTION_DROPDOWN],
+            components[Components.STATUS_STRIP],
             status_log,
         ],
         queue=True,

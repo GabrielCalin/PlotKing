@@ -1,6 +1,7 @@
 import gradio as gr
 import ui.editor_handlers as H
 from ui.tabs.editor.utils import append_status, remove_highlight
+from ui.tabs.editor.constants import Components, States
 
 def start_edit(curr_text, section, current_log):
     """Switch to edit mode — locks Section + Mode."""
@@ -165,34 +166,34 @@ def create_manual_ui():
 
 def create_manual_handlers(components, states):
     """Wire events for Manual mode components."""
-    start_edit_btn = components["start_edit_btn"]
-    confirm_btn = components["confirm_btn"]
-    discard_btn = components["discard_btn"]
-    force_edit_btn = components["force_edit_btn"]
+    start_edit_btn = components[Components.START_EDIT_BTN]
+    confirm_btn = components[Components.CONFIRM_BTN]
+    discard_btn = components[Components.DISCARD_BTN]
+    force_edit_btn = components[Components.FORCE_EDIT_BTN]
     
     # Shared components
-    current_md = states["current_md"]
-    selected_section = states["selected_section"]
-    status_log = states["status_log"]
-    editor_tb = components["editor_tb"]
-    create_sections_epoch = states["create_sections_epoch"]
+    current_md = states[States.CURRENT_MD]
+    selected_section = states[States.SELECTED_SECTION]
+    status_log = states[States.STATUS_LOG]
+    editor_tb = components[Components.EDITOR_TB]
+    create_sections_epoch = states[States.CREATE_SECTIONS_EPOCH]
     
     start_edit_btn.click(
         fn=lambda *args: (*start_edit(*args), gr.update(visible=False)), # Wrap to hide status row
         inputs=[current_md, selected_section, status_log],
         outputs=[
             start_edit_btn,
-            components["rewrite_section"],
+            components[Components.REWRITE_SECTION],
             confirm_btn,
             discard_btn,
             force_edit_btn,
-            components["viewer_md"],
+            components[Components.VIEWER_MD],
             editor_tb,
-            components["mode_radio"],
-            components["section_dropdown"],
-            components["status_strip"],
+            components[Components.MODE_RADIO],
+            components[Components.SECTION_DROPDOWN],
+            components[Components.STATUS_STRIP],
             status_log,
-            components["status_row"],
+            components[Components.STATUS_ROW],
         ],
     )
 
@@ -200,18 +201,18 @@ def create_manual_handlers(components, states):
         fn=confirm_edit,
         inputs=[selected_section, editor_tb, status_log],
         outputs=[
-            components["validation_box"], states["pending_plan"],
-            components["validation_title"], components["validation_box"],
-            components["apply_updates_btn"], components["regenerate_btn"], components["continue_btn"], components["discard2_btn"],
+            components[Components.VALIDATION_BOX], states[States.PENDING_PLAN],
+            components[Components.VALIDATION_TITLE], components[Components.VALIDATION_BOX],
+            components[Components.APPLY_UPDATES_BTN], components[Components.REGENERATE_BTN], components[Components.CONTINUE_BTN], components[Components.DISCARD2_BTN],
             confirm_btn, discard_btn, force_edit_btn,
             start_edit_btn,
-            components["rewrite_section"],
-            components["viewer_md"],
+            components[Components.REWRITE_SECTION],
+            components[Components.VIEWER_MD],
             editor_tb,
-            components["mode_radio"], components["section_dropdown"],
-            components["status_strip"],
+            components[Components.MODE_RADIO], components[Components.SECTION_DROPDOWN],
+            components[Components.STATUS_STRIP],
             status_log,
-            components["status_row"],
+            components[Components.STATUS_ROW],
         ],
         queue=True,
         show_progress=False,
@@ -221,15 +222,15 @@ def create_manual_handlers(components, states):
         fn=discard_from_manual,
         inputs=[selected_section, status_log],
         outputs=[
-            components["viewer_md"], editor_tb, components["validation_box"], states["pending_plan"],
-            components["validation_title"],
-            components["apply_updates_btn"], components["regenerate_btn"], components["continue_btn"], components["discard2_btn"],
+            components[Components.VIEWER_MD], editor_tb, components[Components.VALIDATION_BOX], states[States.PENDING_PLAN],
+            components[Components.VALIDATION_TITLE],
+            components[Components.APPLY_UPDATES_BTN], components[Components.REGENERATE_BTN], components[Components.CONTINUE_BTN], components[Components.DISCARD2_BTN],
             start_edit_btn,
             confirm_btn, discard_btn, force_edit_btn,
-            components["rewrite_section"],
-            components["mode_radio"], components["section_dropdown"], components["status_strip"],
+            components[Components.REWRITE_SECTION],
+            components[Components.MODE_RADIO], components[Components.SECTION_DROPDOWN], components[Components.STATUS_STRIP],
             status_log,
-            components["status_row"],
+            components[Components.STATUS_ROW],
         ],
     )
 
@@ -237,13 +238,13 @@ def create_manual_handlers(components, states):
         fn=force_edit,
         inputs=[selected_section, editor_tb, status_log, create_sections_epoch],
         outputs=[
-            components["viewer_md"], components["status_strip"], editor_tb,
+            components[Components.VIEWER_MD], components[Components.STATUS_STRIP], editor_tb,
             confirm_btn, discard_btn, force_edit_btn, start_edit_btn,
-            components["rewrite_section"],
-            components["mode_radio"], components["section_dropdown"],
-            current_md,  # update current_md state
+            components[Components.REWRITE_SECTION],
+            components[Components.MODE_RADIO], components[Components.SECTION_DROPDOWN],
+            current_md,
             status_log,
-            create_sections_epoch,  # bump create_sections_epoch to notify Create tab
-            components["status_row"],
+            create_sections_epoch,
+            components[Components.STATUS_ROW],
         ],
     )

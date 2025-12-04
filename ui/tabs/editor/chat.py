@@ -2,6 +2,7 @@
 import gradio as gr
 import ui.editor_handlers as H
 from ui.tabs.editor.utils import append_status
+from ui.tabs.editor.constants import Components, States
 from pipeline.steps.chat_editor.llm import call_llm_chat
 
 def chat_handler(section, message, history, current_text, initial_text, current_log, current_drafts):
@@ -354,23 +355,23 @@ def create_chat_ui():
 
 def create_chat_handlers(components, states):
     """Wire events for Chat mode components."""
-    chat_input = components["chat_input"]
-    chat_send_btn = components["chat_send_btn"]
-    chat_clear_btn = components["chat_clear_btn"]
-    chat_discard_btn = components["chat_discard_btn"]
-    chat_force_edit_btn = components["chat_force_edit_btn"]
-    chat_validate_btn = components["chat_validate_btn"]
-    chatbot = components["chatbot"]
+    chat_input = components[Components.CHAT_INPUT]
+    chat_send_btn = components[Components.CHAT_SEND_BTN]
+    chat_clear_btn = components[Components.CHAT_CLEAR_BTN]
+    chat_discard_btn = components[Components.CHAT_DISCARD_BTN]
+    chat_force_edit_btn = components[Components.CHAT_FORCE_EDIT_BTN]
+    chat_validate_btn = components[Components.CHAT_VALIDATE_BTN]
+    chatbot = components[Components.CHATBOT]
     
     # Shared components
-    selected_section = states["selected_section"]
-    chat_history = states["chat_history"]
-    current_md = states["current_md"]
-    initial_text_before_chat = states["initial_text_before_chat"]
-    status_log = states["status_log"]
-    current_drafts = states["current_drafts"]
-    create_sections_epoch = states["create_sections_epoch"]
-    mode_radio = components["mode_radio"]
+    selected_section = states[States.SELECTED_SECTION]
+    chat_history = states[States.CHAT_HISTORY]
+    current_md = states[States.CURRENT_MD]
+    initial_text_before_chat = states[States.INITIAL_TEXT_BEFORE_CHAT]
+    status_log = states[States.STATUS_LOG]
+    current_drafts = states[States.CURRENT_DRAFTS]
+    create_sections_epoch = states[States.CREATE_SECTIONS_EPOCH]
+    mode_radio = components[Components.MODE_RADIO]
     
     # Chat Input Change Event to toggle Send button
     chat_input.change(
@@ -385,26 +386,26 @@ def create_chat_handlers(components, states):
         outputs=[
             chat_input,
             chat_history,
-            components["chatbot"], # Update chatbot component
-            components["viewer_md"],
-            components["chat_actions_row_1"], # validate/discard row
-            chat_discard_btn, # redundant but for safety if handled individually
-            chat_force_edit_btn, # redundant but for safety if handled individually
-            components["chat_actions_row_2"], # force/diff row
+            components[Components.CHATBOT],
+            components[Components.VIEWER_MD],
+            components[Components.CHAT_ACTIONS_ROW_1],
+            chat_discard_btn,
+            chat_force_edit_btn,
+            components[Components.CHAT_ACTIONS_ROW_2],
             chat_validate_btn,
             status_log,
-            components["status_strip"],
+            components[Components.STATUS_STRIP],
             current_md,
-            chat_input, # Added output
-            chat_clear_btn, # Added output
-            current_drafts, # Added output
-            components["status_row"], # Added output
-            components["status_label"],
-            components["btn_checkpoint"],
-            components["btn_draft"],
-            components["btn_diff"],
-            states["current_view_state"],
-            mode_radio, # Added output
+            chat_input,
+            chat_clear_btn,
+            current_drafts,
+            components[Components.STATUS_ROW],
+            components[Components.STATUS_LABEL],
+            components[Components.BTN_CHECKPOINT],
+            components[Components.BTN_DRAFT],
+            components[Components.BTN_DIFF],
+            states[States.CURRENT_VIEW_STATE],
+            mode_radio,
         ],
     )
     
@@ -415,62 +416,62 @@ def create_chat_handlers(components, states):
         outputs=[
             chat_input,
             chat_history,
-            components["chatbot"], # Update chatbot component
-            components["viewer_md"],
-            components["chat_actions_row_1"], # validate/discard row
-            chat_discard_btn, # redundant but for safety if handled individually
-            chat_force_edit_btn, # redundant but for safety if handled individually
-            components["chat_actions_row_2"], # force/diff row
+            components[Components.CHATBOT],
+            components[Components.VIEWER_MD],
+            components[Components.CHAT_ACTIONS_ROW_1],
+            chat_discard_btn,
+            chat_force_edit_btn,
+            components[Components.CHAT_ACTIONS_ROW_2],
             chat_validate_btn,
             status_log,
-            components["status_strip"],
+            components[Components.STATUS_STRIP],
             current_md,
-            chat_input, # Added output
-            chat_clear_btn, # Added output
-            current_drafts, # Added output
-            components["status_row"], # Added output
-            components["status_label"],
-            components["btn_checkpoint"],
-            components["btn_draft"],
-            components["btn_diff"],
-            states["current_view_state"],
-            mode_radio, # Added output
+            chat_input,
+            chat_clear_btn,
+            current_drafts,
+            components[Components.STATUS_ROW],
+            components[Components.STATUS_LABEL],
+            components[Components.BTN_CHECKPOINT],
+            components[Components.BTN_DRAFT],
+            components[Components.BTN_DIFF],
+            states[States.CURRENT_VIEW_STATE],
+            mode_radio,
         ],
     )
     
     chat_clear_btn.click(
         fn=clear_chat,
         inputs=[selected_section, status_log],
-        outputs=[chat_history, status_log, components["status_strip"], components["chatbot"]]
+        outputs=[chat_history, status_log, components[Components.STATUS_STRIP], components[Components.CHATBOT]]
     )
 
     chatbot.clear(
         fn=clear_chat,
         inputs=[selected_section, status_log],
-        outputs=[chat_history, status_log, components["status_strip"], components["chatbot"]]
+        outputs=[chat_history, status_log, components[Components.STATUS_STRIP], components[Components.CHATBOT]]
     )
     
     chat_discard_btn.click(
         fn=discard_handler,
         inputs=[selected_section, status_log, current_drafts],
         outputs=[
-            components["viewer_md"],
-            components["chat_actions_row_1"],
+            components[Components.VIEWER_MD],
+            components[Components.CHAT_ACTIONS_ROW_1],
             chat_discard_btn,
             chat_force_edit_btn,
-            components["chat_actions_row_2"],
+            components[Components.CHAT_ACTIONS_ROW_2],
             chat_validate_btn,
             current_md,
             status_log,
-            components["status_strip"],
+            components[Components.STATUS_STRIP],
             current_drafts,
-            components["status_row"],
-            components["status_label"],
-            components["btn_checkpoint"],
-            components["btn_draft"],
-            components["btn_diff"],
-            states["current_view_state"],
-            mode_radio, # Added output
+            components[Components.STATUS_ROW],
+            components[Components.STATUS_LABEL],
+            components[Components.BTN_CHECKPOINT],
+            components[Components.BTN_DRAFT],
+            components[Components.BTN_DIFF],
+            states[States.CURRENT_VIEW_STATE],
+            mode_radio,
         ]
     )
     
@@ -478,24 +479,24 @@ def create_chat_handlers(components, states):
         fn=force_edit_handler,
         inputs=[selected_section, current_md, status_log, create_sections_epoch, current_drafts],
         outputs=[
-            components["viewer_md"],
-            components["chat_actions_row_1"],
+            components[Components.VIEWER_MD],
+            components[Components.CHAT_ACTIONS_ROW_1],
             chat_discard_btn,
             chat_force_edit_btn,
-            components["chat_actions_row_2"],
+            components[Components.CHAT_ACTIONS_ROW_2],
             chat_validate_btn,
             current_md,
             status_log,
-            components["status_strip"],
+            components[Components.STATUS_STRIP],
             create_sections_epoch,
             current_drafts,
-            components["status_row"],
-            components["status_label"],
-            components["btn_checkpoint"],
-            components["btn_draft"],
-            components["btn_diff"],
-            states["current_view_state"],
-            mode_radio, # Added output
+            components[Components.STATUS_ROW],
+            components[Components.STATUS_LABEL],
+            components[Components.BTN_CHECKPOINT],
+            components[Components.BTN_DRAFT],
+            components[Components.BTN_DIFF],
+            states[States.CURRENT_VIEW_STATE],
+            mode_radio,
         ]
     )
     
@@ -503,17 +504,17 @@ def create_chat_handlers(components, states):
         fn=validate_handler,
         inputs=[selected_section, current_md, status_log, current_drafts],
         outputs=[
-            components["chat_section"],
-            components["validation_title"],
-            components["validation_box"],
-            components["apply_updates_btn"],
-            components["regenerate_btn"],
-            components["continue_btn"],
-            components["discard2_btn"],
-            components["viewer_md"],
+            components[Components.CHAT_SECTION],
+            components[Components.VALIDATION_TITLE],
+            components[Components.VALIDATION_BOX],
+            components[Components.APPLY_UPDATES_BTN],
+            components[Components.REGENERATE_BTN],
+            components[Components.CONTINUE_BTN],
+            components[Components.DISCARD2_BTN],
+            components[Components.VIEWER_MD],
             status_log,
-            components["status_strip"],
-            states["pending_plan"],
-            mode_radio, # Added output
+            components[Components.STATUS_STRIP],
+            states[States.PENDING_PLAN],
+            mode_radio,
         ]
     )

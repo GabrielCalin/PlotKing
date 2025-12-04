@@ -2,6 +2,7 @@ import gradio as gr
 import ui.editor_handlers as H
 from utils.logger import merge_logs
 from ui.tabs.editor.utils import append_status, remove_highlight
+from ui.tabs.editor.constants import Components, States
 from pipeline.state_manager import save_checkpoint, get_checkpoint
 
 _stop_flag = False
@@ -615,53 +616,53 @@ def create_validate_ui():
 
 def create_validate_handlers(components, states):
     """Wire events for Validation and Draft Review components."""
-    apply_updates_btn = components["apply_updates_btn"]
-    stop_updates_btn = components["stop_updates_btn"]
-    regenerate_btn = components["regenerate_btn"]
-    continue_btn = components["continue_btn"]
-    discard2_btn = components["discard2_btn"]
-    btn_draft_accept_all = components["btn_draft_accept_all"]
-    btn_draft_revert = components["btn_draft_revert"]
-    btn_draft_accept_selected = components["btn_draft_accept_selected"]
-    btn_draft_regenerate = components["btn_draft_regenerate"]
-    original_draft_checkbox = components["original_draft_checkbox"]
-    generated_drafts_list = components["generated_drafts_list"]
+    apply_updates_btn = components[Components.APPLY_UPDATES_BTN]
+    stop_updates_btn = components[Components.STOP_UPDATES_BTN]
+    regenerate_btn = components[Components.REGENERATE_BTN]
+    continue_btn = components[Components.CONTINUE_BTN]
+    discard2_btn = components[Components.DISCARD2_BTN]
+    btn_draft_accept_all = components[Components.BTN_DRAFT_ACCEPT_ALL]
+    btn_draft_revert = components[Components.BTN_DRAFT_REVERT]
+    btn_draft_accept_selected = components[Components.BTN_DRAFT_ACCEPT_SELECTED]
+    btn_draft_regenerate = components[Components.BTN_DRAFT_REGENERATE]
+    original_draft_checkbox = components[Components.ORIGINAL_DRAFT_CHECKBOX]
+    generated_drafts_list = components[Components.GENERATED_DRAFTS_LIST]
     
     # Shared components
-    section_dropdown = components["section_dropdown"]
-    editor_tb = components["editor_tb"]
-    pending_plan = states["pending_plan"]
-    status_log = states["status_log"]
-    create_sections_epoch = states["create_sections_epoch"]
-    mode_radio = components["mode_radio"]
-    current_md = states["current_md"]
-    current_drafts = states["current_drafts"]
-    selected_section = states["selected_section"]
+    section_dropdown = components[Components.SECTION_DROPDOWN]
+    editor_tb = components[Components.EDITOR_TB]
+    pending_plan = states[States.PENDING_PLAN]
+    status_log = states[States.STATUS_LOG]
+    create_sections_epoch = states[States.CREATE_SECTIONS_EPOCH]
+    mode_radio = components[Components.MODE_RADIO]
+    current_md = states[States.CURRENT_MD]
+    current_drafts = states[States.CURRENT_DRAFTS]
+    selected_section = states[States.SELECTED_SECTION]
     
     apply_updates_btn.click(
         fn=apply_updates,
         inputs=[section_dropdown, editor_tb, pending_plan, status_log, create_sections_epoch, mode_radio, current_md, current_drafts],
         outputs=[
-            components["viewer_md"], components["status_strip"],
+            components[Components.VIEWER_MD], components[Components.STATUS_STRIP],
             editor_tb,
-            components["validation_title"], components["validation_box"],
+            components[Components.VALIDATION_TITLE], components[Components.VALIDATION_BOX],
             apply_updates_btn, stop_updates_btn, regenerate_btn, continue_btn, discard2_btn,
-            components["start_edit_btn"],
-            components["rewrite_section"],
+            components[Components.START_EDIT_BTN],
+            components[Components.REWRITE_SECTION],
             mode_radio, section_dropdown,
-            current_md,  # update current_md state
+            current_md,
             status_log,
-            create_sections_epoch,  # bump create_sections_epoch to notify Create tab
-            components["draft_review_panel"], # Added
-            original_draft_checkbox, # Added
-            generated_drafts_list, # Added
-            current_drafts, # Added
-            components["status_row"], # Added
-            components["status_label"], # Added
-            components["btn_checkpoint"], # Added
-            components["btn_draft"], # Added
-            components["btn_diff"], # Added
-            states["current_view_state"], # Added
+            create_sections_epoch,
+            components[Components.DRAFT_REVIEW_PANEL],
+            original_draft_checkbox,
+            generated_drafts_list,
+            current_drafts,
+            components[Components.STATUS_ROW],
+            components[Components.STATUS_LABEL],
+            components[Components.BTN_CHECKPOINT],
+            components[Components.BTN_DRAFT],
+            components[Components.BTN_DIFF],
+            states[States.CURRENT_VIEW_STATE],
         ],
         queue=True,
     )
@@ -674,20 +675,20 @@ def create_validate_handlers(components, states):
     )
     
     continue_btn.click(
-        fn=components["_continue_edit_dispatcher"], # Passed from main file
+        fn=components[Components._CONTINUE_EDIT_DISPATCHER],
         inputs=[selected_section, status_log, mode_radio, current_md],
         outputs=[
-            components["validation_title"], components["validation_box"],
+            components[Components.VALIDATION_TITLE], components[Components.VALIDATION_BOX],
             apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
-            components["confirm_btn"], components["discard_btn"], components["force_edit_btn"],
-            components["rewrite_section"],
-            components["viewer_md"],
+            components[Components.CONFIRM_BTN], components[Components.DISCARD_BTN], components[Components.FORCE_EDIT_BTN],
+            components[Components.REWRITE_SECTION],
+            components[Components.VIEWER_MD],
             editor_tb,
             mode_radio, section_dropdown,
-            components["status_strip"],
+            components[Components.STATUS_STRIP],
             status_log,
-            components["chat_section"], # Added output
-            components["status_row"], # Added
+            components[Components.CHAT_SECTION],
+            components[Components.STATUS_ROW],
         ],
     )
 
@@ -695,24 +696,24 @@ def create_validate_handlers(components, states):
         fn=discard_from_validate,
         inputs=[selected_section, status_log],
         outputs=[
-            components["viewer_md"], editor_tb, components["validation_box"], pending_plan,
-            components["validation_title"],
+            components[Components.VIEWER_MD], editor_tb, components[Components.VALIDATION_BOX], pending_plan,
+            components[Components.VALIDATION_TITLE],
             apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
-            components["start_edit_btn"],
-            components["confirm_btn"], components["discard_btn"], components["force_edit_btn"],
-            components["rewrite_section"],
-            mode_radio, section_dropdown, components["status_strip"],
+            components[Components.START_EDIT_BTN],
+            components[Components.CONFIRM_BTN], components[Components.DISCARD_BTN], components[Components.FORCE_EDIT_BTN],
+            components[Components.REWRITE_SECTION],
+            mode_radio, section_dropdown, components[Components.STATUS_STRIP],
             status_log,
             current_md,
-            components["draft_review_panel"], # Added
-            generated_drafts_list, # Added
-            current_drafts, # Added
-            components["status_row"], # Added: show status row
-            components["status_label"], # Added
-            components["btn_checkpoint"], # Added
-            components["btn_draft"], # Added
-            components["btn_diff"], # Added
-            states["current_view_state"], # Added
+            components[Components.DRAFT_REVIEW_PANEL],
+            generated_drafts_list,
+            current_drafts,
+            components[Components.STATUS_ROW],
+            components[Components.STATUS_LABEL],
+            components[Components.BTN_CHECKPOINT],
+            components[Components.BTN_DRAFT],
+            components[Components.BTN_DIFF],
+            states[States.CURRENT_VIEW_STATE],
         ],
     )
 
@@ -720,14 +721,14 @@ def create_validate_handlers(components, states):
         fn=regenerate_dispatcher,
         inputs=[selected_section, editor_tb, status_log, mode_radio, current_md],
         outputs=[
-            components["validation_box"],
+            components[Components.VALIDATION_BOX],
             pending_plan,
-            components["validation_title"],
+            components[Components.VALIDATION_TITLE],
             apply_updates_btn,
             regenerate_btn,
             continue_btn,
             discard2_btn,
-            components["status_strip"],
+            components[Components.STATUS_STRIP],
             status_log,
         ],
         queue=True,
@@ -738,25 +739,25 @@ def create_validate_handlers(components, states):
     btn_draft_accept_all.click(
         fn=draft_accept_all,
         inputs=[selected_section, current_drafts, status_log, create_sections_epoch],
-        outputs=[components["draft_review_panel"], components["status_strip"], status_log, create_sections_epoch, current_drafts, components["status_row"], components["status_label"], components["btn_checkpoint"], components["btn_draft"], components["btn_diff"], states["current_view_state"], components["viewer_md"], current_md, mode_radio]
+        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, create_sections_epoch, current_drafts, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], current_md, mode_radio]
     )
     
     btn_draft_revert.click(
         fn=draft_revert_all,
         inputs=[selected_section, status_log],
-        outputs=[components["draft_review_panel"], components["status_strip"], status_log, current_drafts, components["status_row"], components["status_label"], components["btn_checkpoint"], components["btn_draft"], components["btn_diff"], states["current_view_state"], components["viewer_md"], current_md, mode_radio]
+        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, current_drafts, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], current_md, mode_radio]
     )
     
     btn_draft_accept_selected.click(
         fn=draft_accept_selected,
         inputs=[selected_section, original_draft_checkbox, generated_drafts_list, current_drafts, status_log, create_sections_epoch],
-        outputs=[components["draft_review_panel"], components["status_strip"], status_log, create_sections_epoch, current_drafts, components["status_row"], components["status_label"], components["btn_checkpoint"], components["btn_draft"], components["btn_diff"], states["current_view_state"], components["viewer_md"], current_md, mode_radio]
+        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, create_sections_epoch, current_drafts, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], current_md, mode_radio]
     )
     
     btn_draft_regenerate.click(
         fn=draft_regenerate_selected,
         inputs=[generated_drafts_list, current_drafts, pending_plan, selected_section, status_log, create_sections_epoch],
-        outputs=[components["draft_review_panel"], original_draft_checkbox, generated_drafts_list, components["status_strip"], status_log, create_sections_epoch, current_drafts, components["status_row"], stop_updates_btn],
+        outputs=[components[Components.DRAFT_REVIEW_PANEL], original_draft_checkbox, generated_drafts_list, components[Components.STATUS_STRIP], status_log, create_sections_epoch, current_drafts, components[Components.STATUS_ROW], stop_updates_btn],
         queue=True
     )
     
