@@ -33,6 +33,7 @@ def chat_handler(section, message, history, current_text, initial_text, current_
             gr.update(), # btn_draft
             gr.update(), # btn_diff
             "Checkpoint", # current_view_state
+            gr.update(), # mode_radio (no change)
         )
 
     # Append user message to history
@@ -65,6 +66,7 @@ def chat_handler(section, message, history, current_text, initial_text, current_
         gr.update(), # btn_draft
         gr.update(), # btn_diff
         "Checkpoint", # current_view_state
+        gr.update(), # mode_radio (no change)
     )
 
     # Call LLM
@@ -111,6 +113,7 @@ def chat_handler(section, message, history, current_text, initial_text, current_
                 gr.update(visible=True, interactive=True), # btn_draft - visible
                 gr.update(visible=True, interactive=True), # btn_diff - visible
                 "Draft", # current_view_state
+                gr.update(interactive=False), # mode_radio - DISABLED
             )
         else:
             # No edits, just chat
@@ -137,6 +140,7 @@ def chat_handler(section, message, history, current_text, initial_text, current_
                 gr.update(), # btn_draft - unchanged
                 gr.update(), # btn_diff - unchanged
                 "Checkpoint", # current_view_state - unchanged
+                gr.update(), # mode_radio - unchanged
             )
             
     except Exception as e:
@@ -165,6 +169,7 @@ def chat_handler(section, message, history, current_text, initial_text, current_
             gr.update(), # btn_draft - unchanged
             gr.update(), # btn_diff - unchanged
             "Checkpoint", # current_view_state - unchanged
+            gr.update(), # mode_radio - unchanged
         )
 
 
@@ -202,6 +207,7 @@ def validate_handler(section, current_text, current_log, current_drafts):
         new_log,
         status_update,
         None, # pending_plan placeholder
+        gr.update(interactive=False), # mode_radio - DISABLED
     )
     
     msg, plan = H.editor_validate(section, draft_to_validate)
@@ -219,6 +225,7 @@ def validate_handler(section, current_text, current_log, current_drafts):
         final_log,
         final_status,
         plan, # pending_plan
+        gr.update(interactive=False), # mode_radio - DISABLED
     )
 
 def discard_handler(section, current_log, current_drafts):
@@ -250,6 +257,7 @@ def discard_handler(section, current_log, current_drafts):
         gr.update(visible=False), # btn_draft - hide
         gr.update(visible=False), # btn_diff - hide
         "Checkpoint", # current_view_state
+        gr.update(interactive=True), # mode_radio - ENABLED
     )
 
 def force_edit_handler(section, current_text, current_log, create_epoch, current_drafts):
@@ -283,6 +291,7 @@ def force_edit_handler(section, current_text, current_log, create_epoch, current
         gr.update(visible=False), # btn_draft - hide
         gr.update(visible=False), # btn_diff - hide
         "Checkpoint", # current_view_state
+        gr.update(interactive=True), # mode_radio - ENABLED
     )
 
 def continue_edit(section, current_log):
@@ -302,7 +311,7 @@ def continue_edit(section, current_log):
         gr.update(visible=False),   # hide Rewrite Section
         gr.update(),  # viewer_md - don't update (user might be viewing diff)
         gr.update(visible=False),   # hide editor_tb
-        gr.update(value="Chat", interactive=True), # unlock Mode
+        gr.update(value="Chat", interactive=False), # unlock Mode - DISABLED (draft exists)
         gr.update(interactive=True), # unlock Section
         status_update,
         new_log,
@@ -361,6 +370,7 @@ def create_chat_handlers(components, states):
     status_log = states["status_log"]
     current_drafts = states["current_drafts"]
     create_sections_epoch = states["create_sections_epoch"]
+    mode_radio = components["mode_radio"]
     
     # Chat Input Change Event to toggle Send button
     chat_input.change(
@@ -394,6 +404,7 @@ def create_chat_handlers(components, states):
             components["btn_draft"],
             components["btn_diff"],
             states["current_view_state"],
+            mode_radio, # Added output
         ],
     )
     
@@ -423,6 +434,7 @@ def create_chat_handlers(components, states):
             components["btn_draft"],
             components["btn_diff"],
             states["current_view_state"],
+            mode_radio, # Added output
         ],
     )
     
@@ -458,6 +470,7 @@ def create_chat_handlers(components, states):
             components["btn_draft"],
             components["btn_diff"],
             states["current_view_state"],
+            mode_radio, # Added output
         ]
     )
     
@@ -482,6 +495,7 @@ def create_chat_handlers(components, states):
             components["btn_draft"],
             components["btn_diff"],
             states["current_view_state"],
+            mode_radio, # Added output
         ]
     )
     
@@ -500,5 +514,6 @@ def create_chat_handlers(components, states):
             status_log,
             components["status_strip"],
             states["pending_plan"],
+            mode_radio, # Added output
         ]
     )
