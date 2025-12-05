@@ -15,8 +15,8 @@ from pipeline.steps.plot_editor import run_plot_editor
 from pipeline.steps.overview_editor import run_overview_editor
 from pipeline.steps.chapter_editor import run_chapter_editor
 
-# Utils: logging cu timestamp
 from utils.logger import log_ui
+from ui.tabs.editor.drafts_manager import DraftsManager
 
 
 def _get_section_impact(impact_data: dict, section_name: str) -> str:
@@ -67,7 +67,7 @@ def run_edit_pipeline_stream(
     state = PipelineContext.from_checkpoint(checkpoint)
     
     # Dictionary to store drafts: {section_name: new_content}
-    drafts = {}
+    drafts = DraftsManager()
     
     # Creează un log nou doar pentru edit pipeline (nu modificăm state.status_log existent)
     edit_log = []
@@ -119,7 +119,7 @@ def run_edit_pipeline_stream(
                 diff_summary=diff_summary,
                 edited_section=edited_section,
             )
-            drafts["Expanded Plot"] = state.expanded_plot
+            drafts.add_generated("Expanded Plot", state.expanded_plot)
             log_ui(edit_log, "✅ Expanded Plot adapted.")
             # DO NOT SAVE CHECKPOINT
             
@@ -163,7 +163,7 @@ def run_edit_pipeline_stream(
                 diff_summary=diff_summary,
                 edited_section=edited_section,
             )
-            drafts["Chapters Overview"] = state.chapters_overview
+            drafts.add_generated("Chapters Overview", state.chapters_overview)
             log_ui(edit_log, "✅ Chapters Overview adapted.")
             # DO NOT SAVE CHECKPOINT
             
@@ -221,7 +221,7 @@ def run_edit_pipeline_stream(
         )
         
         state.chapters_full[chapter_num - 1] = edited_chapter
-        drafts[chapter_name] = edited_chapter
+        drafts.add_generated(chapter_name, edited_chapter)
         log_ui(edit_log, f"✅ {chapter_name} adapted.")
         # DO NOT SAVE CHECKPOINT
         
@@ -261,7 +261,7 @@ def run_edit_pipeline_stream(
     )
 
 
-def _maybe_pause_pipeline(step_label: str, state: PipelineContext, drafts: dict):
+def _maybe_pause_pipeline(step_label: str, state: PipelineContext, drafts: DraftsManager):
     """Helper pentru pauză pipeline (similar cu runner.py)."""
     if not is_stop_requested():
         return False

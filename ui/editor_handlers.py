@@ -215,7 +215,9 @@ def editor_apply(section, draft, plan):
         return {section: draft}
     
     # Initialize drafts with the user's manual edit
-    drafts = {section: draft}
+    from ui.tabs.editor.drafts_manager import DraftsManager
+    drafts = DraftsManager()
+    drafts.add_original(section, draft)
     
     # Dacă există plan cu secțiuni impactate, rulează pipeline-ul de editare
     if plan and isinstance(plan, dict):
@@ -227,8 +229,7 @@ def editor_apply(section, draft, plan):
         if impacted:
             from pipeline.runner_edit import run_edit_pipeline_stream
             
-            # Yield initial drafts (just the user edit)
-            yield drafts
+            # No need to yield drafts here - DraftsManager is a Singleton accessible everywhere
             
             for result in run_edit_pipeline_stream(
                 edited_section=edited_section,
@@ -236,7 +237,7 @@ def editor_apply(section, draft, plan):
                 impact_data=impact_data,
                 impacted_sections=impacted,
             ):
-                # result is a tuple, the last element is the drafts dict
+                # result is a tuple, the last element is the drafts dict (now DraftsManager)
                 if isinstance(result, tuple) and len(result) >= 9:
                     pipeline_drafts = result[8]
                     # Update our drafts with what the pipeline produced

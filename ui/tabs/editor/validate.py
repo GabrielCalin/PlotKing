@@ -4,6 +4,7 @@ from utils.logger import merge_logs
 from ui.tabs.editor.utils import append_status, remove_highlight
 from ui.tabs.editor.constants import Components, States
 from pipeline.state_manager import save_checkpoint, get_checkpoint
+from ui.tabs.editor.drafts_manager import DraftsManager
 
 _stop_flag = False
 
@@ -20,16 +21,22 @@ def should_stop():
     global _stop_flag
     return _stop_flag
 
-def _get_generated_drafts_list(plan, drafts, exclude_section):
-    """Helper to generate the list of auto-generated drafts from plan and current drafts."""
+def _get_generated_drafts_list(plan, exclude_section):
+    """Helper to generate the list of auto-generated drafts from plan.
+    Returns ALL impacted sections from plan, even if they don't have drafts yet.
+    This allows user to regenerate sections that were stopped before completion.
+    """
     if not plan:
         return []
     impacted_sections = plan.get("impacted_sections", [])
     generated_drafts = [s for s in impacted_sections if s != exclude_section]
-    # Ensure any other drafts are also included (just in case)
-    for s in drafts.keys():
+    
+    # Also include any generated drafts that might not be in the plan
+    drafts_mgr = DraftsManager()
+    for s in drafts_mgr.get_generated_drafts():
         if s != exclude_section and s not in generated_drafts:
             generated_drafts.append(s)
+    
     return generated_drafts
 
 def _save_section_to_checkpoint(section, content):
@@ -57,12 +64,12 @@ def _save_section_to_checkpoint(section, content):
     return True
 
 
-def apply_updates(section, draft, plan, current_log, create_epoch, current_mode, current_md, current_drafts):
+def apply_updates(section, draft, plan, current_log, create_epoch, current_mode, current_md):
     """
     Aplică modificările și rulează pipeline-ul de editare dacă există secțiuni impactate.
     Este generator dacă există plan, altfel returnează direct.
     For Chat mode, current_md already contains the draft, so we use it directly.
-    current_drafts is used to preserve existing drafts state (for other sections) and update it after apply.
+    Uses DraftsManager for draft storage.
     """
     # Reset stop signal at start
     clear_stop()
@@ -78,17 +85,19 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
     
     base_log = current_log
     current_epoch = create_epoch or 0
-    # Start with existing drafts to preserve drafts for other sections
-    drafts = (current_drafts or {}).copy()
+    
+    drafts_mgr = DraftsManager()
 
     # If no plan (no major plot changes), save directly to checkpoint
     if not plan:
+        # Add draft to DraftsManager first so draft_accept_selected can find it
+        drafts_mgr.add_original(section, draft_to_save)
+        
         # Reuse draft_accept_selected to save and get common return values
-        draft_panel, status_strip_upd, status_log_val, epoch_val, drafts_dict, status_row_upd, status_label_upd, btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, viewer_upd, current_md_val, mode_radio_upd = draft_accept_selected(
+        draft_panel, status_strip_upd, status_log_val, epoch_val, status_row_upd, status_label_upd, btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, viewer_upd, current_md_val, mode_radio_upd = draft_accept_selected(
             current_section=section,
             original_selected=[section],
             generated_selected=[],
-            current_drafts={section: draft_to_save},
             current_log=current_log,
             create_epoch=create_epoch
         )
@@ -118,7 +127,6 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
             gr.update(visible=False), # draft_review_panel - HIDDEN (no drafts to review)
             gr.update(choices=[], value=[]), # original_draft_checkbox
             gr.update(choices=[], value=[]), # generated_drafts_list
-            drafts_dict, # current_drafts - from draft_accept_selected (should be {})
             status_row_upd, # status_row - from draft_accept_selected
             status_label_upd, # status_label - from draft_accept_selected
             btn_cp_upd, # btn_checkpoint - from draft_accept_selected
@@ -130,6 +138,11 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
 
     # Yield initial status
     new_log, status_update = append_status(current_log, f"✅ ({section}) Starting update pipeline...")
+    
+    # Initial DraftsManager state (should have the original draft)
+    if not drafts_mgr.has(section):
+        drafts_mgr.add_original(section, draft_to_save)
+
     yield (
         gr.update(value=draft_to_save, visible=True), # viewer - show initial draft
         status_update, # status_strip
@@ -151,7 +164,6 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
         gr.update(visible=False), # draft_review_panel
         gr.update(choices=[], value=[]), # original_draft_checkbox
         gr.update(choices=[], value=[]), # generated_drafts_list
-        drafts, # current_drafts - preserve existing drafts
         gr.update(visible=True), # status_row - SHOW
         gr.update(value="**Viewing:** <span style='color:red;'>Draft</span>"), # status_label
         gr.update(visible=True, interactive=True), # btn_checkpoint - VISIBLE
@@ -160,60 +172,57 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
         "Draft" # current_view_state
     )
 
-    # Call editor_apply which now yields drafts
+    # Call editor_apply which yields pipeline results
+    new_log = base_log  # Initialize with base_log
+    
     for result in H.editor_apply(section, draft_to_save, plan):
-        if isinstance(result, dict):
-            # Initial drafts yield (just the user edit)
-            drafts.update(result)
-        elif isinstance(result, tuple) and len(result) >= 9:
-            expanded_plot, chapters_overview, chapters_full, current_text, dropdown, counter, status_log_text, validation_text, pipeline_drafts = result
+        # result is always a tuple from pipeline now (DraftsManager is a Singleton, no need to yield it)
+        
+        if not isinstance(result, tuple) or len(result) < 7:
+            continue  # Skip invalid results (need at least 7 elements for status_log at index 6)
+        
+        # Refresh draft lists
+        # Original drafts from DraftsManager, Generated from plan (includes all impacted, even if not generated yet)
+        current_mgr = DraftsManager()
+        original_drafts = current_mgr.get_original_drafts()
+        generated_drafts = _get_generated_drafts_list(plan, section)
+        
+        # Extract status_log_text from pipeline result (position 6)
+        status_msg = result[6]  # status_log from pipeline
+        new_log = merge_logs(base_log, status_msg)
+        
+        yield (
+            gr.update(), # viewer_md - NO CHANGE
+            gr.update(value=new_log, visible=True),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=True), # stop_btn
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(value="View", interactive=False), # mode_radio - DISABLED
+            gr.update(interactive=True),
+            draft_to_save, # current_md - keep updating state just in case
+            new_log,
+            current_epoch,
+            gr.update(visible=False), # draft_review_panel
+            gr.update(choices=original_drafts, value=original_drafts), # original_draft_checkbox
+            gr.update(choices=generated_drafts, value=generated_drafts), # generated_drafts_list
+            gr.update(), # status_row - NO CHANGE
+            gr.update(), # status_label - NO CHANGE
+            gr.update(), # btn_checkpoint - NO CHANGE
+            gr.update(), # btn_draft - NO CHANGE
+            gr.update(), # btn_diff - NO CHANGE
+            gr.update() # current_view_state - NO CHANGE
+        )
             
-            new_log = merge_logs(base_log, status_log_text)
-            current_epoch += 1
-            drafts.update(pipeline_drafts)
-            
-            # Determine content to show in viewer:
-            # User requested NOT to update viewer during generation for other sections.
-            # We only updated it initially.
-            
-            viewer_content = drafts.get(section, draft_to_save)
-            
-            # Split drafts for UI - use plan to show ALL impacted sections even if not generated yet
-            generated_drafts = _get_generated_drafts_list(plan, drafts, section)
-
-            yield (
-                gr.update(), # viewer_md - NO CHANGE
-                gr.update(value=new_log, visible=True),
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=True), # stop_btn
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(value="View", interactive=False), # mode_radio - DISABLED
-                gr.update(interactive=True),
-                viewer_content, # current_md - keep updating state just in case
-                new_log,
-                current_epoch,
-                gr.update(visible=False), # draft_review_panel
-                gr.update(choices=[section], value=[section]), # original_draft_checkbox - auto-select
-                gr.update(choices=generated_drafts, value=generated_drafts), # generated_drafts_list - auto-select
-                drafts,
-                gr.update(), # status_row - NO CHANGE
-                gr.update(), # status_label - NO CHANGE
-                gr.update(), # btn_checkpoint - NO CHANGE
-                gr.update(), # btn_draft - NO CHANGE
-                gr.update(), # btn_diff - NO CHANGE
-                gr.update() # current_view_state - NO CHANGE
-            )
-            
-            # Check stop after processing and saving results
-            if should_stop():
-                break
+        # Check stop after processing and saving results
+        if should_stop():
+            break
     
     if new_log and not new_log.endswith("\n"):
         new_log += "\n"
@@ -226,15 +235,14 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
     current_epoch += 1
     
     # Final yield: Show Draft Review Panel
-    # Split drafts into original (the edited section) and generated (impacted sections)
-    viewer_content = drafts.get(section, draft_to_save)
+    final_mgr = DraftsManager()
+    original_drafts = final_mgr.get_original_drafts()
+    generated_drafts = _get_generated_drafts_list(plan, section)
     
-    # Separate original draft from generated drafts
-    generated_drafts = _get_generated_drafts_list(plan, drafts, section)
+    viewer_content = final_mgr.get_content(section) or draft_to_save
     
     yield (
-        gr.update(), # viewer_md - NO CHANGE
-
+        gr.update(), # viewer_md - NO CHANGE (user might be viewing a different section)
         gr.update(value=new_log, visible=True),
         gr.update(visible=False),
         gr.update(visible=False),
@@ -252,9 +260,8 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
         new_log,
         current_epoch,
         gr.update(visible=True), # SHOW Draft Review Panel
-        gr.update(choices=[section], value=[section]), # original_draft_checkbox - auto-select
-        gr.update(choices=generated_drafts, value=generated_drafts), # generated_drafts_list - auto-select all
-        drafts, # Update state
+        gr.update(choices=original_drafts, value=original_drafts), # original_draft_checkbox
+        gr.update(choices=generated_drafts, value=generated_drafts), # generated_drafts_list
         gr.update(), # status_row - NO CHANGE
         gr.update(), # status_label - NO CHANGE
         gr.update(), # btn_checkpoint - NO CHANGE
@@ -263,15 +270,20 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
         gr.update() # current_view_state - NO CHANGE
     )
 
-def draft_accept_all(current_section, current_drafts, current_log, create_epoch):
+def draft_accept_all(current_section, current_log, create_epoch):
     """Save all drafts to checkpoint."""
-    if not current_drafts:
-        return gr.update(visible=False), gr.update(visible=False), current_log, create_epoch, {}, gr.update(visible=True), gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), gr.update(interactive=True), gr.update(visible=False), gr.update(visible=False), "Checkpoint", gr.update(), gr.update(interactive=True)
+    drafts_mgr = DraftsManager()
+    all_drafts = drafts_mgr.get_all_content()
+    
+    if not all_drafts:
+        return gr.update(visible=False), gr.update(visible=False), current_log, create_epoch, gr.update(visible=True), gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), gr.update(interactive=True), gr.update(visible=False), gr.update(visible=False), "Checkpoint", gr.update(), gr.update(interactive=True)
 
-
-    for section, content in current_drafts.items():
+    for section, content in all_drafts.items():
         _save_section_to_checkpoint(section, content)
     
+    # Clear drafts after saving
+    drafts_mgr.clear()
+
     new_log, status_update = append_status(current_log, "✅ All drafts accepted and saved.")
     new_epoch = (create_epoch or 0) + 1
     
@@ -283,7 +295,6 @@ def draft_accept_all(current_section, current_drafts, current_log, create_epoch)
         status_update,
         new_log,
         new_epoch,
-        {}, # Clear drafts
         gr.update(visible=True), # status_row
         gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), # status_label
         gr.update(visible=False), # btn_checkpoint - HIDDEN (no draft = no point showing C only)
@@ -297,6 +308,7 @@ def draft_accept_all(current_section, current_drafts, current_log, create_epoch)
 
 def draft_revert_all(current_section, current_log):
     """Discard all drafts."""
+    DraftsManager().clear()
     new_log, status_update = append_status(current_log, "❌ All drafts reverted.")
     
     # Get fresh content for viewer (original checkpoint content)
@@ -306,7 +318,6 @@ def draft_revert_all(current_section, current_log):
         gr.update(visible=False), # Hide draft panel
         status_update,
         new_log,
-        {}, # Clear drafts
         gr.update(visible=True), # status_row
         gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), # status_label
         gr.update(visible=False), # btn_checkpoint - HIDDEN
@@ -318,12 +329,10 @@ def draft_revert_all(current_section, current_log):
         gr.update(interactive=True) # mode_radio - ENABLED
     )
 
-def draft_accept_selected(current_section, original_selected, generated_selected, current_drafts, current_log, create_epoch):
+def draft_accept_selected(current_section, original_selected, generated_selected, current_log, create_epoch):
     """Save selected drafts to checkpoint, discard unselected, and close panel."""
-    if not current_drafts:
-        return gr.update(visible=False), gr.update(), current_log, create_epoch, {}, gr.update(visible=True), gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), "Checkpoint", gr.update(), gr.update(interactive=True)
-
-
+    drafts_mgr = DraftsManager()
+    
     # Combine selections from both checkboxes
     sections_to_save = set()
     if original_selected:
@@ -333,9 +342,13 @@ def draft_accept_selected(current_section, original_selected, generated_selected
     
     # Only save what user actually selected
     for section in sections_to_save:
-        if section in current_drafts:
-            _save_section_to_checkpoint(section, current_drafts[section])
+        if drafts_mgr.has(section):
+            content = drafts_mgr.get_content(section)
+            _save_section_to_checkpoint(section, content)
     
+    # Clear ALL drafts after selective save (unselected are discarded)
+    drafts_mgr.clear()
+
     # Count how many selected
     new_log, status_update = append_status(current_log, f"✅ Accepted {len(sections_to_save)} drafts. Unselected drafts discarded.")
     new_epoch = (create_epoch or 0) + 1
@@ -349,7 +362,6 @@ def draft_accept_selected(current_section, original_selected, generated_selected
         status_update,
         new_log,
         new_epoch,
-        {}, # Clear ALL drafts
         gr.update(visible=True), # status_row
         gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), # status_label
         gr.update(visible=False), # btn_checkpoint - HIDDEN
@@ -361,7 +373,7 @@ def draft_accept_selected(current_section, original_selected, generated_selected
         gr.update(interactive=True) # mode_radio - ENABLED
     )
 
-def draft_regenerate_selected(selected_sections, current_drafts, plan, section, current_log, create_epoch):
+def draft_regenerate_selected(generated_selected, plan, section, current_log, create_epoch):
     """Regenerate selected sections."""
     # This is complex. We need to re-run the pipeline for these sections.
     # We can reuse apply_updates logic but with a filtered plan.
@@ -374,7 +386,7 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
     
     # Filter impacted sections in the plan
     original_impacted = plan.get("impacted_sections", [])
-    filtered_impacted = [s for s in original_impacted if s in selected_sections]
+    filtered_impacted = [s for s in original_impacted if s in generated_selected]
     
     # Also include the edited section if selected (though usually it's the source)
     # Actually, if we regenerate, we are regenerating the *impacted* ones based on the *edited* one.
@@ -385,7 +397,7 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
     # So we just run the pipeline again for the selected impacted sections.
     
     # We need to keep the unselected drafts!
-    drafts = current_drafts.copy()
+    drafts_mgr = DraftsManager()
     
     base_log = current_log
     current_epoch = create_epoch or 0
@@ -398,16 +410,16 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
     
     # Prepare initial UI updates
     # Use edited_section as the source of truth for the original draft
-    generated_drafts = _get_generated_drafts_list(plan, drafts, edited_section)
+    original_drafts = drafts_mgr.get_original_drafts()
+    generated_drafts = _get_generated_drafts_list(plan, edited_section)
     
     yield (
         gr.update(visible=False), # Hide draft panel during regen
-        gr.update(choices=[edited_section], value=[edited_section]), # original_draft_checkbox
+        gr.update(choices=original_drafts, value=original_drafts), # original_draft_checkbox
         gr.update(choices=generated_drafts, value=generated_drafts), # generated_drafts_list
         status_update,
         new_log,
         current_epoch,
-        drafts,
         gr.update(visible=True), # status_row
         gr.update(visible=True, interactive=True) # Show and ENABLE stop button
     )
@@ -425,20 +437,19 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
             
             new_log = merge_logs(base_log, status_log_text)
             current_epoch += 1
-            # Update drafts with NEW values for regenerated sections
-            drafts.update(pipeline_drafts)
             
-            # Update generated drafts list
-            generated_drafts = _get_generated_drafts_list(plan, drafts, edited_section)
+            # Update generated drafts list from plan (includes all impacted, even if not generated yet)
+            current_mgr = DraftsManager()
+            original_drafts = current_mgr.get_original_drafts()
+            generated_drafts = _get_generated_drafts_list(plan, edited_section)
             
             yield (
                 gr.update(visible=False),
-                gr.update(choices=[edited_section], value=[edited_section]), # original_draft_checkbox
+                gr.update(choices=original_drafts, value=original_drafts), # original_draft_checkbox
                 gr.update(choices=generated_drafts, value=generated_drafts), # generated_drafts_list
                 gr.update(value=new_log, visible=True),
                 new_log,
                 current_epoch,
-                drafts,
                 gr.update(visible=True), # status_row
                 gr.update(visible=True) # Keep stop button visible
             )
@@ -457,16 +468,17 @@ def draft_regenerate_selected(selected_sections, current_drafts, plan, section, 
          pass
     
     # Final update - show panel again
-    generated_drafts = _get_generated_drafts_list(plan, drafts, edited_section)
+    current_mgr = DraftsManager()
+    original_drafts = current_mgr.get_original_drafts()
+    generated_drafts = _get_generated_drafts_list(plan, edited_section)
 
     yield (
         gr.update(visible=True), # Show panel again
-        gr.update(choices=[edited_section], value=[edited_section]), # original_draft_checkbox
+        gr.update(choices=original_drafts, value=original_drafts), # original_draft_checkbox
         gr.update(choices=generated_drafts, value=generated_drafts), # generated_drafts_list
         status_update,
         new_log,
         current_epoch,
-        drafts,
         gr.update(visible=True), # status_row
         gr.update(visible=False) # Hide stop button
     )
@@ -497,7 +509,6 @@ def discard_from_validate(section, current_log):
         clean_text,  # current_md - resetat la textul curat din checkpoint
         gr.update(visible=False), # hide draft panel
         gr.update(choices=[], value=[]), # clear generated_drafts_list
-        {}, # clear drafts
         gr.update(visible=True), # status_row
         gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), # status_label
         gr.update(interactive=True), # btn_checkpoint
@@ -636,12 +647,11 @@ def create_validate_handlers(components, states):
     create_sections_epoch = states[States.CREATE_SECTIONS_EPOCH]
     mode_radio = components[Components.MODE_RADIO]
     current_md = states[States.CURRENT_MD]
-    current_drafts = states[States.CURRENT_DRAFTS]
     selected_section = states[States.SELECTED_SECTION]
     
     apply_updates_btn.click(
         fn=apply_updates,
-        inputs=[section_dropdown, editor_tb, pending_plan, status_log, create_sections_epoch, mode_radio, current_md, current_drafts],
+        inputs=[section_dropdown, editor_tb, pending_plan, status_log, create_sections_epoch, mode_radio, current_md],
         outputs=[
             components[Components.VIEWER_MD], components[Components.STATUS_STRIP],
             editor_tb,
@@ -656,7 +666,6 @@ def create_validate_handlers(components, states):
             components[Components.DRAFT_REVIEW_PANEL],
             original_draft_checkbox,
             generated_drafts_list,
-            current_drafts,
             components[Components.STATUS_ROW],
             components[Components.STATUS_LABEL],
             components[Components.BTN_CHECKPOINT],
@@ -707,7 +716,6 @@ def create_validate_handlers(components, states):
             current_md,
             components[Components.DRAFT_REVIEW_PANEL],
             generated_drafts_list,
-            current_drafts,
             components[Components.STATUS_ROW],
             components[Components.STATUS_LABEL],
             components[Components.BTN_CHECKPOINT],
@@ -738,26 +746,26 @@ def create_validate_handlers(components, states):
     # Draft Review Handlers
     btn_draft_accept_all.click(
         fn=draft_accept_all,
-        inputs=[selected_section, current_drafts, status_log, create_sections_epoch],
-        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, create_sections_epoch, current_drafts, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], current_md, mode_radio]
+        inputs=[selected_section, status_log, create_sections_epoch],
+        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, create_sections_epoch, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], current_md, mode_radio]
     )
     
     btn_draft_revert.click(
         fn=draft_revert_all,
         inputs=[selected_section, status_log],
-        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, current_drafts, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], current_md, mode_radio]
+        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], current_md, mode_radio]
     )
     
     btn_draft_accept_selected.click(
         fn=draft_accept_selected,
-        inputs=[selected_section, original_draft_checkbox, generated_drafts_list, current_drafts, status_log, create_sections_epoch],
-        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, create_sections_epoch, current_drafts, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], current_md, mode_radio]
+        inputs=[selected_section, original_draft_checkbox, generated_drafts_list, status_log, create_sections_epoch],
+        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, create_sections_epoch, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], current_md, mode_radio]
     )
     
     btn_draft_regenerate.click(
         fn=draft_regenerate_selected,
-        inputs=[generated_drafts_list, current_drafts, pending_plan, selected_section, status_log, create_sections_epoch],
-        outputs=[components[Components.DRAFT_REVIEW_PANEL], original_draft_checkbox, generated_drafts_list, components[Components.STATUS_STRIP], status_log, create_sections_epoch, current_drafts, components[Components.STATUS_ROW], stop_updates_btn],
+        inputs=[generated_drafts_list, pending_plan, selected_section, status_log, create_sections_epoch],
+        outputs=[components[Components.DRAFT_REVIEW_PANEL], original_draft_checkbox, generated_drafts_list, components[Components.STATUS_STRIP], status_log, create_sections_epoch, components[Components.STATUS_ROW], stop_updates_btn],
         queue=True
     )
     

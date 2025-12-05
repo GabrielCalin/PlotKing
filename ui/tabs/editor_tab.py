@@ -11,6 +11,7 @@ from ui.tabs.editor.utils import (
     update_instructions_from_preset,
     diff_handler,
 )
+from ui.tabs.editor.drafts_manager import DraftsManager
 import ui.tabs.editor.manual as Manual
 import ui.tabs.editor.rewrite as Rewrite
 import ui.tabs.editor.validate as Validate
@@ -29,7 +30,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     selected_indices = gr.State(None)  # [start, end] indices pentru selectie
 
     original_text_before_rewrite = gr.State("")  # textul original inainte de rewrite
-    current_drafts = gr.State({})  # {section_name: draft_content}
+    # current_drafts removed - using DraftsManager singleton
     
     # Chat States
     chat_history = gr.State([{"role": "assistant", "content": Chat.PLOT_KING_GREETING}])
@@ -130,17 +131,18 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(choices=sections, value=default),  # dropdown update
         )
 
-    def _load_section_content(name, drafts):
+    def _load_section_content(name):
         if not name:
             return "_Empty_", None, "", gr.update(value="View"), "", [], "", \
                    gr.update(visible=True), gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), \
                    gr.update(interactive=False, visible=False), gr.update(visible=False), gr.update(visible=False), "Checkpoint"
         
         # Check if we have a draft for this section
-        has_draft = drafts and name in drafts
+        drafts_mgr = DraftsManager()
+        has_draft = drafts_mgr.has(name)
         
         if has_draft:
-            text = drafts[name]
+            text = drafts_mgr.get_content(name)
             view_state = "Draft"
             label = "**Viewing:** <span style='color:red;'>Draft</span>"
             # Buttons: Checkpoint (visible, enabled), Draft (visible), Diff (visible)
@@ -261,16 +263,18 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     section_dropdown.change(
         fn=_load_section_content,
-        inputs=[section_dropdown, current_drafts],
+        inputs=[section_dropdown],
         outputs=[viewer_md, selected_section, current_md, mode_radio, original_text_before_rewrite, chat_history, initial_text_before_chat, status_row, status_label, btn_checkpoint, btn_draft, btn_diff, current_view_state],
     )
 
-    def _handle_view_switch(view_type, section, drafts):
+    def _handle_view_switch(view_type, section):
         if not section:
             return gr.update(), "**Viewing:** <span style='color:red;'>Checkpoint</span>", "Checkpoint"
             
         original_text = H.editor_get_section_content(section) or ""
-        draft_text = drafts.get(section, "") if drafts else ""
+        
+        drafts_mgr = DraftsManager()
+        draft_text = drafts_mgr.get_content(section) if drafts_mgr.has(section) else ""
         
         if view_type == "Checkpoint":
             return original_text, "**Viewing:** <span style='color:red;'>Checkpoint</span>", "Checkpoint"
@@ -286,20 +290,20 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         return original_text, "**Viewing:** <span style='color:red;'>Checkpoint</span>", "Checkpoint"
 
     btn_checkpoint.click(
-        fn=lambda s, d: _handle_view_switch("Checkpoint", s, d),
-        inputs=[selected_section, current_drafts],
+        fn=lambda s: _handle_view_switch("Checkpoint", s),
+        inputs=[selected_section],
         outputs=[viewer_md, status_label, current_view_state]
     )
     
     btn_draft.click(
-        fn=lambda s, d: _handle_view_switch("Draft", s, d),
-        inputs=[selected_section, current_drafts],
+        fn=lambda s: _handle_view_switch("Draft", s),
+        inputs=[selected_section],
         outputs=[viewer_md, status_label, current_view_state]
     )
     
     btn_diff.click(
-        fn=lambda s, d: _handle_view_switch("Diff", s, d),
-        inputs=[selected_section, current_drafts],
+        fn=lambda s: _handle_view_switch("Diff", s),
+        inputs=[selected_section],
         outputs=[viewer_md, status_label, current_view_state]
     )
 
@@ -374,7 +378,6 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         States.SELECTED_TEXT: selected_text,
         States.SELECTED_INDICES: selected_indices,
         States.ORIGINAL_TEXT_BEFORE_REWRITE: original_text_before_rewrite,
-        States.CURRENT_DRAFTS: current_drafts,
         States.CHAT_HISTORY: chat_history,
         States.INITIAL_TEXT_BEFORE_CHAT: initial_text_before_chat,
         States.CURRENT_VIEW_STATE: current_view_state,

@@ -10,6 +10,8 @@ from pipeline.state_manager import save_checkpoint, clear_stop, clear_checkpoint
 _PROJECTS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "projects")
 _NAME_RE = re.compile(r'^[A-Za-z0-9 _-]+$')
 
+from ui.tabs.editor.drafts_manager import DraftsManager
+
 def _ensure_projects_dir():
     os.makedirs(_PROJECTS_DIR, exist_ok=True)
 
@@ -144,6 +146,9 @@ def load_project(selected_name, current_status):
         "status_log": [ts_prefix(f"📂 Project “{selected_name}” loaded.")],
     }
     save_checkpoint(checkpoint)
+    
+    # Clear drafts on load
+    DraftsManager().clear()
 
     if not chapters_list:
         chapter_dropdown = gr.update(choices=[], value=None)
@@ -231,6 +236,9 @@ def new_project(current_status):
     """
     clear_stop()
     clear_checkpoint()
+    
+    # Clear drafts on new project
+    DraftsManager().clear()
 
     new_log = (current_status or "") + "\n" + ts_prefix("🆕 New project started.")
 

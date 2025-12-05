@@ -2,16 +2,16 @@
 import gradio as gr
 import ui.editor_handlers as H
 from ui.tabs.editor.utils import append_status
+from ui.tabs.editor.drafts_manager import DraftsManager
 from ui.tabs.editor.constants import Components, States
 from pipeline.steps.chat_editor.llm import call_llm_chat
 
-def chat_handler(section, message, history, current_text, initial_text, current_log, current_drafts):
+def chat_handler(section, message, history, current_text, initial_text, current_log):
     """
     Handles the chat interaction with the Plot King.
     Uses OpenAI-style messages format: [{'role': 'user', 'content': '...'}, ...]
     """
     if not message:
-        drafts = current_drafts or {}
         return (
             gr.update(value=""), # clear input
             history,
@@ -27,7 +27,6 @@ def chat_handler(section, message, history, current_text, initial_text, current_
             current_text, # current_md
             gr.update(), # chat_input (no change)
             gr.update(), # chat_clear_btn (no change)
-            drafts, # current_drafts
             gr.update(), # status_row
             gr.update(), # status_label
             gr.update(), # btn_checkpoint
@@ -41,8 +40,6 @@ def chat_handler(section, message, history, current_text, initial_text, current_
     new_history = history + [{"role": "user", "content": message}]
     
     new_log, status_update = append_status(current_log, f"💬 ({section}) Asking Plot King...")
-    
-    drafts = current_drafts.copy() if current_drafts else {}
     
     # Yield loading state
     yield (
@@ -60,7 +57,6 @@ def chat_handler(section, message, history, current_text, initial_text, current_
         current_text,
         gr.update(interactive=False), # chat_input disable
         gr.update(interactive=False), # chat_clear_btn disable
-        drafts, # current_drafts
         gr.update(), # status_row
         gr.update(), # status_label
         gr.update(), # btn_checkpoint
@@ -90,7 +86,9 @@ def chat_handler(section, message, history, current_text, initial_text, current_
         
         if new_content:
             # Edits were made - create draft and show status_row
-            drafts[section] = new_content
+            drafts_mgr = DraftsManager()
+            drafts_mgr.add_original(section, new_content)
+            
             final_log, final_status = append_status(new_log, f"✅ ({section}) Plot King made edits.")
             yield (
                 gr.update(value="", interactive=True),
@@ -107,12 +105,11 @@ def chat_handler(section, message, history, current_text, initial_text, current_
                 new_content, # update current_md
                 gr.update(interactive=True), # chat_input enable
                 gr.update(interactive=True), # chat_clear_btn enable
-                drafts, # current_drafts - updated with draft
                 gr.update(visible=True), # status_row - show
                 gr.update(value="**Viewing:** <span style='color:red;'>Draft</span>"), # status_label - show Draft
                 gr.update(visible=True, interactive=True), # btn_checkpoint - visible
-                gr.update(visible=True, interactive=True), # btn_draft - visible
-                gr.update(visible=True, interactive=True), # btn_diff - visible
+                gr.update(visible=True, interactive=True), # btn_draft
+                gr.update(visible=True, interactive=True), # btn_diff
                 "Draft", # current_view_state
                 gr.update(interactive=False), # mode_radio - DISABLED
             )
@@ -134,7 +131,6 @@ def chat_handler(section, message, history, current_text, initial_text, current_
                 current_text, # current_md unchanged
                 gr.update(interactive=True), # chat_input enable
                 gr.update(interactive=True), # chat_clear_btn enable
-                drafts, # current_drafts - unchanged
                 gr.update(), # status_row - unchanged
                 gr.update(), # status_label - unchanged
                 gr.update(), # btn_checkpoint - unchanged
@@ -163,7 +159,6 @@ def chat_handler(section, message, history, current_text, initial_text, current_
             current_text,
             gr.update(interactive=True), # chat_input enable
             gr.update(interactive=True), # chat_clear_btn enable
-            drafts, # current_drafts - unchanged
             gr.update(), # status_row - unchanged
             gr.update(), # status_label - unchanged
             gr.update(), # btn_checkpoint - unchanged
@@ -184,14 +179,13 @@ def clear_chat(section, current_log):
 
 
 
-def validate_handler(section, current_text, current_log, current_drafts):
+def validate_handler(section, current_text, current_log):
     """
     Starts validation for the chat edits. Hides Chat UI.
-    Uses existing draft from current_drafts if available, otherwise uses current_text.
+    Uses existing draft from DraftsManager if available, otherwise uses current_text.
     """
-    # Use existing draft if available, otherwise use current_text
-    drafts = current_drafts or {}
-    draft_to_validate = drafts.get(section, current_text)
+    drafts_manager = DraftsManager()
+    draft_to_validate = drafts_manager.get_content(section) or current_text
     
     new_log, status_update = append_status(current_log, f"🔍 ({section}) Validation started (from Chat).")
     
@@ -229,17 +223,16 @@ def validate_handler(section, current_text, current_log, current_drafts):
         gr.update(interactive=False), # mode_radio - DISABLED
     )
 
-def discard_handler(section, current_log, current_drafts):
+def discard_handler(section, current_log):
     """
-    Discards chat edits and reverts to checkpoint. Removes draft from current_drafts.
+    Discards chat edits and reverts to checkpoint. Removes draft from DraftsManager.
     """
+    drafts_manager = DraftsManager()
+    if drafts_manager.has(section):
+        drafts_manager.remove(section)
+
     clean_text = H.editor_get_section_content(section) or "_Empty_"
     new_log, status_update = append_status(current_log, f"🗑️ ({section}) Chat edits discarded.")
-    
-    # Remove draft for this section
-    drafts = current_drafts.copy() if current_drafts else {}
-    if section in drafts:
-        del drafts[section]
     
     return (
         gr.update(value=clean_text), # viewer_md
@@ -251,7 +244,6 @@ def discard_handler(section, current_log, current_drafts):
         clean_text, # current_md
         new_log,
         status_update,
-        drafts, # current_drafts - removed draft for this section
         gr.update(visible=True), # status_row - show (but buttons hidden if no drafts)
         gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), # status_label - show Checkpoint
         gr.update(visible=False), # btn_checkpoint - hide (no draft = no point showing C only)
@@ -261,7 +253,7 @@ def discard_handler(section, current_log, current_drafts):
         gr.update(interactive=True), # mode_radio - ENABLED
     )
 
-def force_edit_handler(section, current_text, current_log, create_epoch, current_drafts):
+def force_edit_handler(section, current_text, current_log, create_epoch):
     """
     Force saves the chat edits to checkpoint.
     """
@@ -270,9 +262,9 @@ def force_edit_handler(section, current_text, current_log, create_epoch, current
     new_create_epoch = (create_epoch or 0) + 1
     
     # Remove draft for this section since changes are saved to checkpoint
-    drafts = current_drafts.copy() if current_drafts else {}
-    if section in drafts:
-        del drafts[section]
+    drafts_manager = DraftsManager()
+    if drafts_manager.has(section):
+        drafts_manager.remove(section)
     
     return (
         gr.update(value=updated_text), # viewer_md
@@ -285,7 +277,6 @@ def force_edit_handler(section, current_text, current_log, create_epoch, current
         new_log,
         status_update,
         new_create_epoch,
-        drafts, # current_drafts - removed draft for this section
         gr.update(visible=True), # status_row - show
         gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), # status_label - show Checkpoint
         gr.update(visible=False), # btn_checkpoint - hide (no draft = no point showing C only)
@@ -369,7 +360,6 @@ def create_chat_handlers(components, states):
     current_md = states[States.CURRENT_MD]
     initial_text_before_chat = states[States.INITIAL_TEXT_BEFORE_CHAT]
     status_log = states[States.STATUS_LOG]
-    current_drafts = states[States.CURRENT_DRAFTS]
     create_sections_epoch = states[States.CREATE_SECTIONS_EPOCH]
     mode_radio = components[Components.MODE_RADIO]
     
@@ -382,7 +372,7 @@ def create_chat_handlers(components, states):
 
     chat_send_btn.click(
         fn=chat_handler,
-        inputs=[selected_section, chat_input, chat_history, current_md, initial_text_before_chat, status_log, current_drafts],
+        inputs=[selected_section, chat_input, chat_history, current_md, initial_text_before_chat, status_log],
         outputs=[
             chat_input,
             chat_history,
@@ -398,7 +388,6 @@ def create_chat_handlers(components, states):
             current_md,
             chat_input,
             chat_clear_btn,
-            current_drafts,
             components[Components.STATUS_ROW],
             components[Components.STATUS_LABEL],
             components[Components.BTN_CHECKPOINT],
@@ -412,7 +401,7 @@ def create_chat_handlers(components, states):
     # Also trigger send on Enter in chat_input
     chat_input.submit(
         fn=chat_handler,
-        inputs=[selected_section, chat_input, chat_history, current_md, initial_text_before_chat, status_log, current_drafts],
+        inputs=[selected_section, chat_input, chat_history, current_md, initial_text_before_chat, status_log],
         outputs=[
             chat_input,
             chat_history,
@@ -428,7 +417,6 @@ def create_chat_handlers(components, states):
             current_md,
             chat_input,
             chat_clear_btn,
-            current_drafts,
             components[Components.STATUS_ROW],
             components[Components.STATUS_LABEL],
             components[Components.BTN_CHECKPOINT],
@@ -453,7 +441,7 @@ def create_chat_handlers(components, states):
     
     chat_discard_btn.click(
         fn=discard_handler,
-        inputs=[selected_section, status_log, current_drafts],
+        inputs=[selected_section, status_log],
         outputs=[
             components[Components.VIEWER_MD],
             components[Components.CHAT_ACTIONS_ROW_1],
@@ -464,7 +452,6 @@ def create_chat_handlers(components, states):
             current_md,
             status_log,
             components[Components.STATUS_STRIP],
-            current_drafts,
             components[Components.STATUS_ROW],
             components[Components.STATUS_LABEL],
             components[Components.BTN_CHECKPOINT],
@@ -477,7 +464,7 @@ def create_chat_handlers(components, states):
     
     chat_force_edit_btn.click(
         fn=force_edit_handler,
-        inputs=[selected_section, current_md, status_log, create_sections_epoch, current_drafts],
+        inputs=[selected_section, current_md, status_log, create_sections_epoch],
         outputs=[
             components[Components.VIEWER_MD],
             components[Components.CHAT_ACTIONS_ROW_1],
@@ -489,7 +476,6 @@ def create_chat_handlers(components, states):
             status_log,
             components[Components.STATUS_STRIP],
             create_sections_epoch,
-            current_drafts,
             components[Components.STATUS_ROW],
             components[Components.STATUS_LABEL],
             components[Components.BTN_CHECKPOINT],
@@ -502,7 +488,7 @@ def create_chat_handlers(components, states):
     
     chat_validate_btn.click(
         fn=validate_handler,
-        inputs=[selected_section, current_md, status_log, current_drafts],
+        inputs=[selected_section, current_md, status_log],
         outputs=[
             components[Components.CHAT_SECTION],
             components[Components.VALIDATION_TITLE],
