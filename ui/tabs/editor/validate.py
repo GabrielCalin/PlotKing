@@ -3,7 +3,7 @@ import ui.editor_handlers as H
 from utils.logger import merge_logs
 from ui.tabs.editor.utils import append_status, remove_highlight
 from ui.tabs.editor.constants import Components, States
-from pipeline.state_manager import save_checkpoint, get_checkpoint
+from pipeline.checkpoint_manager import save_section, get_checkpoint
 from ui.tabs.editor.drafts_manager import DraftsManager
 
 _stop_flag = False
@@ -39,29 +39,6 @@ def _get_generated_drafts_list(plan, exclude_section):
     
     return generated_drafts
 
-def _save_section_to_checkpoint(section, content):
-    """Helper to save a single section's content to checkpoint. Returns True if saved successfully."""
-    checkpoint = get_checkpoint()
-    if not checkpoint:
-        return False
-    
-    updated_checkpoint = checkpoint.copy()
-    if section == "Expanded Plot":
-        updated_checkpoint["expanded_plot"] = content
-    elif section == "Chapters Overview":
-        updated_checkpoint["chapters_overview"] = content
-    elif section.startswith("Chapter "):
-        try:
-            chapter_num = int(section.split(" ")[1])
-            chapters_full = list(updated_checkpoint.get("chapters_full", []))
-            if 1 <= chapter_num <= len(chapters_full):
-                chapters_full[chapter_num - 1] = content
-                updated_checkpoint["chapters_full"] = chapters_full
-        except (ValueError, IndexError):
-            return False
-    
-    save_checkpoint(updated_checkpoint)
-    return True
 
 
 def apply_updates(section, draft, plan, current_log, create_epoch, current_mode, current_md):
@@ -279,7 +256,7 @@ def draft_accept_all(current_section, current_log, create_epoch):
         return gr.update(visible=False), gr.update(visible=False), current_log, create_epoch, gr.update(visible=True), gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), gr.update(interactive=True), gr.update(visible=False), gr.update(visible=False), "Checkpoint", gr.update(), gr.update(interactive=True)
 
     for section, content in all_drafts.items():
-        _save_section_to_checkpoint(section, content)
+        save_section(section, content)
     
     # Clear drafts after saving
     drafts_mgr.clear()
@@ -344,7 +321,7 @@ def draft_accept_selected(current_section, original_selected, generated_selected
     for section in sections_to_save:
         if drafts_mgr.has(section):
             content = drafts_mgr.get_content(section)
-            _save_section_to_checkpoint(section, content)
+            save_section(section, content)
     
     # Clear ALL drafts after selective save (unselected are discarded)
     drafts_mgr.clear()

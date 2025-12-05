@@ -103,47 +103,22 @@ def _format_validation_markdown(
 
 def editor_list_sections():
     """Returnează lista secțiunilor existente din checkpoint."""
-    from pipeline.state_manager import get_checkpoint
+    from pipeline.checkpoint_manager import get_sections_list
     
-    checkpoint = get_checkpoint()
-    if not checkpoint:
-        return []
-    
-    sections = []
-    
-    # Adaugă "Expanded Plot" dacă există
-    expanded_plot = checkpoint.get("expanded_plot")
-    if expanded_plot and expanded_plot.strip():
-        sections.append("Expanded Plot")
-    
-    # Adaugă "Chapters Overview" dacă există
-    chapters_overview = checkpoint.get("chapters_overview")
-    if chapters_overview and chapters_overview.strip():
-        sections.append("Chapters Overview")
-    
-    # Adaugă capitolele generate (Chapter 1, Chapter 2, etc.)
-    chapters_full = checkpoint.get("chapters_full", [])
-    for i in range(len(chapters_full)):
-        sections.append(f"Chapter {i + 1}")
-    
-    return sections
+    return get_sections_list()
 
 def editor_get_section_content(name):
     """Încarcă textul secțiunii selectate din checkpoint."""
-    from pipeline.state_manager import get_checkpoint
+    from pipeline.checkpoint_manager import get_section_content
     
     if not name:
         return ""
     
-    checkpoint = get_checkpoint()
-    if not checkpoint:
-        return ""
-    
-    return _section_content_from_checkpoint(checkpoint, name)
+    return get_section_content(name)
 
 def editor_validate(section, draft):
     """Validează modificările comparând versiunea originală cu versiunea editată."""
-    from pipeline.state_manager import get_checkpoint
+    from pipeline.checkpoint_manager import get_checkpoint, get_section_content
     from pipeline.context import PipelineContext
     from pipeline.steps.version_diff import call_llm_version_diff
     from pipeline.steps.impact_analyzer import call_llm_impact_analysis
@@ -153,7 +128,7 @@ def editor_validate(section, draft):
         return "Error: No checkpoint found.", None
 
     # Obține versiunea originală din checkpoint (fără să o modificăm)
-    original_version = _section_content_from_checkpoint(checkpoint, section) or ""
+    original_version = get_section_content(section) or ""
 
     # Creează un context temporar din checkpoint pentru a obține genre
     context = PipelineContext.from_checkpoint(checkpoint)
@@ -208,7 +183,7 @@ def editor_apply(section, draft, plan):
     Aplică modificarea și rulează pipeline-ul de editare dacă există secțiuni impactate.
     Returnează drafts (dict) și rulează pipeline-ul de editare.
     """
-    from pipeline.state_manager import get_checkpoint
+    from pipeline.checkpoint_manager import get_checkpoint
     
     checkpoint = get_checkpoint()
     if not checkpoint:
@@ -257,34 +232,9 @@ def editor_apply(section, draft, plan):
 
 def force_edit(section, draft):
     """Aplică modificarea direct în checkpoint, fără validare."""
-    from pipeline.state_manager import get_checkpoint, save_checkpoint
+    from pipeline.checkpoint_manager import save_section
     
-    checkpoint = get_checkpoint()
-    if not checkpoint:
-        return draft
-    
-    # Creează o copie a checkpoint-ului pentru a-l actualiza
-    updated_checkpoint = checkpoint.copy()
-    
-    # Actualizează secțiunea corespunzătoare
-    if section == "Expanded Plot":
-        updated_checkpoint["expanded_plot"] = draft
-    elif section == "Chapters Overview":
-        updated_checkpoint["chapters_overview"] = draft
-    elif section.startswith("Chapter "):
-        try:
-            chapter_num = int(section.split(" ")[1])
-            chapters_full = list(updated_checkpoint.get("chapters_full", []))  # Creează o copie
-            # Actualizează doar dacă capitolul există deja
-            if 1 <= chapter_num <= len(chapters_full):
-                chapters_full[chapter_num - 1] = draft
-                updated_checkpoint["chapters_full"] = chapters_full
-        except (ValueError, IndexError):
-            pass
-    
-    # Salvează checkpoint-ul actualizat
-    save_checkpoint(updated_checkpoint)
-    
+    save_section(section, draft)
     return draft
 
 def switch_to_create():
@@ -337,28 +287,6 @@ def editor_rewrite(section, selected_text, instructions):
     
     return result
 
-def _section_content_from_checkpoint(checkpoint, name: str) -> str:
-    if not checkpoint or not name:
-        return ""
-
-    if name == "Expanded Plot":
-        return checkpoint.get("expanded_plot", "") or ""
-
-    if name == "Chapters Overview":
-        return checkpoint.get("chapters_overview", "") or ""
-
-    if name.startswith("Chapter "):
-        try:
-            chapter_num = int(name.split(" ")[1])
-            chapters_full = checkpoint.get("chapters_full", [])
-            if 1 <= chapter_num <= len(chapters_full):
-                return chapters_full[chapter_num - 1] or ""
-        except (ValueError, IndexError):
-            return ""
-
-    return ""
-
-
 def _build_candidate_sections(section: str, checkpoint) -> List[Tuple[str, str]]:
     candidates: List[Tuple[str, str]] = []
 
@@ -368,7 +296,8 @@ def _build_candidate_sections(section: str, checkpoint) -> List[Tuple[str, str]]
     def add(name: str):
         if not name or name == section:
             return
-        content = _section_content_from_checkpoint(checkpoint, name) or ""
+        from pipeline.checkpoint_manager import get_section_content
+        content = get_section_content(name) or ""
         candidates.append((name, content))
 
     total_chapters = len(checkpoint.get("chapters_full", []) or [])

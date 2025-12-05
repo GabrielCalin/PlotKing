@@ -4,7 +4,8 @@ import os, re, json
 import gradio as gr
 from utils.timestamp import ts_prefix
 from pipeline.constants import RUN_MODE_CHOICES
-from pipeline.state_manager import save_checkpoint, clear_stop, clear_checkpoint
+from pipeline.state_manager import clear_stop
+from pipeline.checkpoint_manager import save_checkpoint, clear_checkpoint
 
 # === Config & helpers ===
 _PROJECTS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "projects")
@@ -62,7 +63,7 @@ def save_project(
     genre = genre_input or ""
 
     # Checkpoint-ul este sursa de adevăr pentru expanded_plot, chapters_overview și chapters
-    from pipeline.state_manager import get_checkpoint
+    from pipeline.checkpoint_manager import get_checkpoint
     checkpoint = get_checkpoint()
     
     if checkpoint:

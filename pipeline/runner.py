@@ -5,7 +5,8 @@ import gradio as gr
 
 from pipeline.context import PipelineContext
 from pipeline.constants import RUN_MODE_CHOICES
-from pipeline.state_manager import is_stop_requested, save_checkpoint, clear_stop
+from pipeline.state_manager import is_stop_requested, clear_stop
+from pipeline.checkpoint_manager import save_checkpoint
 
 # Pașii modularizați
 from pipeline.steps.plot_expander import run_plot_expander
