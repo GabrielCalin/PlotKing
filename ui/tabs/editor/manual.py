@@ -2,7 +2,7 @@ import gradio as gr
 import ui.editor_handlers as H
 from ui.tabs.editor.utils import append_status, remove_highlight
 from ui.tabs.editor.constants import Components, States
-from pipeline.checkpoint_manager import get_section_content
+from pipeline.checkpoint_manager import get_section_content, save_section
 
 def start_edit(curr_text, section, current_log):
     """Switch to edit mode — locks Section + Mode."""
@@ -85,7 +85,8 @@ def confirm_edit(section, draft, current_log):
 
 def force_edit(section, draft, current_log, create_epoch):
     """Apply changes directly without validation — unlocks controls after."""
-    updated_text = H.force_edit(section, draft)
+    save_section(section, draft)
+    updated_text = draft
     new_log, status_update = append_status(current_log, f"⚡ ({section}) Synced (forced).")
     new_create_epoch = (create_epoch or 0) + 1  # Bump create_sections_epoch to notify Create tab
     return (

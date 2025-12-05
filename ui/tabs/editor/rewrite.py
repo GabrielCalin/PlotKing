@@ -3,7 +3,7 @@ import ui.editor_handlers as H
 from ui.rewrite_presets import REWRITE_PRESETS
 from ui.tabs.editor.utils import append_status, replace_text_with_highlight, remove_highlight, format_selected_preview, update_instructions_from_preset
 from ui.tabs.editor.constants import Components, States
-from pipeline.checkpoint_manager import get_section_content
+from pipeline.checkpoint_manager import get_section_content, save_section
 
 def handle_text_selection(evt: gr.SelectData):
     """Handle text selection in editor_tb and store selected text and indices."""
@@ -121,7 +121,8 @@ def rewrite_discard(section, current_log):
 def rewrite_force_edit(section, draft_with_highlight, current_log, create_epoch):
     """Force edit with rewritten text - remove highlight and update checkpoint."""
     draft_clean = remove_highlight(draft_with_highlight)
-    updated_text = H.force_edit(section, draft_clean)
+    save_section(section, draft_clean)
+    updated_text = draft_clean
     new_log, status_update = append_status(current_log, f"⚡ ({section}) Synced (forced from rewrite).")
     new_create_epoch = (create_epoch or 0) + 1
     return (

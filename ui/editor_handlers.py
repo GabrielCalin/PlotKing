@@ -111,12 +111,6 @@ def editor_apply(section, draft, plan):
     # Dacă nu există plan sau nu sunt secțiuni impactate, doar returnează draft-ul inițial
     return drafts
 
-def force_edit(section, draft):
-    """Aplică modificarea direct în checkpoint, fără validare."""
-    from pipeline.checkpoint_manager import save_section
-    
-    save_section(section, draft)
-    return draft
 
 def switch_to_create():
     print(">>> Switching to Create tab... (JS trigger here)")

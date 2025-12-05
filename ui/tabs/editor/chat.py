@@ -5,7 +5,7 @@ from ui.tabs.editor.utils import append_status
 from ui.tabs.editor.drafts_manager import DraftsManager
 from ui.tabs.editor.constants import Components, States
 from pipeline.steps.chat_editor.llm import call_llm_chat
-from pipeline.checkpoint_manager import get_section_content
+from pipeline.checkpoint_manager import get_section_content, save_section
 
 def chat_handler(section, message, history, current_text, initial_text, current_log):
     """
@@ -258,7 +258,8 @@ def force_edit_handler(section, current_text, current_log, create_epoch):
     """
     Force saves the chat edits to checkpoint.
     """
-    updated_text = H.force_edit(section, current_text)
+    save_section(section, current_text)
+    updated_text = current_text
     new_log, status_update = append_status(current_log, f"⚡ ({section}) Synced (forced from Chat).")
     new_create_epoch = (create_epoch or 0) + 1
     
