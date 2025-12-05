@@ -112,12 +112,6 @@ def editor_apply(section, draft, plan):
     return drafts
 
 
-def switch_to_create():
-    print(">>> Switching to Create tab... (JS trigger here)")
-
-def switch_to_editor():
-    print(">>> Returning to Editor tab... (JS trigger here)")
-
 def editor_rewrite(section, selected_text, instructions):
     """
     Rewrite selected text based on instructions using LLM.
