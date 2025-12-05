@@ -119,7 +119,6 @@ def editor_get_section_content(name):
 def editor_validate(section, draft):
     """Validează modificările comparând versiunea originală cu versiunea editată."""
     from pipeline.checkpoint_manager import get_checkpoint, get_section_content
-    from pipeline.context import PipelineContext
     from pipeline.steps.version_diff import call_llm_version_diff
     from pipeline.steps.impact_analyzer import call_llm_impact_analysis
 
@@ -130,15 +129,12 @@ def editor_validate(section, draft):
     # Obține versiunea originală din checkpoint (fără să o modificăm)
     original_version = get_section_content(section) or ""
 
-    # Creează un context temporar din checkpoint pentru a obține genre
-    context = PipelineContext.from_checkpoint(checkpoint)
-
     # Apelează call_llm_version_diff
     result, diff_data = call_llm_version_diff(
         section_type=section,
         original_version=original_version,
         modified_version=draft or "",
-        genre=context.genre or "",
+        genre=checkpoint.genre or "",
     )
 
     # Formatează rezultatul pentru Validation Output
@@ -300,7 +296,7 @@ def _build_candidate_sections(section: str, checkpoint) -> List[Tuple[str, str]]
         content = get_section_content(name) or ""
         candidates.append((name, content))
 
-    total_chapters = len(checkpoint.get("chapters_full", []) or [])
+    total_chapters = len(checkpoint.chapters_full or [])
 
     if section in {"Expanded Plot", "Chapters Overview"}:
         add("Expanded Plot")

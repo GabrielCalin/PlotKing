@@ -16,7 +16,7 @@ def fetch_title_handler(current_log):
         new_log = (current_log or "") + "\n" + ts_prefix("⚠️ No checkpoint found. Cannot fetch title.")
         return "", new_log.strip()
 
-    expanded_plot = checkpoint.get("expanded_plot", "")
+    expanded_plot = checkpoint.expanded_plot or ""
     if not expanded_plot:
         new_log = (current_log or "") + "\n" + ts_prefix("⚠️ No expanded plot found. Cannot fetch title.")
         return "", new_log.strip()
@@ -100,7 +100,7 @@ def export_book_handler(title, author, cover_image_path, font_family, font_size,
         book.add_item(title_page)
 
         # Chapters
-        chapters_full = checkpoint.get("chapters_full", [])
+        chapters_full = checkpoint.chapters_full or []
         epub_chapters = []
         
         # Add items to spine

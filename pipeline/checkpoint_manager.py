@@ -1,44 +1,45 @@
 from threading import Lock
-from typing import Optional, Dict, List, Any
+from typing import Optional, List
+from pipeline.context import PipelineContext
 
-_checkpoint_data: Optional[Dict[str, Any]] = None
+_checkpoint_data: Optional[PipelineContext] = None
 _lock = Lock()
 
 
-def save_checkpoint(data: Dict[str, Any]) -> None:
+def save_checkpoint(context: PipelineContext) -> None:
     """Salvează checkpoint-ul complet. Face deep copy pentru liste mutabile."""
     global _checkpoint_data
     with _lock:
-        if data is None:
+        if context is None:
             _checkpoint_data = None
             return
         
-        checkpoint_copy = data.copy()
+        context_copy = PipelineContext(**context.__dict__)
         
-        if "chapters_full" in checkpoint_copy and isinstance(checkpoint_copy["chapters_full"], list):
-            checkpoint_copy["chapters_full"] = list(checkpoint_copy["chapters_full"])
+        if context_copy.chapters_full:
+            context_copy.chapters_full = list(context_copy.chapters_full)
         
-        if "status_log" in checkpoint_copy and isinstance(checkpoint_copy["status_log"], list):
-            checkpoint_copy["status_log"] = list(checkpoint_copy["status_log"])
+        if context_copy.status_log:
+            context_copy.status_log = list(context_copy.status_log)
         
-        _checkpoint_data = checkpoint_copy
+        _checkpoint_data = context_copy
 
 
-def get_checkpoint() -> Optional[Dict[str, Any]]:
+def get_checkpoint() -> Optional[PipelineContext]:
     """Returnează o copie a checkpoint-ului pentru a preveni modificări accidentale."""
     with _lock:
         if _checkpoint_data is None:
             return None
         
-        checkpoint_copy = _checkpoint_data.copy()
+        context_copy = PipelineContext(**_checkpoint_data.__dict__)
         
-        if "chapters_full" in checkpoint_copy and isinstance(checkpoint_copy["chapters_full"], list):
-            checkpoint_copy["chapters_full"] = list(checkpoint_copy["chapters_full"])
+        if context_copy.chapters_full:
+            context_copy.chapters_full = list(context_copy.chapters_full)
         
-        if "status_log" in checkpoint_copy and isinstance(checkpoint_copy["status_log"], list):
-            checkpoint_copy["status_log"] = list(checkpoint_copy["status_log"])
+        if context_copy.status_log:
+            context_copy.status_log = list(context_copy.status_log)
         
-        return checkpoint_copy
+        return context_copy
 
 
 def clear_checkpoint() -> None:
@@ -65,23 +66,21 @@ def save_section(section: str, content: str) -> bool:
     Returns:
         True dacă salvarea a reușit, False altfel
     """
-    checkpoint = get_checkpoint()
-    if not checkpoint:
+    context = get_checkpoint()
+    if not context:
         return False
     
-    updated_checkpoint = checkpoint.copy()
-    
     if section == "Expanded Plot":
-        updated_checkpoint["expanded_plot"] = content
+        context.expanded_plot = content
     elif section == "Chapters Overview":
-        updated_checkpoint["chapters_overview"] = content
+        context.chapters_overview = content
     elif section.startswith("Chapter "):
         try:
             chapter_num = int(section.split(" ")[1])
-            chapters_full = list(updated_checkpoint.get("chapters_full", []))
-            if 1 <= chapter_num <= len(chapters_full):
-                chapters_full[chapter_num - 1] = content
-                updated_checkpoint["chapters_full"] = chapters_full
+            if not context.chapters_full:
+                return False
+            if 1 <= chapter_num <= len(context.chapters_full):
+                context.chapters_full[chapter_num - 1] = content
             else:
                 return False
         except (ValueError, IndexError):
@@ -89,7 +88,7 @@ def save_section(section: str, content: str) -> bool:
     else:
         return False
     
-    save_checkpoint(updated_checkpoint)
+    save_checkpoint(context)
     return True
 
 
@@ -103,22 +102,21 @@ def get_section_content(section: str) -> str:
     Returns:
         Conținutul secțiunii sau string gol dacă nu există
     """
-    checkpoint = get_checkpoint()
-    if not checkpoint or not section:
+    context = get_checkpoint()
+    if not context or not section:
         return ""
     
     if section == "Expanded Plot":
-        return checkpoint.get("expanded_plot", "") or ""
+        return context.expanded_plot or ""
     
     if section == "Chapters Overview":
-        return checkpoint.get("chapters_overview", "") or ""
+        return context.chapters_overview or ""
     
     if section.startswith("Chapter "):
         try:
             chapter_num = int(section.split(" ")[1])
-            chapters_full = checkpoint.get("chapters_full", [])
-            if 1 <= chapter_num <= len(chapters_full):
-                return chapters_full[chapter_num - 1] or ""
+            if context.chapters_full and 1 <= chapter_num <= len(context.chapters_full):
+                return context.chapters_full[chapter_num - 1] or ""
         except (ValueError, IndexError):
             return ""
     
@@ -132,21 +130,21 @@ def get_sections_list() -> List[str]:
     Returns:
         Lista de nume de secțiuni disponibile
     """
-    checkpoint = get_checkpoint()
-    if not checkpoint:
+    context = get_checkpoint()
+    if not context:
         return []
     
     sections = []
     
-    if checkpoint.get("expanded_plot"):
+    if context.expanded_plot:
         sections.append("Expanded Plot")
     
-    if checkpoint.get("chapters_overview"):
+    if context.chapters_overview:
         sections.append("Chapters Overview")
     
-    chapters_full = checkpoint.get("chapters_full", [])
-    for idx in range(len(chapters_full)):
-        sections.append(f"Chapter {idx + 1}")
+    if context.chapters_full:
+        for idx in range(len(context.chapters_full)):
+            sections.append(f"Chapter {idx + 1}")
     
     return sections
 

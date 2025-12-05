@@ -68,9 +68,9 @@ def save_project(
     
     if checkpoint:
         # Citește din checkpoint doar expanded_plot, chapters_overview și chapters
-        expanded_plot = checkpoint.get("expanded_plot") or ""
-        chapters_overview = checkpoint.get("chapters_overview") or ""
-        chapters = checkpoint.get("chapters_full") or []
+        expanded_plot = checkpoint.expanded_plot or ""
+        chapters_overview = checkpoint.chapters_overview or ""
+        chapters = checkpoint.chapters_full or []
     else:
         # Dacă checkpoint nu există, folosește valori goale
         expanded_plot = ""
@@ -131,21 +131,23 @@ def load_project(selected_name, current_status):
     overview = data.get("chapters_overview", "")
     chapters_list = data.get("chapters", []) or []
 
-    checkpoint = {
-        "plot": chosen_plot,
-        "num_chapters": num_chapters,
-        "genre": genre,
-        "anpc": anpc,
-        "run_mode": RUN_MODE_CHOICES["FULL"],
-        "expanded_plot": expanded,
-        "chapters_overview": overview,
-        "chapters_full": chapters_list,
-        "validation_text": "",
-        "overview_validated": bool(overview),
-        "pending_validation_index": None,
-        "next_chapter_index": None,
-        "status_log": [ts_prefix(f"📂 Project “{selected_name}” loaded.")],
-    }
+    from pipeline.context import PipelineContext
+    
+    checkpoint = PipelineContext(
+        plot=chosen_plot,
+        num_chapters=num_chapters,
+        genre=genre,
+        anpc=anpc,
+        run_mode=RUN_MODE_CHOICES["FULL"],
+        expanded_plot=expanded,
+        chapters_overview=overview,
+        chapters_full=chapters_list,
+        validation_text="",
+        overview_validated=bool(overview),
+        pending_validation_index=None,
+        next_chapter_index=None,
+        status_log=[ts_prefix(f"📂 Project “{selected_name}” loaded.")],
+    )
     save_checkpoint(checkpoint)
     
     # Clear drafts on load

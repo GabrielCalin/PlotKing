@@ -65,7 +65,7 @@ def run_edit_pipeline_stream(
         return
     
     # Initialize state from checkpoint (temporary state)
-    state = PipelineContext.from_checkpoint(checkpoint)
+    state = checkpoint
     
     # Dictionary to store drafts: {section_name: new_content}
     drafts = DraftsManager()

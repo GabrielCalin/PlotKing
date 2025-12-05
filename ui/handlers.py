@@ -42,16 +42,16 @@ def post_pipeline_controls():
             gr.update(visible=False), # regen chapter
         )
 
-    expanded_visible = bool(checkpoint.get("expanded_plot"))
-    overview_visible = bool(checkpoint.get("chapters_overview"))
-    chapters_count = len(checkpoint.get("chapters_full", []))
+    expanded_visible = bool(checkpoint.expanded_plot)
+    overview_visible = bool(checkpoint.chapters_overview)
+    chapters_count = len(checkpoint.chapters_full or [])
 
     try:
-        total_chapters = int(checkpoint.get("num_chapters") or chapters_count)
+        total_chapters = int(checkpoint.num_chapters or chapters_count)
     except Exception:
         total_chapters = chapters_count
 
-    has_resume_markers = bool(checkpoint.get("pending_validation_index")) or bool(checkpoint.get("next_chapter_index"))
+    has_resume_markers = bool(checkpoint.pending_validation_index) or bool(checkpoint.next_chapter_index)
     is_full_complete = expanded_visible and overview_visible and (chapters_count >= max(1, total_chapters)) and not has_resume_markers
     stopped_at_overview = expanded_visible and overview_visible and (chapters_count == 0) and not has_resume_markers
     chapters_visible = chapters_count > 0
@@ -115,15 +115,15 @@ def resume_pipeline(pipeline_fn):
         yield "", "", [], "", gr.update(choices=[]), "_No checkpoint_", "⚠️ No checkpoint found to resume from.", ""
         return
 
-    plot = checkpoint.get("plot", "")
-    num_chapters = checkpoint.get("num_chapters", 0)
-    genre = checkpoint.get("genre", "")
-    anpc = checkpoint.get("anpc", 0)
-    run_mode = checkpoint.get("run_mode", RUN_MODE_CHOICES["FULL"])
+    plot = checkpoint.plot
+    num_chapters = checkpoint.num_chapters
+    genre = checkpoint.genre
+    anpc = checkpoint.anpc
+    run_mode = checkpoint.run_mode
 
-    expanded = checkpoint.get("expanded_plot")
-    overview = checkpoint.get("chapters_overview")
-    chapters = checkpoint.get("chapters_full", [])
+    expanded = checkpoint.expanded_plot
+    overview = checkpoint.chapters_overview
+    chapters = checkpoint.chapters_full or []
 
     clear_stop()
 
@@ -146,15 +146,15 @@ def resume_pipeline(pipeline_fn):
         return
 
     yield (
-        checkpoint.get("expanded_plot", ""),
-        checkpoint.get("chapters_overview", ""),
-        checkpoint.get("chapters_full", []),
+        checkpoint.expanded_plot or "",
+        checkpoint.chapters_overview or "",
+        checkpoint.chapters_full or [],
         gr.update(),
         gr.update(choices=[f"Chapter {i+1}" for i in range(len(chapters))]),
         f"✅ All {len(chapters)} chapters already complete.",
-        "\n".join(checkpoint.get("status_log", []))
+        "\n".join(checkpoint.status_log or [])
         + "\n" + ts_prefix("ℹ️ Nothing left to resume."),
-        checkpoint.get("validation_text", ""),
+        checkpoint.validation_text or "",
     )
 
 def refresh_expanded(pipeline_fn):
@@ -164,11 +164,11 @@ def refresh_expanded(pipeline_fn):
         return
     clear_stop()
     yield from pipeline_fn(
-        checkpoint["plot"],
-        checkpoint["num_chapters"],
-        checkpoint["genre"],
-        checkpoint["anpc"],
-        checkpoint["run_mode"],
+        checkpoint.plot,
+        checkpoint.num_chapters,
+        checkpoint.genre,
+        checkpoint.anpc,
+        checkpoint.run_mode,
         checkpoint=checkpoint,
         refresh_from="expanded"
     )
@@ -180,11 +180,11 @@ def refresh_overview(pipeline_fn):
         return
     clear_stop()
     yield from pipeline_fn(
-        checkpoint["plot"],
-        checkpoint["num_chapters"],
-        checkpoint["genre"],
-        checkpoint["anpc"],
-        checkpoint["run_mode"],
+        checkpoint.plot,
+        checkpoint.num_chapters,
+        checkpoint.genre,
+        checkpoint.anpc,
+        checkpoint.run_mode,
         checkpoint=checkpoint,
         refresh_from="overview"
     )
@@ -206,25 +206,25 @@ def refresh_chapter(pipeline_fn, selected_name):
         current_text_update = ""
         dropdown_update = gr.update(value=None)
     else:
-        current_text_update = checkpoint.get("chapters_full", [])[0] if checkpoint.get("chapters_full") else ""
+        current_text_update = checkpoint.chapters_full[0] if checkpoint.chapters_full else ""
         dropdown_update = gr.update(value="Chapter 1")
 
     yield (
-        gr.update(value=checkpoint.get("expanded_plot", "")),
-        gr.update(value=checkpoint.get("chapters_overview", "")),
-        checkpoint.get("chapters_full", []),
+        gr.update(value=checkpoint.expanded_plot or ""),
+        gr.update(value=checkpoint.chapters_overview or ""),
+        checkpoint.chapters_full or [],
         current_text_update,
         dropdown_update,
         f"Refreshing from chapter {idx}...",
         ts_prefix(f"🔁 Refresh from chapter {idx} initiated."),
-        checkpoint.get("validation_text", ""),
+        checkpoint.validation_text or "",
     )
     yield from pipeline_fn(
-        checkpoint["plot"],
-        checkpoint["num_chapters"],
-        checkpoint["genre"],
-        checkpoint["anpc"],
-        checkpoint["run_mode"],
+        checkpoint.plot,
+        checkpoint.num_chapters,
+        checkpoint.genre,
+        checkpoint.anpc,
+        checkpoint.run_mode,
         checkpoint=checkpoint,
         refresh_from=idx
     )
@@ -272,9 +272,9 @@ def refresh_create_from_checkpoint(epoch, current_chapters_state, current_chapte
         )
     
     # Citește din checkpoint
-    expanded = checkpoint.get("expanded_plot", "") or ""
-    overview = checkpoint.get("chapters_overview", "") or ""
-    chapters_list = checkpoint.get("chapters_full", []) or []
+    expanded = checkpoint.expanded_plot or ""
+    overview = checkpoint.chapters_overview or ""
+    chapters_list = checkpoint.chapters_full or []
     
     # Actualizează expanded_output și chapters_output
     expanded_update = gr.update(value=expanded)

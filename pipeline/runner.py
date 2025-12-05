@@ -2,6 +2,7 @@
 # pipeline/runner.py
 
 import gradio as gr
+from typing import Optional
 
 from pipeline.context import PipelineContext
 from pipeline.constants import RUN_MODE_CHOICES
@@ -32,7 +33,7 @@ def vtext_add(section: str, validation_text: str) -> str:
 def maybe_pause_pipeline(step_label: str, state: PipelineContext):
     if not is_stop_requested():
         return False
-    save_checkpoint(state.__dict__)
+    save_checkpoint(state)
     log_ui(state.status_log, f"🛑 Stop requested — pipeline paused after {step_label}.")
     yield (
         state.expanded_plot,
@@ -72,7 +73,7 @@ def apply_refresh_point(state: PipelineContext, refresh_from):
 
 # ------- Public API: exact semnături folosite de UI -------
 
-def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, checkpoint=None, refresh_from=None):
+def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, checkpoint: Optional[PipelineContext] = None, refresh_from=None):
     """
     Orchestrarea completă (streaming) pentru UI.
     Păstrează semnătura/ordinul de yield identic cu versiunea anterioară.
@@ -80,7 +81,7 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
     clear_stop()
 
     if checkpoint:
-        state = PipelineContext.from_checkpoint(checkpoint)
+        state = checkpoint
         state.run_mode = run_mode
         if refresh_from:
             log_ui(state.status_log, "🔁 Regeneration requested...")
@@ -178,7 +179,7 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
 
     # Early stop dacă user a cerut OVERVIEW only
     if state.run_mode == RUN_MODE_CHOICES["OVERVIEW"]:
-        save_checkpoint(state.__dict__)
+        save_checkpoint(state)
         log_ui(state.status_log, "⏹️ Stopped after chapters overview as requested.")
         yield state.expanded_plot, state.chapters_overview, [], "", gr.update(choices=[], value=None), "_Stopped after overview_", "\n".join(state.status_log), state.validation_text
         return
@@ -370,7 +371,7 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
 
     state.next_chapter_index = None
     state.pending_validation_index = None
-    save_checkpoint(state.__dict__)
+    save_checkpoint(state)
 
     yield (
         state.expanded_plot,
@@ -384,10 +385,10 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
     )
 
 
-def generate_book_outline_stream_resume(checkpoint):
-    plot = checkpoint.get("plot", "")
-    num_chapters = checkpoint.get("num_chapters", 0)
-    genre = checkpoint.get("genre", "")
-    anpc = checkpoint.get("anpc", 0)
-    run_mode = checkpoint.get("run_mode", RUN_MODE_CHOICES["FULL"])
+def generate_book_outline_stream_resume(checkpoint: PipelineContext):
+    plot = checkpoint.plot
+    num_chapters = checkpoint.num_chapters
+    genre = checkpoint.genre
+    anpc = checkpoint.anpc
+    run_mode = checkpoint.run_mode
     return generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, checkpoint=checkpoint)
