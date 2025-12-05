@@ -1,6 +1,7 @@
 import gradio as gr
 import re
 import difflib
+from typing import List, Dict, Any
 from utils.timestamp import ts_prefix
 from ui.rewrite_presets import REWRITE_PRESETS
 
@@ -172,3 +173,103 @@ def diff_handler(current_text, initial_text, diff_btn_label, show_label="📝 Sh
             gr.update(value=current_text), # viewer_md shows draft
             gr.update(value=diff_label), # Toggle button label
         )
+
+def format_validation_markdown(
+    result: str,
+    diff_data: Dict[str, Any],
+    impact_result: str = None,
+    impact_data: Dict[str, Any] = None,
+    impacted: List[str] = None,
+) -> str:
+    """Formatează rezultatul validării într-un format markdown human-readable."""
+    
+    if result == "ERROR":
+        message = diff_data.get("error", "Unknown error encountered during validation.")
+        return f"""## ❌ Error
+
+**Validation failed with error:**
+
+```
+{message}
+```
+"""
+    
+    if result == "UNKNOWN":
+        raw = diff_data.get("raw", "(no details provided)")
+        return f"""## ⚠️ Unexpected Format
+
+**Received unexpected validation format:**
+
+```
+{raw}
+```
+"""
+    
+    if result == "NO_CHANGES":
+        message = diff_data.get("message", "No major changes detected.")
+        return f"""## ✅ No Major Changes Detected
+
+{message}
+"""
+    
+    if result == "CHANGES_DETECTED":
+        changes_section = ""
+        changes = diff_data.get("changes", []) or []
+        if changes:
+            changes_section = "### 📝 Changes Detected\n\n"
+            for change in changes:
+                if isinstance(change, str):
+                    changes_section += f"- {change}\n"
+                else:
+                    changes_section += f"- {str(change)}\n"
+        
+        impact_section = ""
+        if impact_result == "ERROR":
+            message = "Unknown error during impact analysis."
+            if impact_data:
+                message = impact_data.get("error", message)
+            impact_section = f"\n\n### ❌ Impact Analysis Error\n\n{message}\n"
+        elif impact_result == "UNKNOWN":
+            raw = "(no details provided)"
+            if impact_data:
+                raw = impact_data.get("raw", raw)
+            impact_section = f"\n\n### ⚠️ Unexpected Impact Format\n\n{raw}\n"
+        elif impact_result == "IMPACT_DETECTED":
+            impact_section = "\n\n### ⚠️ Impact Analysis\n\n"
+            
+            if impacted:
+                impact_section += f"**Sections that need updates:** {', '.join(f'`{s}`' for s in impacted)}\n\n"
+            
+            items = []
+            if impact_data:
+                items = impact_data.get("impacted_sections", []) or []
+
+            if items:
+                for entry in items:
+                    name = entry.get("name") if isinstance(entry, dict) else None
+                    reason = entry.get("reason") if isinstance(entry, dict) else None
+                    if name:
+                        impact_section += f"#### 📌 {name}\n\n{reason or 'Reason not provided.'}\n\n"
+            else:
+                impact_section += "No impacted sections provided.\n"
+        elif impact_result == "NO_IMPACT":
+            message = "No other sections require updates."
+            if impact_data:
+                message = impact_data.get("message", message)
+            impact_section = f"\n\n### ✅ No Impact Detected\n\n{message}\n"
+        
+        return f"""## 📋 Validation Results
+
+{changes_section}{impact_section}
+"""
+    
+    raw_details = diff_data if isinstance(diff_data, str) else str(diff_data)
+    return f"""## ⚠️ Unexpected Result
+
+**Result:** `{result}`
+
+**Details:**
+```
+{raw_details}
+```
+"""

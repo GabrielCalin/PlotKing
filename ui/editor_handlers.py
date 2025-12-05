@@ -1,105 +1,5 @@
 from typing import List, Tuple, Dict, Any
-
-
-def _format_validation_markdown(
-    result: str,
-    diff_data: Dict[str, Any],
-    impact_result: str = None,
-    impact_data: Dict[str, Any] = None,
-    impacted: List[str] = None,
-) -> str:
-    """Formatează rezultatul validării într-un format markdown human-readable."""
-    
-    if result == "ERROR":
-        message = diff_data.get("error", "Unknown error encountered during validation.")
-        return f"""## ❌ Error
-
-**Validation failed with error:**
-
-```
-{message}
-```
-"""
-    
-    if result == "UNKNOWN":
-        raw = diff_data.get("raw", "(no details provided)")
-        return f"""## ⚠️ Unexpected Format
-
-**Received unexpected validation format:**
-
-```
-{raw}
-```
-"""
-    
-    if result == "NO_CHANGES":
-        message = diff_data.get("message", "No major changes detected.")
-        return f"""## ✅ No Major Changes Detected
-
-{message}
-"""
-    
-    if result == "CHANGES_DETECTED":
-        changes_section = ""
-        changes = diff_data.get("changes", []) or []
-        if changes:
-            changes_section = "### 📝 Changes Detected\n\n"
-            for change in changes:
-                if isinstance(change, str):
-                    changes_section += f"- {change}\n"
-                else:
-                    changes_section += f"- {str(change)}\n"
-        
-        impact_section = ""
-        if impact_result == "ERROR":
-            message = "Unknown error during impact analysis."
-            if impact_data:
-                message = impact_data.get("error", message)
-            impact_section = f"\n\n### ❌ Impact Analysis Error\n\n{message}\n"
-        elif impact_result == "UNKNOWN":
-            raw = "(no details provided)"
-            if impact_data:
-                raw = impact_data.get("raw", raw)
-            impact_section = f"\n\n### ⚠️ Unexpected Impact Format\n\n{raw}\n"
-        elif impact_result == "IMPACT_DETECTED":
-            impact_section = "\n\n### ⚠️ Impact Analysis\n\n"
-            
-            if impacted:
-                impact_section += f"**Sections that need updates:** {', '.join(f'`{s}`' for s in impacted)}\n\n"
-            
-            items = []
-            if impact_data:
-                items = impact_data.get("impacted_sections", []) or []
-
-            if items:
-                for entry in items:
-                    name = entry.get("name") if isinstance(entry, dict) else None
-                    reason = entry.get("reason") if isinstance(entry, dict) else None
-                    if name:
-                        impact_section += f"#### 📌 {name}\n\n{reason or 'Reason not provided.'}\n\n"
-            else:
-                impact_section += "No impacted sections provided.\n"
-        elif impact_result == "NO_IMPACT":
-            message = "No other sections require updates."
-            if impact_data:
-                message = impact_data.get("message", message)
-            impact_section = f"\n\n### ✅ No Impact Detected\n\n{message}\n"
-        
-        return f"""## 📋 Validation Results
-
-{changes_section}{impact_section}
-"""
-    
-    raw_details = diff_data if isinstance(diff_data, str) else str(diff_data)
-    return f"""## ⚠️ Unexpected Result
-
-**Result:** `{result}`
-
-**Details:**
-```
-{raw_details}
-```
-"""
+from ui.tabs.editor.utils import format_validation_markdown
 
 def editor_list_sections():
     """Returnează lista secțiunilor existente din checkpoint."""
@@ -139,13 +39,13 @@ def editor_validate(section, draft):
 
     # Formatează rezultatul pentru Validation Output
     if result == "ERROR":
-        msg = _format_validation_markdown(result, diff_data)
+        msg = format_validation_markdown(result, diff_data)
         plan = None
     elif result == "UNKNOWN":
-        msg = _format_validation_markdown(result, diff_data)
+        msg = format_validation_markdown(result, diff_data)
         plan = None
     elif result == "NO_CHANGES":
-        msg = _format_validation_markdown(result, diff_data)
+        msg = format_validation_markdown(result, diff_data)
         plan = None
     elif result == "CHANGES_DETECTED":
         candidates = _build_candidate_sections(section, checkpoint)
@@ -160,7 +60,7 @@ def editor_validate(section, draft):
             diff_summary=diff_summary_text,
             candidate_sections=candidates,
         )
-        msg = _format_validation_markdown(result, diff_data, impact_result, impact_data, impacted)
+        msg = format_validation_markdown(result, diff_data, impact_result, impact_data, impacted)
         # Păstrăm datele pentru runner_edit
         plan = {
             "edited_section": section,
@@ -169,7 +69,7 @@ def editor_validate(section, draft):
             "impacted_sections": impacted,
         } if impact_result == "IMPACT_DETECTED" and impacted else None
     else:
-        msg = _format_validation_markdown(result, diff_data)
+        msg = format_validation_markdown(result, diff_data)
         plan = None
 
     return msg, plan
