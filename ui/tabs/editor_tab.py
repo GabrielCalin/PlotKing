@@ -4,6 +4,7 @@
 import gradio as gr
 import ui.editor_handlers as H
 from ui.rewrite_presets import REWRITE_PRESETS
+from pipeline.checkpoint_manager import get_sections_list, get_section_content
 
 # Import helpers and logic from new modules
 from ui.tabs.editor.utils import (
@@ -111,7 +112,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     def _refresh_sections(_):
         """Repopulate dropdown when editor_sections_epoch changes (Create → Editor sync), or show empty state."""
-        sections = H.editor_list_sections()
+        sections = get_sections_list()
 
         if not sections:
             # 🔹 hide everything except empty message
@@ -150,7 +151,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             btn_dr_upd = gr.update(visible=True, interactive=True)
             btn_df_upd = gr.update(visible=True, interactive=True)
         else:
-            text = H.editor_get_section_content(name) or "_Empty_"
+            text = get_section_content(name) or "_Empty_"
             view_state = "Checkpoint"
             label = "**Viewing:** <span style='color:red;'>Checkpoint</span>"
             # Buttons: Checkpoint (HIDDEN - no point showing only C), Draft (hidden), Diff (hidden)
@@ -271,7 +272,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         if not section:
             return gr.update(), "**Viewing:** <span style='color:red;'>Checkpoint</span>", "Checkpoint"
             
-        original_text = H.editor_get_section_content(section) or ""
+        original_text = get_section_content(section) or ""
         
         drafts_mgr = DraftsManager()
         draft_text = drafts_mgr.get_content(section) if drafts_mgr.has(section) else ""

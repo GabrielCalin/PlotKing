@@ -3,6 +3,7 @@ import ui.editor_handlers as H
 from ui.rewrite_presets import REWRITE_PRESETS
 from ui.tabs.editor.utils import append_status, replace_text_with_highlight, remove_highlight, format_selected_preview, update_instructions_from_preset
 from ui.tabs.editor.constants import Components, States
+from pipeline.checkpoint_manager import get_section_content
 
 def handle_text_selection(evt: gr.SelectData):
     """Handle text selection in editor_tb and store selected text and indices."""
@@ -36,7 +37,7 @@ def rewrite_handler(section, selected_txt, selected_idx, instructions, current_t
     """Handle rewrite button click - call handler and replace selected text."""
     start_idx, end_idx = selected_idx if isinstance(selected_idx, (list, tuple)) and len(selected_idx) == 2 else (None, None)
     
-    original_text = H.editor_get_section_content(section)
+    original_text = get_section_content(section)
     
     new_log, status_update = append_status(current_log, f"🔄 ({section}) Rewriting selected text...")
     
@@ -100,7 +101,7 @@ def rewrite_handler(section, selected_txt, selected_idx, instructions, current_t
 def rewrite_discard(section, current_log):
     """Discard rewrite changes - switch back to Text Box non-interactive. Always use checkpoint as source of truth."""
     new_log, status_update = append_status(current_log, f"🗑️ ({section}) Rewrite discarded.")
-    clean_text = H.editor_get_section_content(section) or "_Empty_"
+    clean_text = get_section_content(section) or "_Empty_"
     return (
         gr.update(visible=True, value=clean_text, interactive=False),  # editor_tb
         gr.update(visible=False, value=clean_text),  # viewer_md - resetat la textul curat din checkpoint

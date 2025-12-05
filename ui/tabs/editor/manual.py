@@ -2,6 +2,7 @@ import gradio as gr
 import ui.editor_handlers as H
 from ui.tabs.editor.utils import append_status, remove_highlight
 from ui.tabs.editor.constants import Components, States
+from pipeline.checkpoint_manager import get_section_content
 
 def start_edit(curr_text, section, current_log):
     """Switch to edit mode — locks Section + Mode."""
@@ -106,7 +107,7 @@ def force_edit(section, draft, current_log, create_epoch):
 
 def discard_from_manual(section, current_log):
     """Revert changes from Manual edit mode — unlock Section + Mode, show Start Editing button."""
-    text = H.editor_get_section_content(section) or "_Empty_"
+    text = get_section_content(section) or "_Empty_"
     new_log, status_update = append_status(current_log, f"🗑️ ({section}) Changes discarded.")
     return (
         gr.update(value=text, visible=True),  # update and show Viewer

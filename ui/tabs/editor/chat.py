@@ -5,6 +5,7 @@ from ui.tabs.editor.utils import append_status
 from ui.tabs.editor.drafts_manager import DraftsManager
 from ui.tabs.editor.constants import Components, States
 from pipeline.steps.chat_editor.llm import call_llm_chat
+from pipeline.checkpoint_manager import get_section_content
 
 def chat_handler(section, message, history, current_text, initial_text, current_log):
     """
@@ -231,7 +232,7 @@ def discard_handler(section, current_log):
     if drafts_manager.has(section):
         drafts_manager.remove(section)
 
-    clean_text = H.editor_get_section_content(section) or "_Empty_"
+    clean_text = get_section_content(section) or "_Empty_"
     new_log, status_update = append_status(current_log, f"🗑️ ({section}) Chat edits discarded.")
     
     return (

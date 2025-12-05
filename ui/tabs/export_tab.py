@@ -1,7 +1,7 @@
 # ui/tabs/export_tab.py
 import gradio as gr
 import ui.export_handlers as H
-import ui.editor_handlers as EditorH # For checking project state
+from pipeline.checkpoint_manager import get_sections_list
 
 def render_export_tab(editor_sections_epoch, create_sections_epoch):
     """
@@ -76,7 +76,7 @@ def render_export_tab(editor_sections_epoch, create_sections_epoch):
     # ====== Helper functions ======
     def _refresh_export_tab(_):
         """Check if we have content to export."""
-        sections = EditorH.editor_list_sections()
+        sections = get_sections_list()
         if not sections:
              return gr.update(visible=True), gr.update(visible=False)
         return gr.update(visible=False), gr.update(visible=True)

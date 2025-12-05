@@ -1,21 +1,6 @@
 from typing import List, Tuple, Dict, Any
 from ui.tabs.editor.utils import format_validation_markdown
 
-def editor_list_sections():
-    """Returnează lista secțiunilor existente din checkpoint."""
-    from pipeline.checkpoint_manager import get_sections_list
-    
-    return get_sections_list()
-
-def editor_get_section_content(name):
-    """Încarcă textul secțiunii selectate din checkpoint."""
-    from pipeline.checkpoint_manager import get_section_content
-    
-    if not name:
-        return ""
-    
-    return get_section_content(name)
-
 def editor_validate(section, draft):
     """Validează modificările comparând versiunea originală cu versiunea editată."""
     from pipeline.checkpoint_manager import get_checkpoint, get_section_content
@@ -150,7 +135,8 @@ def editor_rewrite(section, selected_text, instructions):
         return {"success": False, "message": "No text selected."}
     
     # Get full section content for context
-    full_content = editor_get_section_content(section)
+    from pipeline.checkpoint_manager import get_section_content
+    full_content = get_section_content(section)
     
     # Calculate context padding
     context_before = ""

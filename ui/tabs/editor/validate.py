@@ -3,7 +3,7 @@ import ui.editor_handlers as H
 from utils.logger import merge_logs
 from ui.tabs.editor.utils import append_status, remove_highlight
 from ui.tabs.editor.constants import Components, States
-from pipeline.checkpoint_manager import save_section, get_checkpoint
+from pipeline.checkpoint_manager import save_section, get_checkpoint, get_section_content
 from ui.tabs.editor.drafts_manager import DraftsManager
 
 _stop_flag = False
@@ -265,7 +265,7 @@ def draft_accept_all(current_section, current_log, create_epoch):
     new_epoch = (create_epoch or 0) + 1
     
     # Get fresh content for viewer
-    fresh_content = H.editor_get_section_content(current_section) or ""
+    fresh_content = get_section_content(current_section) or ""
     
     return (
         gr.update(visible=False), # Hide draft panel
@@ -289,7 +289,7 @@ def draft_revert_all(current_section, current_log):
     new_log, status_update = append_status(current_log, "❌ All drafts reverted.")
     
     # Get fresh content for viewer (original checkpoint content)
-    fresh_content = H.editor_get_section_content(current_section) or ""
+    fresh_content = get_section_content(current_section) or ""
     
     return (
         gr.update(visible=False), # Hide draft panel
@@ -331,7 +331,7 @@ def draft_accept_selected(current_section, original_selected, generated_selected
     new_epoch = (create_epoch or 0) + 1
     
     # Get fresh content for viewer (checkpoint content)
-    viewer_val = H.editor_get_section_content(current_section) or ""
+    viewer_val = get_section_content(current_section) or ""
 
     # ALWAYS close the panel and clear drafts
     return (
@@ -462,7 +462,7 @@ def draft_regenerate_selected(generated_selected, plan, section, current_log, cr
 
 def discard_from_validate(section, current_log):
     """Revert changes from validation — return to View mode with no buttons visible. Always use checkpoint as source of truth."""
-    clean_text = H.editor_get_section_content(section) or "_Empty_"
+    clean_text = get_section_content(section) or "_Empty_"
     new_log, status_update = append_status(current_log, f"🗑️ ({section}) Changes discarded.")
     return (
         gr.update(value=clean_text, visible=True),  # update and show Viewer with clean text from checkpoint
