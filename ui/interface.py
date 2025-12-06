@@ -6,7 +6,7 @@ from ui import load_css
 from ui.tabs.create_tab import render_create_tab
 from ui.tabs.editor_tab import render_editor_tab
 from ui.tabs.export_tab import render_export_tab
-import ui.handlers as H  # <-- necesar pentru list_projects() în demo.load()
+from ui.tabs.create.create_handlers import list_projects
 
 
 def create_interface(pipeline_fn, refine_fn):
@@ -48,8 +48,8 @@ def create_interface(pipeline_fn, refine_fn):
         demo.load(
             fn=lambda: (
                 gr.update(
-                    choices=H.list_projects(),
-                    value=(H.list_projects()[0] if H.list_projects() else None)
+                    choices=list_projects(),
+                    value=(list_projects()[0] if list_projects() else None)
                 )
             ),
             inputs=None,

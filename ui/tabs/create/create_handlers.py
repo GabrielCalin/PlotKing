@@ -1,4 +1,4 @@
-# ui/handlers.py
+# ui/tabs/create/create_handlers.py
 import gradio as gr
 import os, re, json
 from pipeline.constants import RUN_MODE_CHOICES
@@ -13,7 +13,7 @@ from ui.project_manager import (
     new_project,
 )
 
-# --- Helpers “pure” folosite în mai multe locuri ---
+# --- Helpers "pure" folosite în mai multe locuri ---
 
 def choose_plot_for_pipeline(plot, refined):
     return refined if (refined or "").strip() else plot
@@ -261,7 +261,6 @@ def refresh_create_from_checkpoint(epoch, current_chapters_state, current_chapte
     
     checkpoint = get_checkpoint()
     if not checkpoint:
-        # Dacă nu există checkpoint, nu schimbăm nimic
         return (
             gr.update(),  # expanded_output
             gr.update(),  # chapters_output
@@ -271,23 +270,18 @@ def refresh_create_from_checkpoint(epoch, current_chapters_state, current_chapte
             gr.update(),  # chapter_counter
         )
     
-    # Citește din checkpoint
     expanded = checkpoint.expanded_plot or ""
     overview = checkpoint.chapters_overview or ""
     chapters_list = checkpoint.chapters_full or []
     
-    # Actualizează expanded_output și chapters_output
     expanded_update = gr.update(value=expanded)
     overview_update = gr.update(value=overview)
     
-    # Actualizează chapters_state
     chapters_state_update = chapters_list
     
-    # Actualizează chapter_selector dacă numărul de capitole s-a schimbat
     if len(chapters_list) != len(current_chapters_state or []):
         if chapters_list:
             chapter_choices = [f"Chapter {i+1}" for i in range(len(chapters_list))]
-            # Păstrează selecția curentă dacă e validă, altfel selectează primul
             current_value = current_chapter_selector
             if current_value not in chapter_choices:
                 current_value = chapter_choices[0] if chapter_choices else None
@@ -295,20 +289,17 @@ def refresh_create_from_checkpoint(epoch, current_chapters_state, current_chapte
         else:
             chapter_selector_update = gr.update(choices=[], value=None)
     else:
-        # Păstrează selector-ul, dar actualizează choices în caz că s-a schimbat ceva
         if chapters_list:
             chapter_choices = [f"Chapter {i+1}" for i in range(len(chapters_list))]
             chapter_selector_update = gr.update(choices=chapter_choices)
         else:
             chapter_selector_update = gr.update()
     
-    # Actualizează current_chapter_output dacă există o selecție (întotdeauna, pentru că conținutul poate fi modificat)
     if current_chapter_selector and chapters_list:
         current_chapter_update = display_selected_chapter(current_chapter_selector, chapters_list)
     else:
         current_chapter_update = gr.update(value="")
     
-    # Actualizează chapter_counter
     if chapters_list:
         chapter_counter_update = gr.update(value=f"📖 {len(chapters_list)} chapter(s) available")
     else:
@@ -322,3 +313,4 @@ def refresh_create_from_checkpoint(epoch, current_chapters_state, current_chapte
         chapter_selector_update,
         chapter_counter_update,
     )
+
