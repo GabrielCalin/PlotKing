@@ -2,7 +2,7 @@
 
 import gradio as gr
 from ui import load_css
-from ui.ui_state import display_selected_chapter
+from ui.tabs.create.utils import display_selected_chapter
 from ui.tabs.create.create_handlers import (
     choose_plot_for_pipeline,
     pre_run_reset_and_controls,

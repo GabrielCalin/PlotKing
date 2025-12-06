@@ -257,7 +257,7 @@ def sync_textbox(text, mode):
 
 def refresh_create_from_checkpoint(epoch, current_chapters_state, current_chapter_selector):
     """Actualizează conținutul Create tab din checkpoint când Editor modifică ceva."""
-    from ui.ui_state import display_selected_chapter
+    from ui.tabs.create.utils import display_selected_chapter
     
     checkpoint = get_checkpoint()
     if not checkpoint:
