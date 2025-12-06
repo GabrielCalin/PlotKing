@@ -12,9 +12,9 @@ from pipeline.state_manager import is_stop_requested, clear_stop
 from pipeline.checkpoint_manager import get_checkpoint
 
 # Pașii de editare
-from pipeline.steps.plot_editor import run_plot_editor
-from pipeline.steps.overview_editor import run_overview_editor
-from pipeline.steps.chapter_editor import run_chapter_editor
+from llm.plot_editor import run_plot_editor
+from llm.overview_editor import run_overview_editor
+from llm.chapter_editor import run_chapter_editor
 
 from utils.logger import log_ui
 from ui.tabs.editor.drafts_manager import DraftsManager

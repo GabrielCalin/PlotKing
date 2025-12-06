@@ -2,7 +2,7 @@
 import gradio as gr
 from ui.interface import create_interface
 from pipeline.runner_create import generate_book_outline_stream
-from pipeline.steps.refine_plot.llm import refine_plot
+from llm.refine_plot.llm import refine_plot
 
 if __name__ == "__main__":
     demo = create_interface(generate_book_outline_stream, refine_plot)

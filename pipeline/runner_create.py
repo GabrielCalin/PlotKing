@@ -10,11 +10,11 @@ from pipeline.state_manager import is_stop_requested, clear_stop
 from pipeline.checkpoint_manager import save_checkpoint
 
 # Pașii modularizați
-from pipeline.steps.plot_expander import run_plot_expander
-from pipeline.steps.overview_generator import run_overview_generator
-from pipeline.steps.overview_validator import run_overview_validator
-from pipeline.steps.chapter_writer import run_chapter_writer
-from pipeline.steps.chapter_validator import run_chapter_validator
+from llm.plot_expander import run_plot_expander
+from llm.overview_generator import run_overview_generator
+from llm.overview_validator import run_overview_validator
+from llm.chapter_writer import run_chapter_writer
+from llm.chapter_validator import run_chapter_validator
 
 # Utils: logging cu timestamp
 from utils.logger import log_ui

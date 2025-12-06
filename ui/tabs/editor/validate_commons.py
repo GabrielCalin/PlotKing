@@ -4,8 +4,8 @@ from ui.tabs.editor.utils import format_validation_markdown
 def editor_validate(section, draft):
     """Validează modificările comparând versiunea originală cu versiunea editată."""
     from pipeline.checkpoint_manager import get_checkpoint, get_section_content
-    from pipeline.steps.version_diff import call_llm_version_diff
-    from pipeline.steps.impact_analyzer import call_llm_impact_analysis
+    from llm.version_diff import call_llm_version_diff
+    from llm.impact_analyzer import call_llm_impact_analysis
 
     checkpoint = get_checkpoint()
     if not checkpoint:
