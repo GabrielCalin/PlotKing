@@ -115,12 +115,6 @@ def resume_pipeline(pipeline_fn):
         yield "", "", [], "", gr.update(choices=[]), "_No checkpoint_", "⚠️ No checkpoint found to resume from.", ""
         return
 
-    plot = checkpoint.plot
-    num_chapters = checkpoint.num_chapters
-    genre = checkpoint.genre
-    anpc = checkpoint.anpc
-    run_mode = checkpoint.run_mode
-
     expanded = checkpoint.expanded_plot
     overview = checkpoint.chapters_overview
     chapters = checkpoint.chapters_full or []
@@ -137,12 +131,12 @@ def resume_pipeline(pipeline_fn):
         return
 
     if not overview:
-        yield from pipeline_fn(plot, num_chapters, genre, anpc, run_mode, checkpoint=checkpoint, refresh_from="overview")
+        yield from pipeline_fn(checkpoint=checkpoint, refresh_from="overview")
         return
 
-    if len(chapters) < (num_chapters or 0):
+    if len(chapters) < (checkpoint.num_chapters or 0):
         next_index = len(chapters) + 1
-        yield from pipeline_fn(plot, num_chapters, genre, anpc, run_mode, checkpoint=checkpoint, refresh_from=next_index)
+        yield from pipeline_fn(checkpoint=checkpoint, refresh_from=next_index)
         return
 
     yield (
@@ -163,15 +157,7 @@ def refresh_expanded(pipeline_fn):
         yield "", "", [], "", gr.update(), "_No checkpoint_", "⚠️ Cannot refresh without checkpoint.", ""
         return
     clear_stop()
-    yield from pipeline_fn(
-        checkpoint.plot,
-        checkpoint.num_chapters,
-        checkpoint.genre,
-        checkpoint.anpc,
-        checkpoint.run_mode,
-        checkpoint=checkpoint,
-        refresh_from="expanded"
-    )
+    yield from pipeline_fn(checkpoint=checkpoint, refresh_from="expanded")
 
 def refresh_overview(pipeline_fn):
     checkpoint = get_checkpoint()
@@ -179,15 +165,7 @@ def refresh_overview(pipeline_fn):
         yield "", "", [], "", gr.update(), "_No checkpoint_", "⚠️ Cannot refresh without checkpoint.", ""
         return
     clear_stop()
-    yield from pipeline_fn(
-        checkpoint.plot,
-        checkpoint.num_chapters,
-        checkpoint.genre,
-        checkpoint.anpc,
-        checkpoint.run_mode,
-        checkpoint=checkpoint,
-        refresh_from="overview"
-    )
+    yield from pipeline_fn(checkpoint=checkpoint, refresh_from="overview")
 
 def refresh_chapter(pipeline_fn, selected_name):
     checkpoint = get_checkpoint()
@@ -219,15 +197,7 @@ def refresh_chapter(pipeline_fn, selected_name):
         ts_prefix(f"🔁 Refresh from chapter {idx} initiated."),
         checkpoint.validation_text or "",
     )
-    yield from pipeline_fn(
-        checkpoint.plot,
-        checkpoint.num_chapters,
-        checkpoint.genre,
-        checkpoint.anpc,
-        checkpoint.run_mode,
-        checkpoint=checkpoint,
-        refresh_from=idx
-    )
+    yield from pipeline_fn(checkpoint=checkpoint, refresh_from=idx)
 
 # plot/refine mode toggles
 def show_original(plot, refined):

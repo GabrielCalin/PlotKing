@@ -73,35 +73,13 @@ def apply_refresh_point(state: PipelineContext, refresh_from):
 
 # ------- Public API: exact semnături folosite de UI -------
 
-def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, checkpoint: Optional[PipelineContext] = None, refresh_from=None):
+def _generate_book_outline_stream_impl(state: PipelineContext):
     """
-    Orchestrarea completă (streaming) pentru UI.
-    Păstrează semnătura/ordinul de yield identic cu versiunea anterioară.
+    Implementarea comună a pipeline-ului de generare.
+    Primește un PipelineContext complet inițializat.
     """
-    clear_stop()
-
-    if checkpoint:
-        state = checkpoint
-        state.run_mode = run_mode
-        if refresh_from:
-            log_ui(state.status_log, "🔁 Regeneration requested...")
-            state = apply_refresh_point(state, refresh_from)
-    else:
-        state = PipelineContext(
-            expanded_plot=None,
-            chapters_overview=None,
-            chapters_full=[],
-            validation_text="",
-            status_log=[],
-            genre=genre,
-            anpc=anpc,
-            plot=plot,
-            num_chapters=num_chapters,
-            run_mode=run_mode,
-        )
-
     # Protecție input gol
-    if not checkpoint and not state.plot.strip():
+    if not state.plot.strip():
         yield (
             "Please enter a plot description.",
             "",
@@ -385,11 +363,49 @@ def generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, chec
     )
 
 
+def generate_book_outline_stream(
+    plot: Optional[str] = None,
+    num_chapters: Optional[int] = None,
+    genre: Optional[str] = None,
+    anpc: Optional[str] = None,
+    run_mode: Optional[str] = None,
+    checkpoint: Optional[PipelineContext] = None,
+    refresh_from=None
+):
+    """
+    Orchestrarea completă (streaming) pentru UI.
+    Păstrează semnătura/ordinul de yield identic cu versiunea anterioară.
+    """
+    clear_stop()
+
+    if checkpoint:
+        state = checkpoint
+        if run_mode is not None:
+            state.run_mode = run_mode
+        if refresh_from:
+            log_ui(state.status_log, "🔁 Regeneration requested...")
+            state = apply_refresh_point(state, refresh_from)
+    else:
+        state = PipelineContext(
+            expanded_plot=None,
+            chapters_overview=None,
+            chapters_full=[],
+            validation_text="",
+            status_log=[],
+            genre=genre,
+            anpc=anpc,
+            plot=plot,
+            num_chapters=num_chapters,
+            run_mode=run_mode,
+        )
+
+    yield from _generate_book_outline_stream_impl(state)
+
+
 def generate_book_outline_stream_resume(checkpoint: PipelineContext):
-    plot = checkpoint.plot
-    num_chapters = checkpoint.num_chapters
-    genre = checkpoint.genre
-    anpc = checkpoint.anpc
-    run_mode = checkpoint.run_mode
-    return generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, checkpoint=checkpoint)
+    """
+    Wrapper simplu pentru resume - apelează implementarea comună direct cu checkpoint-ul.
+    """
+    clear_stop()
+    yield from _generate_book_outline_stream_impl(checkpoint)
 
