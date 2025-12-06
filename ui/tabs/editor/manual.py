@@ -1,5 +1,5 @@
 import gradio as gr
-import ui.editor_handlers as H
+from ui.tabs.editor.validate_commons import editor_validate
 from ui.tabs.editor.utils import append_status, remove_highlight
 from ui.tabs.editor.constants import Components, States
 from pipeline.checkpoint_manager import get_section_content, save_section
@@ -56,7 +56,7 @@ def confirm_edit(section, draft, current_log):
     )
     
     # Apelează validarea (blocant) - folosim draft_clean (fără highlight-uri)
-    msg, plan = H.editor_validate(section, draft_clean)
+    msg, plan = editor_validate(section, draft_clean)
     final_log, _ = append_status(new_log, f"✅ ({section}) Validation completed.")
     
     # Yield cu rezultatul validării

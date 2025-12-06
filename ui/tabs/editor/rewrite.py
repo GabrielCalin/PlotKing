@@ -1,5 +1,5 @@
 import gradio as gr
-import ui.editor_handlers as H
+from ui.tabs.editor.validate_commons import editor_validate
 from ui.rewrite_presets import REWRITE_PRESETS
 from ui.tabs.editor.utils import append_status, replace_text_with_highlight, remove_highlight, format_selected_preview, update_instructions_from_preset
 from ui.tabs.editor.constants import Components, States
@@ -209,7 +209,7 @@ def rewrite_validate(section, draft_with_highlight, current_log):
         new_log,  # status_log (State)
     )
     
-    msg, plan = H.editor_validate(section, draft_clean)
+    msg, plan = editor_validate(section, draft_clean)
     final_log, _ = append_status(new_log, f"✅ ({section}) Validation completed.")
     
     yield (

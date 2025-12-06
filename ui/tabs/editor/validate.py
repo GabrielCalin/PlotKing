@@ -1,5 +1,5 @@
 import gradio as gr
-import ui.editor_handlers as H
+from ui.tabs.editor.validate_commons import editor_validate
 from utils.logger import merge_logs
 from ui.tabs.editor.utils import append_status, remove_highlight
 from ui.tabs.editor.constants import Components, States
@@ -39,6 +39,45 @@ def _get_generated_drafts_list(plan, exclude_section):
     
     return generated_drafts
 
+
+def editor_apply(section, draft, plan):
+    """
+    Aplică modificarea și rulează pipeline-ul de editare dacă există secțiuni impactate.
+    Returnează drafts (dict) și rulează pipeline-ul de editare.
+    """
+    from pipeline.checkpoint_manager import get_checkpoint
+    
+    checkpoint = get_checkpoint()
+    if not checkpoint:
+        return {section: draft}
+    
+    drafts = DraftsManager()
+    drafts.add_original(section, draft)
+    
+    if plan and isinstance(plan, dict):
+        edited_section = plan.get("edited_section", section)
+        diff_data = plan.get("diff_data", {})
+        impact_data = plan.get("impact_data", {})
+        impacted = plan.get("impacted_sections", [])
+        
+        if impacted:
+            from pipeline.runner_edit import run_edit_pipeline_stream
+            
+            for result in run_edit_pipeline_stream(
+                edited_section=edited_section,
+                diff_data=diff_data,
+                impact_data=impact_data,
+                impacted_sections=impacted,
+            ):
+                if isinstance(result, tuple) and len(result) >= 9:
+                    pipeline_drafts = result[8]
+                    drafts.update(pipeline_drafts)
+                    yield result
+                else:
+                    yield result
+            return
+    
+    return drafts
 
 
 def apply_updates(section, draft, plan, current_log, create_epoch, current_mode, current_md):
@@ -152,7 +191,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
     # Call editor_apply which yields pipeline results
     new_log = base_log  # Initialize with base_log
     
-    for result in H.editor_apply(section, draft_to_save, plan):
+    for result in editor_apply(section, draft_to_save, plan):
         # result is always a tuple from pipeline now (DraftsManager is a Singleton, no need to yield it)
         
         if not isinstance(result, tuple) or len(result) < 7:
@@ -536,7 +575,7 @@ def regenerate_dispatcher(section, editor_text, current_log, mode, current_md):
         text_to_validate = current_md
         
     # 3. Run Validation Logic
-    msg, plan = H.editor_validate(section, text_to_validate)
+    msg, plan = editor_validate(section, text_to_validate)
     final_log, final_status = append_status(new_log, f"✅ ({section}) Validation completed.")
     
     # 4. Common "Done" State

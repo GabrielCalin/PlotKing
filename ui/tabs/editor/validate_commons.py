@@ -11,10 +11,8 @@ def editor_validate(section, draft):
     if not checkpoint:
         return "Error: No checkpoint found.", None
 
-    # Obține versiunea originală din checkpoint (fără să o modificăm)
     original_version = get_section_content(section) or ""
 
-    # Apelează call_llm_version_diff
     result, diff_data = call_llm_version_diff(
         section_type=section,
         original_version=original_version,
@@ -22,7 +20,6 @@ def editor_validate(section, draft):
         genre=checkpoint.genre or "",
     )
 
-    # Formatează rezultatul pentru Validation Output
     if result == "ERROR":
         msg = format_validation_markdown(result, diff_data)
         plan = None
@@ -46,7 +43,6 @@ def editor_validate(section, draft):
             candidate_sections=candidates,
         )
         msg = format_validation_markdown(result, diff_data, impact_result, impact_data, impacted)
-        # Păstrăm datele pentru runner_edit
         plan = {
             "edited_section": section,
             "diff_data": diff_data,
@@ -58,59 +54,6 @@ def editor_validate(section, draft):
         plan = None
 
     return msg, plan
-
-def editor_apply(section, draft, plan):
-    """
-    Aplică modificarea și rulează pipeline-ul de editare dacă există secțiuni impactate.
-    Returnează drafts (dict) și rulează pipeline-ul de editare.
-    """
-    from pipeline.checkpoint_manager import get_checkpoint
-    
-    checkpoint = get_checkpoint()
-    if not checkpoint:
-        return {section: draft}
-    
-    # Initialize drafts with the user's manual edit
-    from ui.tabs.editor.drafts_manager import DraftsManager
-    drafts = DraftsManager()
-    drafts.add_original(section, draft)
-    
-    # Dacă există plan cu secțiuni impactate, rulează pipeline-ul de editare
-    if plan and isinstance(plan, dict):
-        edited_section = plan.get("edited_section", section)
-        diff_data = plan.get("diff_data", {})
-        impact_data = plan.get("impact_data", {})
-        impacted = plan.get("impacted_sections", [])
-        
-        if impacted:
-            from pipeline.runner_edit import run_edit_pipeline_stream
-            
-            # No need to yield drafts here - DraftsManager is a Singleton accessible everywhere
-            
-            for result in run_edit_pipeline_stream(
-                edited_section=edited_section,
-                diff_data=diff_data,
-                impact_data=impact_data,
-                impacted_sections=impacted,
-            ):
-                # result is a tuple, the last element is the drafts dict (now DraftsManager)
-                if isinstance(result, tuple) and len(result) >= 9:
-                    pipeline_drafts = result[8]
-                    # Update our drafts with what the pipeline produced
-                    drafts.update(pipeline_drafts)
-                    
-                    # Yield the full result from pipeline (caller expects this structure)
-                    # We pass drafts as part of the result or handle it in the caller
-                    # The caller (validate.py) expects specific tuple unpacking
-                    yield result
-                else:
-                    # Fallback or error state
-                    yield result
-            return
-    
-    # Dacă nu există plan sau nu sunt secțiuni impactate, doar returnează draft-ul inițial
-    return drafts
-
 
 def _build_candidate_sections(section: str, checkpoint) -> List[Tuple[str, str]]:
     candidates: List[Tuple[str, str]] = []
@@ -154,3 +97,4 @@ def _build_candidate_sections(section: str, checkpoint) -> List[Tuple[str, str]]
         seen.add(name)
         unique.append((name, content))
     return unique
+

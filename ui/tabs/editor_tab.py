@@ -2,7 +2,6 @@
 # ui/tabs/editor_tab.py — Editor tab with full empty-state handling and lockable controls
 
 import gradio as gr
-import ui.editor_handlers as H
 from ui.rewrite_presets import REWRITE_PRESETS
 from pipeline.checkpoint_manager import get_sections_list, get_section_content
 

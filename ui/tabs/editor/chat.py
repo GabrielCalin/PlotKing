@@ -1,6 +1,6 @@
 # ui/tabs/editor/chat.py
 import gradio as gr
-import ui.editor_handlers as H
+from ui.tabs.editor.validate_commons import editor_validate
 from ui.tabs.editor.utils import append_status
 from ui.tabs.editor.drafts_manager import DraftsManager
 from ui.tabs.editor.constants import Components, States
@@ -206,7 +206,7 @@ def validate_handler(section, current_text, current_log):
         gr.update(interactive=False), # mode_radio - DISABLED
     )
     
-    msg, plan = H.editor_validate(section, draft_to_validate)
+    msg, plan = editor_validate(section, draft_to_validate)
     final_log, final_status = append_status(new_log, f"✅ ({section}) Validation completed.")
     
     yield (
