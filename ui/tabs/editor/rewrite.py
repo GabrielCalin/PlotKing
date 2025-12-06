@@ -4,6 +4,42 @@ from ui.rewrite_presets import REWRITE_PRESETS
 from ui.tabs.editor.utils import append_status, replace_text_with_highlight, remove_highlight, format_selected_preview, update_instructions_from_preset
 from ui.tabs.editor.constants import Components, States
 from pipeline.checkpoint_manager import get_section_content, save_section
+from pipeline.steps.rewrite_editor.llm import call_llm_rewrite_editor
+
+def editor_rewrite(section, selected_text, instructions):
+    """
+    Rewrite selected text based on instructions using LLM.
+    Returns a dict with success status and result/message.
+    """
+    if not selected_text:
+        return {"success": False, "message": "No text selected."}
+    
+    full_content = get_section_content(section)
+    
+    context_before = ""
+    context_after = ""
+    
+    if len(selected_text) < 50:
+        try:
+            idx = full_content.find(selected_text)
+            if idx != -1:
+                start = max(0, idx - 25)
+                end = min(len(full_content), idx + len(selected_text) + 25)
+                
+                context_before = full_content[start:idx]
+                context_after = full_content[idx + len(selected_text):end]
+        except Exception:
+            pass
+
+    result = call_llm_rewrite_editor(
+        section_content=full_content,
+        selected_text=selected_text,
+        instructions=instructions,
+        context_before=context_before,
+        context_after=context_after,
+    )
+    
+    return result
 
 def handle_text_selection(evt: gr.SelectData):
     """Handle text selection in editor_tb and store selected text and indices."""
@@ -57,7 +93,7 @@ def rewrite_handler(section, selected_txt, selected_idx, instructions, current_t
         original_text,
     )
     
-    result = H.editor_rewrite(section, selected_txt, instructions)
+    result = editor_rewrite(section, selected_txt, instructions)
     
     if result.get("success"):
         rewritten_text = result.get("edited_text", "")
