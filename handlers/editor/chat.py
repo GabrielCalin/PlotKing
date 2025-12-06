@@ -1,9 +1,9 @@
 # ui/tabs/editor/chat.py
 import gradio as gr
-from ui.tabs.editor.validate_commons import editor_validate
-from ui.tabs.editor.utils import append_status
+from handlers.editor.validate_commons import editor_validate
+from handlers.editor.utils import append_status
 from state.drafts_manager import DraftsManager
-from ui.tabs.editor.constants import Components, States
+from handlers.editor.constants import Components, States
 from llm.chat_editor.llm import call_llm_chat
 from state.checkpoint_manager import get_section_content, save_section
 

@@ -8,7 +8,7 @@ from state.pipeline_state import clear_stop
 from state.checkpoint_manager import save_checkpoint, clear_checkpoint
 
 # === Config & helpers ===
-_PROJECTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), "projects")
+_PROJECTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "projects")
 _NAME_RE = re.compile(r'^[A-Za-z0-9 _-]+$')
 
 from state.drafts_manager import DraftsManager

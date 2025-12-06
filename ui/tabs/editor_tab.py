@@ -2,11 +2,11 @@
 # ui/tabs/editor_tab.py — Editor tab with full empty-state handling and lockable controls
 
 import gradio as gr
-from ui.tabs.editor.rewrite_presets import REWRITE_PRESETS
+from handlers.editor.rewrite_presets import REWRITE_PRESETS
 from state.checkpoint_manager import get_sections_list, get_section_content
 
 # Import helpers and logic from new modules
-from ui.tabs.editor.utils import (
+from handlers.editor.utils import (
     append_status,
     update_instructions_from_preset,
     diff_handler,
@@ -16,7 +16,7 @@ import ui.tabs.editor.manual_ui as Manual
 import ui.tabs.editor.rewrite_ui as Rewrite
 import ui.tabs.editor.validate_ui as Validate
 import ui.tabs.editor.chat_ui as Chat
-from ui.tabs.editor.constants import Components, States
+from handlers.editor.constants import Components, States
 
 def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     """Render the Editor tab (manual editing mode only)."""
@@ -242,9 +242,9 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     def _continue_edit_dispatcher(section, current_log, current_mode, current_md):
         """Dispatch continue_edit to appropriate module based on mode."""
-        from ui.tabs.editor.rewrite import continue_edit as rewrite_continue_edit
-        from ui.tabs.editor.chat import continue_edit as chat_continue_edit
-        from ui.tabs.editor.manual import continue_edit as manual_continue_edit
+        from handlers.editor.rewrite import continue_edit as rewrite_continue_edit
+        from handlers.editor.chat import continue_edit as chat_continue_edit
+        from handlers.editor.manual import continue_edit as manual_continue_edit
         
         if current_mode == "Rewrite":
             return rewrite_continue_edit(section, current_log, current_md)

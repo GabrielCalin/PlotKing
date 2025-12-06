@@ -1,5 +1,5 @@
 from typing import List, Tuple, Dict, Any
-from ui.tabs.editor.utils import format_validation_markdown
+from handlers.editor.utils import format_validation_markdown
 
 def editor_validate(section, draft):
     """Validează modificările comparând versiunea originală cu versiunea editată."""

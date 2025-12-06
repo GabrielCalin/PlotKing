@@ -6,7 +6,7 @@ from ui import load_css
 from ui.tabs.create_tab import render_create_tab
 from ui.tabs.editor_tab import render_editor_tab
 from ui.tabs.export_tab import render_export_tab
-from ui.tabs.create.create_handlers import list_projects
+from handlers.create.create_handlers import list_projects
 
 
 def create_interface(pipeline_fn, refine_fn):

@@ -1,6 +1,6 @@
 # ui/tabs/editor/validate_ui.py
 import gradio as gr
-from ui.tabs.editor.constants import Components, States
+from handlers.editor.constants import Components, States
 
 def create_validate_ui():
     """Create UI components for Validation and Draft Review."""
@@ -54,7 +54,7 @@ def create_validate_ui():
 
 def create_validate_handlers(components, states):
     """Wire events for Validation and Draft Review components."""
-    from ui.tabs.editor.validate import (
+    from handlers.editor.validate import (
         apply_updates, request_stop, discard_from_validate, regenerate_dispatcher,
         draft_accept_all, draft_revert_all, draft_accept_selected, draft_regenerate_selected,
         update_draft_buttons

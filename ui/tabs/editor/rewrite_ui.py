@@ -1,8 +1,8 @@
 # ui/tabs/editor/rewrite_ui.py
 import gradio as gr
-from ui.tabs.editor.rewrite_presets import REWRITE_PRESETS
-from ui.tabs.editor.utils import update_instructions_from_preset
-from ui.tabs.editor.constants import Components, States
+from handlers.editor.rewrite_presets import REWRITE_PRESETS
+from handlers.editor.utils import update_instructions_from_preset
+from handlers.editor.constants import Components, States
 
 def create_rewrite_ui():
     """Create UI components for Rewrite mode."""
@@ -35,7 +35,7 @@ def create_rewrite_ui():
 
 def create_rewrite_handlers(components, states):
     """Wire events for Rewrite mode components."""
-    from ui.tabs.editor.rewrite import handle_text_selection, rewrite_handler, rewrite_discard, rewrite_force_edit, rewrite_validate
+    from handlers.editor.rewrite import handle_text_selection, rewrite_handler, rewrite_discard, rewrite_force_edit, rewrite_validate
     
     rewrite_section = components[Components.REWRITE_SECTION]
     rewrite_selected_preview = components[Components.REWRITE_SELECTED_PREVIEW]

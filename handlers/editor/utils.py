@@ -3,7 +3,7 @@ import re
 import difflib
 from typing import List, Dict, Any
 from utils.timestamp import ts_prefix
-from ui.tabs.editor.rewrite_presets import REWRITE_PRESETS
+from handlers.editor.rewrite_presets import REWRITE_PRESETS
 
 def append_status(current_log, message):
     """Append message to status log with timestamp."""

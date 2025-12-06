@@ -1,7 +1,7 @@
 import gradio as gr
-from ui.tabs.editor.validate_commons import editor_validate
-from ui.tabs.editor.utils import append_status, remove_highlight
-from ui.tabs.editor.constants import Components, States
+from handlers.editor.validate_commons import editor_validate
+from handlers.editor.utils import append_status, remove_highlight
+from handlers.editor.constants import Components, States
 from state.checkpoint_manager import get_section_content, save_section
 
 def start_edit(curr_text, section, current_log):

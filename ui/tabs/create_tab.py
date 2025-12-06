@@ -2,8 +2,8 @@
 
 import gradio as gr
 from ui import load_css
-from ui.tabs.create.utils import display_selected_chapter
-from ui.tabs.create.create_handlers import (
+from handlers.create.utils import display_selected_chapter
+from handlers.create.create_handlers import (
     choose_plot_for_pipeline,
     pre_run_reset_and_controls,
     post_pipeline_controls,
@@ -20,7 +20,7 @@ from ui.tabs.create.create_handlers import (
     sync_textbox,
     refresh_create_from_checkpoint,
 )
-from ui.tabs.create.project_manager import (
+from handlers.create.project_manager import (
     save_project,
     load_project,
     delete_project,

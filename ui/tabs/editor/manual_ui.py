@@ -1,6 +1,6 @@
 # ui/tabs/editor/manual_ui.py
 import gradio as gr
-from ui.tabs.editor.constants import Components, States
+from handlers.editor.constants import Components, States
 
 def create_manual_ui():
     """Create UI components for Manual mode."""
@@ -13,7 +13,7 @@ def create_manual_ui():
 
 def create_manual_handlers(components, states):
     """Wire events for Manual mode components."""
-    from ui.tabs.editor.manual import start_edit, confirm_edit, discard_from_manual, force_edit
+    from handlers.editor.manual import start_edit, confirm_edit, discard_from_manual, force_edit
     
     start_edit_btn = components[Components.START_EDIT_BTN]
     confirm_btn = components[Components.CONFIRM_BTN]

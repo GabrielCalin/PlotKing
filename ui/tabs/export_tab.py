@@ -1,6 +1,6 @@
 # ui/tabs/export_tab.py
 import gradio as gr
-from ui.tabs.export.export_handlers import fetch_title_handler, export_book_handler
+from handlers.export.export_handlers import fetch_title_handler, export_book_handler
 from state.checkpoint_manager import get_sections_list
 
 def render_export_tab(editor_sections_epoch, create_sections_epoch):

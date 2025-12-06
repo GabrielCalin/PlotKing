@@ -1,6 +1,6 @@
 # ui/tabs/editor/chat_ui.py
 import gradio as gr
-from ui.tabs.editor.constants import Components, States
+from handlers.editor.constants import Components, States
 
 PLOT_KING_GREETING = "Hello! I'm Plot King, your friendly creative sidekick. How can I help you today?"
 
@@ -39,7 +39,7 @@ def create_chat_ui():
 
 def create_chat_handlers(components, states):
     """Wire events for Chat mode components."""
-    from ui.tabs.editor.chat import chat_handler, clear_chat, validate_handler, discard_handler, force_edit_handler
+    from handlers.editor.chat import chat_handler, clear_chat, validate_handler, discard_handler, force_edit_handler
     
     chat_input = components[Components.CHAT_INPUT]
     chat_send_btn = components[Components.CHAT_SEND_BTN]

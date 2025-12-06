@@ -5,7 +5,7 @@ from pipeline.constants import RUN_MODE_CHOICES
 from state.pipeline_state import request_stop, clear_stop
 from state.checkpoint_manager import get_checkpoint, clear_checkpoint
 from utils.timestamp import ts_prefix
-from ui.tabs.create.project_manager import (
+from handlers.create.project_manager import (
     list_projects,
     save_project,
     load_project,
@@ -257,7 +257,7 @@ def sync_textbox(text, mode):
 
 def refresh_create_from_checkpoint(epoch, current_chapters_state, current_chapter_selector):
     """Actualizează conținutul Create tab din checkpoint când Editor modifică ceva."""
-    from ui.tabs.create.utils import display_selected_chapter
+    from handlers.create.utils import display_selected_chapter
     
     checkpoint = get_checkpoint()
     if not checkpoint:

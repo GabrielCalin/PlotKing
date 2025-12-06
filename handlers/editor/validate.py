@@ -1,8 +1,8 @@
 import gradio as gr
-from ui.tabs.editor.validate_commons import editor_validate
+from handlers.editor.validate_commons import editor_validate
 from utils.logger import merge_logs
-from ui.tabs.editor.utils import append_status, remove_highlight
-from ui.tabs.editor.constants import Components, States
+from handlers.editor.utils import append_status, remove_highlight
+from handlers.editor.constants import Components, States
 from state.checkpoint_manager import save_section, get_checkpoint, get_section_content
 from state.drafts_manager import DraftsManager
 
