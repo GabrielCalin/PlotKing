@@ -9,7 +9,7 @@ from ui.tabs.export_tab import render_export_tab
 from handlers.create.create_handlers import list_projects
 
 
-def create_interface(pipeline_fn, refine_fn):
+def create_interface():
     with gr.Blocks(title="PlotKing - AI Story Builder", css=load_css("style.css", "editor.css", "export.css")) as demo:
         # === Header aplicație (în afara tab-urilor) ===
         with gr.Row(elem_id="bk-header"):
@@ -27,7 +27,7 @@ def create_interface(pipeline_fn, refine_fn):
             with gr.Tab("🪶 Create"):
                 # returnăm project_dropdown ca să-l putem popula la load
                 project_dropdown = render_create_tab(
-                    pipeline_fn, refine_fn, current_project_label,
+                    current_project_label,
                     editor_sections_epoch=editor_sections_epoch,
                     create_sections_epoch=create_sections_epoch
                 )

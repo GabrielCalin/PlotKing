@@ -27,9 +27,11 @@ from handlers.create.project_manager import (
     new_project,
 )
 from pipeline.constants import RUN_MODE_CHOICES
+from pipeline.runner_create import generate_book_outline_stream
+from llm.refine_plot.llm import refine_plot
 
 
-def render_create_tab(pipeline_fn, refine_fn, current_project_label, editor_sections_epoch, create_sections_epoch):
+def render_create_tab(current_project_label, editor_sections_epoch, create_sections_epoch):
     header_project = gr.State("")
 
     # ---- States ----
@@ -141,16 +143,16 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label, editor_sect
 
     # ========= Generator WRAPPERS =========
     def _resume_pipeline():
-        yield from resume_pipeline(pipeline_fn)
+        yield from resume_pipeline(generate_book_outline_stream)
 
     def _refresh_expanded():
-        yield from refresh_expanded(pipeline_fn)
+        yield from refresh_expanded(generate_book_outline_stream)
 
     def _refresh_overview():
-        yield from refresh_overview(pipeline_fn)
+        yield from refresh_overview(generate_book_outline_stream)
 
     def _refresh_chapter(selected_name):
-        yield from refresh_chapter(pipeline_fn, selected_name)
+        yield from refresh_chapter(generate_book_outline_stream, selected_name)
 
     # ---- Wiring ----
 
@@ -171,7 +173,7 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label, editor_sect
             regenerate_chapter_btn,
         ],
     ).then(
-        fn=pipeline_fn,
+        fn=generate_book_outline_stream,
         inputs=[plot_state, chapters_input, genre_input, anpc_input, run_mode],
         outputs=[
             expanded_output,
@@ -393,7 +395,7 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label, editor_sect
 
     # Refine / Clear
     refine_btn.click(
-        fn=lambda plot, refined, mode, genre: refine_or_clear(plot, refined, mode, genre, refine_fn),
+        fn=lambda plot, refined, mode, genre: refine_or_clear(plot, refined, mode, genre, refine_plot),
         inputs=[plot_state, refined_plot_state, current_mode, genre_input],
         outputs=[plot_input, refined_plot_state, current_mode, refine_btn],
     )
