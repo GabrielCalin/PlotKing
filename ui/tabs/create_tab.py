@@ -20,7 +20,7 @@ from ui.tabs.create.create_handlers import (
     sync_textbox,
     refresh_create_from_checkpoint,
 )
-from ui.project_manager import (
+from ui.tabs.create.project_manager import (
     save_project,
     load_project,
     delete_project,
