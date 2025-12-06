@@ -6,7 +6,7 @@ Nu modifică `context`; întoarce (result, details) iar runner-ul decide ce face
 """
 
 from typing import Tuple
-from pipeline.context import PipelineContext
+from pipeline.pipeline_context import PipelineContext
 from .llm import call_llm_validate_chapter
 
 def run_chapter_validator(

@@ -131,7 +131,7 @@ def load_project(selected_name, current_status):
     overview = data.get("chapters_overview", "")
     chapters_list = data.get("chapters", []) or []
 
-    from pipeline.context import PipelineContext
+    from pipeline.pipeline_context import PipelineContext
     
     checkpoint = PipelineContext(
         plot=chosen_plot,

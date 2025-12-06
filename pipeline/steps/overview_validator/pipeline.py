@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # pipeline/steps/overview_validator/pipeline.py
 from typing import Tuple, Optional
-from pipeline.context import PipelineContext
+from pipeline.pipeline_context import PipelineContext
 from .llm import call_llm_validate_overview
 
 def run_overview_validator(context: PipelineContext) -> Tuple[str, Optional[str]]:

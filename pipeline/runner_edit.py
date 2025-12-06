@@ -7,7 +7,7 @@ Rulează doar pașii necesari pentru secțiunile identificate ca impactate.
 
 import gradio as gr
 
-from pipeline.context import PipelineContext
+from pipeline.pipeline_context import PipelineContext
 from pipeline.state_manager import is_stop_requested, clear_stop
 from pipeline.checkpoint_manager import get_checkpoint
 

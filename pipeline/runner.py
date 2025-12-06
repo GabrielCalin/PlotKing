@@ -4,7 +4,7 @@
 import gradio as gr
 from typing import Optional
 
-from pipeline.context import PipelineContext
+from pipeline.pipeline_context import PipelineContext
 from pipeline.constants import RUN_MODE_CHOICES
 from pipeline.state_manager import is_stop_requested, clear_stop
 from pipeline.checkpoint_manager import save_checkpoint
