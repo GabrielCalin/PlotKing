@@ -3,7 +3,7 @@ from ui.tabs.editor.validate_commons import editor_validate
 from ui.rewrite_presets import REWRITE_PRESETS
 from ui.tabs.editor.utils import append_status, replace_text_with_highlight, remove_highlight, format_selected_preview, update_instructions_from_preset
 from ui.tabs.editor.constants import Components, States
-from pipeline.checkpoint_manager import get_section_content, save_section
+from state.checkpoint_manager import get_section_content, save_section
 from llm.rewrite_editor.llm import call_llm_rewrite_editor
 
 def editor_rewrite(section, selected_text, instructions):

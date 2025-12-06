@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # pipeline/steps/overview_generator/pipeline.py
 from typing import Optional
-from pipeline.pipeline_context import PipelineContext
+from state.pipeline_context import PipelineContext
 from .llm import call_llm_generate_overview
 
 def run_overview_generator(

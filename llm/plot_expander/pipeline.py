@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # pipeline/steps/plot_expander/pipeline.py
-from pipeline.pipeline_context import PipelineContext
+from state.pipeline_context import PipelineContext
 from .llm import call_llm_expand_plot
 
 def run_plot_expander(context: PipelineContext) -> PipelineContext:

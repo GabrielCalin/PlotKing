@@ -7,7 +7,7 @@ iar runner-ul decide cum îl inserează/înlocuiește.
 """
 
 from typing import Optional, List
-from pipeline.pipeline_context import PipelineContext
+from state.pipeline_context import PipelineContext
 from .llm import call_llm_generate_chapter, call_llm_revise_chapter
 
 def run_chapter_writer(

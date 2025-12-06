@@ -5,7 +5,7 @@ Wrapper pipeline-friendly pentru editarea unui capitol bazat pe impact și diff.
 """
 
 from typing import List
-from pipeline.pipeline_context import PipelineContext
+from state.pipeline_context import PipelineContext
 from .llm import call_llm_edit_chapter
 
 def run_chapter_editor(

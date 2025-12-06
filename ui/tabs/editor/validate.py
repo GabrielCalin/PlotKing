@@ -3,8 +3,8 @@ from ui.tabs.editor.validate_commons import editor_validate
 from utils.logger import merge_logs
 from ui.tabs.editor.utils import append_status, remove_highlight
 from ui.tabs.editor.constants import Components, States
-from pipeline.checkpoint_manager import save_section, get_checkpoint, get_section_content
-from ui.tabs.editor.drafts_manager import DraftsManager
+from state.checkpoint_manager import save_section, get_checkpoint, get_section_content
+from state.drafts_manager import DraftsManager
 
 _stop_flag = False
 
@@ -45,7 +45,7 @@ def editor_apply(section, draft, plan):
     Aplică modificarea și rulează pipeline-ul de editare dacă există secțiuni impactate.
     Returnează drafts (dict) și rulează pipeline-ul de editare.
     """
-    from pipeline.checkpoint_manager import get_checkpoint
+    from state.checkpoint_manager import get_checkpoint
     
     checkpoint = get_checkpoint()
     if not checkpoint:

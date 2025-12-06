@@ -5,13 +5,13 @@ import gradio as gr
 from utils.timestamp import ts_prefix
 from pipeline.constants import RUN_MODE_CHOICES
 from pipeline.state_manager import clear_stop
-from pipeline.checkpoint_manager import save_checkpoint, clear_checkpoint
+from state.checkpoint_manager import save_checkpoint, clear_checkpoint
 
 # === Config & helpers ===
 _PROJECTS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "projects")
 _NAME_RE = re.compile(r'^[A-Za-z0-9 _-]+$')
 
-from ui.tabs.editor.drafts_manager import DraftsManager
+from state.drafts_manager import DraftsManager
 
 def _ensure_projects_dir():
     os.makedirs(_PROJECTS_DIR, exist_ok=True)
@@ -63,7 +63,7 @@ def save_project(
     genre = genre_input or ""
 
     # Checkpoint-ul este sursa de adevăr pentru expanded_plot, chapters_overview și chapters
-    from pipeline.checkpoint_manager import get_checkpoint
+    from state.checkpoint_manager import get_checkpoint
     checkpoint = get_checkpoint()
     
     if checkpoint:
@@ -131,7 +131,7 @@ def load_project(selected_name, current_status):
     overview = data.get("chapters_overview", "")
     chapters_list = data.get("chapters", []) or []
 
-    from pipeline.pipeline_context import PipelineContext
+    from state.pipeline_context import PipelineContext
     
     checkpoint = PipelineContext(
         plot=chosen_plot,

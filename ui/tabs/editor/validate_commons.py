@@ -3,7 +3,7 @@ from ui.tabs.editor.utils import format_validation_markdown
 
 def editor_validate(section, draft):
     """Validează modificările comparând versiunea originală cu versiunea editată."""
-    from pipeline.checkpoint_manager import get_checkpoint, get_section_content
+    from state.checkpoint_manager import get_checkpoint, get_section_content
     from llm.version_diff import call_llm_version_diff
     from llm.impact_analyzer import call_llm_impact_analysis
 
@@ -64,7 +64,7 @@ def _build_candidate_sections(section: str, checkpoint) -> List[Tuple[str, str]]
     def add(name: str):
         if not name or name == section:
             return
-        from pipeline.checkpoint_manager import get_section_content
+        from state.checkpoint_manager import get_section_content
         content = get_section_content(name) or ""
         candidates.append((name, content))
 

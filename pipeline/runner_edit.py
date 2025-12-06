@@ -7,9 +7,9 @@ Rulează doar pașii necesari pentru secțiunile identificate ca impactate.
 
 import gradio as gr
 
-from pipeline.pipeline_context import PipelineContext
+from state.pipeline_context import PipelineContext
 from pipeline.state_manager import is_stop_requested, clear_stop
-from pipeline.checkpoint_manager import get_checkpoint
+from state.checkpoint_manager import get_checkpoint
 
 # Pașii de editare
 from llm.plot_editor import run_plot_editor
@@ -17,7 +17,7 @@ from llm.overview_editor import run_overview_editor
 from llm.chapter_editor import run_chapter_editor
 
 from utils.logger import log_ui
-from ui.tabs.editor.drafts_manager import DraftsManager
+from state.drafts_manager import DraftsManager
 
 
 def _get_section_impact(impact_data: dict, section_name: str) -> str:

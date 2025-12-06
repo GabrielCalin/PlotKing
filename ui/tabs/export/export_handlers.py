@@ -3,7 +3,7 @@ import os
 import gradio as gr
 import markdown
 from ebooklib import epub
-from pipeline.checkpoint_manager import get_checkpoint
+from state.checkpoint_manager import get_checkpoint
 from llm.title_fetcher.llm import fetch_title_llm
 from utils.timestamp import ts_prefix
 

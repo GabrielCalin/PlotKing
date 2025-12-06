@@ -1,6 +1,6 @@
 from threading import Lock
 from typing import Optional, List
-from pipeline.pipeline_context import PipelineContext
+from state.pipeline_context import PipelineContext
 
 _checkpoint_data: Optional[PipelineContext] = None
 _lock = Lock()

@@ -3,7 +3,7 @@
 
 import gradio as gr
 from ui.rewrite_presets import REWRITE_PRESETS
-from pipeline.checkpoint_manager import get_sections_list, get_section_content
+from state.checkpoint_manager import get_sections_list, get_section_content
 
 # Import helpers and logic from new modules
 from ui.tabs.editor.utils import (
@@ -11,7 +11,7 @@ from ui.tabs.editor.utils import (
     update_instructions_from_preset,
     diff_handler,
 )
-from ui.tabs.editor.drafts_manager import DraftsManager
+from state.drafts_manager import DraftsManager
 import ui.tabs.editor.manual as Manual
 import ui.tabs.editor.rewrite as Rewrite
 import ui.tabs.editor.validate as Validate

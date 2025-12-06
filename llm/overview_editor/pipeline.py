@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # pipeline/steps/overview_editor/pipeline.py
-from pipeline.pipeline_context import PipelineContext
+from state.pipeline_context import PipelineContext
 from .llm import call_llm_edit_overview
 
 def run_overview_editor(
