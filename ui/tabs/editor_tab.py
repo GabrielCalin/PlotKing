@@ -12,10 +12,10 @@ from ui.tabs.editor.utils import (
     diff_handler,
 )
 from state.drafts_manager import DraftsManager
-import ui.tabs.editor.manual as Manual
-import ui.tabs.editor.rewrite as Rewrite
-import ui.tabs.editor.validate as Validate
-import ui.tabs.editor.chat as Chat
+import ui.tabs.editor.manual_ui as Manual
+import ui.tabs.editor.rewrite_ui as Rewrite
+import ui.tabs.editor.validate_ui as Validate
+import ui.tabs.editor.chat_ui as Chat
 from ui.tabs.editor.constants import Components, States
 
 def render_editor_tab(editor_sections_epoch, create_sections_epoch):
@@ -33,7 +33,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     # current_drafts removed - using DraftsManager singleton
     
     # Chat States
-    chat_history = gr.State([{"role": "assistant", "content": Chat.PLOT_KING_GREETING}])
+    from ui.tabs.editor.chat_ui import PLOT_KING_GREETING
+    chat_history = gr.State([{"role": "assistant", "content": PLOT_KING_GREETING}])
     initial_text_before_chat = gr.State("")
     current_view_state = gr.State("Checkpoint") # Checkpoint, Draft, Diff
 
@@ -159,7 +160,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             btn_df_upd = gr.update(visible=False)
             
         # Reset chat history when loading new section
-        initial_greeting = [{"role": "assistant", "content": Chat.PLOT_KING_GREETING}]
+        from ui.tabs.editor.chat_ui import PLOT_KING_GREETING
+        initial_greeting = [{"role": "assistant", "content": PLOT_KING_GREETING}]
         
         return text, name, text, gr.update(value="View"), text, initial_greeting, text, \
                gr.update(visible=True), gr.update(value=label), btn_cp_upd, btn_dr_upd, btn_df_upd, view_state
@@ -240,12 +242,16 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     def _continue_edit_dispatcher(section, current_log, current_mode, current_md):
         """Dispatch continue_edit to appropriate module based on mode."""
+        from ui.tabs.editor.rewrite import continue_edit as rewrite_continue_edit
+        from ui.tabs.editor.chat import continue_edit as chat_continue_edit
+        from ui.tabs.editor.manual import continue_edit as manual_continue_edit
+        
         if current_mode == "Rewrite":
-            return Rewrite.continue_edit(section, current_log, current_md)
+            return rewrite_continue_edit(section, current_log, current_md)
         elif current_mode == "Chat":
-            return Chat.continue_edit(section, current_log)
+            return chat_continue_edit(section, current_log)
         else:
-            return Manual.continue_edit(section, current_log)
+            return manual_continue_edit(section, current_log)
 
     # ====== Wiring ======
 
