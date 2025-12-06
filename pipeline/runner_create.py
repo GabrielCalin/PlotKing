@@ -6,7 +6,7 @@ from typing import Optional
 
 from state.pipeline_context import PipelineContext
 from pipeline.constants import RUN_MODE_CHOICES
-from pipeline.state_manager import is_stop_requested, clear_stop
+from state.pipeline_state import is_stop_requested, clear_stop
 from state.checkpoint_manager import save_checkpoint
 
 # Pașii modularizați

@@ -2,7 +2,7 @@
 import gradio as gr
 import os, re, json
 from pipeline.constants import RUN_MODE_CHOICES
-from pipeline.state_manager import request_stop, clear_stop
+from state.pipeline_state import request_stop, clear_stop
 from state.checkpoint_manager import get_checkpoint, clear_checkpoint
 from utils.timestamp import ts_prefix
 from ui.project_manager import (

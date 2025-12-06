@@ -4,7 +4,7 @@ import os, re, json
 import gradio as gr
 from utils.timestamp import ts_prefix
 from pipeline.constants import RUN_MODE_CHOICES
-from pipeline.state_manager import clear_stop
+from state.pipeline_state import clear_stop
 from state.checkpoint_manager import save_checkpoint, clear_checkpoint
 
 # === Config & helpers ===

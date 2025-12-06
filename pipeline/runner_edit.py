@@ -8,7 +8,7 @@ Rulează doar pașii necesari pentru secțiunile identificate ca impactate.
 import gradio as gr
 
 from state.pipeline_context import PipelineContext
-from pipeline.state_manager import is_stop_requested, clear_stop
+from state.pipeline_state import is_stop_requested, clear_stop
 from state.checkpoint_manager import get_checkpoint
 
 # Pașii de editare
