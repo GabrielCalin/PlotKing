@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import gradio as gr
 from ui.interface import create_interface
-from pipeline.runner import generate_book_outline_stream
+from pipeline.runner_create import generate_book_outline_stream
 from pipeline.steps.refine_plot.llm import refine_plot
 
 if __name__ == "__main__":

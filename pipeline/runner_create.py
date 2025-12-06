@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# pipeline/runner.py
+# pipeline/runner_create.py
 
 import gradio as gr
 from typing import Optional
@@ -392,3 +392,4 @@ def generate_book_outline_stream_resume(checkpoint: PipelineContext):
     anpc = checkpoint.anpc
     run_mode = checkpoint.run_mode
     return generate_book_outline_stream(plot, num_chapters, genre, anpc, run_mode, checkpoint=checkpoint)
+
