@@ -2,12 +2,36 @@
 
 import gradio as gr
 from ui import load_css
-from ui.ui_state import display_selected_chapter
-import ui.handlers as H
+from handlers.create.utils import display_selected_chapter
+from handlers.create.create_handlers import (
+    choose_plot_for_pipeline,
+    pre_run_reset_and_controls,
+    post_pipeline_controls,
+    show_stop_only,
+    stop_pipeline,
+    show_controls_on_resume_run,
+    resume_pipeline,
+    refresh_expanded,
+    refresh_overview,
+    refresh_chapter,
+    show_original,
+    show_refined,
+    refine_or_clear,
+    sync_textbox,
+    refresh_create_from_checkpoint,
+)
+from handlers.create.project_manager import (
+    save_project,
+    load_project,
+    delete_project,
+    new_project,
+)
 from pipeline.constants import RUN_MODE_CHOICES
+from pipeline.runner_create import generate_book_outline_stream
+from llm.refine_plot.llm import refine_plot
 
 
-def render_create_tab(pipeline_fn, refine_fn, current_project_label, editor_sections_epoch, create_sections_epoch):
+def render_create_tab(current_project_label, editor_sections_epoch, create_sections_epoch):
     header_project = gr.State("")
 
     # ---- States ----
@@ -119,26 +143,26 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label, editor_sect
 
     # ========= Generator WRAPPERS =========
     def _resume_pipeline():
-        yield from H.resume_pipeline(pipeline_fn)
+        yield from resume_pipeline(generate_book_outline_stream)
 
     def _refresh_expanded():
-        yield from H.refresh_expanded(pipeline_fn)
+        yield from refresh_expanded(generate_book_outline_stream)
 
     def _refresh_overview():
-        yield from H.refresh_overview(pipeline_fn)
+        yield from refresh_overview(generate_book_outline_stream)
 
     def _refresh_chapter(selected_name):
-        yield from H.refresh_chapter(pipeline_fn, selected_name)
+        yield from refresh_chapter(generate_book_outline_stream, selected_name)
 
     # ---- Wiring ----
 
     # Launch pipeline
     generate_btn.click(
-        fn=H.choose_plot_for_pipeline,
+        fn=choose_plot_for_pipeline,
         inputs=[plot_state, refined_plot_state],
         outputs=[plot_state],
     ).then(
-        fn=H.pre_run_reset_and_controls,
+        fn=pre_run_reset_and_controls,
         inputs=[],
         outputs=[
             stop_btn,
@@ -149,7 +173,7 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label, editor_sect
             regenerate_chapter_btn,
         ],
     ).then(
-        fn=pipeline_fn,
+        fn=generate_book_outline_stream,
         inputs=[plot_state, chapters_input, genre_input, anpc_input, run_mode],
         outputs=[
             expanded_output,
@@ -162,7 +186,7 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label, editor_sect
             validation_feedback,
         ],
     ).then(
-        fn=H.post_pipeline_controls,
+        fn=post_pipeline_controls,
         inputs=[],
         outputs=[
             stop_btn,
@@ -180,14 +204,14 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label, editor_sect
 
     # Stop
     stop_btn.click(
-        fn=H.stop_pipeline,
+        fn=stop_pipeline,
         inputs=[status_output],
         outputs=[status_output, stop_btn, resume_btn],
     )
 
     # Resume
     resume_btn.click(
-        fn=H.show_controls_on_resume_run,
+        fn=show_controls_on_resume_run,
         inputs=[],
         outputs=[
             stop_btn,
@@ -212,7 +236,7 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label, editor_sect
         ],
         queue=True,
     ).then(
-        fn=H.post_pipeline_controls,
+        fn=post_pipeline_controls,
         inputs=[],
         outputs=[
             stop_btn,
@@ -237,7 +261,7 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label, editor_sect
 
     # Regenerate: Expanded
     regenerate_expanded_btn.click(
-        fn=H.show_stop_only,
+        fn=show_stop_only,
         inputs=[],
         outputs=[
             stop_btn,
@@ -261,7 +285,7 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label, editor_sect
             validation_feedback,
         ],
     ).then(
-        fn=H.post_pipeline_controls,
+        fn=post_pipeline_controls,
         inputs=[],
         outputs=[
             stop_btn,
@@ -279,7 +303,7 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label, editor_sect
 
     # Regenerate: Overview
     regenerate_overview_btn.click(
-        fn=H.show_stop_only,
+        fn=show_stop_only,
         inputs=[],
         outputs=[
             stop_btn,
@@ -303,7 +327,7 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label, editor_sect
             validation_feedback,
         ],
     ).then(
-        fn=H.post_pipeline_controls,
+        fn=post_pipeline_controls,
         inputs=[],
         outputs=[
             stop_btn,
@@ -321,7 +345,7 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label, editor_sect
 
     # Regenerate: Chapter
     regenerate_chapter_btn.click(
-        fn=H.show_stop_only,
+        fn=show_stop_only,
         inputs=[],
         outputs=[
             stop_btn,
@@ -345,7 +369,7 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label, editor_sect
             validation_feedback,
         ],
     ).then(
-        fn=H.post_pipeline_controls,
+        fn=post_pipeline_controls,
         inputs=[],
         outputs=[
             stop_btn,
@@ -363,27 +387,27 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label, editor_sect
 
     # Plot toggles
     show_original_btn.click(
-        fn=H.show_original, inputs=[plot_state, refined_plot_state], outputs=[plot_input, current_mode, refine_btn]
+        fn=show_original, inputs=[plot_state, refined_plot_state], outputs=[plot_input, current_mode, refine_btn]
     )
     show_refined_btn.click(
-        fn=H.show_refined, inputs=[plot_state, refined_plot_state], outputs=[plot_input, current_mode, refine_btn]
+        fn=show_refined, inputs=[plot_state, refined_plot_state], outputs=[plot_input, current_mode, refine_btn]
     )
 
     # Refine / Clear
     refine_btn.click(
-        fn=lambda plot, refined, mode, genre: H.refine_or_clear(plot, refined, mode, genre, refine_fn),
+        fn=lambda plot, refined, mode, genre: refine_or_clear(plot, refined, mode, genre, refine_plot),
         inputs=[plot_state, refined_plot_state, current_mode, genre_input],
         outputs=[plot_input, refined_plot_state, current_mode, refine_btn],
     )
 
     # Textbox sync
     plot_input.change(
-        fn=H.sync_textbox, inputs=[plot_input, current_mode], outputs=[plot_state, refined_plot_state]
+        fn=sync_textbox, inputs=[plot_input, current_mode], outputs=[plot_state, refined_plot_state]
     )
 
     # === Project management wiring ===
     save_project_btn.click(
-        fn=H.save_project,
+        fn=save_project,
         inputs=[
             project_name,
             genre_input,
@@ -397,7 +421,7 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label, editor_sect
     )
 
     load_project_btn.click(
-        fn=H.load_project,
+        fn=load_project,
         inputs=[project_dropdown, status_output],
         outputs=[
             plot_input,
@@ -434,7 +458,7 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label, editor_sect
     )
 
     delete_project_btn.click(
-        fn=H.delete_project,
+        fn=delete_project,
         inputs=[project_dropdown, status_output],
         outputs=[status_output, project_dropdown],
     ).then(
@@ -444,7 +468,7 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label, editor_sect
     )
 
     new_project_btn.click(
-        fn=H.new_project,
+        fn=new_project,
         inputs=[status_output],
         outputs=[
             plot_input,
@@ -477,7 +501,7 @@ def render_create_tab(pipeline_fn, refine_fn, current_project_label, editor_sect
 
     # ---- Sincronizare Editor -> Create: refresh Create tab când Editor modifică checkpoint ----
     create_sections_epoch.change(
-        fn=H.refresh_create_from_checkpoint,
+        fn=refresh_create_from_checkpoint,
         inputs=[create_sections_epoch, chapters_state, chapter_selector],
         outputs=[
             expanded_output,

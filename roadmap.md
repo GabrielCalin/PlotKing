@@ -6,15 +6,6 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## 🎨 Phase 3 — Presentation and Export
 
-13. **Public GitHub Repository**  
-   - Make the project public and document setup, dependencies, and contribution flow.
-
-14. **Major Code Refactor**  
-   - Draft manager improvements.  
-   - Dedicated checkpoint class.  
-   - Editor tab components separated into files per edit mode.  
-   - Other architectural improvements.
-
 15. **Generate EPUB Cover Image**  
    - Automatically create covers based on title, genre, and plot.  
    - Optional integration with **ComfyUI** or external image workflows.
@@ -145,9 +136,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 | Feature | Status |
 |----------|--------|
-| **Public GitHub Repository** | ⏳ In Progress |
-| **Major Code Refactor** | ⏳ Planned |
-| **Generate EPUB Cover Image** | ⏳ Planned |
+| **Generate EPUB Cover Image** | ⏳ In Progress |
 | **AI Chat for Refined Plot** | ⏳ Planned |
 | **Global Draft System** | ⏳ Planned |
 | **Add Empty Chapters (Writer Assist Mode)** | ⏳ Planned |

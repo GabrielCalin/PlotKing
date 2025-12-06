@@ -1,7 +1,7 @@
 # ui/tabs/export_tab.py
 import gradio as gr
-import ui.export_handlers as H
-import ui.editor_handlers as EditorH # For checking project state
+from handlers.export.export_handlers import fetch_title_handler, export_book_handler
+from state.checkpoint_manager import get_sections_list
 
 def render_export_tab(editor_sections_epoch, create_sections_epoch):
     """
@@ -76,7 +76,7 @@ def render_export_tab(editor_sections_epoch, create_sections_epoch):
     # ====== Helper functions ======
     def _refresh_export_tab(_):
         """Check if we have content to export."""
-        sections = EditorH.editor_list_sections()
+        sections = get_sections_list()
         if not sections:
              return gr.update(visible=True), gr.update(visible=False)
         return gr.update(visible=False), gr.update(visible=True)
@@ -98,7 +98,7 @@ def render_export_tab(editor_sections_epoch, create_sections_epoch):
 
     # Fetch Title
     fetch_title_btn.click(
-        fn=H.fetch_title_handler,
+        fn=fetch_title_handler,
         inputs=[export_log],
         outputs=[title_input, export_status]
     ).then(
@@ -109,7 +109,7 @@ def render_export_tab(editor_sections_epoch, create_sections_epoch):
 
     # Export Book
     export_btn.click(
-        fn=H.export_book_handler,
+        fn=export_book_handler,
         inputs=[title_input, author_input, cover_image, font_family_dropdown, font_size_dropdown, export_log],
         outputs=[download_btn, export_status]
     ).then(

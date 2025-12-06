@@ -2,19 +2,21 @@
 # ui/tabs/editor_tab.py — Editor tab with full empty-state handling and lockable controls
 
 import gradio as gr
-import ui.editor_handlers as H
-from ui.rewrite_presets import REWRITE_PRESETS
+from handlers.editor.rewrite_presets import REWRITE_PRESETS
+from state.checkpoint_manager import get_sections_list, get_section_content
 
 # Import helpers and logic from new modules
-from ui.tabs.editor.utils import (
+from handlers.editor.utils import (
     append_status,
     update_instructions_from_preset,
     diff_handler,
 )
-import ui.tabs.editor.manual as Manual
-import ui.tabs.editor.rewrite as Rewrite
-import ui.tabs.editor.validate as Validate
-import ui.tabs.editor.chat as Chat
+from state.drafts_manager import DraftsManager
+import ui.tabs.editor.manual_ui as Manual
+import ui.tabs.editor.rewrite_ui as Rewrite
+import ui.tabs.editor.validate_ui as Validate
+import ui.tabs.editor.chat_ui as Chat
+from handlers.editor.constants import Components, States
 
 def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     """Render the Editor tab (manual editing mode only)."""
@@ -26,13 +28,13 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     status_log = gr.State("")  # pentru append la status_strip
     selected_text = gr.State("")  # textul selectat de user
     selected_indices = gr.State(None)  # [start, end] indices pentru selectie
-    selected_indices = gr.State(None)  # [start, end] indices pentru selectie
-    selected_indices = gr.State(None)  # [start, end] indices pentru selectie
+
     original_text_before_rewrite = gr.State("")  # textul original inainte de rewrite
-    current_drafts = gr.State({})  # {section_name: draft_content}
+    # current_drafts removed - using DraftsManager singleton
     
     # Chat States
-    chat_history = gr.State([{"role": "assistant", "content": Chat.PLOT_KING_GREETING}])
+    from ui.tabs.editor.chat_ui import PLOT_KING_GREETING
+    chat_history = gr.State([{"role": "assistant", "content": PLOT_KING_GREETING}])
     initial_text_before_chat = gr.State("")
     current_view_state = gr.State("Checkpoint") # Checkpoint, Draft, Diff
 
@@ -62,113 +64,17 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 interactive=True,
             )
 
-            start_edit_btn = gr.Button("✍️ Start Editing", variant="primary", visible=False)
+            # Manual Mode UI
+            start_edit_btn, confirm_btn, discard_btn, force_edit_btn = Manual.create_manual_ui()
             
-            with gr.Column(visible=False) as rewrite_section:
-                rewrite_selected_preview = gr.Textbox(
-                    label="Selected Text",
-                    value="",
-                    lines=1,
-                    interactive=False,
-                    max_lines=1,
-                )
-                preset_dropdown = gr.Dropdown(
-                    label="Presets",
-                    choices=list(REWRITE_PRESETS.keys()),
-                    value="None",
-                    interactive=True,
-                )
-                rewrite_instructions_tb = gr.Textbox(
-                    label="Rewrite Instructions",
-                    placeholder="Enter instructions on how to rewrite this section...",
-                    lines=3,
-                    interactive=True,
-                )
-                rewrite_btn = gr.Button("🔄 Rewrite", variant="primary", interactive=False)
-                rewrite_validate_btn = gr.Button("✅ Validate", visible=False)
-                rewrite_discard_btn = gr.Button("🗑️ Discard", visible=False)
-                rewrite_force_edit_btn = gr.Button("⚡ Force Edit", visible=False)
+            # Rewrite Mode UI
+            rewrite_section, rewrite_selected_preview, preset_dropdown, rewrite_instructions_tb, rewrite_btn, rewrite_validate_btn, rewrite_discard_btn, rewrite_force_edit_btn = Rewrite.create_rewrite_ui()
             
-            # Chat Section
-            with gr.Column(visible=False) as chat_section:
-                chatbot = gr.Chatbot(
-                    label="Plot King",
-                    value=[{"role": "assistant", "content": Chat.PLOT_KING_GREETING}],
-                    height=350,
-                    elem_id="editor-chatbot",
-                    avatar_images=(None, "https://api.dicebear.com/7.x/bottts/svg?seed=PlotKing"),
-                    bubble_full_width=False,
-                    type="messages"
-                )
-                chat_input = gr.Textbox(
-                    label="Message Plot King",
-                    placeholder="Ask for suggestions or request edits...",
-                    lines=1,
-                    max_lines=10,
-                    interactive=True,
-                    elem_id="chat-input",
-                )
-                with gr.Row():
-                    chat_send_btn = gr.Button("📩 Send", variant="primary", interactive=False, scale=1, min_width=0)
-                    chat_clear_btn = gr.Button("🧹 Clear", scale=1, min_width=0)
-                
-                with gr.Row(visible=False) as chat_actions_row_1:
-                    chat_discard_btn = gr.Button("🗑️ Discard", scale=1, min_width=0)
-                    chat_force_edit_btn = gr.Button("⚡ Force Edit", scale=1, min_width=0)
-                
-                with gr.Row(visible=False) as chat_actions_row_2:
-                    chat_validate_btn = gr.Button("✅ Validate", scale=1, min_width=0)
-
-            # Manual Mode Section
-            confirm_btn = gr.Button("✅ Validate", visible=False)
-            discard_btn = gr.Button("🗑️ Discard", visible=False)
-            force_edit_btn = gr.Button("⚡ Force Edit", visible=False)
-
-            # Validation Result (apare în locul butoanelor Validate/Discard/Force Edit)
-            validation_title = gr.Markdown("🔎 **Validation Result**", visible=False)
-            validation_box = gr.Markdown(
-                value="Validation results will appear here after confirming edits.",
-                height=400,
-                visible=False,
-            )
-
-            with gr.Row(elem_classes=["validation-row"]):
-                apply_updates_btn = gr.Button("✅ Apply", scale=1, min_width=0, visible=False)
-                stop_updates_btn = gr.Button("🛑 Stop", variant="stop", scale=1, min_width=0, visible=False)
-                regenerate_btn = gr.Button("🔄 Regenerate", scale=1, min_width=0, visible=False)
+            # Chat Mode UI
+            chat_section, chatbot, chat_input, chat_send_btn, chat_clear_btn, chat_actions_row_1, chat_discard_btn, chat_force_edit_btn, chat_actions_row_2, chat_validate_btn = Chat.create_chat_ui()
             
-            # Draft Review Panel
-            with gr.Column(visible=False) as draft_review_panel:
-                gr.Markdown("### 📝 Draft Review")
-                
-                # Original Draft (the manually edited section) - now a checkbox
-                gr.Markdown("**Original Draft**")
-                original_draft_checkbox = gr.CheckboxGroup(
-                    label="Originally Edited Section",
-                    choices=[],
-                    value=[],
-                    interactive=True
-                )
-                
-                # Auto-Generated Drafts (impacted sections)
-                gr.Markdown("**Auto-Generated Drafts**")
-                generated_drafts_list = gr.CheckboxGroup(
-                    label="AI-Generated Sections",
-                    choices=[],
-                    value=[],
-                    interactive=True
-                )
-                
-                with gr.Row():
-                    btn_draft_accept_all = gr.Button("✅ Accept All", size="sm", variant="primary", scale=1, min_width=0)
-                    btn_draft_revert = gr.Button("❌ Revert All", size="sm", variant="stop", scale=1, min_width=0)
-                with gr.Row():
-                    btn_draft_accept_selected = gr.Button("✔️ Accept Selected", size="sm", scale=1, min_width=0, interactive=False)
-                    btn_draft_regenerate = gr.Button("🔄 Regenerate Selected", size="sm", scale=1, min_width=0, interactive=False)
-
-            with gr.Row(elem_classes=["validation-row"]):
-                continue_btn = gr.Button("🔁 Back", scale=1, min_width=0, visible=False)
-                discard2_btn = gr.Button("🗑️ Discard", scale=1, min_width=0, visible=False)
+            # Validation & Draft Review UI
+            validation_title, validation_box, apply_updates_btn, stop_updates_btn, regenerate_btn, draft_review_panel, original_draft_checkbox, generated_drafts_list, btn_draft_accept_all, btn_draft_revert, btn_draft_accept_selected, btn_draft_regenerate, continue_btn, discard2_btn = Validate.create_validate_ui()
 
         # ---- (1b) Right Column: Viewer / Editor ----
         with gr.Column(scale=3):
@@ -206,7 +112,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     def _refresh_sections(_):
         """Repopulate dropdown when editor_sections_epoch changes (Create → Editor sync), or show empty state."""
-        sections = H.editor_list_sections()
+        sections = get_sections_list()
 
         if not sections:
             # 🔹 hide everything except empty message
@@ -226,17 +132,18 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(choices=sections, value=default),  # dropdown update
         )
 
-    def _load_section_content(name, drafts):
+    def _load_section_content(name):
         if not name:
             return "_Empty_", None, "", gr.update(value="View"), "", [], "", \
                    gr.update(visible=True), gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), \
                    gr.update(interactive=False, visible=False), gr.update(visible=False), gr.update(visible=False), "Checkpoint"
         
         # Check if we have a draft for this section
-        has_draft = drafts and name in drafts
+        drafts_mgr = DraftsManager()
+        has_draft = drafts_mgr.has(name)
         
         if has_draft:
-            text = drafts[name]
+            text = drafts_mgr.get_content(name)
             view_state = "Draft"
             label = "**Viewing:** <span style='color:red;'>Draft</span>"
             # Buttons: Checkpoint (visible, enabled), Draft (visible), Diff (visible)
@@ -244,7 +151,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             btn_dr_upd = gr.update(visible=True, interactive=True)
             btn_df_upd = gr.update(visible=True, interactive=True)
         else:
-            text = H.editor_get_section_content(name) or "_Empty_"
+            text = get_section_content(name) or "_Empty_"
             view_state = "Checkpoint"
             label = "**Viewing:** <span style='color:red;'>Checkpoint</span>"
             # Buttons: Checkpoint (HIDDEN - no point showing only C), Draft (hidden), Diff (hidden)
@@ -253,23 +160,13 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             btn_df_upd = gr.update(visible=False)
             
         # Reset chat history when loading new section
-        initial_greeting = [{"role": "assistant", "content": Chat.PLOT_KING_GREETING}]
+        from ui.tabs.editor.chat_ui import PLOT_KING_GREETING
+        initial_greeting = [{"role": "assistant", "content": PLOT_KING_GREETING}]
         
         return text, name, text, gr.update(value="View"), text, initial_greeting, text, \
                gr.update(visible=True), gr.update(value=label), btn_cp_upd, btn_dr_upd, btn_df_upd, view_state
 
-    def _update_draft_buttons(original_selected, generated_selected):
-        """Enable/disable draft action buttons based on selections."""
-        # Accept Selected: enabled if ANY checkbox is selected
-        any_selected = bool(original_selected or generated_selected)
-        
-        # Regenerate Selected: enabled only if auto-generated drafts are selected
-        can_regenerate = bool(generated_selected)
-        
-        return (
-            gr.update(interactive=any_selected),  # btn_draft_accept_selected
-            gr.update(interactive=can_regenerate)  # btn_draft_regenerate
-        )
+
 
 
     def _toggle_mode(mode, current_log, current_text):
@@ -341,59 +238,20 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     # ====== Dispatchers ======
 
-    def _regenerate_dispatcher(section, editor_text, current_log, mode, current_md):
-        """
-        Handles 'Regenerate' button click.
-        Re-runs validation logic based on the current mode and updates ONLY the Validation UI.
-        """
-        # 1. Common "Loading" State
-        new_log, status_update = append_status(current_log, f"🔄 ({section}) Regenerating validation...")
-        
-        yield (
-            gr.update(value="🔄 Validating..."), # validation_box
-            None, # pending_plan
-            gr.update(visible=True), # validation_title
-            gr.update(visible=False), # apply_updates_btn
-            gr.update(visible=False), # regenerate_btn
-            gr.update(visible=False), # continue_btn
-            gr.update(visible=False), # discard2_btn
-            status_update, # status_strip
-            new_log # status_log
-        )
-        
-        # 2. Determine text to validate
-        text_to_validate = ""
-        if mode == "Manual":
-            text_to_validate = editor_text
-        else:
-            # Chat and Rewrite modes use current_md state
-            text_to_validate = current_md
-            
-        # 3. Run Validation Logic
-        msg, plan = H.editor_validate(section, text_to_validate)
-        final_log, final_status = append_status(new_log, f"✅ ({section}) Validation completed.")
-        
-        # 4. Common "Done" State
-        yield (
-            gr.update(value=msg), # validation_box
-            plan, # pending_plan
-            gr.update(visible=True), # validation_title
-            gr.update(visible=True), # apply_updates_btn
-            gr.update(visible=True), # regenerate_btn
-            gr.update(visible=True), # continue_btn
-            gr.update(visible=True), # discard2_btn
-            final_status, # status_strip
-            final_log # status_log
-        )
+
 
     def _continue_edit_dispatcher(section, current_log, current_mode, current_md):
         """Dispatch continue_edit to appropriate module based on mode."""
+        from handlers.editor.rewrite import continue_edit as rewrite_continue_edit
+        from handlers.editor.chat import continue_edit as chat_continue_edit
+        from handlers.editor.manual import continue_edit as manual_continue_edit
+        
         if current_mode == "Rewrite":
-            return Rewrite.continue_edit(section, current_log, current_md)
+            return rewrite_continue_edit(section, current_log, current_md)
         elif current_mode == "Chat":
-            return Chat.continue_edit(section, current_log)
+            return chat_continue_edit(section, current_log)
         else:
-            return Manual.continue_edit(section, current_log)
+            return manual_continue_edit(section, current_log)
 
     # ====== Wiring ======
 
@@ -411,16 +269,18 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     section_dropdown.change(
         fn=_load_section_content,
-        inputs=[section_dropdown, current_drafts],
+        inputs=[section_dropdown],
         outputs=[viewer_md, selected_section, current_md, mode_radio, original_text_before_rewrite, chat_history, initial_text_before_chat, status_row, status_label, btn_checkpoint, btn_draft, btn_diff, current_view_state],
     )
 
-    def _handle_view_switch(view_type, section, drafts):
+    def _handle_view_switch(view_type, section):
         if not section:
             return gr.update(), "**Viewing:** <span style='color:red;'>Checkpoint</span>", "Checkpoint"
             
-        original_text = H.editor_get_section_content(section) or ""
-        draft_text = drafts.get(section, "") if drafts else ""
+        original_text = get_section_content(section) or ""
+        
+        drafts_mgr = DraftsManager()
+        draft_text = drafts_mgr.get_content(section) if drafts_mgr.has(section) else ""
         
         if view_type == "Checkpoint":
             return original_text, "**Viewing:** <span style='color:red;'>Checkpoint</span>", "Checkpoint"
@@ -436,33 +296,23 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         return original_text, "**Viewing:** <span style='color:red;'>Checkpoint</span>", "Checkpoint"
 
     btn_checkpoint.click(
-        fn=lambda s, d: _handle_view_switch("Checkpoint", s, d),
-        inputs=[selected_section, current_drafts],
+        fn=lambda s: _handle_view_switch("Checkpoint", s),
+        inputs=[selected_section],
         outputs=[viewer_md, status_label, current_view_state]
     )
     
     btn_draft.click(
-        fn=lambda s, d: _handle_view_switch("Draft", s, d),
-        inputs=[selected_section, current_drafts],
+        fn=lambda s: _handle_view_switch("Draft", s),
+        inputs=[selected_section],
         outputs=[viewer_md, status_label, current_view_state]
     )
     
     btn_diff.click(
-        fn=lambda s, d: _handle_view_switch("Diff", s, d),
-        inputs=[selected_section, current_drafts],
+        fn=lambda s: _handle_view_switch("Diff", s),
+        inputs=[selected_section],
         outputs=[viewer_md, status_label, current_view_state]
     )
-    editor_tb.select(
-        fn=Rewrite.handle_text_selection,
-        inputs=None,
-        outputs=[selected_text, selected_indices, rewrite_selected_preview, rewrite_btn],
-    )
 
-    preset_dropdown.change(
-        fn=update_instructions_from_preset,
-        inputs=[preset_dropdown],
-        outputs=[rewrite_instructions_tb]
-    )
 
     mode_radio.change(
         fn=_toggle_mode,
@@ -470,443 +320,79 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         outputs=[start_edit_btn, rewrite_section, chat_section, status_strip, status_log, editor_tb, viewer_md, rewrite_btn, rewrite_validate_btn, rewrite_discard_btn, rewrite_force_edit_btn, status_row]
     )
     
-    # Chat Input Change Event to toggle Send button
-    chat_input.change(
-        fn=lambda x: gr.update(interactive=bool(x.strip())),
-        inputs=[chat_input],
-        outputs=[chat_send_btn]
-    )
+    # Chat Input Change Event to toggle Send button - MOVED TO CHAT HANDLERS
 
-    start_edit_btn.click(
-        fn=lambda *args: (*Manual.start_edit(*args), gr.update(visible=False)), # Wrap to hide status row
-        inputs=[current_md, selected_section, status_log],
-        outputs=[
-            start_edit_btn,
-            rewrite_section,
-            confirm_btn,
-            discard_btn,
-            force_edit_btn,
-            viewer_md,
-            editor_tb,
-            mode_radio,
-            section_dropdown,
-            status_strip,
-            status_log,
-            status_row, # Added
-        ],
-    )
-
-    confirm_btn.click(
-        fn=Manual.confirm_edit,
-        inputs=[selected_section, editor_tb, status_log],
-        outputs=[
-            validation_box, pending_plan,
-            validation_title, validation_box,
-            apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
-            confirm_btn, discard_btn, force_edit_btn,
-            start_edit_btn,
-            rewrite_section,
-            viewer_md,
-            editor_tb,
-            mode_radio, section_dropdown,
-            status_strip,
-            status_log,
-            status_row, # Added
-        ],
-        queue=True,
-        show_progress=False,
-    )
-
-    apply_updates_btn.click(
-        fn=Validate.apply_updates,
-        inputs=[section_dropdown, editor_tb, pending_plan, status_log, create_sections_epoch, mode_radio, current_md, current_drafts],
-        outputs=[
-            viewer_md, status_strip,
-            editor_tb,
-            validation_title, validation_box,
-            apply_updates_btn, stop_updates_btn, regenerate_btn, continue_btn, discard2_btn,
-            start_edit_btn,
-            rewrite_section,
-            mode_radio, section_dropdown,
-            current_md,  # update current_md state
-            status_log,
-            create_sections_epoch,  # bump create_sections_epoch to notify Create tab
-            draft_review_panel, # Added
-            original_draft_checkbox, # Added
-            generated_drafts_list, # Added
-            current_drafts, # Added
-            status_row, # Added
-            status_label, # Added
-            btn_checkpoint, # Added
-            btn_draft, # Added
-            btn_diff, # Added
-            current_view_state, # Added
-        ],
-        queue=True,
-    )
-
-    stop_updates_btn.click(
-        fn=Validate.request_stop,
-        inputs=None,
-        outputs=[stop_updates_btn],
-        queue=False
-    )
+    # Call handler creators
     
-    continue_btn.click(
-        fn=_continue_edit_dispatcher,
-        inputs=[selected_section, status_log, mode_radio, current_md],
-        outputs=[
-            validation_title, validation_box,
-            apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
-            confirm_btn, discard_btn, force_edit_btn,
-            rewrite_section,
-            viewer_md,
-            editor_tb,
-            mode_radio, section_dropdown,
-            status_strip,
-            status_log,
-            chat_section, # Added output
-            status_row, # Added
-        ],
-    )
+    # Components dictionary for passing to handlers
+    components = {
+        Components.SECTION_DROPDOWN: section_dropdown,
+        Components.MODE_RADIO: mode_radio,
+        Components.START_EDIT_BTN: start_edit_btn,
+        Components.CONFIRM_BTN: confirm_btn,
+        Components.DISCARD_BTN: discard_btn,
+        Components.FORCE_EDIT_BTN: force_edit_btn,
+        Components.REWRITE_SECTION: rewrite_section,
+        Components.REWRITE_SELECTED_PREVIEW: rewrite_selected_preview,
+        Components.PRESET_DROPDOWN: preset_dropdown,
+        Components.REWRITE_INSTRUCTIONS_TB: rewrite_instructions_tb,
+        Components.REWRITE_BTN: rewrite_btn,
+        Components.REWRITE_VALIDATE_BTN: rewrite_validate_btn,
+        Components.REWRITE_DISCARD_BTN: rewrite_discard_btn,
+        Components.REWRITE_FORCE_EDIT_BTN: rewrite_force_edit_btn,
+        Components.CHAT_SECTION: chat_section,
+        Components.CHATBOT: chatbot,
+        Components.CHAT_INPUT: chat_input,
+        Components.CHAT_SEND_BTN: chat_send_btn,
+        Components.CHAT_CLEAR_BTN: chat_clear_btn,
+        Components.CHAT_ACTIONS_ROW_1: chat_actions_row_1,
+        Components.CHAT_DISCARD_BTN: chat_discard_btn,
+        Components.CHAT_FORCE_EDIT_BTN: chat_force_edit_btn,
+        Components.CHAT_ACTIONS_ROW_2: chat_actions_row_2,
+        Components.CHAT_VALIDATE_BTN: chat_validate_btn,
+        Components.VALIDATION_TITLE: validation_title,
+        Components.VALIDATION_BOX: validation_box,
+        Components.APPLY_UPDATES_BTN: apply_updates_btn,
+        Components.STOP_UPDATES_BTN: stop_updates_btn,
+        Components.REGENERATE_BTN: regenerate_btn,
+        Components.DRAFT_REVIEW_PANEL: draft_review_panel,
+        Components.ORIGINAL_DRAFT_CHECKBOX: original_draft_checkbox,
+        Components.GENERATED_DRAFTS_LIST: generated_drafts_list,
+        Components.BTN_DRAFT_ACCEPT_ALL: btn_draft_accept_all,
+        Components.BTN_DRAFT_REVERT: btn_draft_revert,
+        Components.BTN_DRAFT_ACCEPT_SELECTED: btn_draft_accept_selected,
+        Components.BTN_DRAFT_REGENERATE: btn_draft_regenerate,
+        Components.CONTINUE_BTN: continue_btn,
+        Components.DISCARD2_BTN: discard2_btn,
+        Components.STATUS_ROW: status_row,
+        Components.STATUS_LABEL: status_label,
+        Components.BTN_CHECKPOINT: btn_checkpoint,
+        Components.BTN_DRAFT: btn_draft,
+        Components.BTN_DIFF: btn_diff,
+        Components.VIEWER_MD: viewer_md,
+        Components.EDITOR_TB: editor_tb,
+        Components.STATUS_STRIP: status_strip,
+        Components._CONTINUE_EDIT_DISPATCHER: _continue_edit_dispatcher,
+    }
+    
+    # States dictionary
+    states = {
+        States.SELECTED_SECTION: selected_section,
+        States.CURRENT_MD: current_md,
+        States.PENDING_PLAN: pending_plan,
+        States.STATUS_LOG: status_log,
+        States.SELECTED_TEXT: selected_text,
+        States.SELECTED_INDICES: selected_indices,
+        States.ORIGINAL_TEXT_BEFORE_REWRITE: original_text_before_rewrite,
+        States.CHAT_HISTORY: chat_history,
+        States.INITIAL_TEXT_BEFORE_CHAT: initial_text_before_chat,
+        States.CURRENT_VIEW_STATE: current_view_state,
+        States.CREATE_SECTIONS_EPOCH: create_sections_epoch,
+    }
 
-    discard_btn.click(
-        fn=Manual.discard_from_manual,
-        inputs=[selected_section, status_log],
-        outputs=[
-            viewer_md, editor_tb, validation_box, pending_plan,
-            validation_title,
-            apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
-            start_edit_btn,
-            confirm_btn, discard_btn, force_edit_btn,
-            rewrite_section,
-            mode_radio, section_dropdown, status_strip,
-            status_log,
-            status_row, # Added
-        ],
-    )
-
-    discard2_btn.click(
-        fn=Validate.discard_from_validate,
-        inputs=[selected_section, status_log],
-        outputs=[
-            viewer_md, editor_tb, validation_box, pending_plan,
-            validation_title,
-            apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
-            start_edit_btn,
-            confirm_btn, discard_btn, force_edit_btn,
-            rewrite_section,
-            mode_radio, section_dropdown, status_strip,
-            status_log,
-            current_md,
-            draft_review_panel, # Added
-            generated_drafts_list, # Added
-            current_drafts, # Added
-            status_row, # Added: show status row
-            status_label, # Added
-            btn_checkpoint, # Added
-            btn_draft, # Added
-            btn_diff, # Added
-            current_view_state, # Added
-        ],
-    )
-
-    force_edit_btn.click(
-        fn=Manual.force_edit,
-        inputs=[selected_section, editor_tb, status_log, create_sections_epoch],
-        outputs=[
-            viewer_md, status_strip, editor_tb,
-            confirm_btn, discard_btn, force_edit_btn, start_edit_btn,
-            rewrite_section,
-            mode_radio, section_dropdown,
-            current_md,  # update current_md state
-            status_log,
-            create_sections_epoch,  # bump create_sections_epoch to notify Create tab
-            status_row, # Added
-        ],
-    )
-
-    regenerate_btn.click(
-        fn=_regenerate_dispatcher,
-        inputs=[selected_section, editor_tb, status_log, mode_radio, current_md],
-        outputs=[
-            validation_box,
-            pending_plan,
-            validation_title,
-            apply_updates_btn,
-            regenerate_btn,
-            continue_btn,
-            discard2_btn,
-            status_strip,
-            status_log,
-        ],
-        queue=True,
-        show_progress=False,
-    )
-
-    rewrite_btn.click(
-        fn=Rewrite.rewrite_handler,
-        inputs=[selected_section, selected_text, selected_indices, rewrite_instructions_tb, current_md, status_log, original_text_before_rewrite],
-        outputs=[
-            editor_tb,
-            viewer_md,
-            rewrite_validate_btn,
-            rewrite_discard_btn,
-            rewrite_force_edit_btn,
-            rewrite_btn,
-            status_strip,
-            status_log,
-            current_md,
-            selected_text,
-            selected_indices,
-            original_text_before_rewrite,
-        ],
-        queue=True,
-        show_progress=False,
-    )
-
-    rewrite_discard_btn.click(
-        fn=Rewrite.rewrite_discard,
-        inputs=[selected_section, status_log],
-        outputs=[
-            editor_tb,
-            viewer_md,
-            rewrite_validate_btn,
-            rewrite_discard_btn,
-            rewrite_force_edit_btn,
-            rewrite_btn,
-            rewrite_selected_preview,
-            status_strip,
-            status_log,
-            selected_text,
-            selected_indices,
-            current_md,
-            original_text_before_rewrite,
-        ],
-    )
-
-    rewrite_force_edit_btn.click(
-        fn=Rewrite.rewrite_force_edit,
-        inputs=[selected_section, current_md, status_log, create_sections_epoch],
-        outputs=[
-            viewer_md,
-            status_strip,
-            editor_tb,
-            validation_title,
-            validation_box,
-            apply_updates_btn,
-            regenerate_btn,
-            continue_btn,
-            discard2_btn,
-            confirm_btn,
-            discard_btn,
-            force_edit_btn,
-            start_edit_btn,
-            rewrite_section,
-            mode_radio,
-            section_dropdown,
-            current_md,
-            status_log,
-            create_sections_epoch,
-            selected_text,
-            selected_indices,
-            status_row, # Added
-        ],
-    )
-
-    rewrite_validate_btn.click(
-        fn=Rewrite.rewrite_validate,
-        inputs=[selected_section, current_md, status_log],
-        outputs=[
-            validation_box,
-            pending_plan,
-            validation_title,
-            validation_box,
-            apply_updates_btn,
-            regenerate_btn,
-            continue_btn,
-            discard2_btn,
-            rewrite_section,
-            viewer_md,
-            editor_tb,
-            mode_radio,
-            section_dropdown,
-            status_strip,
-            status_log,
-        ],
-        queue=True,
-        show_progress=False,
-    )
-    
-    # Draft Review Handlers
-    btn_draft_accept_all.click(
-        fn=Validate.draft_accept_all,
-        inputs=[selected_section, current_drafts, status_log, create_sections_epoch],
-        outputs=[draft_review_panel, status_strip, status_log, create_sections_epoch, current_drafts, status_row, status_label, btn_checkpoint, btn_draft, btn_diff, current_view_state, viewer_md, current_md]
-    )
-    
-    btn_draft_revert.click(
-        fn=Validate.draft_revert_all,
-        inputs=[selected_section, status_log],
-        outputs=[draft_review_panel, status_strip, status_log, current_drafts, status_row, status_label, btn_checkpoint, btn_draft, btn_diff, current_view_state, viewer_md, current_md]
-    )
-    
-    btn_draft_accept_selected.click(
-        fn=Validate.draft_accept_selected,
-        inputs=[selected_section, original_draft_checkbox, generated_drafts_list, current_drafts, status_log, create_sections_epoch],
-        outputs=[draft_review_panel, status_strip, status_log, create_sections_epoch, current_drafts, status_row, status_label, btn_checkpoint, btn_draft, btn_diff, current_view_state, viewer_md, current_md]
-    )
-    
-    btn_draft_regenerate.click(
-        fn=Validate.draft_regenerate_selected,
-        inputs=[generated_drafts_list, current_drafts, pending_plan, selected_section, status_log, create_sections_epoch],
-        outputs=[draft_review_panel, original_draft_checkbox, generated_drafts_list, status_strip, status_log, create_sections_epoch, current_drafts, status_row, stop_updates_btn],
-        queue=True
-    )
-    
-    # Change handlers for checkboxes to enable/disable buttons
-    original_draft_checkbox.change(
-        fn=_update_draft_buttons,
-        inputs=[original_draft_checkbox, generated_drafts_list],
-        outputs=[btn_draft_accept_selected, btn_draft_regenerate]
-    )
-    
-    generated_drafts_list.change(
-        fn=_update_draft_buttons,
-        inputs=[original_draft_checkbox, generated_drafts_list],
-        outputs=[btn_draft_accept_selected, btn_draft_regenerate]
-    )
-
-    
-    # Chat Event Handlers
-    
-    chat_send_btn.click(
-        fn=Chat.chat_handler,
-        inputs=[selected_section, chat_input, chat_history, current_md, initial_text_before_chat, status_log, current_drafts],
-        outputs=[
-            chat_input,
-            chat_history,
-            chatbot, # Update chatbot component
-            viewer_md,
-            chat_actions_row_1, # validate/discard row
-            chat_discard_btn, # redundant but for safety if handled individually
-            chat_actions_row_2, # force/diff row
-            status_log,
-            status_strip,
-            current_md,
-            chat_input, # Added output
-            chat_clear_btn, # Added output
-            current_drafts, # Added output
-            status_row, # Added output
-            status_label, # Added output
-            btn_checkpoint, # Added output
-            btn_draft, # Added output
-            btn_diff, # Added output
-            current_view_state, # Added output
-        ],
-        queue=True
-    )
-    
-    # Also trigger send on Enter in chat_input
-    chat_input.submit(
-        fn=Chat.chat_handler,
-        inputs=[selected_section, chat_input, chat_history, current_md, initial_text_before_chat, status_log, current_drafts],
-        outputs=[
-            chat_input,
-            chat_history,
-            chatbot, # Update chatbot component
-            viewer_md,
-            chat_actions_row_1,
-            chat_discard_btn,
-            chat_actions_row_2,
-            status_log,
-            status_strip,
-            current_md,
-            chat_input, # Added output
-            chat_clear_btn, # Added output
-            current_drafts, # Added output
-            status_row, # Added output
-            status_label, # Added output
-            btn_checkpoint, # Added output
-            btn_draft, # Added output
-            btn_diff, # Added output
-            current_view_state, # Added output
-        ],
-        queue=True
-    )
-    
-    chat_clear_btn.click(
-        fn=Chat.clear_chat,
-        inputs=[selected_section, status_log],
-        outputs=[chat_history, status_log, status_strip, chatbot]
-    )
-
-    chatbot.clear(
-        fn=Chat.clear_chat,
-        inputs=[selected_section, status_log],
-        outputs=[chat_history, status_log, status_strip, chatbot]
-    )
-
-    
-    chat_validate_btn.click(
-        fn=Chat.validate_handler,
-        inputs=[selected_section, current_md, status_log, current_drafts],
-        outputs=[
-            chat_section,
-            validation_title,
-            validation_box,
-            apply_updates_btn,
-            regenerate_btn,
-            continue_btn,
-            discard2_btn,
-            viewer_md,
-            status_log,
-            status_strip,
-            pending_plan, # Added output
-        ]
-    )
-    
-    chat_discard_btn.click(
-        fn=Chat.discard_handler,
-        inputs=[selected_section, status_log, current_drafts],
-        outputs=[
-            viewer_md,
-            chat_actions_row_1,
-            chat_discard_btn,
-            chat_actions_row_2,
-            current_md,
-            status_log,
-            status_strip,
-            current_drafts, # Added output
-            status_row, # Added output
-            status_label, # Added output
-            btn_checkpoint, # Added output
-            btn_draft, # Added output
-            btn_diff, # Added output
-            current_view_state, # Added output
-        ]
-    )
-    
-    chat_force_edit_btn.click(
-        fn=Chat.force_edit_handler,
-        inputs=[selected_section, current_md, status_log, create_sections_epoch, current_drafts],
-        outputs=[
-            viewer_md,
-            chat_actions_row_1,
-            chat_discard_btn,
-            chat_actions_row_2,
-            current_md,
-            status_log,
-            status_strip,
-            create_sections_epoch,
-            current_drafts, # Added output
-            status_row, # Added output
-            status_label, # Added output
-            btn_checkpoint, # Added output
-            btn_draft, # Added output
-            btn_diff, # Added output
-            current_view_state, # Added output
-        ]
-    )
+    Manual.create_manual_handlers(components, states)
+    Rewrite.create_rewrite_handlers(components, states)
+    Chat.create_chat_handlers(components, states)
+    Validate.create_validate_handlers(components, states)
 
     return section_dropdown
