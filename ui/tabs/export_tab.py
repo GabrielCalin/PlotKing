@@ -1,6 +1,6 @@
 # ui/tabs/export_tab.py
 import gradio as gr
-from handlers.export.export_handlers import fetch_title_handler, export_book_handler
+from handlers.export.export_handlers import fetch_title_handler, export_book_handler, generate_cover_handler, suggest_cover_prompt_handler
 from state.checkpoint_manager import get_sections_list
 
 def render_export_tab(editor_sections_epoch, create_sections_epoch):
@@ -64,7 +64,29 @@ def render_export_tab(editor_sections_epoch, create_sections_epoch):
                         interactive=True
                     )
                 
-                cover_image = gr.Image(label="Cover Image", type="filepath", height=300, elem_id="export-cover")
+                gr.Markdown("### Cover Image")
+                cover_source = gr.Radio(
+                    choices=["Upload", "Generate"],
+                    value="Upload",
+                    label="Cover Source",
+                    interactive=True
+                )
+                
+                with gr.Column(visible=True) as upload_cover_group:
+                    cover_image = gr.Image(label="Upload Cover", type="filepath", height=300, elem_id="export-cover")
+
+                with gr.Column(visible=False) as generate_cover_group:
+                    with gr.Row():
+                        prompt_input = gr.Textbox(
+                            label="Image Prompt", 
+                            placeholder="Describe the cover image...", 
+                            lines=3,
+                            scale=4
+                        )
+                        suggest_btn = gr.Button("✨ Suggest", scale=1)
+                    
+                    generate_btn = gr.Button("🎨 Generate Cover", variant="primary")
+                    generated_cover_image = gr.Image(label="Generated Cover", type="filepath", height=300, interactive=False)
                 
             with gr.Column(scale=1):
                 export_status = gr.Textbox(label="Process Log", lines=30, interactive=False, elem_id="export-log")
@@ -107,10 +129,54 @@ def render_export_tab(editor_sections_epoch, create_sections_epoch):
         outputs=[export_log]
     )
 
+    # Toggle Cover Source
+    def _toggle_cover_source(source):
+        return gr.update(visible=(source == "Upload")), gr.update(visible=(source == "Generate"))
+
+    cover_source.change(
+        fn=_toggle_cover_source,
+        inputs=[cover_source],
+        outputs=[upload_cover_group, generate_cover_group]
+    )
+
+    # Suggest Prompt
+    suggest_btn.click(
+        fn=suggest_cover_prompt_handler,
+        inputs=[export_log],
+        outputs=[prompt_input, export_status]
+    ).then(
+        fn=lambda log: log,
+        inputs=[export_status],
+        outputs=[export_log]
+    )
+
+    # Generate Cover
+    generate_btn.click(
+        fn=generate_cover_handler,
+        inputs=[prompt_input, export_log],
+        outputs=[generated_cover_image, export_status]
+    ).then(
+        fn=lambda log: log,
+        inputs=[export_status],
+        outputs=[export_log]
+    )
+
     # Export Book
+    # Note: We need to handle which image to use. For now, we'll pass the visible one or handle it in the handler.
+    # Actually, simpler: The handler takes a path. We can have a wrapper to pick the right one.
+    # But wait, 'cover_image' is the upload one. 'generated_cover_image' is the generated one.
+    # We should update the export handler call to pass the correct image based on the radio selection.
+    
+    def _get_active_cover(source, upload_path, gen_path):
+        return upload_path if source == "Upload" else gen_path
+
     export_btn.click(
+        fn=_get_active_cover,
+        inputs=[cover_source, cover_image, generated_cover_image],
+        outputs=[gr.State()]
+    ).then(
         fn=export_book_handler,
-        inputs=[title_input, author_input, cover_image, font_family_dropdown, font_size_dropdown, export_log],
+        inputs=[title_input, author_input, cover_image, generated_cover_image, cover_source, font_family_dropdown, font_size_dropdown, export_log],
         outputs=[download_btn, export_status]
     ).then(
         fn=lambda log: log, # Update state

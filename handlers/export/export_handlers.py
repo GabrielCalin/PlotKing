@@ -2,9 +2,12 @@
 import os
 import gradio as gr
 import markdown
+import requests
+import base64
 from ebooklib import epub
 from state.checkpoint_manager import get_checkpoint
 from llm.title_fetcher.llm import fetch_title_llm
+from llm.cover_prompter.llm import generate_prompt
 from utils.timestamp import ts_prefix
 
 def fetch_title_handler(current_log):
@@ -31,7 +34,72 @@ def fetch_title_handler(current_log):
         final_log = new_log + "\n" + ts_prefix(f"❌ Error fetching title: {e}")
         return "", final_log.strip()
 
-def export_book_handler(title, author, cover_image_path, font_family, font_size, current_log):
+def suggest_cover_prompt_handler(current_log):
+    """
+    Handler for the 'Suggest' button.
+    """
+    checkpoint = get_checkpoint()
+    if not checkpoint:
+        return "", (current_log or "") + "\n" + ts_prefix("⚠️ No checkpoint found. Cannot suggest prompt.")
+    
+    expanded_plot = checkpoint.expanded_plot or ""
+    if not expanded_plot:
+        return "", (current_log or "") + "\n" + ts_prefix("⚠️ No expanded plot found. Cannot suggest prompt.")
+
+    new_log = (current_log or "") + "\n" + ts_prefix("✨ Suggesting cover prompt...")
+    
+    try:
+        prompt = generate_prompt(expanded_plot)
+        final_log = new_log + "\n" + ts_prefix("✅ Prompt suggested.")
+        return prompt, final_log.strip()
+    except Exception as e:
+        final_log = new_log + "\n" + ts_prefix(f"❌ Error suggesting prompt: {e}")
+        return "", final_log.strip()
+
+def generate_cover_handler(prompt, current_log):
+    """
+    Handler for the 'Generate Cover' button.
+    """
+    if not prompt or not prompt.strip():
+        return None, (current_log or "") + "\n" + ts_prefix("⚠️ Prompt is required.")
+
+    new_log = (current_log or "") + "\n" + ts_prefix(f"🎨 Generating cover for prompt: '{prompt}'...")
+    
+    try:
+        payload = {
+            "prompt": prompt,
+            "steps": 20, # Increased steps for better quality
+            "width": 512,
+            "height": 768, # Portrait aspect ratio for book covers
+            "cfg_scale": 7
+        }
+        
+        response = requests.post("http://127.0.0.1:6969/sdapi/v1/txt2img", json=payload)
+        
+        if response.status_code == 200:
+            r = response.json()
+            image_b64 = r['images'][0]
+            
+            # Create tmp directory if it doesn't exist
+            tmp_dir = "tmp"
+            os.makedirs(tmp_dir, exist_ok=True)
+            
+            output_path = os.path.join(tmp_dir, "cover.png")
+            
+            with open(output_path, "wb") as f:
+                f.write(base64.b64decode(image_b64))
+                
+            final_log = new_log + "\n" + ts_prefix(f"✅ Cover generated: {output_path}")
+            return os.path.abspath(output_path), final_log.strip()
+        else:
+            final_log = new_log + "\n" + ts_prefix(f"❌ Generation failed with status code: {response.status_code}")
+            return None, final_log.strip()
+            
+    except Exception as e:
+        final_log = new_log + "\n" + ts_prefix(f"❌ Error generating cover: {e}")
+        return None, final_log.strip()
+
+def export_book_handler(title, author, upload_path, gen_path, source, font_family, font_size, current_log):
     """
     Handler for the 'Export' button.
     Generates an EPUB file.
@@ -45,6 +113,9 @@ def export_book_handler(title, author, cover_image_path, font_family, font_size,
     
     if not author or not author.strip():
         return None, (current_log or "") + "\n" + ts_prefix("⚠️ Author is required.")
+
+    # Determine cover image path
+    cover_image_path = upload_path if source == "Upload" else gen_path
 
     new_log = (current_log or "") + "\n" + ts_prefix(f"📚 Starting export for '{title}' by {author}...")
     
@@ -61,6 +132,8 @@ def export_book_handler(title, author, cover_image_path, font_family, font_size,
             with open(cover_image_path, 'rb') as f:
                 cover_content = f.read()
             ext = os.path.splitext(cover_image_path)[1]
+            if not ext:
+                ext = ".png" # Default to png if no extension
             cover_file_name = f"cover{ext}"
             
             book.set_cover(cover_file_name, cover_content, create_page=False)
@@ -70,7 +143,7 @@ def export_book_handler(title, author, cover_image_path, font_family, font_size,
             cover_page.content = cover_html_content
             book.add_item(cover_page)
             
-            new_log += "\n" + ts_prefix("🖼️ Cover image added.")
+            new_log += "\n" + ts_prefix(f"🖼️ Cover image added from {source}.")
         else:
             new_log += "\n" + ts_prefix("ℹ️ No cover image provided or file not found.")
 
