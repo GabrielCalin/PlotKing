@@ -10,28 +10,33 @@ This document outlines the planned development milestones for the **AI Story Gen
    - Automatically create covers based on title, genre, and plot.  
    - Optional integration with **ComfyUI** or external image workflows.
 
+16. **Basic Settings**  
+   - Model selection per task.  
+   - Customization of local OpenAI endpoint.  
+   - Integration with **OpenAI**.
+
 ---
 
 ## ✍️ Phase 4 — Story Growth and Structure Control
 
-16. **AI Chat for Refined Plot**  
+17. **AI Chat for Refined Plot**  
    - Generate a refined plot based on an interactive chat conversation.  
    - Users can discuss plot improvements, character arcs, and story structure through natural conversation.  
    - The AI generates an updated plot that incorporates the discussion points.
 
-17. **Global Draft System**  
+18. **Global Draft System**  
    - Switch between edit modes and add to a 'draft', validating only at the end.  
    - Support for undo/redo + quick save project.
 
-18. **Add Empty Chapters (Writer Assist Mode)**  
+19. **Add Empty Chapters (Writer Assist Mode)**  
    - Let users insert blank chapters manually.  
    - Intended to help writers start or continue their own text with AI assistance.
 
-19. **Infill Chapters**  
+20. **Infill Chapters**  
    - Add the ability to insert a new chapter **between existing ones** to fill narrative gaps.  
    - Automatically update chapter numbering and summary references.
 
-20. **Outfill Chapters**  
+21. **Outfill Chapters**  
    - Continue an existing book with **new chapters** beyond the planned structure.  
    - Preserve continuity by referencing the final chapters.
 
@@ -39,56 +44,59 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## ⚙️ Phase 5 — Configuration & Customization
 
-21. **Settings Tab**  
+22. **Advanced Settings**  
    - Add a settings section for advanced parameters:  
-     - Model selection per task.  
      - Max tokens per chapter.  
      - Timeout and retry policies.  
-     - Context window behavior (summaries vs full chapter inclusion).  
-     - Temperature, top-p, and verbosity controls.
+     - Temperature, top-p, and verbosity controls.  
+     - Prompt Customization.
 
-22. **Model Selection per Task**  
-   - Choose separate models for each step (e.g., validation vs writing).  
-   - Integration with **OpenAI**, **LM Studio**, or **local LLMs**.
+23. **Pipeline Improvements**  
+   - At validate, provide sequentially: expanded plot, chapter overview, and chapters.  
+   - Extract chapter descriptions as a list with AI before generating a chapter, providing only the description of the chapter to be generated + full previous chapters, not descriptions of all chapters.  
+   - Option for Summarize instead of Full Chapters in the context provided to the LLM when writing a new chapter, with Summarize also defining things like open points, things to remember for the next sections.
 
-23. **Automatic Translation**  
+24. **Automatic Translation**  
    - Add automatic **multi-language translation** for full books or chapters.  
    - Universal model-agnostic design, with export to any supported language.  
    - **Main Language System**: There will be a main language, and translated versions will only allow either re-generation from scratch or generation with minimal changes + manual edits.  
+
+25. **Editor Functions in Manual Mode**  
+   - Add formatting options (bold, italic, etc.) for manual editing mode.
 
 ---
 
 ## 💬 Phase 6 — Advanced Interaction & Collaboration
 
-25. **Advanced Cross-Chapter Chat**  
+26. **Advanced Cross-Chapter Chat**  
    - A global AI chat that can handle **multi-chapter edits** and **story-level refactoring**.  
    - Allows broader transformations such as tone adjustment, pacing changes, or multi-arc restructuring.  
    - Edit and chat with the validator based on results.
 
-26. **Character & Object Modification**  
+27. **Character & Object Modification**  
    - Provide an interface to modify a character's **personality, appearance, relationships, or role**.  
    - Extendable to modify **key objects** or **locations** across chapters.  
    - System ensures consistency by updating references in future (and optionally past) chapters.
 
-27. **Automated Tests (UI Scenario Based)**  
+28. **Automated Tests (UI Scenario Based)**  
    - Implement automated UI tests based on user scenarios.  
    - Test critical workflows end-to-end to ensure reliability and prevent regressions.
 
-28. **Switch from Gradio Frontend**  
+29. **Switch from Gradio Frontend**  
    - Migrate from Gradio to a more flexible frontend framework.  
    - Improve UI/UX capabilities and performance.
 
-29. **Visual Plot Design**  
+30. **Visual Plot Design**  
    - A new tab to visualize main events, characters, etc. (e.g., circles for plot items).  
    - Allows easy definition of parallel narrative threads and their intersections.  
    - Helps in understanding and defining the story structure visually.
 
-30. **Import Ebooks**  
+31. **Import Ebooks**  
    - Add the ability to import existing ebooks (EPUB, MOBI, etc.) into the system.  
    - Parse imported books into chapters and structure.  
    - Users can then expand or modify the imported book using all available editing tools.
 
-31. **Book Continuations**  
+32. **Book Continuations**  
    - Support for book sequels (Part 2).  
    - Support for copying the narrative style of another book (Persona definitions).
 
@@ -120,12 +128,15 @@ This document outlines the planned development milestones for the **AI Story Gen
    - Ideal for **biographies, essays, or technical non-fiction** where factual correctness is essential.  
    - *Low priority / experimental feature.*
 
-38. **REST API**  
+38. **Interactive / Gamified Story Creation**  
+   - Add interactive and gamified elements to the story creation process.
+
+39. **REST API**  
    - Provide a REST API for programmatic access to the story generation system.  
    - Enable integration with external tools and automation workflows.  
    - *Low priority / experimental feature.*
 
-39. **Custom Blocks (ComfyUI-style)**  
+40. **Custom Blocks (ComfyUI-style)**  
    - Implement a visual node-based interface similar to ComfyUI for workflow customization.  
    - Allow users to create custom processing blocks and connect them visually.  
    - *Low priority / experimental feature.*
@@ -137,14 +148,16 @@ This document outlines the planned development milestones for the **AI Story Gen
 | Feature | Status |
 |----------|--------|
 | **Generate EPUB Cover Image** | ⏳ In Progress |
+| **Basic Settings** | ⏳ Planned |
 | **AI Chat for Refined Plot** | ⏳ Planned |
 | **Global Draft System** | ⏳ Planned |
 | **Add Empty Chapters (Writer Assist Mode)** | ⏳ Planned |
 | **Infill Chapters** | ⏳ Planned |
 | **Outfill Chapters** | ⏳ Planned |
-| **Settings Tab** | ⏳ Planned |
-| **Model Selection per Task** | ⏳ Planned |
+| **Advanced Settings** | ⏳ Planned |
+| **Pipeline Improvements** | ⏳ Planned |
 | **Automatic Translation** | ⏳ Planned |
+| **Editor Functions in Manual Mode** | ⏳ Planned |
 | **Advanced Cross-Chapter Chat** | ⏳ Planned |
 | **Character & Object Modification** | ⏳ Planned |
 | **Automated Tests (UI Scenario Based)** | ⏳ Planned |
@@ -157,6 +170,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 | **Generate Audio Book** | 🔬 Experimental |
 | **Graphic Story Generation** | 🔬 Experimental |
 | **Embedded LLMs / Research Non-Fiction Mode** | 🔬 Experimental |
+| **Interactive / Gamified Story Creation** | 🔬 Experimental |
 | **REST API** | 🔬 Experimental |
 | **Custom Blocks (ComfyUI-style)** | 🔬 Experimental |
 
