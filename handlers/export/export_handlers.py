@@ -63,7 +63,7 @@ def generate_cover_handler(prompt, current_log):
     if not prompt or not prompt.strip():
         return None, (current_log or "") + "\n" + ts_prefix("⚠️ Prompt is required.")
 
-    new_log = (current_log or "") + "\n" + ts_prefix(f"🎨 Generating cover for prompt: '{prompt}'...")
+    new_log = (current_log or "") + "\n" + ts_prefix("🎨 Generating cover for prompt...")
     
     try:
         payload = {

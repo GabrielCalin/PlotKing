@@ -76,14 +76,18 @@ def render_export_tab(editor_sections_epoch, create_sections_epoch):
                     cover_image = gr.Image(label="Upload Cover", type="filepath", height=300, elem_id="export-cover")
 
                 with gr.Column(visible=False) as generate_cover_group:
-                    with gr.Row():
+                    with gr.Column(elem_classes=["plot-wrapper"]):
+                        with gr.Row(elem_classes=["plot-header"]):
+                            gr.Markdown("Image Prompt", elem_id="prompt-label")
+                            with gr.Row(elem_classes=["plot-buttons"]):
+                                suggest_btn = gr.Button("✨ Suggest", size="sm", elem_id="suggest-btn")
+                        
                         prompt_input = gr.Textbox(
-                            label="Image Prompt", 
+                            label=None, 
+                            show_label=False,
                             placeholder="Describe the cover image...", 
-                            lines=3,
-                            scale=4
+                            lines=3
                         )
-                        suggest_btn = gr.Button("✨ Suggest", scale=1)
                     
                     generate_btn = gr.Button("🎨 Generate Cover", variant="primary")
                     generated_cover_image = gr.Image(label="Generated Cover", type="filepath", height=300, interactive=False)
