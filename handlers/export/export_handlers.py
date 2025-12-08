@@ -138,7 +138,6 @@ def export_book_handler(title, author, upload_path, gen_path, source, font_famil
             
             book.set_cover(cover_file_name, cover_content, create_page=False)
             
-            # Improved cover page styling using absolute positioning for wider compatibility
             # We use inline styles on a container div to ensure centering across different readers.
             cover_html_content = f'''
             <div style="position: absolute; top: 0; left: 0; bottom: 0; right: 0; text-align: center; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center;">

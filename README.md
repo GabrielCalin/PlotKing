@@ -52,7 +52,7 @@ Turn your project into a finished product:
 -   **EPUB Generation**: Creates a professional e-book file compatible with most readers.
 -   **Metadata Fetching**: AI can suggest a title based on your story content.
 -   **Customization**: Choose fonts (Georgia, Palatino, etc.) and set font sizes for the output file.
--   **Cover Art**: Upload a custom cover image to be embedded in the EPUB.
+-   **Cover Art**: Upload a custom cover image or **generate** one using AI, to be embedded in the EPUB.
 
 ### 4. Project Management
 Keep your stories organized:
@@ -71,9 +71,9 @@ The application requires:
 -   Access to a local LLM API (default: `http://localhost:1234/v1/chat/completions`)
 -   Additional dependencies listed in `requirements.txt`
 
-### LLM Support
+### Local AI Support
 
-**Current Status**: PlotKing currently supports only local LLM deployments with a predefined API endpoint: `http://127.0.0.1:1234/v1/chat/completions`. This endpoint follows the OpenAI-compatible API format, making it compatible with tools like LM Studio.
+**Current Status**: PlotKing currently supports local LLM deployments and local Stable Diffusion (via Automatic1111) for image generation with predefined API endpoints: `http://127.0.0.1:1234/v1/chat/completions` for LLMs and `http://127.0.0.1:6969` for Stable Diffusion. The LLM endpoint follows the OpenAI-compatible API format, making it compatible with tools like LM Studio.
 
 **Future Plans**: Support for customizable API endpoints and cloud providers (OpenAI, Anthropic, etc.) is planned for future releases.
 
@@ -113,6 +113,25 @@ In **LM Studio** while the model is loaded:
 1.  Open the model's **Settings**, the gear on the left of the loaded model.
 2.  Enable **“FlashAttention”**
 3.  Restart the model to apply changes.
+
+## Running a Local Image Generator with Automatic1111
+
+PlotKing supports **Stable Diffusion** for generating book covers via the **Automatic1111 WebUI**.
+
+### 🔹 Step 1: Install Automatic1111
+Follow the installation instructions for your OS:
+👉 [https://github.com/AUTOMATIC1111/stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui)
+
+### 🔹 Step 2: Enable the API
+To allow PlotKing to communicate with Stable Diffusion, you must enable the API and set the port.
+
+1.  Open the `webui-user.bat` file (Windows) or `webui-user.sh` (Linux/Mac) in a text editor.
+2.  Add the following arguments to the `COMMANDLINE_ARGS` variable:
+    ```bash
+    set COMMANDLINE_ARGS=--api --port 6969
+    ```
+3.  Save the file and run it to start the server.
+4.  Ensure the server is running at `http://127.0.0.1:6969`.
 
 ## Contributing
 
