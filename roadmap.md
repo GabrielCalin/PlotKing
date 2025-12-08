@@ -6,10 +6,6 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## 🎨 Phase 3 — Presentation and Export
 
-15. **Generate EPUB Cover Image**  
-   - Automatically create covers based on title, genre, and plot.  
-   - Optional integration with **ComfyUI** or external image workflows.
-
 16. **Basic Settings**  
    - Model selection per task.  
    - Customization of local OpenAI endpoint.  
@@ -147,8 +143,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 | Feature | Status |
 |----------|--------|
-| **Generate EPUB Cover Image** | ⏳ In Progress |
-| **Basic Settings** | ⏳ Planned |
+| **Basic Settings** | ⏳ In Progress |
 | **AI Chat for Refined Plot** | ⏳ Planned |
 | **Global Draft System** | ⏳ Planned |
 | **Add Empty Chapters (Writer Assist Mode)** | ⏳ Planned |
