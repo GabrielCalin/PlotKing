@@ -138,7 +138,14 @@ def export_book_handler(title, author, upload_path, gen_path, source, font_famil
             
             book.set_cover(cover_file_name, cover_content, create_page=False)
             
-            cover_html_content = f'<div style="text-align: center; padding: 0; margin: 0;"><img src="{cover_file_name}" alt="Cover" style="max-width: 100%; height: auto;" /></div>'
+            # Improved cover page styling using absolute positioning for wider compatibility
+            # We use inline styles on a container div to ensure centering across different readers.
+            cover_html_content = f'''
+            <div style="position: absolute; top: 0; left: 0; bottom: 0; right: 0; text-align: center; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center;">
+                <img src="{cover_file_name}" alt="Cover" style="max-width: 100%; max-height: 100%; height: auto; width: auto; object-fit: contain;" />
+            </div>
+            '''
+            
             cover_page = epub.EpubHtml(title="Cover", file_name="cover_page.xhtml", lang='en')
             cover_page.content = cover_html_content
             book.add_item(cover_page)
