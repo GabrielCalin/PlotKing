@@ -1,5 +1,5 @@
 import gradio as gr
-from state.settings_manager import settings_manager
+from state.settings_manager import settings_manager, DEFAULT_LLM_MODEL
 from utils.timestamp import ts_prefix
 
 def render_models_tab(process_log):
@@ -8,12 +8,15 @@ def render_models_tab(process_log):
         
         models_list = settings_manager.get_models()
         model_names = [m["name"] for m in models_list]
-        default_val = "default_llm" if "default_llm" in model_names else (model_names[0] if model_names else None)
+        
+        # Use DEFAULT_LLM_MODEL constant for the default if present, otherwise fallback
+        default_model_name = DEFAULT_LLM_MODEL["name"]
+        default_val = default_model_name if default_model_name in model_names else (model_names[0] if model_names else None)
 
         # Simplified initialization - default_llm always exists per requirements
         m = next((m for m in models_list if m["name"] == default_val), None)
-        # Fallback just in case, though user guaranteed it exists
-        if not m: m = {"name": "", "technical_name": "", "type": "llm", "provider": "LM Studio", "url": "http://127.0.0.1:1234", "api_key": ""}
+        # Fallback just in case
+        if not m: m = DEFAULT_LLM_MODEL.copy()
         
         initial_name = m.get("name", "")
         initial_tech_name = m.get("technical_name", "")
@@ -25,8 +28,9 @@ def render_models_tab(process_log):
         curr_provider_choices = ["LM Studio", "OpenAI"] if initial_type == "llm" else ["Automatic1111", "OpenAI"]
 
         # Initial Visibility
-        initial_url_vis = (initial_provider != "OpenAI")
-        initial_key_vis = (initial_provider == "OpenAI")
+        caps = settings_manager.get_provider_capabilities(initial_provider)
+        initial_url_vis = caps.get("has_url", True)
+        initial_key_vis = caps.get("has_api_key", False)
 
         with gr.Row():
             model_selector = gr.Dropdown(
@@ -71,12 +75,8 @@ def render_models_tab(process_log):
 
             # Helper for visibility based on provider
             def update_visibility(provider):
-                if provider == "OpenAI":
-                    # OpenAI: Hide URL, Show Key
-                    return gr.update(visible=False), gr.update(visible=True)
-                else:
-                    # Others (LM Studio, A1111): Show URL, Hide Key
-                    return gr.update(visible=True), gr.update(visible=False)
+                caps = settings_manager.get_provider_capabilities(provider)
+                return gr.update(visible=caps.get("has_url", True)), gr.update(visible=caps.get("has_api_key", False))
 
             provider_selector.change(fn=update_visibility, inputs=[provider_selector], outputs=[model_url_input, model_key_input])
 
@@ -111,12 +111,9 @@ def render_models_tab(process_log):
             provider_choices = ["LM Studio", "OpenAI"] if m_type == "llm" else ["Automatic1111", "OpenAI"]
             
             # Visibility checks
-            if provider == "OpenAI":
-                url_vis = False
-                key_vis = True
-            else:
-                url_vis = True
-                key_vis = False
+            caps = settings_manager.get_provider_capabilities(provider)
+            url_vis = caps.get("has_url", True)
+            key_vis = caps.get("has_api_key", False)
 
             return (
                 model.get("name", ""),

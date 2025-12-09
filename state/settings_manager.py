@@ -32,6 +32,12 @@ DEFAULT_IMAGE_MODEL = {
 
 DEFAULT_IMAGE_MODEL["url"] = "http://127.0.0.1:6969"
 
+PROVIDER_CAPABILITIES = {
+    "OpenAI": {"has_url": False, "has_api_key": True},
+    "LM Studio": {"has_url": True, "has_api_key": False},
+    "Automatic1111": {"has_url": True, "has_api_key": False}
+}
+
 
 # Known Tasks (Hardcoded list + dynamic scan could be better, but user said "sa fie toate")
 # We will define them here.
@@ -200,6 +206,10 @@ class SettingsManager:
                 # We'll handle UI logging in the UI layer.
 
         self.save_settings()
+
+    def get_provider_capabilities(self, provider_name: str) -> Dict[str, bool]:
+        # Default to URL only if unknown, or safe fallback
+        return PROVIDER_CAPABILITIES.get(provider_name, {"has_url": True, "has_api_key": True})
 
     def _update_task_assignments_on_rename(self, old_name: str, new_name: str):
         for task, assigned_model in self.settings["tasks"].items():
