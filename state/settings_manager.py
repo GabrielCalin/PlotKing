@@ -38,6 +38,9 @@ PROVIDER_CAPABILITIES = {
     "Automatic1111": {"has_url": True, "has_api_key": False}
 }
 
+LLM_PROVIDERS = ["LM Studio", "OpenAI"]
+IMAGE_PROVIDERS = ["Automatic1111", "OpenAI"]
+
 
 # Known Tasks (Hardcoded list + dynamic scan could be better, but user said "sa fie toate")
 # We will define them here.

@@ -1,5 +1,5 @@
 import gradio as gr
-from state.settings_manager import settings_manager, DEFAULT_LLM_MODEL
+from state.settings_manager import settings_manager, DEFAULT_LLM_MODEL, LLM_PROVIDERS, IMAGE_PROVIDERS
 from utils.timestamp import ts_prefix
 
 def render_models_tab(process_log):
@@ -9,28 +9,43 @@ def render_models_tab(process_log):
         models_list = settings_manager.get_models()
         model_names = [m["name"] for m in models_list]
         
-        # Use DEFAULT_LLM_MODEL constant for the default if present, otherwise fallback
         default_model_name = DEFAULT_LLM_MODEL["name"]
         default_val = default_model_name if default_model_name in model_names else (model_names[0] if model_names else None)
 
-        # Simplified initialization - default_llm always exists per requirements
-        m = next((m for m in models_list if m["name"] == default_val), None)
-        # Fallback just in case
-        if not m: m = DEFAULT_LLM_MODEL.copy()
-        
-        initial_name = m.get("name", "")
-        initial_tech_name = m.get("technical_name", "")
-        initial_type = m.get("type", "llm")
-        initial_provider = m.get("provider", "LM Studio")
-        initial_url = m.get("url", "")
-        initial_key = m.get("api_key", "")
-        
-        curr_provider_choices = ["LM Studio", "OpenAI"] if initial_type == "llm" else ["Automatic1111", "OpenAI"]
+        def get_model_data(model_name):
+            if not model_name:
+                # Return empty defaults
+                return "", "", "llm", LLM_PROVIDERS[0], "", "", True, False, False, LLM_PROVIDERS
+                
+            model = next((m for m in settings_manager.get_models() if m["name"] == model_name), None)
+            if not model:
+                 # Fallback to default structure if not found (shouldn't happen for valid names)
+                 model = DEFAULT_LLM_MODEL.copy()
+            
+            name = model.get("name", "")
+            tech_name = model.get("technical_name", "")
+            m_type = model.get("type", "llm")
+            provider = model.get("provider", LLM_PROVIDERS[0])
+            url = model.get("url", "")
+            key = model.get("api_key", "")
+            
+            is_default = model.get("is_default", False)
+            delete_interactive = not is_default
+            
+            provider_choices = LLM_PROVIDERS if m_type == "llm" else IMAGE_PROVIDERS
+            
+            caps = settings_manager.get_provider_capabilities(provider)
+            url_vis = caps.get("has_url", True)
+            key_vis = caps.get("has_api_key", False)
+            
+            return name, tech_name, m_type, provider, url, key, url_vis, key_vis, delete_interactive, provider_choices
 
-        # Initial Visibility
-        caps = settings_manager.get_provider_capabilities(initial_provider)
-        initial_url_vis = caps.get("has_url", True)
-        initial_key_vis = caps.get("has_api_key", False)
+        # Initialization using the helper
+        (
+            initial_name, initial_tech_name, initial_type, initial_provider, 
+            initial_url, initial_key, initial_url_vis, initial_key_vis, 
+            _, curr_provider_choices
+        ) = get_model_data(default_val)
 
         with gr.Row():
             model_selector = gr.Dropdown(
@@ -67,9 +82,9 @@ def render_models_tab(process_log):
             # Use .input() instead of .change() to avoid triggering when loading details programmatically
             def update_provider_choices(m_type):
                 if m_type == "llm":
-                    return gr.update(choices=["LM Studio", "OpenAI"], value="LM Studio")
+                    return gr.update(choices=LLM_PROVIDERS, value=LLM_PROVIDERS[0])
                 else:
-                    return gr.update(choices=["Automatic1111", "OpenAI"], value="Automatic1111")
+                    return gr.update(choices=IMAGE_PROVIDERS, value=IMAGE_PROVIDERS[0])
             
             type_selector.input(fn=update_provider_choices, inputs=[type_selector], outputs=[provider_selector])
 
@@ -88,41 +103,18 @@ def render_models_tab(process_log):
         # --- Logic ---
 
         def load_model_details(model_name):
-            if not model_name:
-                return (
-                    gr.update(), gr.update(), gr.update(), gr.update(), 
-                    gr.update(), gr.update(), gr.update(interactive=False)
-                )
+            (
+                name, tech, mtype, prov, url, key, url_v, key_v, del_int, p_choices
+            ) = get_model_data(model_name)
             
-            models = settings_manager.get_models()
-            model = next((m for m in models if m["name"] == model_name), None)
-            
-            if not model:
-                return (
-                    gr.update(), gr.update(), gr.update(), gr.update(), 
-                    gr.update(), gr.update(), gr.update(interactive=False)
-                )
-            
-            is_default = model.get("is_default", False)
-            delete_interactive = not is_default
-            
-            m_type = model.get("type", "llm")
-            provider = model.get("provider", "LM Studio")
-            provider_choices = ["LM Studio", "OpenAI"] if m_type == "llm" else ["Automatic1111", "OpenAI"]
-            
-            # Visibility checks
-            caps = settings_manager.get_provider_capabilities(provider)
-            url_vis = caps.get("has_url", True)
-            key_vis = caps.get("has_api_key", False)
-
             return (
-                model.get("name", ""),
-                model.get("technical_name", ""),
-                m_type,
-                gr.update(value=provider, choices=provider_choices),
-                gr.update(value=model.get("url", ""), visible=url_vis),
-                gr.update(value=model.get("api_key", ""), visible=key_vis),
-                gr.update(interactive=delete_interactive)
+                name,
+                tech,
+                mtype,
+                gr.update(value=prov, choices=p_choices),
+                gr.update(value=url, visible=url_v),
+                gr.update(value=key, visible=key_v),
+                gr.update(interactive=del_int)
             )
 
         model_selector.change(
@@ -151,7 +143,7 @@ def render_models_tab(process_log):
             except Exception as e:
                 return (current_log or "") + "\n" + ts_prefix(f"❌ Error: {e}"), gr.update()
 
-        add_btn.click(
+        add_evt = add_btn.click(
             fn=add_new_model,
             inputs=[name_input, technical_name_input, type_selector, provider_selector, model_url_input, model_key_input, process_log],
             outputs=[process_log, model_selector]
@@ -181,7 +173,7 @@ def render_models_tab(process_log):
             except Exception as e:
                 return (current_log or "") + "\n" + ts_prefix(f"❌ Error: {e}"), gr.update()
 
-        save_btn.click(
+        save_evt = save_btn.click(
             fn=update_model,
             inputs=[model_selector, name_input, technical_name_input, type_selector, provider_selector, model_url_input, model_key_input, process_log],
             outputs=[process_log, model_selector]
@@ -189,19 +181,54 @@ def render_models_tab(process_log):
 
         def delete_model(name, current_log):
             if not name:
-                return (current_log or "") + "\n" + ts_prefix("❌ No model selected."), gr.update(), gr.update()
+                return (
+                    (current_log or "") + "\n" + ts_prefix("❌ No model selected."), 
+                    gr.update(), gr.update(), gr.update(), gr.update(), 
+                    gr.update(), gr.update(), gr.update(), gr.update()
+                )
             try:
                 settings_manager.delete_model(name)
+                
+                # Switch to default
+                fallback_name = DEFAULT_LLM_MODEL["name"]
                 new_choices = [m["name"] for m in settings_manager.get_models()]
+                
                 log_msg = (current_log or "") + "\n" + ts_prefix(f"✅ Model '{name}' deleted.")
-                return log_msg, gr.update(choices=new_choices, value=None), gr.update(value="", placeholder="Deleted")
-            except Exception as e:
-                return (current_log or "") + "\n" + ts_prefix(f"❌ Error: {e}"), gr.update(), gr.update()
+                
+                # Get details for fallback model to repopulate the form
+                (
+                    f_name, f_tech, f_type, f_provider, f_url, f_key, f_url_vis, f_key_vis, f_del_int, f_choices
+                ) = get_model_data(fallback_name)
+                
+                return (
+                    log_msg, 
+                    gr.update(choices=new_choices, value=fallback_name), 
+                    f_name, 
+                    f_tech, 
+                    f_type, 
+                    gr.update(value=f_provider, choices=f_choices),
+                    gr.update(value=f_url, visible=f_url_vis),
+                    gr.update(value=f_key, visible=f_key_vis), 
+                    gr.update(interactive=f_del_int)
+                )
 
-        delete_btn.click(
+            except Exception as e:
+                return (
+                    (current_log or "") + "\n" + ts_prefix(f"❌ Error: {e}"), 
+                    gr.update(), gr.update(), gr.update(), gr.update(), 
+                    gr.update(), gr.update(), gr.update(), gr.update()
+                )
+
+        del_evt = delete_btn.click(
             fn=delete_model,
             inputs=[model_selector, process_log],
-            outputs=[process_log, model_selector, name_input]
+            outputs=[process_log, model_selector, name_input, technical_name_input, type_selector, provider_selector, model_url_input, model_key_input, delete_btn]
         )
 
-        return add_btn, save_btn, delete_btn
+        def refresh_models_list():
+            models = settings_manager.get_models()
+            names = [m["name"] for m in models]
+            # Keep current value if valid, else default
+            return gr.update(choices=names)
+
+        return refresh_models_list, model_selector, add_evt, save_evt, del_evt
