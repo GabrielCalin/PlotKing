@@ -4,21 +4,12 @@
 LLM helper pentru editarea unui capitol bazat pe impact și diff.
 """
 
-import os
+
 import textwrap
-import requests
 import json
 from typing import List, Optional
+from provider import provider_manager
 from utils.json_utils import extract_json_from_response
-
-LOCAL_API_URL = os.getenv("LMSTUDIO_API_URL", "http://127.0.0.1:1234/v1/chat/completions")
-MODEL_NAME = os.getenv("LMSTUDIO_MODEL", "phi-3-mini-4k-instruct")
-
-GEN_PARAMS = {
-    "temperature": 0.8,
-    "top_p": 0.95,
-    "max_tokens": 8000,
-}
 
 _EDIT_CHAPTER_PROMPT = textwrap.dedent("""\
 You are an expert fiction editor specializing in adapting chapters to maintain continuity after story changes.
@@ -135,6 +126,7 @@ def call_llm_edit_chapter(
     genre: str = "",
     anpc: Optional[int] = None,
     *,
+    # Deprecated args kept for signature compatibility but ignored (or mapped if useful)
     api_url: Optional[str] = None,
     model_name: Optional[str] = None,
     timeout: int = 3600,
@@ -143,11 +135,9 @@ def call_llm_edit_chapter(
     Editează un capitol bazat pe impact și diff.
     AI-ul determină dacă e breaking change și adaptează în consecință.
     """
-    url = api_url or LOCAL_API_URL
-    model = model_name or MODEL_NAME
     prev_joined = _join_previous_chapters(previous_chapters or [])
 
-    prompt = _EDIT_CHAPTER_PROMPT.format(
+    prompt_text = _EDIT_CHAPTER_PROMPT.format(
         expanded_plot=expanded_plot or "",
         chapters_overview=chapters_overview or "",
         previous_chapters_summary=prev_joined,
@@ -158,21 +148,21 @@ def call_llm_edit_chapter(
         genre=genre or "unspecified",
         chapter_number=chapter_index,
     )
-
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": "You are a precise fiction editor that adapts chapters while preserving as much original content as possible. You must output only valid JSON."},
-            {"role": "user", "content": prompt},
-        ],
-        **GEN_PARAMS,
-    }
+    
+    messages = [
+        {"role": "system", "content": "You are a precise fiction editor that adapts chapters while preserving as much original content as possible. You must output only valid JSON."},
+        {"role": "user", "content": prompt_text},
+    ]
 
     try:
-        resp = requests.post(url, json=payload, timeout=timeout)
-        resp.raise_for_status()
-        data = resp.json()
-        content = data["choices"][0]["message"]["content"].strip()
+        content = provider_manager.get_llm_response(
+            task_name="chapter_editor",
+            messages=messages,
+            timeout=timeout,
+            temperature=0.8,
+            top_p=0.95,
+            max_tokens=8000
+        )
         
         # Parse JSON response (suportă atât JSON pur cât și wrappat în tag-uri)
         try:
@@ -183,4 +173,5 @@ def call_llm_edit_chapter(
             return content
     except Exception as e:
         return f"Error during chapter editing: {e}"
+
 

@@ -1,21 +1,13 @@
 # -*- coding: utf-8 -*-
 # pipeline/steps/rewrite_editor/llm.py
 
-import os
+
 import textwrap
-import requests
 import json
 from typing import Dict, Any, Optional
 from utils.json_utils import extract_json_from_response
+from provider import provider_manager
 
-LOCAL_API_URL = os.getenv("LMSTUDIO_API_URL", "http://127.0.0.1:1234/v1/chat/completions")
-MODEL_NAME = os.getenv("LMSTUDIO_MODEL", "phi-3-mini-4k-instruct")
-
-GEN_PARAMS = {
-    "temperature": 0.7,
-    "top_p": 0.95,
-    "max_tokens": 2000,
-}
 
 _REWRITE_PROMPT = textwrap.dedent("""\
 You are an expert fiction editor and co-author. Your task is to rewrite a specific selected text within a larger section based on user instructions.
@@ -114,8 +106,7 @@ def call_llm_rewrite_editor(
     """
     Calls the LLM to rewrite the selected text based on instructions.
     """
-    url = api_url or LOCAL_API_URL
-    model = model_name or MODEL_NAME
+
 
     prompt = _REWRITE_PROMPT.format(
         section_content=section_content or "",
@@ -125,20 +116,21 @@ def call_llm_rewrite_editor(
         context_after=context_after or "",
     )
 
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": "You are a helpful AI editor. Output only valid JSON."},
-            {"role": "user", "content": prompt},
-        ],
-        **GEN_PARAMS,
-    }
+
+    messages = [
+        {"role": "system", "content": "You are a helpful AI editor. Output only valid JSON."},
+        {"role": "user", "content": prompt},
+    ]
 
     try:
-        resp = requests.post(url, json=payload, timeout=timeout)
-        resp.raise_for_status()
-        data = resp.json()
-        content = data["choices"][0]["message"]["content"].strip()
+        content = provider_manager.get_llm_response(
+            task_name="rewrite_editor",
+            messages=messages,
+            timeout=timeout,
+            temperature=0.7,
+            top_p=0.95,
+            max_tokens=2000
+        )
         
         try:
             result = extract_json_from_response(content)
@@ -155,3 +147,4 @@ def call_llm_rewrite_editor(
             "edited_text": "",
             "message": f"Error calling LLM: {str(e)}"
         }
+

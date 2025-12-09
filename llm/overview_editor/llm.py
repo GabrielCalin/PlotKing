@@ -4,20 +4,12 @@
 LLM helper pentru editarea Chapters Overview bazat pe impact și diff.
 """
 
-import os
+
 import textwrap
-import requests
 import json
 from utils.json_utils import extract_json_from_response
+from provider import provider_manager
 
-LOCAL_API_URL = os.getenv("LMSTUDIO_API_URL", "http://127.0.0.1:1234/v1/chat/completions")
-MODEL_NAME = os.getenv("LMSTUDIO_MODEL", "phi-3-mini-4k-instruct")
-
-GEN_PARAMS = {
-    "temperature": 0.6,
-    "top_p": 0.95,
-    "max_tokens": 8000,
-}
 
 _EDIT_OVERVIEW_PROMPT = textwrap.dedent("""\
 You are an expert book structure editor specializing in adapting chapter overviews to maintain continuity after changes.
@@ -123,8 +115,7 @@ def call_llm_edit_overview(
         chapter_index: Index-ul capitolului editat (1-based, dacă e cazul)
         num_chapters: Numărul total de capitole (folosit pentru validare)
     """
-    url = api_url or LOCAL_API_URL
-    model = model_name or MODEL_NAME
+
 
     edited_section = edited_section or "Unknown section"
     
@@ -152,6 +143,7 @@ The user edited Chapter {chapter_index}. You need to:
 - If BREAKING CHANGE: Significant modifications to impacted chapters are allowed, but preserve as much of the original overview as possible. Only change what is necessary to address the breaking change.
 - If NON-BREAKING CHANGE: Make MINIMAL modifications to impacted chapters for coherence — only what is necessary to ensure they align with the modified Expanded Plot. Preserve the vast majority of the original text unchanged."""
 
+
     prompt = _EDIT_OVERVIEW_PROMPT.format(
         edited_section=edited_section,
         original_overview=original_overview or "",
@@ -164,20 +156,20 @@ The user edited Chapter {chapter_index}. You need to:
         num_chapters=num_chapters or 0,
     )
 
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": "You are a precise story structure editor that adapts chapter overviews while preserving as much original content as possible. You must output only valid JSON."},
-            {"role": "user", "content": prompt},
-        ],
-        **GEN_PARAMS,
-    }
+    messages = [
+        {"role": "system", "content": "You are a precise story structure editor that adapts chapter overviews while preserving as much original content as possible. You must output only valid JSON."},
+        {"role": "user", "content": prompt},
+    ]
 
     try:
-        resp = requests.post(url, json=payload, timeout=timeout)
-        resp.raise_for_status()
-        data = resp.json()
-        content = data["choices"][0]["message"]["content"].strip()
+        content = provider_manager.get_llm_response(
+            task_name="overview_editor",
+            messages=messages,
+            timeout=timeout,
+            temperature=0.6,
+            top_p=0.95,
+            max_tokens=8000
+        )
         
         # Parse JSON response (suportă atât JSON pur cât și wrappat în tag-uri)
         try:
@@ -188,4 +180,5 @@ The user edited Chapter {chapter_index}. You need to:
             return content
     except Exception as e:
         return f"Error during overview editing: {e}"
+
 

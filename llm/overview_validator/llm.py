@@ -1,17 +1,16 @@
 # -*- coding: utf-8 -*-
 # pipeline/steps/overview_validator/llm.py
-import os
-import requests
+
 import textwrap
 from typing import Tuple
-
-LOCAL_API_URL = os.environ.get("LMSTUDIO_API_URL", "http://127.0.0.1:1234/v1/chat/completions")
+from provider import provider_manager
 
 DEFAULT_PARAMS = {
     "temperature": 0.6,
     "top_p": 0.9,
     "max_tokens": 1000,
 }
+
 
 PROMPT_TEMPLATE = textwrap.dedent("""
 You are a story structure analyst.
@@ -72,31 +71,32 @@ def call_llm_validate_overview(
         ("ERROR", message) on request or parsing error
         ("UNKNOWN", raw_content) if the model's format is unexpected
     """
-    url = api_url or LOCAL_API_URL
+
     _params = {**DEFAULT_PARAMS, **(params or {})}
 
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": "You are a logical story structure validator."},
-            {
-                "role": "user",
-                "content": PROMPT_TEMPLATE.format(
-                    initial_plot=initial_plot,
-                    expanded_plot=expanded_plot,
-                    chapters=chapters,
-                    genre=genre,
-                ),
-            },
-        ],
-        **_params,
-    }
+
+    messages = [
+        {"role": "system", "content": "You are a logical story structure validator."},
+        {
+            "role": "user",
+            "content": PROMPT_TEMPLATE.format(
+                initial_plot=initial_plot,
+                expanded_plot=expanded_plot,
+                chapters=chapters,
+                genre=genre,
+            ),
+        },
+    ]
 
     try:
-        r = requests.post(url, json=payload, timeout=timeout)
-        r.raise_for_status()
-        data = r.json()
-        content = data["choices"][0]["message"]["content"].strip()
+        content = provider_manager.get_llm_response(
+            task_name="overview_validator",
+            messages=messages,
+            timeout=timeout,
+            temperature=_params.get("temperature", 0.6),
+            top_p=_params.get("top_p", 0.9),
+            max_tokens=_params.get("max_tokens", 1000)
+        )
     except Exception as e:
         return ("ERROR", f"Validation request failed: {e}")
 
@@ -107,3 +107,4 @@ def call_llm_validate_overview(
         suggestions = content.split("\n", 1)[1].strip() if "\n" in content else "(no details provided)"
         return ("NOT OK", suggestions)
     return ("UNKNOWN", content)
+

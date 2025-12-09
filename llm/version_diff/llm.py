@@ -5,20 +5,12 @@ LLM-only comparator pentru două versiuni ale unei secțiuni: primește toate in
 apelează modelul, și întoarce (result, diff_details).
 """
 
-import os
+
 import json
 import textwrap
-import requests
 from typing import Tuple, Dict, Any
+from provider import provider_manager
 
-LOCAL_API_URL = os.getenv("LMSTUDIO_API_URL", "http://127.0.0.1:1234/v1/chat/completions")
-MODEL_NAME = os.getenv("LMSTUDIO_MODEL", "phi-3-mini-4k-instruct")
-
-GEN_PARAMS = {
-    "temperature": 0.3,
-    "top_p": 0.9,
-    "max_tokens": 2000,
-}
 
 _DIFF_PROMPT = textwrap.dedent("""\
 You are an analytical text comparison system designed to identify meaningful differences between two versions of the same section.
@@ -89,8 +81,7 @@ def call_llm_version_diff(
       ("UNKNOWN", {"raw": content})              – dacă formatul nu e recunoscut
       ("ERROR", {"error": message})            – dacă a eșuat requestul
     """
-    url = api_url or LOCAL_API_URL
-    model = model_name or MODEL_NAME
+
 
     prompt = _DIFF_PROMPT.format(
         section_type=section_type or "unknown",
@@ -99,24 +90,20 @@ def call_llm_version_diff(
         genre=genre or "unspecified",
     )
 
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": "You are a precise text comparison system that identifies meaningful differences between document versions."},
-            {"role": "user", "content": prompt},
-        ],
-        **GEN_PARAMS,
-    }
+
+    messages = [
+        {"role": "system", "content": "You are a precise text comparison system that identifies meaningful differences between document versions."},
+        {"role": "user", "content": prompt},
+    ]
 
     try:
-        resp = requests.post(url, json=payload, timeout=timeout)
-        resp.raise_for_status()
-        data = resp.json()
-        content = (
-            data.get("choices", [{}])[0]
-                .get("message", {})
-                .get("content", "")
-                .strip()
+        content = provider_manager.get_llm_response(
+            task_name="version_diff",
+            messages=messages,
+            timeout=timeout,
+            temperature=0.3,
+            top_p=0.9,
+            max_tokens=2000
         )
     except Exception as e:
         return ("ERROR", {"error": str(e)})
@@ -135,4 +122,5 @@ def call_llm_version_diff(
         return (result, parsed)
 
     return ("UNKNOWN", {"raw": content})
+
 

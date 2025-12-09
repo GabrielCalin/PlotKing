@@ -5,20 +5,12 @@ LLM-only helpers pentru scrierea/revizuirea unui capitol.
 Nu au dependențe de runner sau context; primesc totul ca argumente.
 """
 
-import os
+
 import textwrap
-import requests
 import random
 from typing import List, Optional
+from provider import provider_manager
 
-LOCAL_API_URL = os.getenv("LMSTUDIO_API_URL", "http://127.0.0.1:1234/v1/chat/completions")
-MODEL_NAME = os.getenv("LMSTUDIO_MODEL", "phi-3-mini-4k-instruct")
-
-GEN_PARAMS = {
-    "temperature": 0.8,
-    "top_p": 0.95,
-    "max_tokens": 8000,
-}
 
 _CHAPTER_PROMPT = textwrap.dedent("""\
 You are an expert **long-form fiction writer**.
@@ -147,6 +139,7 @@ def _compute_word_target(anpc: Optional[int]) -> int:
     return random.randint(2500, 3500)
 
 
+
 def call_llm_generate_chapter(
     expanded_plot: str,
     chapters_overview: str,
@@ -166,8 +159,6 @@ def call_llm_generate_chapter(
     Generează textul pentru un singur capitol (fără feedback).
     Returnează conținutul Markdown sau mesaj de eroare.
     """
-    url = api_url or LOCAL_API_URL
-    model = model_name or MODEL_NAME
     word_target = _compute_word_target(anpc)
     prev_joined = _join_previous_chapters(previous_chapters or [])
 
@@ -180,23 +171,20 @@ def call_llm_generate_chapter(
         word_target=word_target,
     )
 
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": "You are a professional fiction ghostwriter ensuring perfect narrative coherence."},
-            {"role": "user", "content": prompt},
-        ],
-        "temperature": GEN_PARAMS["temperature"] if temperature is None else temperature,
-        "top_p": GEN_PARAMS["top_p"] if top_p is None else top_p,
-        "max_tokens": GEN_PARAMS["max_tokens"] if max_tokens is None else max_tokens,
-    }
+    messages = [
+        {"role": "system", "content": "You are a professional fiction ghostwriter ensuring perfect narrative coherence."},
+        {"role": "user", "content": prompt},
+    ]
 
     try:
-        r = requests.post(url, json=payload, timeout=timeout)
-        r.raise_for_status()
-        data = r.json()
-        content = (data.get("choices", [{}])[0].get("message", {}) or {}).get("content") \
-                  or data.get("choices", [{}])[0].get("text")
+        content = provider_manager.get_llm_response(
+            task_name="chapter_writer",
+            messages=messages,
+            timeout=timeout,
+            temperature=temperature if temperature is not None else 0.8,
+            top_p=top_p if top_p is not None else 0.95,
+            max_tokens=max_tokens if max_tokens is not None else 8000
+        )
         if not content:
             return "Error: model returned empty content"
         return content.strip()
@@ -225,8 +213,6 @@ def call_llm_revise_chapter(
     Revizuiește un capitol existent pe baza feedback-ului.
     Returnează conținutul Markdown sau mesaj de eroare.
     """
-    url = api_url or LOCAL_API_URL
-    model = model_name or MODEL_NAME
     word_target = _compute_word_target(anpc)
     prev_joined = _join_previous_chapters(previous_chapters or [])
 
@@ -241,25 +227,23 @@ def call_llm_revise_chapter(
         word_target=word_target,
     )
 
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": "You are a professional fiction ghostwriter ensuring perfect narrative coherence."},
-            {"role": "user", "content": prompt},
-        ],
-        "temperature": GEN_PARAMS["temperature"] if temperature is None else temperature,
-        "top_p": GEN_PARAMS["top_p"] if top_p is None else top_p,
-        "max_tokens": GEN_PARAMS["max_tokens"] if max_tokens is None else max_tokens,
-    }
+    messages = [
+        {"role": "system", "content": "You are a professional fiction ghostwriter ensuring perfect narrative coherence."},
+        {"role": "user", "content": prompt},
+    ]
 
     try:
-        r = requests.post(url, json=payload, timeout=timeout)
-        r.raise_for_status()
-        data = r.json()
-        content = (data.get("choices", [{}])[0].get("message", {}) or {}).get("content") \
-                  or data.get("choices", [{}])[0].get("text")
+        content = provider_manager.get_llm_response(
+            task_name="chapter_writer",
+            messages=messages,
+            timeout=timeout,
+            temperature=temperature if temperature is not None else 0.8,
+            top_p=top_p if top_p is not None else 0.95,
+            max_tokens=max_tokens if max_tokens is not None else 8000
+        )
         if not content:
             return "Error: model returned empty content"
         return content.strip()
     except Exception as e:
         return f"Error during chapter revision: {e}"
+

@@ -4,19 +4,12 @@
 LLM helper pentru analiza impactului unui diff asupra altor secțiuni.
 """
 
-import os
+
 import json
 import textwrap
-import requests
 from typing import List, Tuple, Dict, Any
+from provider import provider_manager
 
-LOCAL_API_URL = os.getenv("LMSTUDIO_API_URL", "http://127.0.0.1:1234/v1/chat/completions")
-MODEL_NAME = os.getenv("LMSTUDIO_MODEL", "phi-3-mini-4k-instruct")
-
-GEN_PARAMS = {
-    "temperature": 0.1,
-    "top_p": 0.3
-}
 
 _IMPACT_PROMPT = textwrap.dedent("""\
 You are a continuity analyst that identifies which story sections need updates after a change and provides detailed instructions for other AI editors (plot editor, overview editor, chapter editor) on how to adapt those sections.
@@ -139,11 +132,11 @@ def call_llm_impact_analysis(
       ("UNKNOWN", {"raw": content}, [])
       ("ERROR", {"error": message}, [])
     """
-    url = api_url or LOCAL_API_URL
-    model = model_name or MODEL_NAME
+
 
     formatted_candidates = _format_candidate_sections(candidate_sections)
     candidate_names = ", ".join(name for name, _ in candidate_sections) or "(none)"
+
 
     prompt = _IMPACT_PROMPT.format(
         section_name=section_name,
@@ -154,24 +147,18 @@ def call_llm_impact_analysis(
         candidate_names=candidate_names,
     )
 
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": "You are a precise story continuity analyst."},
-            {"role": "user", "content": prompt},
-        ],
-        **GEN_PARAMS,
-    }
+    messages = [
+        {"role": "system", "content": "You are a precise story continuity analyst."},
+        {"role": "user", "content": prompt},
+    ]
 
     try:
-        resp = requests.post(url, json=payload, timeout=timeout)
-        resp.raise_for_status()
-        data = resp.json()
-        content = (
-            data.get("choices", [{}])[0]
-                .get("message", {})
-                .get("content", "")
-                .strip()
+        content = provider_manager.get_llm_response(
+            task_name="impact_analyzer",
+            messages=messages,
+            timeout=timeout,
+            temperature=0.1,
+            top_p=0.3
         )
     except Exception as e:
         return ("ERROR", {"error": str(e)}, [])
@@ -203,3 +190,4 @@ def call_llm_impact_analysis(
         return (result, parsed, impacted_sections)
 
     return ("UNKNOWN", {"raw": content}, [])
+

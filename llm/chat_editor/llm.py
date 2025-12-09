@@ -4,22 +4,13 @@
 LLM helper for Chat Editor mode ("Plot King").
 """
 
-import os
+
 import textwrap
-import requests
 import json
 from typing import List, Optional, Dict, Any
 from utils.json_utils import extract_json_from_response
+from provider import provider_manager
 
-
-LOCAL_API_URL = os.getenv("LMSTUDIO_API_URL", "http://127.0.0.1:1234/v1/chat/completions")
-MODEL_NAME = os.getenv("LMSTUDIO_MODEL", "phi-3-mini-4k-instruct")
-
-GEN_PARAMS = {
-    "temperature": 0.8,
-    "top_p": 0.95,
-    "max_tokens": 8000,
-}
 
 
 # ---------------------------------------
@@ -151,6 +142,7 @@ Do NOT call outline documents “chapters”.
 # ---------------------------------------
 # LLM CALL FUNCTION
 # ---------------------------------------
+
 def call_llm_chat(
     section_name: str,
     initial_content: str,
@@ -165,9 +157,6 @@ def call_llm_chat(
     """
     Calls the LLM with the Plot King persona.
     """
-
-    url = api_url or LOCAL_API_URL
-    model = model_name or MODEL_NAME
 
     # Build message sequence
     messages = [
@@ -184,18 +173,15 @@ def call_llm_chat(
     # Add user message
     messages.append({"role": "user", "content": user_message})
 
-    payload = {
-        "model": model,
-        "messages": messages,
-        **GEN_PARAMS
-    }
-
     try:
-        resp = requests.post(url, json=payload, timeout=timeout)
-        resp.raise_for_status()
-        data = resp.json()
-
-        content = data["choices"][0]["message"]["content"].strip()
+        content = provider_manager.get_llm_response(
+            task_name="chat_editor",
+            messages=messages,
+            timeout=timeout,
+            temperature=0.8,
+            top_p=0.95,
+            max_tokens=8000
+        )
 
         # Try to extract JSON using your custom extractor
         try:
@@ -219,3 +205,4 @@ def call_llm_chat(
             "new_content": None,
             "response": f"Plot King tripped over a narrative cable! Error: {e}"
         }
+

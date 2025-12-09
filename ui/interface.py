@@ -6,6 +6,7 @@ from ui import load_css
 from ui.tabs.create_tab import render_create_tab
 from ui.tabs.editor_tab import render_editor_tab
 from ui.tabs.export_tab import render_export_tab
+from ui.tabs.settings_tab import render_settings_tab
 from handlers.create.create_handlers import list_projects
 
 
@@ -43,6 +44,9 @@ def create_interface():
                     editor_sections_epoch=editor_sections_epoch,
                     create_sections_epoch=create_sections_epoch
                 )
+
+            with gr.Tab("⚙️ Settings"):
+                render_settings_tab()
 
         # === Populate project list on startup ===
         demo.load(
