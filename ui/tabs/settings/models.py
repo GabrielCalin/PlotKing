@@ -1,88 +1,130 @@
 import gradio as gr
 from state.settings_manager import settings_manager
+from utils.timestamp import ts_prefix
 
-def render_models_tab():
+def render_models_tab(process_log):
     with gr.Column():
         gr.Markdown("### Manage AI Models")
         
-        # State to store list of models (names) for dropdowns
-        model_names_state = gr.State([m["name"] for m in settings_manager.get_models()])
+        models_list = settings_manager.get_models()
+        model_names = [m["name"] for m in models_list]
+        default_val = "default_llm" if "default_llm" in model_names else (model_names[0] if model_names else None)
+
+        # Simplified initialization - default_llm always exists per requirements
+        m = next((m for m in models_list if m["name"] == default_val), None)
+        # Fallback just in case, though user guaranteed it exists
+        if not m: m = {"name": "", "technical_name": "", "type": "llm", "provider": "LM Studio", "url": "http://127.0.0.1:1234", "api_key": ""}
         
+        initial_name = m.get("name", "")
+        initial_tech_name = m.get("technical_name", "")
+        initial_type = m.get("type", "llm")
+        initial_provider = m.get("provider", "LM Studio")
+        initial_url = m.get("url", "")
+        initial_key = m.get("api_key", "")
+        
+        curr_provider_choices = ["LM Studio", "OpenAI"] if initial_type == "llm" else ["Automatic1111", "OpenAI"]
+
+        # Initial Visibility
+        initial_url_vis = (initial_provider != "OpenAI")
+        initial_key_vis = (initial_provider == "OpenAI")
+
         with gr.Row():
             model_selector = gr.Dropdown(
                 label="Select Model to Edit",
-                choices=[m["name"] for m in settings_manager.get_models()],
-                value=None,
+                choices=model_names,
+                value=default_val,
                 interactive=True
             )
-            refresh_btn = gr.Button("🔄 Refresh List", size="sm")
 
         # --- Edit / Add Area ---
         with gr.Group():
             with gr.Row():
-                name_input = gr.Textbox(label="Friendly Name", placeholder="My Custom Model")
-                technical_name_input = gr.Textbox(label="Technical Name / ID", placeholder="gpt-4, phi-3, etc.")
+                name_input = gr.Textbox(label="Friendly Name", placeholder="My Custom Model", value=initial_name)
+                technical_name_input = gr.Textbox(label="Technical Name / ID", placeholder="gpt-4, phi-3, etc.", value=initial_tech_name)
             
             with gr.Row():
                 type_selector = gr.Dropdown(
                     label="Type",
                     choices=["llm", "image"],
-                    value="llm",
+                    value=initial_type,
                     interactive=True
                 )
                 provider_selector = gr.Dropdown(
                     label="Provider",
-                    choices=["LM Studio", "OpenAI"], # Initial choices for LLM
-                    value="LM Studio",
+                    choices=curr_provider_choices,
+                    value=initial_provider,
                     interactive=True
                 )
                 
-            model_url_input = gr.Textbox(label="Endpoint URL", value="http://127.0.0.1:1234")
-            model_key_input = gr.Textbox(label="API Key", type="password")
+            model_url_input = gr.Textbox(label="Endpoint URL", value=initial_url, visible=initial_url_vis)
+            model_key_input = gr.Textbox(label="API Key", type="password", visible=initial_key_vis, value=initial_key)
             
             # Helper to update provider choices based on type
+            # Use .input() instead of .change() to avoid triggering when loading details programmatically
             def update_provider_choices(m_type):
                 if m_type == "llm":
                     return gr.update(choices=["LM Studio", "OpenAI"], value="LM Studio")
                 else:
                     return gr.update(choices=["Automatic1111", "OpenAI"], value="Automatic1111")
             
-            type_selector.change(fn=update_provider_choices, inputs=[type_selector], outputs=[provider_selector])
+            type_selector.input(fn=update_provider_choices, inputs=[type_selector], outputs=[provider_selector])
+
+            # Helper for visibility based on provider
+            def update_visibility(provider):
+                if provider == "OpenAI":
+                    # OpenAI: Hide URL, Show Key
+                    return gr.update(visible=False), gr.update(visible=True)
+                else:
+                    # Others (LM Studio, A1111): Show URL, Hide Key
+                    return gr.update(visible=True), gr.update(visible=False)
+
+            provider_selector.change(fn=update_visibility, inputs=[provider_selector], outputs=[model_url_input, model_key_input])
 
             with gr.Row():
                 add_btn = gr.Button("➕ Add New Model", variant="primary")
                 save_btn = gr.Button("💾 Update Selected Model")
                 delete_btn = gr.Button("🗑️ Delete Selected Model", variant="stop")
 
-        model_status = gr.Markdown("")
-
         # --- Logic ---
 
         def load_model_details(model_name):
             if not model_name:
-                return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(visible=True)
+                return (
+                    gr.update(), gr.update(), gr.update(), gr.update(), 
+                    gr.update(), gr.update(), gr.update(interactive=False)
+                )
             
             models = settings_manager.get_models()
             model = next((m for m in models if m["name"] == model_name), None)
             
             if not model:
-                return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(visible=True)
+                return (
+                    gr.update(), gr.update(), gr.update(), gr.update(), 
+                    gr.update(), gr.update(), gr.update(interactive=False)
+                )
             
             is_default = model.get("is_default", False)
             delete_interactive = not is_default
             
-            
-            # Determine correct provider choices based on type
             m_type = model.get("type", "llm")
+            provider = model.get("provider", "LM Studio")
             provider_choices = ["LM Studio", "OpenAI"] if m_type == "llm" else ["Automatic1111", "OpenAI"]
             
+            # Visibility checks
+            if provider == "OpenAI":
+                url_vis = False
+                key_vis = True
+            else:
+                url_vis = True
+                key_vis = False
+
             return (
                 model.get("name", ""),
                 model.get("technical_name", ""),
                 m_type,
-                gr.update(value=model.get("provider", "LM Studio"), choices=provider_choices),
-                model.get("url", ""),
-                model.get("api_key", ""),
+                gr.update(value=provider, choices=provider_choices),
+                gr.update(value=model.get("url", ""), visible=url_vis),
+                gr.update(value=model.get("api_key", ""), visible=key_vis),
                 gr.update(interactive=delete_interactive)
             )
 
@@ -92,9 +134,9 @@ def render_models_tab():
             outputs=[name_input, technical_name_input, type_selector, provider_selector, model_url_input, model_key_input, delete_btn]
         )
 
-        def add_new_model(name, tech_name, m_type, provider, url, key):
+        def add_new_model(name, tech_name, m_type, provider, url, key, current_log):
             if not name:
-                return "❌ Name is required.", gr.update()
+                return (current_log or "") + "\n" + ts_prefix("❌ Name is required."), gr.update()
             try:
                 new_model = {
                     "name": name,
@@ -107,21 +149,21 @@ def render_models_tab():
                 }
                 settings_manager.add_model(new_model)
                 new_choices = [m["name"] for m in settings_manager.get_models()]
-                return f"✅ Model '{name}' added.", gr.update(choices=new_choices, value=name)
+                log_msg = (current_log or "") + "\n" + ts_prefix(f"✅ Model '{name}' added.")
+                return log_msg, gr.update(choices=new_choices, value=name)
             except Exception as e:
-                return f"❌ Error: {e}", gr.update()
+                return (current_log or "") + "\n" + ts_prefix(f"❌ Error: {e}"), gr.update()
 
         add_btn.click(
             fn=add_new_model,
-            inputs=[name_input, technical_name_input, type_selector, provider_selector, model_url_input, model_key_input],
-            outputs=[model_status, model_selector]
+            inputs=[name_input, technical_name_input, type_selector, provider_selector, model_url_input, model_key_input, process_log],
+            outputs=[process_log, model_selector]
         )
 
-        def update_model(original_name, name, tech_name, m_type, provider, url, key):
+        def update_model(original_name, name, tech_name, m_type, provider, url, key, current_log):
             if not original_name:
-                return "❌ No model selected to update.", gr.update()
+                return (current_log or "") + "\n" + ts_prefix("❌ No model selected to update."), gr.update()
             try:
-                # Keep is_default if it was default
                 models = settings_manager.get_models()
                 existing = next((m for m in models if m["name"] == original_name), None)
                 is_default = existing.get("is_default", False) if existing else False
@@ -137,34 +179,32 @@ def render_models_tab():
                 }
                 settings_manager.update_model(original_name, updated_model)
                 new_choices = [m["name"] for m in settings_manager.get_models()]
-                return f"✅ Model '{name}' updated.", gr.update(choices=new_choices, value=name)
+                log_msg = (current_log or "") + "\n" + ts_prefix(f"✅ Model '{name}' updated.")
+                return log_msg, gr.update(choices=new_choices, value=name)
             except Exception as e:
-                return f"❌ Error: {e}", gr.update()
+                return (current_log or "") + "\n" + ts_prefix(f"❌ Error: {e}"), gr.update()
 
         save_btn.click(
             fn=update_model,
-            inputs=[model_selector, name_input, technical_name_input, type_selector, provider_selector, model_url_input, model_key_input],
-            outputs=[model_status, model_selector]
+            inputs=[model_selector, name_input, technical_name_input, type_selector, provider_selector, model_url_input, model_key_input, process_log],
+            outputs=[process_log, model_selector]
         )
 
-        def delete_model(name):
+        def delete_model(name, current_log):
             if not name:
-                return "❌ No model selected.", gr.update(), gr.update()
+                return (current_log or "") + "\n" + ts_prefix("❌ No model selected."), gr.update(), gr.update()
             try:
                 settings_manager.delete_model(name)
                 new_choices = [m["name"] for m in settings_manager.get_models()]
-                return f"✅ Model '{name}' deleted.", gr.update(choices=new_choices, value=None), gr.update(value="", placeholder="Deleted")
+                log_msg = (current_log or "") + "\n" + ts_prefix(f"✅ Model '{name}' deleted.")
+                return log_msg, gr.update(choices=new_choices, value=None), gr.update(value="", placeholder="Deleted")
             except Exception as e:
-                return f"❌ Error: {e}", gr.update(), gr.update()
+                return (current_log or "") + "\n" + ts_prefix(f"❌ Error: {e}"), gr.update(), gr.update()
 
         delete_btn.click(
             fn=delete_model,
-            inputs=[model_selector],
-            outputs=[model_status, model_selector, name_input]
+            inputs=[model_selector, process_log],
+            outputs=[process_log, model_selector, name_input]
         )
-        
-        def refresh_list():
-            new_choices = [m["name"] for m in settings_manager.get_models()]
-            return gr.update(choices=new_choices)
-            
-        refresh_btn.click(fn=refresh_list, inputs=None, outputs=[model_selector])
+
+        return add_btn, save_btn, delete_btn

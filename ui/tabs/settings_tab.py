@@ -6,17 +6,26 @@ from utils.timestamp import ts_prefix
 
 def render_settings_tab():
     with gr.Blocks() as settings_block:
+        # Define process_log first so it can be passed to functions. render=False prevents it from showing up here.
+        process_log = gr.Textbox(label="Log", lines=20, interactive=False, render=False)
+
         with gr.Row():
             with gr.Column(scale=2):
                 with gr.Tabs():
                     with gr.Tab("🤖 Models"):
-                        render_models_tab()
+                        add_btn, save_btn, delete_btn = render_models_tab(process_log)
                     with gr.Tab("📋 Tasks"):
                         refresh_tasks_fn, task_dropdowns = render_tasks_tab()
             
+            # Wire up auto-refresh for tasks when models change
+            add_btn.click(fn=refresh_tasks_fn, inputs=[], outputs=task_dropdowns)
+            save_btn.click(fn=refresh_tasks_fn, inputs=[], outputs=task_dropdowns)
+            delete_btn.click(fn=refresh_tasks_fn, inputs=[], outputs=task_dropdowns)
+            
             with gr.Column(scale=1):
                 gr.Markdown("### Process Log")
-                process_log = gr.Textbox(label="Log", lines=20, interactive=False)
+                # Render the log where we want it in the layout
+                process_log.render()
         
         with gr.Row():
             save_all_btn = gr.Button("💾 Save All Settings", variant="primary", scale=1)
@@ -29,10 +38,6 @@ def render_settings_tab():
             except Exception as e:
                 return "\n" + ts_prefix(f"❌ Error saving settings: {e}")
 
-        # Note: We need to append to log, but for now we just show the message. 
-        # Real process log usually accumulates. 
-        # Let's make it accumulate.
-        
         def save_and_log(current_log):
             msg = save_all_settings()
             return (current_log or "") + msg
@@ -45,4 +50,3 @@ def render_settings_tab():
 
     # Return refresh utils so interface can bind global load events if needed
     return refresh_tasks_fn, task_dropdowns
-

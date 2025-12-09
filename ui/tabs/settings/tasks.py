@@ -6,34 +6,13 @@ def render_tasks_tab():
         gr.Markdown("### Assign Models to Tasks")
         
         # We need a dynamic list of rows, one for each task
-        # Gradio doesn't support dynamic creation of components easily after launch without @gr.render
-        # But we know the task list is fixed (hardcoded in settings_manager).
-        
         tasks_dict = settings_manager.get_tasks()
         
-        # Sort tasks: LLM first, then Image
-        # We can detect type by checking if it defaults to default_llm or default_image or just by name from manager lists
-        
-        # Re-import lists to separate them
         from state.settings_manager import LLM_TASKS, IMAGE_TASKS
         
-        model_choices = [m["name"] for m in settings_manager.get_models()]
-        
-        # Use a dictionary to store the dropdown components so we can gather values later if needed
-        # But actually, simpler is to have a Save/Sync button that reads all? 
-        # Or Just have immediate update? 
-        # Requirement: "Va exista si un buton de Save pentru salvarea setarilor, comun tuturor tab-urilor."
-        # So we just need to keep `settings_manager` state updated in memory when these change.
-        
-        # Important: `settings_manager.settings` acts as the in-memory state.
-        # But `settings_manager.tasks` is a dict.
-        
         # We will create a loop.
-        
         llm_dropdowns = []
         image_dropdowns = []
-        
-        refresh_btn = gr.Button("🔄 Refresh Choices", size="sm")
 
         gr.Markdown("#### LLM Tasks")
         with gr.Group():
@@ -74,11 +53,6 @@ def render_tasks_tab():
 
         # Refresh Logic
         def refresh_choices():
-            # Reload settings to ensure fresh state
-            # settings_manager.settings = settings_manager.load_settings() # Optional: Force reload from disk?
-            # Or just assume memory is updated if Models tab updated it? 
-            # Models tab updates `settings_manager` in memory.
-            
             new_llm_models = [m["name"] for m in settings_manager.get_models() if m.get("type") == "llm"]
             new_img_models = [m["name"] for m in settings_manager.get_models() if m.get("type") == "image"]
             
@@ -101,5 +75,3 @@ def render_tasks_tab():
         all_dropdowns = [dd for _, dd in llm_dropdowns] + [dd for _, dd in image_dropdowns]
         
         return refresh_choices, all_dropdowns
-
-
