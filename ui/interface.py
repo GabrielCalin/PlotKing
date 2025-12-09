@@ -46,7 +46,7 @@ def create_interface():
                 )
 
             with gr.Tab("⚙️ Settings"):
-                render_settings_tab()
+                refresh_tasks_fn, task_dropdowns = render_settings_tab()
 
         # === Populate project list on startup ===
         demo.load(
@@ -58,6 +58,14 @@ def create_interface():
             ),
             inputs=None,
             outputs=[project_dropdown],
+        )
+
+        # === Refresh Settings Task Dropdowns on startup ===
+        # This ensures that even if models were added in previous session, the Tasks tab sees them immediately.
+        demo.load(
+            fn=refresh_tasks_fn,
+            inputs=None,
+            outputs=task_dropdowns
         )
 
     return demo

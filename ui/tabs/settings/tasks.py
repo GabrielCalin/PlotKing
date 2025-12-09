@@ -30,54 +30,76 @@ def render_tasks_tab():
         
         # We will create a loop.
         
+        llm_dropdowns = []
+        image_dropdowns = []
+        
+        refresh_btn = gr.Button("🔄 Refresh Choices", size="sm")
+
         gr.Markdown("#### LLM Tasks")
-        for task in LLM_TASKS:
-            with gr.Row():
-                t_label = gr.Markdown(f"**{task}**")
-                
-                # Filter choices to only LLM type models?
-                # User didn't strictly say we must filter, but it makes sense.
-                llm_models = [m["name"] for m in settings_manager.get_models() if m.get("type") == "llm"]
-                
-                current_val = tasks_dict.get(task)
-                if current_val not in llm_models and current_val is not None:
-                     # Fallback if assigned model not in filtered list (e.g. wrong type assigned?)
-                     # Just show all to be safe or append current
-                     if current_val: llm_models.append(current_val)
-                
-                dd = gr.Dropdown(choices=llm_models, value=current_val, label=f"Model for {task}", show_label=False)
-                
-                # Update handler
-                def update_task_assignment(val, t_name=task):
-                    settings_manager.settings["tasks"][t_name] = val
-                    # We don't save to file yet, wait for global save.
-                    # But settings_manager.settings is updated in memory.
-                
-                dd.change(fn=update_task_assignment, inputs=[dd])
+        with gr.Group():
+            for task in LLM_TASKS:
+                with gr.Row():
+                    t_label = gr.Markdown(f"**{task}**")
+                    
+                    llm_models = [m["name"] for m in settings_manager.get_models() if m.get("type") == "llm"]
+                    
+                    current_val = tasks_dict.get(task)
+                    if current_val not in llm_models and current_val is not None:
+                         if current_val: llm_models.append(current_val)
+                    
+                    dd = gr.Dropdown(choices=llm_models, value=current_val, label=f"Model for {task}", show_label=False)
+                    llm_dropdowns.append((task, dd))
+                    
+                    def update_task_assignment(val, t_name=task):
+                        settings_manager.settings["tasks"][t_name] = val
+                    
+                    dd.change(fn=update_task_assignment, inputs=[dd])
                 
         gr.Markdown("#### Image Tasks")
-        for task in IMAGE_TASKS:
-            with gr.Row():
-                t_label = gr.Markdown(f"**{task}**")
+        with gr.Group():
+            for task in IMAGE_TASKS:
+                with gr.Row():
+                    t_label = gr.Markdown(f"**{task}**")
+                    
+                    image_models = [m["name"] for m in settings_manager.get_models() if m.get("type") == "image"]
+                    current_val = tasks_dict.get(task)
+                    
+                    dd = gr.Dropdown(choices=image_models, value=current_val, label=f"Model for {task}", show_label=False)
+                    image_dropdowns.append((task, dd))
+                    
+                    def update_task_assignment(val, t_name=task):
+                        settings_manager.settings["tasks"][t_name] = val
+                    
+                    dd.change(fn=update_task_assignment, inputs=[dd])
+
+        # Refresh Logic
+        def refresh_choices():
+            # Reload settings to ensure fresh state
+            # settings_manager.settings = settings_manager.load_settings() # Optional: Force reload from disk?
+            # Or just assume memory is updated if Models tab updated it? 
+            # Models tab updates `settings_manager` in memory.
+            
+            new_llm_models = [m["name"] for m in settings_manager.get_models() if m.get("type") == "llm"]
+            new_img_models = [m["name"] for m in settings_manager.get_models() if m.get("type") == "image"]
+            
+            updates = []
+            
+            # For LLM tasks
+            current_tasks = settings_manager.get_tasks()
+            
+            for task, _ in llm_dropdowns:
+                curr = current_tasks.get(task)
+                updates.append(gr.update(choices=new_llm_models, value=curr))
                 
-                image_models = [m["name"] for m in settings_manager.get_models() if m.get("type") == "image"]
-                current_val = tasks_dict.get(task)
+            for task, _ in image_dropdowns:
+                curr = current_tasks.get(task)
+                updates.append(gr.update(choices=new_img_models, value=curr))
                 
-                dd = gr.Dropdown(choices=image_models, value=current_val, label=f"Model for {task}", show_label=False)
-                
-                def update_task_assignment(val, t_name=task):
-                    settings_manager.settings["tasks"][t_name] = val
-                
-                dd.change(fn=update_task_assignment, inputs=[dd])
+            return updates
+
+        # Expose components for external refresh
+        all_dropdowns = [dd for _, dd in llm_dropdowns] + [dd for _, dd in image_dropdowns]
         
-        # We might need a refresh logic if models are added/removed in the Models tab.
-        # Since they are on separate tabs, we can't easily trigger a re-render of this tab without a reload
-        # OR we can add a "Refresh Choices" button here too.
-        
-        gr.Markdown("*(If you added a new model, restart or click Refresh below to see it)*")
-        # Creating a refresh button for the dropdowns is tricky in a loop without re-rendering.
-        # Gradio 5 might allow gr.render, but let's stick to simple first.
-        # A simple refresh button that updates all choices.
-        
-        # Actually, let's just assume user switches tabs. 
-        # Updating the `choices` of all dropdowns dynamically is possible if we hold references.
+        return refresh_choices, all_dropdowns
+
+

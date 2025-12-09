@@ -75,7 +75,17 @@ class SettingsManager:
                 settings = json.load(f)
                 return self._validate_and_fix_settings(settings)
         except Exception as e:
-            print(f"Error loading settings: {e}. Reverting to defaults.")
+            print(f"Error loading settings: {e}")
+            # Backup corrupt file if it exists so we don't lose data on next save
+            if os.path.exists(SETTINGS_FILE):
+                 import shutil
+                 backup_path = SETTINGS_FILE + ".bak"
+                 try:
+                     shutil.copy2(SETTINGS_FILE, backup_path)
+                     print(f"Corrupt settings backed up to {backup_path}")
+                 except Exception as backup_err:
+                     print(f"Failed to backup corrupt settings: {backup_err}")
+            
             return self._create_default_settings()
 
     def _create_default_settings(self) -> Dict[str, Any]:

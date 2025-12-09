@@ -12,7 +12,7 @@ def render_settings_tab():
                     with gr.Tab("🤖 Models"):
                         render_models_tab()
                     with gr.Tab("📋 Tasks"):
-                        render_tasks_tab()
+                        refresh_tasks_fn, task_dropdowns = render_tasks_tab()
             
             with gr.Column(scale=1):
                 gr.Markdown("### Process Log")
@@ -42,3 +42,7 @@ def render_settings_tab():
             inputs=[process_log],
             outputs=[process_log]
         )
+
+    # Return refresh utils so interface can bind global load events if needed
+    return refresh_tasks_fn, task_dropdowns
+
