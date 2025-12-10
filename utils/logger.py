@@ -28,3 +28,9 @@ def merge_logs(base_log: str, new_log_text: str) -> str:
                 combined_lines.append(line)
     
     return "\n".join(combined_lines)
+
+def append_log_string(current_log: str, new_msg: str) -> str:
+    """Appends a new message to a log string, handling newlines correctly."""
+    if not current_log:
+        return new_msg
+    return current_log + "\n" + new_msg

@@ -1,6 +1,7 @@
 import gradio as gr
 from state.settings_manager import settings_manager, DEFAULT_LLM_MODEL, LLM_PROVIDERS, IMAGE_PROVIDERS
 from utils.timestamp import ts_prefix
+from utils.logger import append_log_string
 
 def render_models_tab(process_log):
     with gr.Column():
@@ -44,7 +45,7 @@ def render_models_tab(process_log):
         (
             initial_name, initial_tech_name, initial_type, initial_provider, 
             initial_url, initial_key, initial_url_vis, initial_key_vis, 
-            _, curr_provider_choices
+            initial_delete_interactive, curr_provider_choices
         ) = get_model_data(default_val)
 
         with gr.Row():
@@ -98,7 +99,7 @@ def render_models_tab(process_log):
             with gr.Row():
                 add_btn = gr.Button("➕ Add New Model", variant="primary")
                 save_btn = gr.Button("💾 Update Selected Model")
-                delete_btn = gr.Button("🗑️ Delete Selected Model", variant="stop")
+                delete_btn = gr.Button("🗑️ Delete Selected Model", variant="stop", interactive=initial_delete_interactive)
 
         # --- Logic ---
 
@@ -125,7 +126,7 @@ def render_models_tab(process_log):
 
         def add_new_model(name, tech_name, m_type, provider, url, key, current_log):
             if not name:
-                return (current_log or "") + "\n" + ts_prefix("❌ Name is required."), gr.update()
+                return append_log_string(current_log, ts_prefix("❌ Name is required.")), gr.update()
             try:
                 new_model = {
                     "name": name,
@@ -138,10 +139,10 @@ def render_models_tab(process_log):
                 }
                 settings_manager.add_model(new_model)
                 new_choices = [m["name"] for m in settings_manager.get_models()]
-                log_msg = (current_log or "") + "\n" + ts_prefix(f"✅ Model '{name}' added.")
+                log_msg = append_log_string(current_log, ts_prefix(f"✅ Model '{name}' added."))
                 return log_msg, gr.update(choices=new_choices, value=name)
             except Exception as e:
-                return (current_log or "") + "\n" + ts_prefix(f"❌ Error: {e}"), gr.update()
+                return append_log_string(current_log, ts_prefix(f"❌ Error: {e}")), gr.update()
 
         add_evt = add_btn.click(
             fn=add_new_model,
@@ -151,7 +152,7 @@ def render_models_tab(process_log):
 
         def update_model(original_name, name, tech_name, m_type, provider, url, key, current_log):
             if not original_name:
-                return (current_log or "") + "\n" + ts_prefix("❌ No model selected to update."), gr.update()
+                return append_log_string(current_log, ts_prefix("❌ No model selected to update.")), gr.update()
             try:
                 models = settings_manager.get_models()
                 existing = next((m for m in models if m["name"] == original_name), None)
@@ -168,10 +169,10 @@ def render_models_tab(process_log):
                 }
                 settings_manager.update_model(original_name, updated_model)
                 new_choices = [m["name"] for m in settings_manager.get_models()]
-                log_msg = (current_log or "") + "\n" + ts_prefix(f"✅ Model '{name}' updated.")
+                log_msg = append_log_string(current_log, ts_prefix(f"✅ Model '{name}' updated."))
                 return log_msg, gr.update(choices=new_choices, value=name)
             except Exception as e:
-                return (current_log or "") + "\n" + ts_prefix(f"❌ Error: {e}"), gr.update()
+                return append_log_string(current_log, ts_prefix(f"❌ Error: {e}")), gr.update()
 
         save_evt = save_btn.click(
             fn=update_model,
@@ -182,7 +183,7 @@ def render_models_tab(process_log):
         def delete_model(name, current_log):
             if not name:
                 return (
-                    (current_log or "") + "\n" + ts_prefix("❌ No model selected."), 
+                    append_log_string(current_log, ts_prefix("❌ No model selected.")), 
                     gr.update(), gr.update(), gr.update(), gr.update(), 
                     gr.update(), gr.update(), gr.update(), gr.update()
                 )
@@ -193,7 +194,7 @@ def render_models_tab(process_log):
                 fallback_name = DEFAULT_LLM_MODEL["name"]
                 new_choices = [m["name"] for m in settings_manager.get_models()]
                 
-                log_msg = (current_log or "") + "\n" + ts_prefix(f"✅ Model '{name}' deleted.")
+                log_msg = append_log_string(current_log, ts_prefix(f"✅ Model '{name}' deleted."))
                 
                 # Get details for fallback model to repopulate the form
                 (
@@ -214,7 +215,7 @@ def render_models_tab(process_log):
 
             except Exception as e:
                 return (
-                    (current_log or "") + "\n" + ts_prefix(f"❌ Error: {e}"), 
+                    append_log_string(current_log, ts_prefix(f"❌ Error: {e}")), 
                     gr.update(), gr.update(), gr.update(), gr.update(), 
                     gr.update(), gr.update(), gr.update(), gr.update()
                 )
