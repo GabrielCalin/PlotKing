@@ -2,36 +2,44 @@ import requests
 import os
 import base64
 from typing import List, Dict, Any
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 
 def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kwargs) -> str:
     api_key = settings.get("api_key")
     if not api_key:
         raise ValueError("OpenAI API Key is missing.")
         
-    model = settings.get("technical_name") or "gpt-4o" # Default if empty? Or gpt-3.5-turbo
-    
-    url = "https://api.openai.com/v1/chat/completions"
-    
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}"
-    }
-    
-    payload = {
-        "model": model,
-        "messages": messages,
-        "temperature": kwargs.get("temperature", 0.7),
-        "max_tokens": kwargs.get("max_tokens", 4000), # Default max tokens
-        "top_p": kwargs.get("top_p", 1.0),
-    }
+    model = settings.get("technical_name") or "gpt-4o"
     
     try:
-        response = requests.post(url, headers=headers, json=payload, timeout=kwargs.get("timeout", 60))
-        response.raise_for_status()
-        data = response.json()
-        return data["choices"][0]["message"]["content"]
+        llm = ChatOpenAI(
+            api_key=api_key,
+            model=model,
+            temperature=kwargs.get("temperature", 0.7),
+            max_tokens=kwargs.get("max_tokens", 4000),
+            request_timeout=kwargs.get("timeout", 60)
+        )
+        
+        lc_messages = []
+        for m in messages:
+            role = m.get("role")
+            content = m.get("content")
+            if role == "user":
+                lc_messages.append(HumanMessage(content=content))
+            elif role == "system":
+                lc_messages.append(SystemMessage(content=content))
+            elif role == "assistant":
+                lc_messages.append(AIMessage(content=content))
+            else:
+                # Fallback for generic or function roles if any
+                lc_messages.append(HumanMessage(content=content))
+                
+        response = llm.invoke(lc_messages)
+        return response.content
+        
     except Exception as e:
-        raise Exception(f"OpenAI Text Error: {e}")
+        raise Exception(f"OpenAI Text Error (LangChain): {e}")
 
 
 def generate_image(settings: Dict[str, Any], prompt: str, **kwargs) -> str:

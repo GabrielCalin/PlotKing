@@ -97,9 +97,9 @@ def render_models_tab(process_log):
             provider_selector.change(fn=update_visibility, inputs=[provider_selector], outputs=[model_url_input, model_key_input])
 
             with gr.Row():
-                add_btn = gr.Button("➕ Add New Model", variant="primary")
-                save_btn = gr.Button("💾 Update Selected Model")
-                delete_btn = gr.Button("🗑️ Delete Selected Model", variant="stop", interactive=initial_delete_interactive)
+                add_btn = gr.Button("➕ Add", variant="primary")
+                save_btn = gr.Button("💾 Update")
+                delete_btn = gr.Button("🗑️ Delete", variant="stop", interactive=initial_delete_interactive)
 
         # --- Logic ---
 
