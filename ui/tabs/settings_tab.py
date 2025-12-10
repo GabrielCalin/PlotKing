@@ -13,7 +13,7 @@ def render_settings_tab():
             with gr.Column(scale=2):
                 with gr.Tabs():
                     with gr.Tab("🤖 Models"):
-                        refresh_models_fn, model_selector_comp, add_evt, save_evt, del_evt = render_models_tab(process_log)
+                        refresh_models_fn, model_selector_comp, add_evt, save_evt, del_evt, load_model_details_fn, model_input_components = render_models_tab(process_log)
                     with gr.Tab("📋 Tasks"):
                         refresh_tasks_fn, task_dropdowns = render_tasks_tab(process_log)
             
@@ -29,4 +29,4 @@ def render_settings_tab():
                 process_log.render()
 
     # Return refresh utils so interface can bind global load events if needed
-    return refresh_tasks_fn, task_dropdowns, refresh_models_fn, model_selector_comp
+    return refresh_tasks_fn, task_dropdowns, refresh_models_fn, model_selector_comp, load_model_details_fn, model_input_components

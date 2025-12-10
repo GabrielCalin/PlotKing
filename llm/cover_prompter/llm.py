@@ -45,7 +45,7 @@ def generate_prompt(story_context: str,
             messages=messages,
             timeout=timeout,
             temperature=0.7,
-            max_tokens=150
+            max_tokens=500
         )
         # Cleanup
         content = content.replace('"', '').replace("Prompt:", "").strip()

@@ -232,4 +232,4 @@ def render_models_tab(process_log):
             # Keep current value if valid, else default
             return gr.update(choices=names)
 
-        return refresh_models_list, model_selector, add_evt, save_evt, del_evt
+        return refresh_models_list, model_selector, add_evt, save_evt, del_evt, load_model_details, [name_input, technical_name_input, type_selector, provider_selector, model_url_input, model_key_input, delete_btn]
