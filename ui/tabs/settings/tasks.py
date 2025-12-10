@@ -1,7 +1,9 @@
 import gradio as gr
 from state.settings_manager import settings_manager
+from utils.timestamp import ts_prefix
+from utils.logger import append_log_string
 
-def render_tasks_tab():
+def render_tasks_tab(process_log):
     with gr.Column():
         gr.Markdown("### Assign Models to Tasks")
         
@@ -29,10 +31,12 @@ def render_tasks_tab():
                     dd = gr.Dropdown(choices=llm_models, value=current_val, label=f"Model for {task}", show_label=False)
                     llm_dropdowns.append((task, dd))
                     
-                    def update_task_assignment(val, t_name=task):
+                    def update_task_assignment(val, current_log, t_name=task):
                         settings_manager.settings["tasks"][t_name] = val
+                        settings_manager.save_settings()
+                        return append_log_string(current_log, ts_prefix(f"✅ Task '{t_name}' assigned to '{val}'."))
                     
-                    dd.change(fn=update_task_assignment, inputs=[dd])
+                    dd.change(fn=update_task_assignment, inputs=[dd, process_log], outputs=[process_log])
                 
         gr.Markdown("#### Image Tasks")
         with gr.Group():
@@ -46,10 +50,12 @@ def render_tasks_tab():
                     dd = gr.Dropdown(choices=image_models, value=current_val, label=f"Model for {task}", show_label=False)
                     image_dropdowns.append((task, dd))
                     
-                    def update_task_assignment(val, t_name=task):
+                    def update_task_assignment(val, current_log, t_name=task):
                         settings_manager.settings["tasks"][t_name] = val
+                        settings_manager.save_settings()
+                        return append_log_string(current_log, ts_prefix(f"✅ Task '{t_name}' assigned to '{val}'."))
                     
-                    dd.change(fn=update_task_assignment, inputs=[dd])
+                    dd.change(fn=update_task_assignment, inputs=[dd, process_log], outputs=[process_log])
 
         # Refresh Logic
         def refresh_choices():

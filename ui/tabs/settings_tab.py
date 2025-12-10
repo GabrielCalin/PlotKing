@@ -15,7 +15,7 @@ def render_settings_tab():
                     with gr.Tab("🤖 Models"):
                         refresh_models_fn, model_selector_comp, add_evt, save_evt, del_evt = render_models_tab(process_log)
                     with gr.Tab("📋 Tasks"):
-                        refresh_tasks_fn, task_dropdowns = render_tasks_tab()
+                        refresh_tasks_fn, task_dropdowns = render_tasks_tab(process_log)
             
             # Wire up auto-refresh for tasks when models change - using .then() on events returned from models.py
             # This ensures they run AFTER the add/update/delete logic completes
@@ -27,27 +27,6 @@ def render_settings_tab():
                 gr.Markdown("### Process Log")
                 # Render the log where we want it in the layout
                 process_log.render()
-        
-        with gr.Row():
-            save_all_btn = gr.Button("💾 Save All Settings", variant="primary", scale=1)
-            status_msg = gr.Markdown("")
-
-        def save_all_settings():
-            try:
-                settings_manager.save_settings()
-                return "\n" + ts_prefix("✅ Settings saved successfully to disk.")
-            except Exception as e:
-                return "\n" + ts_prefix(f"❌ Error saving settings: {e}")
-
-        def save_and_log(current_log):
-            msg = save_all_settings()
-            return (current_log or "") + msg
-
-        save_all_btn.click(
-            fn=save_and_log,
-            inputs=[process_log],
-            outputs=[process_log]
-        )
 
     # Return refresh utils so interface can bind global load events if needed
     return refresh_tasks_fn, task_dropdowns, refresh_models_fn, model_selector_comp
