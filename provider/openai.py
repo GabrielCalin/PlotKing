@@ -18,7 +18,8 @@ def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kw
             model=model,
             temperature=kwargs.get("temperature", 0.7),
             max_tokens=kwargs.get("max_tokens", 4000),
-            request_timeout=kwargs.get("timeout", 60)
+            request_timeout=kwargs.get("timeout", 60),
+            reasoning_effort="minimal"
         )
         
         lc_messages = []
