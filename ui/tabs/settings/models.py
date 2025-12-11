@@ -97,8 +97,7 @@ def render_models_tab(process_log):
             provider_selector.change(fn=update_visibility, inputs=[provider_selector], outputs=[model_url_input, model_key_input])
 
             with gr.Row():
-                add_btn = gr.Button("➕ Add", variant="primary")
-                save_btn = gr.Button("💾 Update")
+                save_btn = gr.Button("💾 Save", variant="primary")
                 delete_btn = gr.Button("🗑️ Delete", variant="stop", interactive=initial_delete_interactive)
 
         # --- Logic ---
@@ -124,11 +123,15 @@ def render_models_tab(process_log):
             outputs=[name_input, technical_name_input, type_selector, provider_selector, model_url_input, model_key_input, delete_btn]
         )
 
-        def add_new_model(name, tech_name, m_type, provider, url, key, current_log):
+        def save_model(name, tech_name, m_type, provider, url, key, current_log):
             if not name:
                 return append_log_string(current_log, ts_prefix("❌ Name is required.")), gr.update()
+            
             try:
-                new_model = {
+                models = settings_manager.get_models()
+                model_exists = any(m["name"] == name for m in models)
+                
+                model_data = {
                     "name": name,
                     "technical_name": tech_name,
                     "type": m_type,
@@ -137,46 +140,28 @@ def render_models_tab(process_log):
                     "api_key": key,
                     "is_default": False
                 }
-                settings_manager.add_model(new_model)
+                
+                if model_exists:
+                    existing = next((m for m in models if m["name"] == name), None)
+                    if existing:
+                        is_default = existing.get("is_default", False)
+                        model_data["is_default"] = is_default
+                        settings_manager.update_model(name, model_data)
+                        log_msg = append_log_string(current_log, ts_prefix(f"✅ Model '{name}' updated."))
+                    else:
+                        return append_log_string(current_log, ts_prefix(f"❌ Model '{name}' not found.")), gr.update()
+                else:
+                    settings_manager.add_model(model_data)
+                    log_msg = append_log_string(current_log, ts_prefix(f"✅ Model '{name}' added."))
+                
                 new_choices = [m["name"] for m in settings_manager.get_models()]
-                log_msg = append_log_string(current_log, ts_prefix(f"✅ Model '{name}' added."))
-                return log_msg, gr.update(choices=new_choices, value=name)
-            except Exception as e:
-                return append_log_string(current_log, ts_prefix(f"❌ Error: {e}")), gr.update()
-
-        add_evt = add_btn.click(
-            fn=add_new_model,
-            inputs=[name_input, technical_name_input, type_selector, provider_selector, model_url_input, model_key_input, process_log],
-            outputs=[process_log, model_selector]
-        )
-
-        def update_model(original_name, name, tech_name, m_type, provider, url, key, current_log):
-            if not original_name:
-                return append_log_string(current_log, ts_prefix("❌ No model selected to update.")), gr.update()
-            try:
-                models = settings_manager.get_models()
-                existing = next((m for m in models if m["name"] == original_name), None)
-                is_default = existing.get("is_default", False) if existing else False
-
-                updated_model = {
-                    "name": name,
-                    "technical_name": tech_name,
-                    "type": m_type,
-                    "provider": provider,
-                    "url": url,
-                    "api_key": key,
-                    "is_default": is_default
-                }
-                settings_manager.update_model(original_name, updated_model)
-                new_choices = [m["name"] for m in settings_manager.get_models()]
-                log_msg = append_log_string(current_log, ts_prefix(f"✅ Model '{name}' updated."))
                 return log_msg, gr.update(choices=new_choices, value=name)
             except Exception as e:
                 return append_log_string(current_log, ts_prefix(f"❌ Error: {e}")), gr.update()
 
         save_evt = save_btn.click(
-            fn=update_model,
-            inputs=[model_selector, name_input, technical_name_input, type_selector, provider_selector, model_url_input, model_key_input, process_log],
+            fn=save_model,
+            inputs=[name_input, technical_name_input, type_selector, provider_selector, model_url_input, model_key_input, process_log],
             outputs=[process_log, model_selector]
         )
 
@@ -232,4 +217,4 @@ def render_models_tab(process_log):
             # Keep current value if valid, else default
             return gr.update(choices=names)
 
-        return refresh_models_list, model_selector, add_evt, save_evt, del_evt, load_model_details, [name_input, technical_name_input, type_selector, provider_selector, model_url_input, model_key_input, delete_btn]
+        return refresh_models_list, model_selector, save_evt, del_evt, load_model_details, [name_input, technical_name_input, type_selector, provider_selector, model_url_input, model_key_input, delete_btn]
