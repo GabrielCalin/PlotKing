@@ -11,7 +11,7 @@ from handlers.create.create_handlers import list_projects
 
 
 def create_interface():
-    with gr.Blocks(title="PlotKing - AI Story Builder", css=load_css("style.css", "editor.css", "export.css")) as demo:
+    with gr.Blocks(title="PlotKing - AI Story Builder", css=load_css("style.css", "editor.css", "export.css", "settings.css")) as demo:
         # === Header aplicație (în afara tab-urilor) ===
         with gr.Row(elem_id="bk-header"):
             gr.HTML("<div id='bk-title'>📖 PlotKing – AI Story Builder</div>")

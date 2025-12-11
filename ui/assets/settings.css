@@ -1,0 +1,17 @@
+.task-row .html-container {
+    display: flex;
+    position: relative;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--checkbox-label-gap);
+    padding: var(--checkbox-label-padding);
+    height: 100%;
+}
+
+.task-row .block {
+    border-style: solid;
+    border-width: var(--block-border-width);
+    border-color: var(--block-border-color, #e0e0e0);
+    padding: var(--block-padding);
+}
+

@@ -19,8 +19,8 @@ def render_tasks_tab(process_log):
         gr.Markdown("#### LLM Tasks")
         with gr.Group():
             for task in LLM_TASKS:
-                with gr.Row():
-                    t_label = gr.Markdown(f"**{task}**")
+                with gr.Row(elem_classes=["task-row"]):
+                    t_label = gr.HTML(f"<p style='display: flex; align-items: center; height: 100%; margin: 0;'><strong>{task}</strong></p>")
                     
                     llm_models = [m["name"] for m in settings_manager.get_models() if m.get("type") == "llm"]
                     
@@ -41,8 +41,8 @@ def render_tasks_tab(process_log):
         gr.Markdown("#### Image Tasks")
         with gr.Group():
             for task in IMAGE_TASKS:
-                with gr.Row():
-                    t_label = gr.Markdown(f"**{task}**")
+                with gr.Row(elem_classes=["task-row"]):
+                    t_label = gr.HTML(f"<p style='display: flex; align-items: center; height: 100%; margin: 0;'><strong>{task}</strong></p>")
                     
                     image_models = [m["name"] for m in settings_manager.get_models() if m.get("type") == "image"]
                     current_val = tasks_dict.get(task)
