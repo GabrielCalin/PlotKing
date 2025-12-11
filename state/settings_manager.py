@@ -45,27 +45,25 @@ IMAGE_PROVIDERS = ["Automatic1111", "OpenAI"]
 # Known Tasks (Hardcoded list + dynamic scan could be better, but user said "sa fie toate")
 # We will define them here.
 LLM_TASKS = [
-    "chapter_editor",
-    "chapter_validator",
-    "chapter_writer",
-    "chat_editor",
-    "cover_prompter",
-    "impact_analyzer",
-    "overview_editor",
-    "overview_generator",
-    "overview_validator",
-    "plot_editor",
-    "plot_expander",
-    "refine_plot",
-    "rewrite_editor",
-    "title_fetcher",
-#    "version_diff" # version_diff is likely logic, not LLM, but I'll double check. Assuming it IS for now if it's in llm folder? 
-    # Checking file list again... `version_diff` is in `llm` folder. Including it.
-    "version_diff"
+    {"technical_name": "chapter_editor", "display_name": "Chapter Editor"},
+    {"technical_name": "chapter_validator", "display_name": "Chapter Validator"},
+    {"technical_name": "chapter_writer", "display_name": "Chapter Writer"},
+    {"technical_name": "chat_editor", "display_name": "Chat Editor"},
+    {"technical_name": "cover_prompter", "display_name": "Cover Prompter"},
+    {"technical_name": "impact_analyzer", "display_name": "Impact Analyzer"},
+    {"technical_name": "overview_editor", "display_name": "Overview Editor"},
+    {"technical_name": "overview_generator", "display_name": "Overview Generator"},
+    {"technical_name": "overview_validator", "display_name": "Overview Validator"},
+    {"technical_name": "plot_editor", "display_name": "Plot Editor"},
+    {"technical_name": "plot_expander", "display_name": "Plot Expander"},
+    {"technical_name": "refine_plot", "display_name": "Refine Plot"},
+    {"technical_name": "rewrite_editor", "display_name": "Rewrite Editor"},
+    {"technical_name": "title_fetcher", "display_name": "Title Fetcher"},
+    {"technical_name": "version_diff", "display_name": "Version Diff"}
 ]
 
 IMAGE_TASKS = [
-    "cover_image_generation"
+    {"technical_name": "cover_image_generation", "display_name": "Cover Image Generation"}
 ]
 
 class SettingsManager:
@@ -105,10 +103,10 @@ class SettingsManager:
         
         # Assign defaults to tasks
         for task in LLM_TASKS:
-            settings["tasks"][task] = "default_llm"
+            settings["tasks"][task["technical_name"]] = "default_llm"
             
         for task in IMAGE_TASKS:
-            settings["tasks"][task] = "default_image"
+            settings["tasks"][task["technical_name"]] = "default_image"
             
         return settings
 
@@ -131,12 +129,14 @@ class SettingsManager:
         current_models = {m["name"]: m for m in settings["models"]}
         
         for task in LLM_TASKS:
-            if task not in settings["tasks"] or settings["tasks"][task] not in current_models:
-               settings["tasks"][task] = "default_llm"
+            tech_name = task["technical_name"]
+            if tech_name not in settings["tasks"] or settings["tasks"][tech_name] not in current_models:
+               settings["tasks"][tech_name] = "default_llm"
 
         for task in IMAGE_TASKS:
-            if task not in settings["tasks"] or settings["tasks"][task] not in current_models:
-                settings["tasks"][task] = "default_image"
+            tech_name = task["technical_name"]
+            if tech_name not in settings["tasks"] or settings["tasks"][tech_name] not in current_models:
+                settings["tasks"][tech_name] = "default_image"
                 
         return settings
 
