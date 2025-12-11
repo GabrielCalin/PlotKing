@@ -6,3 +6,5 @@ EbookLib>=0.17.1
 markdown>=3.0
 langchain
 langchain-openai
+langchain-google-genai
+langchain-xai

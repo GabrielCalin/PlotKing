@@ -34,11 +34,13 @@ DEFAULT_IMAGE_MODEL["url"] = "http://127.0.0.1:6969"
 
 PROVIDER_CAPABILITIES = {
     "OpenAI": {"has_url": False, "has_api_key": True, "has_reasoning": True},
+    "Gemini": {"has_url": False, "has_api_key": True, "has_reasoning": True},
+    "xAI": {"has_url": False, "has_api_key": True, "has_reasoning": True},
     "LM Studio": {"has_url": True, "has_api_key": False, "has_reasoning": False},
     "Automatic1111": {"has_url": True, "has_api_key": False, "has_reasoning": False}
 }
 
-LLM_PROVIDERS = ["LM Studio", "OpenAI"]
+LLM_PROVIDERS = ["LM Studio", "OpenAI", "Gemini", "xAI"]
 IMAGE_PROVIDERS = ["Automatic1111", "OpenAI"]
 
 
