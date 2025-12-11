@@ -11,16 +11,21 @@ def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kw
         raise ValueError("OpenAI API Key is missing.")
         
     model = settings.get("technical_name") or "gpt-4o"
+    reasoning = settings.get("reasoning", False)
     
     try:
-        llm = ChatOpenAI(
-            api_key=api_key,
-            model=model,
-            temperature=kwargs.get("temperature", 0.7),
-            max_tokens=kwargs.get("max_tokens", 4000),
-            request_timeout=kwargs.get("timeout", 60),
-            reasoning_effort="minimal"
-        )
+        llm_params = {
+            "api_key": api_key,
+            "model": model,
+            "temperature": kwargs.get("temperature", 0.7),
+            "max_tokens": kwargs.get("max_tokens", 4000),
+            "request_timeout": kwargs.get("timeout", 60)
+        }
+        
+        if reasoning:
+            llm_params["reasoning_effort"] = "minimal"
+        
+        llm = ChatOpenAI(**llm_params)
         
         lc_messages = []
         for m in messages:

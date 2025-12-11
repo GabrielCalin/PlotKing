@@ -16,7 +16,7 @@ def render_models_tab(process_log):
         def get_model_data(model_name):
             if not model_name:
                 # Return empty defaults
-                return "", "", "llm", LLM_PROVIDERS[0], "", "", True, False, False, LLM_PROVIDERS
+                return "", "", "llm", LLM_PROVIDERS[0], "", "", True, False, False, False, LLM_PROVIDERS
                 
             model = next((m for m in settings_manager.get_models() if m["name"] == model_name), None)
             if not model:
@@ -29,6 +29,7 @@ def render_models_tab(process_log):
             provider = model.get("provider", LLM_PROVIDERS[0])
             url = model.get("url", "")
             key = model.get("api_key", "")
+            reasoning = model.get("reasoning", False)
             
             is_default = model.get("is_default", False)
             delete_interactive = not is_default
@@ -38,13 +39,14 @@ def render_models_tab(process_log):
             caps = settings_manager.get_provider_capabilities(provider)
             url_vis = caps.get("has_url", True)
             key_vis = caps.get("has_api_key", False)
+            reasoning_vis = caps.get("has_reasoning", False)
             
-            return name, tech_name, m_type, provider, url, key, url_vis, key_vis, delete_interactive, provider_choices
+            return name, tech_name, m_type, provider, url, key, reasoning, url_vis, key_vis, reasoning_vis, delete_interactive, provider_choices
 
         # Initialization using the helper
         (
             initial_name, initial_tech_name, initial_type, initial_provider, 
-            initial_url, initial_key, initial_url_vis, initial_key_vis, 
+            initial_url, initial_key, initial_reasoning, initial_url_vis, initial_key_vis, initial_reasoning_vis,
             initial_delete_interactive, curr_provider_choices
         ) = get_model_data(default_val)
 
@@ -78,6 +80,7 @@ def render_models_tab(process_log):
                 
             model_url_input = gr.Textbox(label="Endpoint URL", value=initial_url, visible=initial_url_vis)
             model_key_input = gr.Textbox(label="API Key", type="password", visible=initial_key_vis, value=initial_key)
+            reasoning_checkbox = gr.Checkbox(label="Reasoning", value=initial_reasoning, visible=initial_reasoning_vis)
             
             # Helper to update provider choices based on type
             # Use .input() instead of .change() to avoid triggering when loading details programmatically
@@ -92,9 +95,13 @@ def render_models_tab(process_log):
             # Helper for visibility based on provider
             def update_visibility(provider):
                 caps = settings_manager.get_provider_capabilities(provider)
-                return gr.update(visible=caps.get("has_url", True)), gr.update(visible=caps.get("has_api_key", False))
+                return (
+                    gr.update(visible=caps.get("has_url", True)), 
+                    gr.update(visible=caps.get("has_api_key", False)),
+                    gr.update(visible=caps.get("has_reasoning", False))
+                )
 
-            provider_selector.change(fn=update_visibility, inputs=[provider_selector], outputs=[model_url_input, model_key_input])
+            provider_selector.change(fn=update_visibility, inputs=[provider_selector], outputs=[model_url_input, model_key_input, reasoning_checkbox])
 
             with gr.Row():
                 save_btn = gr.Button("💾 Save", variant="primary")
@@ -104,7 +111,7 @@ def render_models_tab(process_log):
 
         def load_model_details(model_name):
             (
-                name, tech, mtype, prov, url, key, url_v, key_v, del_int, p_choices
+                name, tech, mtype, prov, url, key, reasoning, url_v, key_v, reasoning_v, del_int, p_choices
             ) = get_model_data(model_name)
             
             return (
@@ -114,16 +121,17 @@ def render_models_tab(process_log):
                 gr.update(value=prov, choices=p_choices),
                 gr.update(value=url, visible=url_v),
                 gr.update(value=key, visible=key_v),
+                gr.update(value=reasoning, visible=reasoning_v),
                 gr.update(interactive=del_int)
             )
 
         model_selector.change(
             fn=load_model_details,
             inputs=[model_selector],
-            outputs=[name_input, technical_name_input, type_selector, provider_selector, model_url_input, model_key_input, delete_btn]
+            outputs=[name_input, technical_name_input, type_selector, provider_selector, model_url_input, model_key_input, reasoning_checkbox, delete_btn]
         )
 
-        def save_model(name, tech_name, m_type, provider, url, key, current_log):
+        def save_model(name, tech_name, m_type, provider, url, key, reasoning, current_log):
             if not name:
                 return append_log_string(current_log, ts_prefix("❌ Name is required.")), gr.update()
             
@@ -138,6 +146,7 @@ def render_models_tab(process_log):
                     "provider": provider,
                     "url": url,
                     "api_key": key,
+                    "reasoning": reasoning if reasoning else False,
                     "is_default": False
                 }
                 
@@ -161,7 +170,7 @@ def render_models_tab(process_log):
 
         save_evt = save_btn.click(
             fn=save_model,
-            inputs=[name_input, technical_name_input, type_selector, provider_selector, model_url_input, model_key_input, process_log],
+            inputs=[name_input, technical_name_input, type_selector, provider_selector, model_url_input, model_key_input, reasoning_checkbox, process_log],
             outputs=[process_log, model_selector]
         )
 
@@ -170,7 +179,7 @@ def render_models_tab(process_log):
                 return (
                     append_log_string(current_log, ts_prefix("❌ No model selected.")), 
                     gr.update(), gr.update(), gr.update(), gr.update(), 
-                    gr.update(), gr.update(), gr.update(), gr.update()
+                    gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
                 )
             try:
                 settings_manager.delete_model(name)
@@ -183,7 +192,7 @@ def render_models_tab(process_log):
                 
                 # Get details for fallback model to repopulate the form
                 (
-                    f_name, f_tech, f_type, f_provider, f_url, f_key, f_url_vis, f_key_vis, f_del_int, f_choices
+                    f_name, f_tech, f_type, f_provider, f_url, f_key, f_reasoning, f_url_vis, f_key_vis, f_reasoning_vis, f_del_int, f_choices
                 ) = get_model_data(fallback_name)
                 
                 return (
@@ -194,7 +203,9 @@ def render_models_tab(process_log):
                     f_type, 
                     gr.update(value=f_provider, choices=f_choices),
                     gr.update(value=f_url, visible=f_url_vis),
-                    gr.update(value=f_key, visible=f_key_vis), 
+                    gr.update(value=f_key, visible=f_key_vis),
+                    f_reasoning,
+                    gr.update(visible=f_reasoning_vis),
                     gr.update(interactive=f_del_int)
                 )
 
@@ -202,13 +213,13 @@ def render_models_tab(process_log):
                 return (
                     append_log_string(current_log, ts_prefix(f"❌ Error: {e}")), 
                     gr.update(), gr.update(), gr.update(), gr.update(), 
-                    gr.update(), gr.update(), gr.update(), gr.update()
+                    gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
                 )
 
         del_evt = delete_btn.click(
             fn=delete_model,
             inputs=[model_selector, process_log],
-            outputs=[process_log, model_selector, name_input, technical_name_input, type_selector, provider_selector, model_url_input, model_key_input, delete_btn]
+            outputs=[process_log, model_selector, name_input, technical_name_input, type_selector, provider_selector, model_url_input, model_key_input, reasoning_checkbox, delete_btn]
         )
 
         def refresh_models_list():
@@ -217,4 +228,4 @@ def render_models_tab(process_log):
             # Keep current value if valid, else default
             return gr.update(choices=names)
 
-        return refresh_models_list, model_selector, save_evt, del_evt, load_model_details, [name_input, technical_name_input, type_selector, provider_selector, model_url_input, model_key_input, delete_btn]
+        return refresh_models_list, model_selector, save_evt, del_evt, load_model_details, [name_input, technical_name_input, type_selector, provider_selector, model_url_input, model_key_input, reasoning_checkbox, delete_btn]
