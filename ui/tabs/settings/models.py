@@ -204,8 +204,7 @@ def render_models_tab(process_log):
                     gr.update(value=f_provider, choices=f_choices),
                     gr.update(value=f_url, visible=f_url_vis),
                     gr.update(value=f_key, visible=f_key_vis),
-                    f_reasoning,
-                    gr.update(visible=f_reasoning_vis),
+                    gr.update(value=f_reasoning, visible=f_reasoning_vis),
                     gr.update(interactive=f_del_int)
                 )
 
