@@ -6,12 +6,14 @@
     gap: var(--checkbox-label-gap);
     padding: var(--checkbox-label-padding);
     height: 100%;
+    border-color: white;
+    border-width: thin;
 }
 
 .task-row .block {
     border-style: solid;
-    border-width: var(--block-border-width);
-    border-color: var(--block-border-color, #e0e0e0);
+    border-color: white;
+    border-width: thin;
     padding: var(--block-padding);
 }
 
