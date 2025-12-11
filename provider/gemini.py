@@ -38,7 +38,20 @@ def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kw
                 lc_messages.append(HumanMessage(content=content))
                 
         response = llm.invoke(lc_messages)
-        return response.content
+        
+        if hasattr(response, 'content'):
+            content = response.content
+            if isinstance(content, list):
+                text_parts = []
+                for part in content:
+                    if isinstance(part, dict) and 'text' in part:
+                        text_parts.append(part['text'])
+                    elif isinstance(part, str):
+                        text_parts.append(part)
+                return ''.join(text_parts)
+            return str(content)
+        else:
+            return str(response)
         
     except Exception as e:
         raise Exception(f"Gemini Text Error (LangChain): {e}")
