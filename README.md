@@ -2,7 +2,7 @@
 
 # PlotKing - AI Story Builder
 
-PlotKing is an interactive **AI Book Generator** that helps writers generate, validate, refine, and export novels. The application takes a short plot description and transforms it into a complete book using local LLM deployments.
+PlotKing is an interactive **AI Book Generator** that helps writers generate, validate, refine, and export novels. The application takes a short plot description and transforms it into a complete book using local or cloud LLM deployments.
 
 
 
@@ -38,7 +38,6 @@ The Editor tab is where the magic happens. It's not just a text box; it's a suit
 
 #### 🛡️ Validation System & Drafts
 ![Validation](images/validation.png) 
-![Validation2](images/validation2.png)
 
 When you make changes (manually or via AI), PlotKing doesn't just overwrite your work. It creates **Drafts**.
 -   **Impact Analysis**: The system analyzes how your change affects future chapters.
@@ -61,6 +60,10 @@ Keep your stories organized:
 -   **New**: Start a fresh project from scratch.
 -   **Delete**: Remove unwanted projects.
 
+### 5. Settings: Configurable Models & Task Assignments
+-   **Models**: Support for multiple providers (LM Studio, OpenAI, Gemini, xAI for LLM tasks; Automatic1111 and OpenAI for image generation) with configurable local endpoints, API keys, and provider-specific settings.
+-   **Tasks**: Assign different models to specific tasks for optimal performance and easy switching.
+
 ---
 
 ## Requirements
@@ -68,14 +71,8 @@ Keep your stories organized:
 The application requires:
 -   Python 3.6+
 -   Gradio for the UI
--   Access to a local LLM API (default: `http://localhost:1234/v1/chat/completions`)
+-   Access to an LLM API (default: `http://localhost:1234/v1/chat/completions` for local deployments, but configurable)
 -   Additional dependencies listed in `requirements.txt`
-
-### Local AI Support
-
-**Current Status**: PlotKing currently supports local LLM deployments and local Stable Diffusion (via Automatic1111) for image generation with predefined API endpoints: `http://127.0.0.1:1234/v1/chat/completions` for LLMs and `http://127.0.0.1:6969` for Stable Diffusion. The LLM endpoint follows the OpenAI-compatible API format, making it compatible with tools like LM Studio.
-
-**Future Plans**: Support for customizable API endpoints and cloud providers (OpenAI, Anthropic, etc.) is planned for future releases.
 
 ## Getting Started
 
@@ -101,8 +98,8 @@ PlotKing is designed to work seamlessly with **local LLM deployments**, and **[L
 
 ### 🔹 Step 3: Enable the Local Server API
 1.  In LM Studio, open the **Developer** tab (top-right gear icon).
-2.  Toggle **“Start Server”**.
-3.  Make sure the server runs on the default address: `http://127.0.0.1:1234/v1/chat/completions`
+2.  Toggle **"Start Server"**.
+3.  The default address is `http://127.0.0.1:1234/v1/chat/completions` (this works out of the box), but you can configure a different endpoint in PlotKing's Settings tab if needed.
 
 ### 🔹 Step 4: Enable FlashAttention (Optional, for Faster Generation)
 
@@ -126,12 +123,11 @@ Follow the installation instructions for your OS:
 To allow PlotKing to communicate with Stable Diffusion, you must enable the API and set the port.
 
 1.  Open the `webui-user.bat` file (Windows) or `webui-user.sh` (Linux/Mac) in a text editor.
-2.  Add the following arguments to the `COMMANDLINE_ARGS` variable:
+2.  Add the following arguments to the `COMMANDLINE_ARGS` variable (port 6969 is suggested to match PlotKing's default configuration, but you can use any port and configure it in PlotKing's Settings tab):
     ```bash
     set COMMANDLINE_ARGS=--api --port 6969
     ```
 3.  Save the file and run it to start the server.
-4.  Ensure the server is running at `http://127.0.0.1:6969`.
 
 ## Contributing
 
