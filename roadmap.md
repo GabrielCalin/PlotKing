@@ -4,15 +4,6 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ---
 
-## 🎨 Phase 3 — Presentation and Export
-
-16. **Basic Settings**  
-   - Model selection per task.  
-   - Customization of local OpenAI endpoint.  
-   - Integration with **OpenAI**.
-
----
-
 ## ✍️ Phase 4 — Story Growth and Structure Control
 
 17. **AI Chat for Refined Plot**  
@@ -143,8 +134,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 | Feature | Status |
 |----------|--------|
-| **Basic Settings** | ⏳ In Progress |
-| **AI Chat for Refined Plot** | ⏳ Planned |
+| **AI Chat for Refined Plot** | ⏳ In Progress |
 | **Global Draft System** | ⏳ Planned |
 | **Add Empty Chapters (Writer Assist Mode)** | ⏳ Planned |
 | **Infill Chapters** | ⏳ Planned |
