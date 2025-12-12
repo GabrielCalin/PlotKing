@@ -4,20 +4,12 @@
 LLM helper pentru editarea Expanded Plot bazat pe impact și diff.
 """
 
-import os
+
 import textwrap
-import requests
 import json
 from utils.json_utils import extract_json_from_response
+from provider import provider_manager
 
-LOCAL_API_URL = os.getenv("LMSTUDIO_API_URL", "http://127.0.0.1:1234/v1/chat/completions")
-MODEL_NAME = os.getenv("LMSTUDIO_MODEL", "phi-3-mini-4k-instruct")
-
-GEN_PARAMS = {
-    "temperature": 0.7,
-    "top_p": 0.95,
-    "max_tokens": 4096,
-}
 
 _EDIT_PLOT_PROMPT = textwrap.dedent("""\
 You are an expert story editor specializing in adapting story blueprints to maintain continuity after changes.
@@ -116,8 +108,8 @@ def call_llm_edit_plot(
         diff_summary: Rezumatul modificărilor detectate
         genre: Genul poveștii
     """
-    url = api_url or LOCAL_API_URL
-    model = model_name or MODEL_NAME
+
+
 
     prompt = _EDIT_PLOT_PROMPT.format(
         original_plot=original_plot or "",
@@ -127,20 +119,20 @@ def call_llm_edit_plot(
         genre=genre or "unspecified",
     )
 
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": "You are a precise story continuity editor that adapts story blueprints while preserving as much original content as possible. You must output only valid JSON."},
-            {"role": "user", "content": prompt},
-        ],
-        **GEN_PARAMS,
-    }
+    messages = [
+        {"role": "system", "content": "You are a precise story continuity editor that adapts story blueprints while preserving as much original content as possible. You must output only valid JSON."},
+        {"role": "user", "content": prompt},
+    ]
 
     try:
-        resp = requests.post(url, json=payload, timeout=timeout)
-        resp.raise_for_status()
-        data = resp.json()
-        content = data["choices"][0]["message"]["content"].strip()
+        content = provider_manager.get_llm_response(
+            task_name="plot_editor",
+            messages=messages,
+            timeout=timeout,
+            temperature=0.7,
+            top_p=0.95,
+            max_tokens=4096
+        )
         
         # Parse JSON response (suportă atât JSON pur cât și wrappat în tag-uri)
         try:
@@ -151,4 +143,5 @@ def call_llm_edit_plot(
             return content
     except Exception as e:
         return f"Error during plot editing: {e}"
+
 

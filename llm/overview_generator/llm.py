@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 # pipeline/steps/overview_generator/llm.py
-import requests
 import textwrap
 from typing import Optional
+from provider import provider_manager
+
 
 def call_llm_generate_overview(
     initial_requirements: str,
@@ -126,17 +127,18 @@ def call_llm_generate_overview(
         No extra commentary.
         """)
 
-    payload = {
-        "model": model,
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": temperature,
-        "max_tokens": max_tokens,
-    }
 
+    messages = [{"role": "user", "content": prompt}]
+    
     try:
-        response = requests.post(api_url, json=payload, timeout=300)
-        response.raise_for_status()
-        data = response.json()
-        return data["choices"][0]["message"]["content"].strip()
+        content = provider_manager.get_llm_response(
+            task_name="overview_generator",
+            messages=messages,
+            timeout=300,
+            temperature=temperature,
+            max_tokens=max_tokens
+        )
+        return content
     except Exception as e:
         return f"Error during chapter generation: {e}"
+

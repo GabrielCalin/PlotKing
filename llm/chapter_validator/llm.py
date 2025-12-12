@@ -5,19 +5,13 @@ LLM-only validator pentru un capitol: primește toate intrările ca argumente,
 apelează modelul, și întoarce (result, details).
 """
 
-import os
+
 import textwrap
-import requests
 from typing import List, Tuple
+from provider import provider_manager
 
-LOCAL_API_URL = os.getenv("LMSTUDIO_API_URL", "http://127.0.0.1:1234/v1/chat/completions")
-MODEL_NAME = os.getenv("LMSTUDIO_MODEL", "phi-3-mini-4k-instruct")
 
-GEN_PARAMS = {
-    "temperature": 0.3,
-    "top_p": 0.9,
-    "max_tokens": 1000,
-}
+
 
 _VALIDATION_PROMPT = textwrap.dedent("""\
 You are a balanced and analytical literary editor.
@@ -98,9 +92,9 @@ def call_llm_validate_chapter(
       ("UNKNOWN", raw)       – dacă formatul nu e recunoscut
       ("ERROR", message)     – dacă a eșuat requestul
     """
-    url = api_url or LOCAL_API_URL
-    model = model_name or MODEL_NAME
+
     previous_summary = _summarize_previous(previous_chapters or [])
+
 
     prompt = _VALIDATION_PROMPT.format(
         expanded_plot=expanded_plot or "",
@@ -111,24 +105,19 @@ def call_llm_validate_chapter(
         genre=genre or "unspecified",
     )
 
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": "You are a balanced story structure and continuity validator."},
-            {"role": "user", "content": prompt},
-        ],
-        **GEN_PARAMS,
-    }
+    messages = [
+        {"role": "system", "content": "You are a balanced story structure and continuity validator."},
+        {"role": "user", "content": prompt},
+    ]
 
     try:
-        resp = requests.post(url, json=payload, timeout=timeout)
-        resp.raise_for_status()
-        data = resp.json()
-        content = (
-            data.get("choices", [{}])[0]
-                .get("message", {})
-                .get("content", "")
-                .strip()
+        content = provider_manager.get_llm_response(
+            task_name="chapter_validator",
+            messages=messages,
+            timeout=timeout,
+            temperature=0.3,
+            top_p=0.9,
+            max_tokens=1000
         )
     except Exception as e:
         return ("ERROR", str(e))
@@ -139,3 +128,4 @@ def call_llm_validate_chapter(
     if "RESULT: NOT OK" in up:
         return ("NOT OK", content)
     return ("UNKNOWN", content)
+

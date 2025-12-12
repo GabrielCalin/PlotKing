@@ -1,10 +1,6 @@
 # llm/cover_prompter/llm.py
-import os
-import requests
 import textwrap
-
-LOCAL_API_URL = os.getenv("LMSTUDIO_API_URL", "http://127.0.0.1:1234/v1/chat/completions")
-MODEL_NAME = os.getenv("LMSTUDIO_MODEL", "phi-3-mini-4k-instruct")
+from provider import provider_manager
 
 def generate_prompt(story_context: str,
                     api_url: str = None,
@@ -22,9 +18,6 @@ def generate_prompt(story_context: str,
     Returns:
         A string containing the generated prompt.
     """
-    url = api_url or LOCAL_API_URL
-    model = model_name or MODEL_NAME
-    
     if not story_context:
         return ""
 
@@ -41,23 +34,22 @@ def generate_prompt(story_context: str,
     Example: "A dark forest with glowing mushrooms, a mysterious hooded figure standing in the shadows, magical atmosphere, 8k, detailed, fantasy art style"
     """
     
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"Story Context:\n{story_context}"}
-        ],
-        "temperature": 0.7,
-        "max_tokens": 150,
-    }
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": f"Story Context:\n{story_context}"}
+    ]
     
     try:
-        resp = requests.post(url, json=payload, timeout=timeout)
-        resp.raise_for_status()
-        data = resp.json()
-        content = data["choices"][0]["message"]["content"].strip()
+        content = provider_manager.get_llm_response(
+            task_name="cover_prompter",
+            messages=messages,
+            timeout=timeout,
+            temperature=0.7,
+            max_tokens=500
+        )
         # Cleanup
         content = content.replace('"', '').replace("Prompt:", "").strip()
         return content
     except Exception as e:
         return f"Error generating prompt: {e}"
+

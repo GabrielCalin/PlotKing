@@ -1,6 +1,7 @@
 # pipeline/steps/refine_plot/llm.py
 import textwrap
-import requests
+from provider import provider_manager
+
 
 def refine_plot(user_plot: str, genre: str,
                 model="mistral",
@@ -58,18 +59,19 @@ def refine_plot(user_plot: str, genre: str,
     Output only the refined plot summary.
     """)
 
-    payload = {
-        "model": model,
-        "messages": [{"role": "user", "content": PROMPT_TEMPLATE}],
-        "temperature": 0.8,
-        "top_p": 0.9,
-        "max_tokens": 1200,
-    }
+
+    messages = [{"role": "user", "content": PROMPT_TEMPLATE}]
 
     try:
-        resp = requests.post(api_url, json=payload, timeout=300)
-        resp.raise_for_status()
-        data = resp.json()
-        return data["choices"][0]["message"]["content"].strip()
+        content = provider_manager.get_llm_response(
+            task_name="refine_plot",
+            messages=messages,
+            timeout=300,
+            temperature=0.8,
+            top_p=0.9,
+            max_tokens=1200
+        )
+        return content
     except Exception as e:
         return f"Error during refinement: {e}"
+

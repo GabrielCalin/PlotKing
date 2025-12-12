@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 # pipeline/steps/plot_expander/llm.py
-import requests
 import textwrap
+from provider import provider_manager
+
 
 def call_llm_expand_plot(
     user_plot: str,
@@ -69,17 +70,18 @@ def call_llm_expand_plot(
     Output only the Markdown document with the four sections above — no extra commentary.
     """)
 
-    payload = {
-        "model": model,
-        "messages": [{"role": "user", "content": PROMPT_TEMPLATE}],
-        "temperature": temperature,
-        "max_tokens": max_tokens,
-    }
 
+    messages = [{"role": "user", "content": PROMPT_TEMPLATE}]
+    
     try:
-        resp = requests.post(api_url, json=payload, timeout=300)
-        resp.raise_for_status()
-        data = resp.json()
-        return data["choices"][0]["message"]["content"].strip()
+        content = provider_manager.get_llm_response(
+            task_name="plot_expander",
+            messages=messages,
+            timeout=300,
+            temperature=temperature,
+            max_tokens=max_tokens
+        )
+        return content
     except Exception as e:
         return f"Error during plot expansion: {e}"
+

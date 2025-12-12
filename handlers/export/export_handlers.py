@@ -56,6 +56,9 @@ def suggest_cover_prompt_handler(current_log):
         final_log = new_log + "\n" + ts_prefix(f"❌ Error suggesting prompt: {e}")
         return "", final_log.strip()
 
+
+from provider import provider_manager
+
 def generate_cover_handler(prompt, current_log):
     """
     Handler for the 'Generate Cover' button.
@@ -66,38 +69,17 @@ def generate_cover_handler(prompt, current_log):
     new_log = (current_log or "") + "\n" + ts_prefix("🎨 Generating cover for prompt...")
     
     try:
-        payload = {
-            "prompt": prompt,
-            "steps": 20, # Increased steps for better quality
-            "width": 512,
-            "height": 768, # Portrait aspect ratio for book covers
-            "cfg_scale": 7
-        }
-        
-        response = requests.post("http://127.0.0.1:6969/sdapi/v1/txt2img", json=payload)
-        
-        if response.status_code == 200:
-            r = response.json()
-            image_b64 = r['images'][0]
-            
-            # Create tmp directory if it doesn't exist
-            tmp_dir = "tmp"
-            os.makedirs(tmp_dir, exist_ok=True)
-            
-            output_path = os.path.join(tmp_dir, "cover.png")
-            
-            with open(output_path, "wb") as f:
-                f.write(base64.b64decode(image_b64))
-                
-            final_log = new_log + "\n" + ts_prefix(f"✅ Cover generated: {output_path}")
-            return os.path.abspath(output_path), final_log.strip()
-        else:
-            final_log = new_log + "\n" + ts_prefix(f"❌ Generation failed with status code: {response.status_code}")
-            return None, final_log.strip()
+        output_path = provider_manager.generate_image(
+            task_name="cover_image_generation",
+            prompt=prompt
+        )
+        final_log = new_log + "\n" + ts_prefix(f"✅ Cover generated: {output_path}")
+        return output_path, final_log.strip()
             
     except Exception as e:
         final_log = new_log + "\n" + ts_prefix(f"❌ Error generating cover: {e}")
         return None, final_log.strip()
+
 
 def export_book_handler(title, author, upload_path, gen_path, source, font_family, font_size, current_log):
     """
