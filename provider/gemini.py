@@ -20,7 +20,7 @@ def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kw
         }
         
         if reasoning:
-            llm_params["reasoning_effort"] = "minimal"
+            llm_params["model_kwargs"] = {"reasoning_effort": "minimal"}
         
         llm = ChatGoogleGenerativeAI(**llm_params)
         

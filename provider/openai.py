@@ -4,6 +4,7 @@ import base64
 from typing import List, Dict, Any
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+from openai import OpenAI
 
 def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kwargs) -> str:
     api_key = settings.get("api_key")
@@ -52,52 +53,34 @@ def generate_image(settings: Dict[str, Any], prompt: str, **kwargs) -> str:
     api_key = settings.get("api_key")
     if not api_key:
         raise ValueError("OpenAI API Key is missing.")
-        
-    model = settings.get("technical_name") or "dall-e-3"
-    
-    url = "https://api.openai.com/v1/images/generations"
-    
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}"
-    }
-    
-    # OpenAI size must be supported. DALL-E 3 supports 1024x1024, 1024x1792, etc.
-    # Our app requests 512x768 usually via kwargs (width, height).
-    
+
+    model = settings.get("technical_name") or "gpt-image-1"
+
     width = kwargs.get("width")
     height = kwargs.get("height")
-    
-    if width and height:
-        size = f"{width}x{height}"
-    else:
-        # Defaults if not provided
-        size = "1024x1024" # Safe default for DALL-E 3
-        if "dall-e-2" in model:
-            size = "512x512" 
-    
-    payload = {
-        "model": model,
-        "prompt": prompt,
-        "n": 1,
-        "size": size,
-        "response_format": "b64_json" # Get b64 to save locally matches our flow
-    }
-    
+    size = f"{width}x{height}" if width and height else "1024x1024"
+
     try:
-        response = requests.post(url, headers=headers, json=payload, timeout=kwargs.get("timeout", 60))
-        response.raise_for_status()
-        data = response.json()
-        image_b64 = data["data"][0]["b64_json"]
-        
-        tmp_dir = "tmp"
-        os.makedirs(tmp_dir, exist_ok=True)
-        output_path = os.path.join(tmp_dir, "cover.png")
-        
+        client = OpenAI(api_key=api_key)
+
+        # NO response_format — new API rejects it
+        response = client.images.generate(
+            model=model,
+            prompt=prompt,
+            size=size,
+            n=1
+        )
+
+        # still returned as base64 by default
+        img_b64 = response.data[0].b64_json
+
+        os.makedirs("tmp", exist_ok=True)
+        output_path = os.path.join("tmp", "cover.png")
+
         with open(output_path, "wb") as f:
-            f.write(base64.b64decode(image_b64))
-            
+            f.write(base64.b64decode(img_b64))
+
         return os.path.abspath(output_path)
-        
+
     except Exception as e:
         raise Exception(f"OpenAI Image Error: {e}")
