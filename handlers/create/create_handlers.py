@@ -4,7 +4,10 @@ import os, re, json
 from pipeline.constants import RUN_MODE_CHOICES
 from state.pipeline_state import request_stop, clear_stop
 from state.checkpoint_manager import get_checkpoint, clear_checkpoint
+from state.checkpoint_manager import get_checkpoint, clear_checkpoint
 from utils.timestamp import ts_prefix
+from llm.chat_refiner.llm import call_llm_chat
+from llm.refine_chat.llm import refine_chat
 from handlers.create.project_manager import (
     list_projects,
     save_project,
@@ -284,3 +287,69 @@ def refresh_create_from_checkpoint(epoch, current_chapters_state, current_chapte
         chapter_counter_update,
     )
 
+
+# ---- Chat Handlers ----
+
+def show_original_wrapper(plot, refined):
+    u_val, mode, u_btn = show_original(plot, refined)
+    return u_val, mode, u_btn, gr.update(visible=True), gr.update(visible=False)
+
+def show_refined_wrapper(plot, refined):
+    u_val, mode, u_btn = show_refined(plot, refined)
+    return u_val, mode, u_btn, gr.update(visible=True), gr.update(visible=False)
+
+def show_chat(history, plot, genre):
+    new_history = history if history else []
+    greeting_log = ""
+    if not new_history:
+            try:
+                greeting = call_llm_chat(plot, genre, [], "START_SESSION", timeout=10)
+                new_history.append({"role": "assistant", "content": greeting})
+                greeting_log = "\nPlotKing initialized chat."
+            except Exception:
+                pass
+
+    return (
+        gr.update(visible=False), 
+        "chat", 
+        gr.update(visible=False), 
+        gr.update(visible=True), 
+        new_history, 
+        new_history,
+        greeting_log
+    )
+
+def submit_chat_message(msg, history, plot, genre, current_log):
+    if not msg.strip():
+        return gr.update(), history, history, current_log
+    
+    history.append({"role": "user", "content": msg})
+    reply = call_llm_chat(plot, genre, history, msg)
+    history.append({"role": "assistant", "content": reply})
+    
+    log_msg = current_log + "\nPlotKing replied." if current_log else "PlotKing replied."
+    return "", history, history, log_msg
+
+def clear_chat_handler(plot, genre, current_log):
+    greeting = call_llm_chat(plot, genre, [], "START_SESSION")
+    new_hist = [{"role": "assistant", "content": greeting}]
+    log_msg = current_log + "\nChat cleared." if current_log else "Chat cleared."
+    return new_hist, new_hist, log_msg
+
+def do_refine_chat(plot, genre, history, current_log):
+    if not history:
+            return gr.update(), "chat", gr.update(), gr.update(), gr.update(), "", current_log
+
+    refined_text = refine_chat(plot, genre, history)
+    
+    u_val = gr.update(value=refined_text, label="Refined", interactive=False, visible=True)
+    log_msg = current_log + "\nRefined plot generated from Chat." if current_log else "Refined plot generated from Chat."
+    
+    return (
+        u_val,
+        "refined",
+        gr.update(value="🧹", visible=True),
+        gr.update(visible=False),
+        refined_text,
+        log_msg
+    )

@@ -18,7 +18,14 @@ from handlers.create.create_handlers import (
     show_refined,
     refine_or_clear,
     sync_textbox,
+
     refresh_create_from_checkpoint,
+    show_original_wrapper,
+    show_refined_wrapper,
+    show_chat,
+    submit_chat_message,
+    clear_chat_handler,
+    do_refine_chat,
 )
 from handlers.create.project_manager import (
     save_project,
@@ -39,6 +46,7 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
     refined_plot_state = gr.State("")
     current_mode = gr.State("original")
     chapters_state = gr.State([])
+    chat_history = gr.State([])
 
     # ---- helper: bump epoch (pt. sincronizare Create → Editor) ----
     def _bump_editor_epoch(epoch):
@@ -76,6 +84,7 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
                     gr.Markdown("Plot Description", elem_id="plot-title")
                     with gr.Row(elem_classes=["plot-buttons"]):
                         show_original_btn = gr.Button("O", size="sm")
+                        show_chat_btn = gr.Button("C", size="sm")
                         show_refined_btn = gr.Button("R", size="sm")
                         refine_btn = gr.Button("🪄", size="sm")
                 plot_input = gr.Textbox(
@@ -85,6 +94,13 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
                     placeholder="Ex: A young girl discovers a portal to another world...",
                     interactive=True,
                 )
+                with gr.Column(visible=False, elem_classes=["chat-wrapper"]) as chat_wrapper:
+                    chatbot = gr.Chatbot(label="PlotKing", height=300, type="messages")
+                    with gr.Row():
+                        chat_msg = gr.Textbox(scale=4, show_label=False, placeholder="Discuss with PlotKing...", container=False)
+                        send_btn = gr.Button("Send", scale=1)
+                        clear_btn = gr.Button("Clear", scale=1)
+                        refine_chat_btn = gr.Button("Refine Chat", scale=1, variant="primary")
             genre_input = gr.Textbox(label="Genre", placeholder="Ex: fantasy, science fiction", lines=2)
 
         with gr.Column(scale=1):
@@ -153,6 +169,8 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
 
     def _refresh_chapter(selected_name):
         yield from refresh_chapter(generate_book_outline_stream, selected_name)
+
+    # ---- Chat Handlers are now in create_handlers.py ----
 
     # ---- Wiring ----
 
@@ -387,10 +405,40 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
 
     # Plot toggles
     show_original_btn.click(
-        fn=show_original, inputs=[plot_state, refined_plot_state], outputs=[plot_input, current_mode, refine_btn]
+        fn=show_original_wrapper, 
+        inputs=[plot_state, refined_plot_state], 
+        outputs=[plot_input, current_mode, refine_btn, plot_input, chat_wrapper]
     )
     show_refined_btn.click(
-        fn=show_refined, inputs=[plot_state, refined_plot_state], outputs=[plot_input, current_mode, refine_btn]
+        fn=show_refined_wrapper, 
+        inputs=[plot_state, refined_plot_state], 
+        outputs=[plot_input, current_mode, refine_btn, plot_input, chat_wrapper]
+    )
+    show_chat_btn.click(
+        fn=show_chat,
+        inputs=[chat_history, plot_state, genre_input],
+        outputs=[plot_input, current_mode, refine_btn, chat_wrapper, chatbot, chat_history, status_output]
+    )
+
+    # Chat interactions
+    chat_sub_args = dict(
+        fn=submit_chat_message,
+        inputs=[chat_msg, chat_history, plot_state, genre_input, status_output],
+        outputs=[chat_msg, chatbot, chat_history, status_output]
+    )
+    chat_msg.submit(**chat_sub_args)
+    send_btn.click(**chat_sub_args)
+
+    clear_btn.click(
+        fn=clear_chat_handler,
+        inputs=[plot_state, genre_input, status_output],
+        outputs=[chatbot, chat_history, status_output]
+    )
+    
+    refine_chat_btn.click(
+        fn=do_refine_chat,
+        inputs=[plot_state, genre_input, chat_history, status_output],
+        outputs=[plot_input, current_mode, refine_btn, chat_wrapper, refined_plot_state, status_output]
     )
 
     # Refine / Clear
