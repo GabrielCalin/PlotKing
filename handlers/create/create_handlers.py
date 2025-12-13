@@ -312,7 +312,7 @@ def show_chat(history, plot, genre):
     return (
         gr.update(visible=False), 
         "chat", 
-        gr.update(visible=False), 
+        gr.update(visible=True),  # Keep refine_btn visible
         gr.update(visible=True), 
         new_history, 
         new_history,
@@ -373,10 +373,10 @@ def bot_reply_chat_message(history, plot, genre, current_log):
         gr.update(interactive=True)  # Enable Refine
     )
 
-def clear_chat_handler(plot, genre, current_log):
+def reset_chat_handler(plot, genre, current_log):
     greeting = call_llm_chat(plot, genre, [], "START_SESSION")
     new_hist = [{"role": "assistant", "content": greeting}]
-    log_msg = current_log + "\nChat cleared." if current_log else "Chat cleared."
+    log_msg = current_log + "\nChat reset." if current_log else "Chat reset."
     return new_hist, new_hist, log_msg
 
 def start_refine_chat(current_log):

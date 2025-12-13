@@ -26,7 +26,7 @@ from handlers.create.create_handlers import (
 
     user_submit_chat_message,
     bot_reply_chat_message,
-    clear_chat_handler,
+    reset_chat_handler,
     start_refine_chat,
     finish_refine_chat,
 )
@@ -102,7 +102,7 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
                     with gr.Row():
                         chat_msg = gr.Textbox(scale=4, show_label=False, placeholder="Discuss with PlotKing...", container=False)
                         send_btn = gr.Button("Send", scale=1)
-                        clear_btn = gr.Button("Clear", scale=1)
+                        reset_btn = gr.Button("Reset", scale=1)
                         refine_chat_btn = gr.Button("Refine Chat", scale=1, variant="primary")
             genre_input = gr.Textbox(label="Genre", placeholder="Ex: fantasy, science fiction", lines=2)
 
@@ -432,18 +432,24 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
         trigger(
             fn=user_submit_chat_message,
             inputs=[chat_msg, chat_history],
-            outputs=[chat_msg, chatbot, chat_history, send_btn, chat_msg, clear_btn, refine_chat_btn]
+            outputs=[chat_msg, chatbot, chat_history, send_btn, chat_msg, reset_btn, refine_chat_btn]
         ).then(
             fn=bot_reply_chat_message,
             inputs=[chat_history, plot_state, genre_input, status_output],
-            outputs=[chatbot, chat_history, status_output, send_btn, chat_msg, clear_btn, refine_chat_btn]
+            outputs=[chatbot, chat_history, status_output, send_btn, chat_msg, reset_btn, refine_chat_btn]
         )
 
     _chat_submit_chain(user_submit_chat_message, chat_msg.submit)
     _chat_submit_chain(user_submit_chat_message, send_btn.click)
 
-    clear_btn.click(
-        fn=clear_chat_handler,
+    reset_btn.click(
+        fn=reset_chat_handler,
+        inputs=[plot_state, genre_input, status_output],
+        outputs=[chatbot, chat_history, status_output]
+    )
+    
+    chatbot.clear(
+        fn=reset_chat_handler,
         inputs=[plot_state, genre_input, status_output],
         outputs=[chatbot, chat_history, status_output]
     )
@@ -451,11 +457,11 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
     refine_chat_btn.click(
         fn=start_refine_chat,
         inputs=[status_output],
-        outputs=[refine_chat_btn, status_output, chat_msg, send_btn, clear_btn]
+        outputs=[refine_chat_btn, status_output, chat_msg, send_btn, reset_btn]
     ).then(
         fn=finish_refine_chat,
         inputs=[plot_state, genre_input, chat_history, status_output],
-        outputs=[plot_input, current_mode, refine_btn, chat_wrapper, refined_plot_state, status_output, refine_chat_btn, chat_msg, send_btn, clear_btn]
+        outputs=[plot_input, current_mode, refine_btn, chat_wrapper, refined_plot_state, status_output, refine_chat_btn, chat_msg, send_btn, reset_btn]
     )
 
     # Refine / Clear
