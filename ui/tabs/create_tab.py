@@ -26,9 +26,8 @@ from handlers.create.create_handlers import (
 
     user_submit_chat_message,
     bot_reply_chat_message,
+    bot_reply_chat_message,
     reset_chat_handler,
-    start_refine_chat,
-    finish_refine_chat,
 )
 from handlers.create.project_manager import (
     save_project,
@@ -36,6 +35,7 @@ from handlers.create.project_manager import (
     delete_project,
     new_project,
 )
+from llm.refine_chat.llm import refine_chat
 from pipeline.constants import RUN_MODE_CHOICES
 from pipeline.runner_create import generate_book_outline_stream
 from llm.refine_plot.llm import refine_plot
@@ -100,10 +100,8 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
                 with gr.Column(visible=False, elem_classes=["chat-wrapper"]) as chat_wrapper:
                     chatbot = gr.Chatbot(label="PlotKing", height=300, type="messages")
                     with gr.Row():
-                        chat_msg = gr.Textbox(scale=4, show_label=False, placeholder="Discuss with PlotKing...", container=False)
-                        send_btn = gr.Button("Send", scale=1)
-                        reset_btn = gr.Button("Reset", scale=1)
-                        refine_chat_btn = gr.Button("Refine Chat", scale=1, variant="primary")
+                        chat_msg = gr.Textbox(scale=20, show_label=False, placeholder="Discuss with PlotKing...", container=False)
+                        send_btn = gr.Button("Send", scale=1, min_width=80)
             genre_input = gr.Textbox(label="Genre", placeholder="Ex: fantasy, science fiction", lines=2)
 
         with gr.Column(scale=1):
@@ -432,43 +430,132 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
         trigger(
             fn=user_submit_chat_message,
             inputs=[chat_msg, chat_history],
-            outputs=[chat_msg, chatbot, chat_history, send_btn, chat_msg, reset_btn, refine_chat_btn]
+            outputs=[chat_msg, chatbot, chat_history, send_btn, chat_msg]
         ).then(
             fn=bot_reply_chat_message,
             inputs=[chat_history, plot_state, genre_input, status_output],
-            outputs=[chatbot, chat_history, status_output, send_btn, chat_msg, reset_btn, refine_chat_btn]
+            outputs=[chatbot, chat_history, status_output, send_btn, chat_msg]
         )
 
     _chat_submit_chain(user_submit_chat_message, chat_msg.submit)
     _chat_submit_chain(user_submit_chat_message, send_btn.click)
 
-    reset_btn.click(
-        fn=reset_chat_handler,
-        inputs=[plot_state, genre_input, status_output],
-        outputs=[chatbot, chat_history, status_output]
-    )
-    
-    chatbot.clear(
-        fn=reset_chat_handler,
-        inputs=[plot_state, genre_input, status_output],
-        outputs=[chatbot, chat_history, status_output]
-    )
-    
-    refine_chat_btn.click(
-        fn=start_refine_chat,
-        inputs=[status_output],
-        outputs=[refine_chat_btn, status_output, chat_msg, send_btn, reset_btn]
-    ).then(
-        fn=finish_refine_chat,
-        inputs=[plot_state, genre_input, chat_history, status_output],
-        outputs=[plot_input, current_mode, refine_btn, chat_wrapper, refined_plot_state, status_output, refine_chat_btn, chat_msg, send_btn, reset_btn]
-    )
+
 
     # Refine / Clear
+    # Multi-function Refine Button Routing
+    # We need a routing mechanism because "chat" refinement is async/separate flow compared to simple "plot" refinement.
+    # To achieve this:
+    # 1. We create a "router" function that checks 'current_mode'
+    # 2. But we can't easily dynamically swap the .click() handler.
+    # 3. Instead, we can make 'refine_btn' trigger a conditional chain using gr.State check or similar.
+    #    Actually easier: have two hidden buttons for the different refine actions (plot vs chat),
+    #    and a main visible button that just clicks the appropriate hidden one via valid JS? No, too complex.
+    #    Better: Use a single handler that returns a "plan" or triggers appropriately.
+    #    
+    #    Let's try this: The refine_btn.click will call a "dispatch" function.
+    #    If mode == 'original' or 'refined' -> do sync refine/clear.
+    #    If mode == 'chat' -> do the start/finish async flow.
+    #    
+    #    WAIT. Gradio's .then() chain is fixed.
+    #    We can put the logic in one generator function.
+    
+    def refine_button_dispatcher(plot, refined, mode, genre, history, current_log):
+        # Case 1: Refined -> Clear
+        if mode == "refined":
+            yield (
+                gr.update(value=plot, label="Original", interactive=True, visible=True), # plot_input
+                "",           # refined_plot_state
+                "original",   # mode
+                gr.update(value="🪄", interactive=True), # refine_btn
+                gr.update(visible=False), # chat_wrapper
+                current_log,
+                gr.update(interactive=True), # chat_msg (no-op)
+                gr.update(interactive=True)  # send_btn (no-op)
+            )
+            return
+
+
+        # Case 2: Original -> Refine Plot (LLM)
+        if mode == "original":
+             # Show loading
+            yield (
+                gr.update(interactive=False, placeholder="Refining..."), 
+                gr.update(), 
+                "original", 
+                gr.update(interactive=False), 
+                gr.update(),
+                current_log + "\nRefining original plot...",
+                gr.update(), gr.update()
+            )
+            
+            # Call LLM
+            new_refined = refine_plot(plot, genre)
+            
+            yield (
+                gr.update(value=new_refined, label="Refined", interactive=False, visible=True, placeholder=""),
+                new_refined,
+                "refined",
+                gr.update(value="🧹", interactive=True),
+                gr.update(visible=False),
+                current_log + "\nRefined plot generated.",
+                gr.update(), gr.update()
+            )
+            return
+
+        # Case 3: Chat -> Refine Chat (LLM)
+        if mode == "chat":
+            if not history:
+                 yield (
+                    gr.update(), gr.update(), "chat", gr.update(), gr.update(),
+                    current_log + "\nChat is empty. Cannot refine.",
+                    gr.update(), gr.update()
+                 )
+                 return
+
+            # Start Refine Chat
+            yield (
+                gr.update(), # plot_input (hidden)
+                gr.update(), # refined_plot_state
+                "chat",      # mode
+                gr.update(interactive=False, value="⏳ Refining..."), # refine_btn
+                gr.update(visible=True), # chat_wrapper
+                current_log + "\nRefining plot from chat context...",
+                gr.update(interactive=False), # chat_msg
+                gr.update(interactive=False)  # send_btn
+            )
+            
+            # Call LLM
+            try:
+                refined_text = refine_chat(plot, genre, history)
+                log_msg = current_log + "\nRefined plot generated from Chat."
+                
+                # Finish Refine Chat -> Switch to Refined Mode
+                yield (
+                    gr.update(value=refined_text, label="Refined", interactive=False, visible=True),
+                    refined_text,
+                    "refined",
+                    gr.update(value="🧹", interactive=True),
+                    gr.update(visible=False), # hide chat
+                    log_msg,
+                    gr.update(interactive=True), # reset chat_msg
+                    gr.update(interactive=True)  # reset send_btn
+                )
+            except Exception as e:
+                yield (
+                    gr.update(), "", "chat", 
+                    gr.update(interactive=True, value="🪄"), 
+                    gr.update(visible=True),
+                    current_log + f"\nError refining chat: {e}",
+                    gr.update(interactive=True),
+                    gr.update(interactive=True)
+                )
+            return
+
     refine_btn.click(
-        fn=lambda plot, refined, mode, genre: refine_or_clear(plot, refined, mode, genre, refine_plot),
-        inputs=[plot_state, refined_plot_state, current_mode, genre_input],
-        outputs=[plot_input, refined_plot_state, current_mode, refine_btn],
+        fn=refine_button_dispatcher,
+        inputs=[plot_state, refined_plot_state, current_mode, genre_input, chat_history, status_output],
+        outputs=[plot_input, refined_plot_state, current_mode, refine_btn, chat_wrapper, status_output, chat_msg, send_btn]
     )
 
     # Textbox sync
