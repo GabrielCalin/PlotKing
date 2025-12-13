@@ -213,14 +213,104 @@ def show_refined(plot, refined):
                      placeholder="This refined version will be used for generation (if present)."), \
            "refined", gr.update(value="🧹")
 
-def refine_or_clear(plot, refined, mode, genre, refine_fn):
+def _clear_refined_plot(plot, current_log):
+    """Case 1: Refined -> Clear"""
+    yield (
+        gr.update(value=plot, label="Original", interactive=True, visible=True), # plot_input
+        "",           # refined_plot_state
+        "original",   # mode
+        gr.update(value="🪄", interactive=True), # refine_btn
+        gr.update(visible=False), # chat_wrapper
+        current_log,
+        gr.update(interactive=True), # chat_msg (no-op)
+        gr.update(interactive=True)  # send_btn (no-op)
+    )
+
+def _refine_original_plot(plot, genre, current_log):
+    """Case 2: Original -> Refine Plot (LLM)"""
+    from llm.refine_plot.llm import refine_plot
+    
+    # Show loading
+    yield (
+        gr.update(interactive=False, placeholder="Refining..."), 
+        gr.update(), 
+        "original", 
+        gr.update(interactive=False), 
+        gr.update(),
+        current_log + "\nRefining original plot...",
+        gr.update(), gr.update()
+    )
+    
+    # Call LLM
+    new_refined = refine_plot(plot, genre)
+    
+    yield (
+        gr.update(value=new_refined, label="Refined", interactive=False, visible=True, placeholder=""),
+        new_refined,
+        "refined",
+        gr.update(value="🧹", interactive=True),
+        gr.update(visible=False),
+        current_log + "\nRefined plot generated.",
+        gr.update(), gr.update()
+    )
+
+def _refine_from_chat(plot, genre, history, current_log):
+    """Case 3: Chat -> Refine Chat (LLM)"""
+    if not history:
+         yield (
+            gr.update(), gr.update(), "chat", gr.update(), gr.update(),
+            current_log + "\nChat is empty. Cannot refine.",
+            gr.update(), gr.update()
+         )
+         return
+
+    # Start Refine Chat
+    yield (
+        gr.update(), # plot_input (hidden)
+        gr.update(), # refined_plot_state
+        "chat",      # mode
+        gr.update(interactive=False, value="⏳ Refining..."), # refine_btn
+        gr.update(visible=True), # chat_wrapper
+        current_log + "\nRefining plot from chat context...",
+        gr.update(interactive=False), # chat_msg
+        gr.update(interactive=False)  # send_btn
+    )
+    
+    # Call LLM
+    try:
+        refined_text = refine_chat(plot, genre, history)
+        log_msg = current_log + "\nRefined plot generated from Chat."
+        
+        # Finish Refine Chat -> Switch to Refined Mode
+        yield (
+            gr.update(value=refined_text, label="Refined", interactive=False, visible=True),
+            refined_text,
+            "refined",
+            gr.update(value="🧹", interactive=True),
+            gr.update(visible=False), # hide chat
+            log_msg,
+            gr.update(interactive=True), # reset chat_msg
+            gr.update(interactive=True)  # reset send_btn
+        )
+    except Exception as e:
+        yield (
+            gr.update(), "", "chat", 
+            gr.update(interactive=True, value="🪄"), 
+            gr.update(visible=True),
+            current_log + f"\nError refining chat: {e}",
+            gr.update(interactive=True),
+            gr.update(interactive=True)
+        )
+
+# Multi-function Refine Button Routing
+# Handles: "Refined" -> Clear, "Original" -> Refine Plot, "Chat" -> Refine Chat
+def refine_or_clear_dispatcher(plot, refined, mode, genre, history, current_log):
     if mode == "refined":
-        return gr.update(value=plot, label="Original", interactive=True), "", "original", gr.update(value="🪄")
-    else:
-        new_refined = refine_fn(plot, genre)
-        return gr.update(value=new_refined, label="Refined", interactive=False,
-                         placeholder="This refined version will be used for generation (if present)."), \
-               new_refined, "refined", gr.update(value="🧹")
+        yield from _clear_refined_plot(plot, current_log)
+    elif mode == "original":
+        yield from _refine_original_plot(plot, genre, current_log)
+    elif mode == "chat":
+        yield from _refine_from_chat(plot, genre, history, current_log)
 
 def sync_textbox(text, mode):
     if mode == "refined":
@@ -379,56 +469,4 @@ def reset_chat_handler(plot, genre, current_log):
     log_msg = current_log + "\nChat reset." if current_log else "Chat reset."
     return new_hist, new_hist, log_msg
 
-def start_refine_chat(current_log):
-    # Visual feedback: disable button, show loading logic. Also disable chat controls.
-    log_msg = current_log + "\nRefining plot from chat context..." if current_log else "Refining plot from chat context..."
-    return (
-        gr.update(interactive=False, value="⏳ Refining..."), # refine_btn
-        log_msg,
-        gr.update(interactive=False), # chat_msg
-        gr.update(interactive=False), # send_btn
-        gr.update(interactive=False)  # clear_btn
-    )
 
-def finish_refine_chat(plot, genre, history, current_log):
-    if not history:
-        # Revert button state if checking fails (though UI likely prevents this via separate logic, safe to check)
-        return (
-            gr.update(), # plot_input
-            "chat",      # mode
-            gr.update(), # refine_btn
-            gr.update(), # chat_wrapper
-            gr.update(), # refined_plot_state
-            current_log + "\nChat is empty.", # log
-            gr.update(interactive=True, value="Refine Chat"), # button reset
-            gr.update(interactive=True), # chat_msg
-            gr.update(interactive=True), # send_btn
-            gr.update(interactive=True)  # clear_btn
-        )
-
-    try:
-        refined_text = refine_chat(plot, genre, history)
-        log_msg = current_log + "\nRefined plot generated."
-        
-        # Success transition
-        return (
-            gr.update(value=refined_text, label="Refined", interactive=False, visible=True), # plot_input shows refined
-            "refined",               # mode
-            gr.update(value="🧹", visible=True), # refine_btn visible
-            gr.update(visible=False),# chat_wrapper hidden
-            refined_text,            # state
-            log_msg,                 # log
-            gr.update(interactive=True, value="Refine Chat"), # refine_btn reset
-            gr.update(interactive=True), # chat_msg reset
-            gr.update(interactive=True), # send_btn reset
-            gr.update(interactive=True)  # clear_btn reset
-        )
-    except Exception as e:
-        return (
-            gr.update(), "chat", gr.update(), gr.update(), gr.update(),
-            current_log + f"\nError in refinement: {e}",
-            gr.update(interactive=True, value="Refine Chat"),
-            gr.update(interactive=True), # chat_msg reset
-            gr.update(interactive=True), # send_btn reset
-            gr.update(interactive=True)  # clear_btn reset
-        )
