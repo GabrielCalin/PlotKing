@@ -442,6 +442,12 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
     _chat_submit_chain(user_submit_chat_message, chat_msg.submit)
     _chat_submit_chain(user_submit_chat_message, send_btn.click)
 
+    # Chatbot clear event
+    chatbot.clear(
+        fn=reset_chat_handler,
+        inputs=[plot_state, genre_input, status_output],
+        outputs=[chatbot, chat_history, status_output]
+    )
     
     # Refine / Clear
     refine_btn.click(
