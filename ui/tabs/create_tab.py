@@ -99,10 +99,11 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
                     interactive=True,
                 )
                 with gr.Column(visible=False, elem_classes=["chat-wrapper"]) as chat_wrapper:
-                    chatbot = gr.Chatbot(label="PlotKing", height=300, type="messages")
-                    with gr.Row():
-                        chat_msg = gr.Textbox(scale=20, show_label=False, placeholder="Discuss with PlotKing...", container=False)
+                    chatbot = gr.Chatbot(label="PlotKing", height=300, type="messages", elem_id="create-chatbot", elem_classes=["small-text-chatbot"])
+                    with gr.Row(elem_classes=["chat-input-row"]):
+                        chat_msg = gr.Textbox(scale=20, show_label=False, placeholder="Discuss with PlotKing...", container=False, lines=1, max_lines=10, elem_id="chat-input-create")
                         send_btn = gr.Button("Send", scale=1, min_width=80)
+                        gr.Column(scale=0, min_width=10, elem_classes=["spacer-right"]) # Spacer
             genre_input = gr.Textbox(label="Genre", placeholder="Ex: fantasy, science fiction", lines=2)
 
         with gr.Column(scale=1):
