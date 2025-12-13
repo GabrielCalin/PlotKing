@@ -23,9 +23,12 @@ from handlers.create.create_handlers import (
     show_original_wrapper,
     show_refined_wrapper,
     show_chat,
-    submit_chat_message,
+
+    user_submit_chat_message,
+    bot_reply_chat_message,
     clear_chat_handler,
-    do_refine_chat,
+    start_refine_chat,
+    finish_refine_chat,
 )
 from handlers.create.project_manager import (
     save_project,
@@ -421,13 +424,23 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
     )
 
     # Chat interactions
-    chat_sub_args = dict(
-        fn=submit_chat_message,
-        inputs=[chat_msg, chat_history, plot_state, genre_input, status_output],
-        outputs=[chat_msg, chatbot, chat_history, status_output]
-    )
-    chat_msg.submit(**chat_sub_args)
-    send_btn.click(**chat_sub_args)
+    # Chat interactions: 
+    # 1. User submits -> update UI immediately, disable controls
+    # 2. Bot replies -> call LLM, update UI, enable controls
+    
+    def _chat_submit_chain(start_fn, trigger):
+        trigger(
+            fn=user_submit_chat_message,
+            inputs=[chat_msg, chat_history],
+            outputs=[chat_msg, chatbot, chat_history, send_btn, chat_msg, clear_btn, refine_chat_btn]
+        ).then(
+            fn=bot_reply_chat_message,
+            inputs=[chat_history, plot_state, genre_input, status_output],
+            outputs=[chatbot, chat_history, status_output, send_btn, chat_msg, clear_btn, refine_chat_btn]
+        )
+
+    _chat_submit_chain(user_submit_chat_message, chat_msg.submit)
+    _chat_submit_chain(user_submit_chat_message, send_btn.click)
 
     clear_btn.click(
         fn=clear_chat_handler,
@@ -436,9 +449,13 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
     )
     
     refine_chat_btn.click(
-        fn=do_refine_chat,
+        fn=start_refine_chat,
+        inputs=[status_output],
+        outputs=[refine_chat_btn, status_output, chat_msg, send_btn, clear_btn]
+    ).then(
+        fn=finish_refine_chat,
         inputs=[plot_state, genre_input, chat_history, status_output],
-        outputs=[plot_input, current_mode, refine_btn, chat_wrapper, refined_plot_state, status_output]
+        outputs=[plot_input, current_mode, refine_btn, chat_wrapper, refined_plot_state, status_output, refine_chat_btn, chat_msg, send_btn, clear_btn]
     )
 
     # Refine / Clear

@@ -319,16 +319,59 @@ def show_chat(history, plot, genre):
         greeting_log
     )
 
-def submit_chat_message(msg, history, plot, genre, current_log):
+def user_submit_chat_message(msg, history):
     if not msg.strip():
-        return gr.update(), history, history, current_log
+        # If empty, do nothing but keep controls enabled (or handle as no-op)
+        return gr.update(), history, history, gr.update(), gr.update(), gr.update(), gr.update()
     
+    # Optimistic update: Show user message immediately
     history.append({"role": "user", "content": msg})
-    reply = call_llm_chat(plot, genre, history, msg)
+    
+    return (
+        "",                 # Clear input
+        history,            # Update chatbot
+        history,            # Update state
+        gr.update(interactive=False), # Disable Send
+        gr.update(interactive=False), # Disable Input
+        gr.update(interactive=False), # Disable Clear
+        gr.update(interactive=False)  # Disable Refine
+    )
+
+def bot_reply_chat_message(history, plot, genre, current_log):
+    # Retrieve last message (user's) to send to LLM context properly if needed,
+    # or just pass the whole history. call_llm_chat handles history.
+    # The last message in history is the user's message we just added.
+    
+    if not history or history[-1]["role"] != "user":
+        # Should not happen in normal flow
+        return history, history, current_log, gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True)
+
+    user_msg = history[-1]["content"]
+    # We pass history EXCLUDING the last message to the LLM helper if the helper appends user_msg itself?
+    # Checking call_llm_chat... it accepts `user_message` string AND `chat_history`.
+    # It appends user_message to the history list it sends to provider.
+    # So we should pass history[:-1] as "past history" and history[-1]["content"] as current msg.
+    
+    past_history = history[:-1]
+    
+    try:
+        reply = call_llm_chat(plot, genre, past_history, user_msg)
+    except Exception as e:
+        reply = f"Error: {str(e)}"
+
     history.append({"role": "assistant", "content": reply})
     
     log_msg = current_log + "\nPlotKing replied." if current_log else "PlotKing replied."
-    return "", history, history, log_msg
+    
+    return (
+        history,          # Chatbot
+        history,          # State
+        log_msg,          # Log
+        gr.update(interactive=True), # Enable Send
+        gr.update(interactive=True, placeholder="Discuss with PlotKing..."),   # Enable Input
+        gr.update(interactive=True), # Enable Clear
+        gr.update(interactive=True)  # Enable Refine
+    )
 
 def clear_chat_handler(plot, genre, current_log):
     greeting = call_llm_chat(plot, genre, [], "START_SESSION")
@@ -336,20 +379,56 @@ def clear_chat_handler(plot, genre, current_log):
     log_msg = current_log + "\nChat cleared." if current_log else "Chat cleared."
     return new_hist, new_hist, log_msg
 
-def do_refine_chat(plot, genre, history, current_log):
-    if not history:
-            return gr.update(), "chat", gr.update(), gr.update(), gr.update(), "", current_log
-
-    refined_text = refine_chat(plot, genre, history)
-    
-    u_val = gr.update(value=refined_text, label="Refined", interactive=False, visible=True)
-    log_msg = current_log + "\nRefined plot generated from Chat." if current_log else "Refined plot generated from Chat."
-    
+def start_refine_chat(current_log):
+    # Visual feedback: disable button, show loading logic. Also disable chat controls.
+    log_msg = current_log + "\nRefining plot from chat context..." if current_log else "Refining plot from chat context..."
     return (
-        u_val,
-        "refined",
-        gr.update(value="🧹", visible=True),
-        gr.update(visible=False),
-        refined_text,
-        log_msg
+        gr.update(interactive=False, value="⏳ Refining..."), # refine_btn
+        log_msg,
+        gr.update(interactive=False), # chat_msg
+        gr.update(interactive=False), # send_btn
+        gr.update(interactive=False)  # clear_btn
     )
+
+def finish_refine_chat(plot, genre, history, current_log):
+    if not history:
+        # Revert button state if checking fails (though UI likely prevents this via separate logic, safe to check)
+        return (
+            gr.update(), # plot_input
+            "chat",      # mode
+            gr.update(), # refine_btn
+            gr.update(), # chat_wrapper
+            gr.update(), # refined_plot_state
+            current_log + "\nChat is empty.", # log
+            gr.update(interactive=True, value="Refine Chat"), # button reset
+            gr.update(interactive=True), # chat_msg
+            gr.update(interactive=True), # send_btn
+            gr.update(interactive=True)  # clear_btn
+        )
+
+    try:
+        refined_text = refine_chat(plot, genre, history)
+        log_msg = current_log + "\nRefined plot generated."
+        
+        # Success transition
+        return (
+            gr.update(value=refined_text, label="Refined", interactive=False, visible=True), # plot_input shows refined
+            "refined",               # mode
+            gr.update(value="🧹", visible=True), # refine_btn visible
+            gr.update(visible=False),# chat_wrapper hidden
+            refined_text,            # state
+            log_msg,                 # log
+            gr.update(interactive=True, value="Refine Chat"), # refine_btn reset
+            gr.update(interactive=True), # chat_msg reset
+            gr.update(interactive=True), # send_btn reset
+            gr.update(interactive=True)  # clear_btn reset
+        )
+    except Exception as e:
+        return (
+            gr.update(), "chat", gr.update(), gr.update(), gr.update(),
+            current_log + f"\nError in refinement: {e}",
+            gr.update(interactive=True, value="Refine Chat"),
+            gr.update(interactive=True), # chat_msg reset
+            gr.update(interactive=True), # send_btn reset
+            gr.update(interactive=True)  # clear_btn reset
+        )
