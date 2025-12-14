@@ -27,6 +27,8 @@ IMPORTANT:
 - Keep your responses conversational and engaging.
 - Do NOT output JSON. Output only the plain text of your reply.
 - Verify details about the world (time, place, geography, culture), characters (roles, interactions), and plot progression.
+- ORDERLY FOCUS: Discuss 1-2 subjects per message exchange to avoid overwhelm. It is better to have more exchanges that are punctual than one long message.
+- PURE DIALOGUE: Output ONLY the conversational reply to the user. Do NOT include internal thoughts, labels, or descriptions of your strategy.
 """).strip()
 
 
@@ -47,8 +49,8 @@ def call_llm_chat(
     
     # 2. Build the messages list
     messages = [
-        {"role": "system", "content": system_context},
-        {"role": "assistant", "content": f"CONTEXT - Original Plot: {original_plot}\nGenre: {genre}"}
+        {"role": "system", "content": system_context +
+         f"\n\nCONTEXT:\nOriginal Plot: {original_plot}\nGenre: {genre}"}
     ]
 
     # 3. Append history
