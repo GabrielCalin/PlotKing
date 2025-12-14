@@ -26,8 +26,9 @@ def refine_chat(
 
     Guidelines:
     - The output must be a cohesive, well-structured plot summary (Setup, Inciting Incident, Rising Action, Climax, Resolution).
-    - INCORPORATE ALL DETAILS agreed upon in the chat.
+    - INCORPORATE ALL DETAILS agreed upon in the chat, regardless of how long the response becomes. Completeness is more important than brevity.
     - DO NOT include ideas that the user explicitly rejected or disliked in the chat.
+    - If not all details have been established in the plot or chat, expand and fill the gaps creatively to create a complete, coherent narrative.    
     - If the chat introduced new characters, settings, or plot twists, ensure they are integrated naturally.
     - The tone should match the specified genre.
     - Write in a clear, third-person summary style.
@@ -67,7 +68,7 @@ def refine_chat(
             messages=messages,
             timeout=timeout,
             temperature=0.7,
-            max_tokens=3000
+            max_tokens=8000
         )
         return content
 
