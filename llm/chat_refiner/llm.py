@@ -74,6 +74,8 @@ def call_llm_chat(
             prompt_for_greeting = "The user has provided a plot and a genre. Introduce yourself as Plot King and offer to help detail it."
         elif original_plot:
             prompt_for_greeting = "The user has provided a plot but no genre. Introduce yourself as Plot King and offer to help detail it."
+        elif genre:
+            prompt_for_greeting = "The user has provided a genre but no plot. Introduce yourself as Plot King and offer to help create a plot together in the provided genre."
         else:
             prompt_for_greeting = " The user has provided neither plot nor genre. Introduce yourself as Plot King and suggest we define a plot together."
         
