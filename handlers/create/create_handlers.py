@@ -237,7 +237,7 @@ def _refine_original_plot(plot, genre, current_log):
         "original", 
         gr.update(interactive=False), 
         gr.update(),
-        current_log + "\nRefining original plot...",
+        (current_log + "\n" + ts_prefix("🪄 Refining original plot...")) if current_log else ts_prefix("🪄 Refining original plot..."),
         gr.update(), gr.update()
     )
     
@@ -250,7 +250,7 @@ def _refine_original_plot(plot, genre, current_log):
         "refined",
         gr.update(value="🧹", interactive=True),
         gr.update(visible=False),
-        current_log + "\nRefined plot generated.",
+        (current_log + "\n" + ts_prefix("✅ Refined plot generated.")) if current_log else ts_prefix("✅ Refined plot generated."),
         gr.update(), gr.update()
     )
 
@@ -259,7 +259,7 @@ def _refine_from_chat(plot, genre, history, current_log):
     if not history:
          yield (
             gr.update(), gr.update(), "chat", gr.update(), gr.update(),
-            current_log + "\nChat is empty. Cannot refine.",
+            (current_log + "\n" + ts_prefix("⚠️ Chat is empty. Cannot refine.")) if current_log else ts_prefix("⚠️ Chat is empty. Cannot refine."),
             gr.update(), gr.update()
          )
          return
@@ -271,7 +271,7 @@ def _refine_from_chat(plot, genre, history, current_log):
         "chat",      # mode
         gr.update(interactive=False, value="⏳ Refining..."), # refine_btn
         gr.update(visible=True), # chat_wrapper
-        current_log + "\nRefining plot from chat context...",
+        (current_log + "\n" + ts_prefix("🪄 Refining plot from chat context...")) if current_log else ts_prefix("🪄 Refining plot from chat context..."),
         gr.update(interactive=False), # chat_msg
         gr.update(interactive=False)  # send_btn
     )
@@ -279,7 +279,8 @@ def _refine_from_chat(plot, genre, history, current_log):
     # Call LLM
     try:
         refined_text = refine_chat(plot, genre, history)
-        log_msg = current_log + "\nRefined plot generated from Chat."
+        log_msg = ts_prefix("✅ Refined plot generated from Chat.")
+        new_log = (current_log + "\n" + log_msg) if current_log else log_msg
         
         # Finish Refine Chat -> Switch to Refined Mode
         yield (
@@ -288,16 +289,17 @@ def _refine_from_chat(plot, genre, history, current_log):
             "refined",
             gr.update(value="🧹", interactive=True),
             gr.update(visible=False), # hide chat
-            log_msg,
+            new_log,
             gr.update(interactive=True), # reset chat_msg
             gr.update(interactive=True)  # reset send_btn
         )
     except Exception as e:
+        error_log = ts_prefix(f"❌ Error refining chat: {e}")
         yield (
             gr.update(), "", "chat", 
             gr.update(interactive=True, value="🪄"), 
             gr.update(visible=True),
-            current_log + f"\nError refining chat: {e}",
+            (current_log + "\n" + error_log) if current_log else error_log,
             gr.update(interactive=True),
             gr.update(interactive=True)
         )
@@ -388,17 +390,20 @@ def show_refined_wrapper(plot, refined):
     u_val, mode, u_btn = show_refined(plot, refined)
     return u_val, mode, u_btn, gr.update(visible=True), gr.update(visible=False)
 
-def show_chat(history, plot, genre):
+def show_chat(history, plot, genre, current_log):
     new_history = history if history else []
     greeting_log = ""
     if not new_history:
             try:
                 greeting = call_llm_chat(plot, genre, [], "START_SESSION", timeout=10)
                 new_history.append({"role": "assistant", "content": greeting})
-                greeting_log = "\nPlotKing initialized chat."
+                greeting_log = ts_prefix("💬 PlotKing chat initialized.")
             except Exception:
                 pass
 
+    # Append to existing log
+    new_log = (current_log + "\n" + greeting_log) if (current_log and greeting_log) else (current_log or greeting_log)
+    
     return (
         gr.update(visible=False), 
         "chat", 
@@ -406,7 +411,7 @@ def show_chat(history, plot, genre):
         gr.update(visible=True), 
         new_history, 
         new_history,
-        greeting_log
+        new_log
     )
 
 def user_submit_chat_message(msg, history):
@@ -449,12 +454,12 @@ def bot_reply_chat_message(history, plot, genre, current_log):
 
     history.append({"role": "assistant", "content": reply})
     
-    log_msg = current_log + "\nPlotKing replied." if current_log else "PlotKing replied."
+    # No log update for regular chat messages
     
     return (
         history,          # Chatbot
         history,          # State
-        log_msg,          # Log
+        current_log,      # Log (unchanged)
         gr.update(interactive=True), # Enable Send
         gr.update(interactive=True, placeholder="Discuss with PlotKing..."),   # Enable Input
     )
@@ -462,7 +467,8 @@ def bot_reply_chat_message(history, plot, genre, current_log):
 def reset_chat_handler(plot, genre, current_log):
     greeting = call_llm_chat(plot, genre, [], "START_SESSION")
     new_hist = [{"role": "assistant", "content": greeting}]
-    log_msg = current_log + "\nChat reset." if current_log else "Chat reset."
-    return new_hist, new_hist, log_msg
+    log_msg = ts_prefix("🔄 Chat reset.")
+    new_log = (current_log + "\n" + log_msg) if current_log else log_msg
+    return new_hist, new_hist, new_log
 
 

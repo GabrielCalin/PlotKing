@@ -419,7 +419,7 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
     )
     show_chat_btn.click(
         fn=show_chat,
-        inputs=[chat_history, plot_state, genre_input],
+        inputs=[chat_history, plot_state, genre_input, status_output],
         outputs=[plot_input, current_mode, refine_btn, chat_wrapper, chatbot, chat_history, status_output]
     )
 
