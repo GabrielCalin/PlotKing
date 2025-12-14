@@ -91,6 +91,8 @@
 /* Refined Plot Wrapper */
 .plot-refined-wrapper {
   padding: 12px !important;
+  border: 1px solid var(--block-border-color) !important;
+  border-radius: var(--block-radius) !important;
 }
 
 .plot-refined-label p {
@@ -103,6 +105,13 @@
 
 .plot-refined-content {
   margin-top: 0 !important;
+}
+
+#plot-refined-markdown {
+  border: 1px solid var(--block-border-color) !important;
+  border-radius: var(--block-radius) !important;
+  padding: 8px !important;
+  overflow-y: auto !important;
 }
 
 /* === Header Bar === */

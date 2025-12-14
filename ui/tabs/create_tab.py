@@ -104,7 +104,9 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
                     plot_input_markdown = gr.Markdown(
                         value="_This refined version will be used for generation (if present)._",
                         elem_id="plot-refined-markdown",
-                        elem_classes=["plot-refined-content"]
+                        elem_classes=["plot-refined-content"],
+                        min_height=80,
+                        max_height=300
                     )
                 with gr.Column(visible=False, elem_classes=["chat-wrapper"]) as chat_wrapper:
                     chatbot = gr.Chatbot(label="PlotKing", height=300, type="messages", elem_id="create-chatbot", elem_classes=["small-text-chatbot"])
