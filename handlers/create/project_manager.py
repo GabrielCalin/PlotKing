@@ -166,11 +166,15 @@ def load_project(selected_name, current_status):
         chapter_counter = ""
 
     if plot_refined and plot_refined.strip():
-        plot_display = gr.update(value=plot_refined, interactive=False, label="Refined")
+        plot_textbox_update = gr.update(visible=False)
+        plot_refined_column_update = gr.update(visible=True)
+        plot_markdown_update = gr.update(value=plot_refined)
         refine_btn_state = gr.update(value="🧹")
         mode_value = "refined"
     else:
-        plot_display = gr.update(value=plot_original, interactive=True, label="Original")
+        plot_textbox_update = gr.update(value=plot_original, interactive=True, label="Original", visible=True)
+        plot_refined_column_update = gr.update(visible=False)
+        plot_markdown_update = gr.update()
         refine_btn_state = gr.update(value="🪄")
         mode_value = "original"
 
@@ -190,7 +194,9 @@ def load_project(selected_name, current_status):
     generate_visible = True
 
     return (
-        plot_display,
+        plot_textbox_update,
+        plot_refined_column_update,
+        plot_markdown_update,
         gr.update(value=genre),
         gr.update(value=num_chapters),
         gr.update(value=anpc),
@@ -246,7 +252,9 @@ def new_project(current_status):
     new_log = (current_status or "") + "\n" + ts_prefix("🆕 New project started.")
 
     return (
-        gr.update(value="", label="Original", interactive=True),   # plot_input
+        gr.update(value="", label="Original", interactive=True, visible=True),   # plot_input_textbox
+        gr.update(visible=False),                                                # plot_refined_column
+        gr.update(),                                                             # plot_input_markdown
         gr.update(value=""),                                       # genre_input
         gr.update(value=5),                                        # num_chapters
         gr.update(value=5),                                        # anpc_input

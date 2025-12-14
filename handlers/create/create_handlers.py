@@ -204,19 +204,31 @@ def refresh_chapter(pipeline_fn, selected_name):
 
 # plot/refine mode toggles
 def show_original(plot, refined):
-    return gr.update(value=plot, label="Original", interactive=True,
-                     placeholder="Ex: A young girl discovers a portal to another world..."), \
-           "original", gr.update(value="🪄")
+    return (
+        gr.update(value=plot, label="Original", interactive=True, visible=True,
+                  placeholder="Ex: A young girl discovers a portal to another world..."),  # textbox
+        gr.update(visible=False),  # refined_column
+        gr.update(),  # markdown (no change needed)
+        "original", 
+        gr.update(value="🪄")
+    )
 
 def show_refined(plot, refined):
-    return gr.update(value=refined, label="Refined", interactive=False,
-                     placeholder="This refined version will be used for generation (if present)."), \
-           "refined", gr.update(value="🧹")
+    refined_text = refined if refined else "_This refined version will be used for generation (if present)._"
+    return (
+        gr.update(visible=False),  # textbox
+        gr.update(visible=True),  # refined_column
+        gr.update(value=refined_text),  # markdown content
+        "refined", 
+        gr.update(value="🧹")
+    )
 
 def _clear_refined_plot(plot, current_log):
     """Case 1: Refined -> Clear"""
     yield (
-        gr.update(value=plot, label="Original", interactive=True, visible=True), # plot_input
+        gr.update(value=plot, label="Original", interactive=True, visible=True), # plot_input_textbox
+        gr.update(visible=False), # plot_refined_column
+        gr.update(), # plot_input_markdown (no change)
         "",           # refined_plot_state
         "original",   # mode
         gr.update(value="🪄", interactive=True), # refine_btn
@@ -232,7 +244,9 @@ def _refine_original_plot(plot, genre, current_log):
     
     # Show loading
     yield (
-        gr.update(interactive=False, placeholder="Refining..."), 
+        gr.update(interactive=False, placeholder="Refining...", visible=True), # textbox
+        gr.update(visible=False), # refined_column
+        gr.update(), # markdown
         gr.update(), 
         "original", 
         gr.update(interactive=False), 
@@ -245,7 +259,9 @@ def _refine_original_plot(plot, genre, current_log):
     new_refined = refine_plot(plot, genre)
     
     yield (
-        gr.update(value=new_refined, label="Refined", interactive=False, visible=True, placeholder=""),
+        gr.update(visible=False), # textbox
+        gr.update(visible=True), # refined_column
+        gr.update(value=new_refined), # markdown
         new_refined,
         "refined",
         gr.update(value="🧹", interactive=True),
@@ -258,7 +274,7 @@ def _refine_from_chat(plot, genre, history, current_log):
     """Case 3: Chat -> Refine Chat (LLM)"""
     if not history:
          yield (
-            gr.update(), gr.update(), "chat", gr.update(), gr.update(),
+            gr.update(), gr.update(), gr.update(), gr.update(), "chat", gr.update(), gr.update(),
             (current_log + "\n" + ts_prefix("⚠️ Chat is empty. Cannot refine.")) if current_log else ts_prefix("⚠️ Chat is empty. Cannot refine."),
             gr.update(), gr.update()
          )
@@ -266,7 +282,9 @@ def _refine_from_chat(plot, genre, history, current_log):
 
     # Start Refine Chat
     yield (
-        gr.update(), # plot_input (hidden)
+        gr.update(), # plot_input_textbox (hidden)
+        gr.update(), # plot_refined_column
+        gr.update(), # plot_input_markdown
         gr.update(), # refined_plot_state
         "chat",      # mode
         gr.update(interactive=False, value="⏳ Refining..."), # refine_btn
@@ -284,7 +302,9 @@ def _refine_from_chat(plot, genre, history, current_log):
         
         # Finish Refine Chat -> Switch to Refined Mode
         yield (
-            gr.update(value=refined_text, label="Refined", interactive=False, visible=True),
+            gr.update(visible=False), # textbox
+            gr.update(visible=True), # refined_column
+            gr.update(value=refined_text), # markdown
             refined_text,
             "refined",
             gr.update(value="🧹", interactive=True),
@@ -296,7 +316,7 @@ def _refine_from_chat(plot, genre, history, current_log):
     except Exception as e:
         error_log = ts_prefix(f"❌ Error refining chat: {e}")
         yield (
-            gr.update(), "", "chat", 
+            gr.update(), gr.update(), gr.update(), "", "chat", 
             gr.update(interactive=True, value="🪄"), 
             gr.update(visible=True),
             (current_log + "\n" + error_log) if current_log else error_log,
@@ -383,12 +403,12 @@ def refresh_create_from_checkpoint(epoch, current_chapters_state, current_chapte
 # ---- Chat Handlers ----
 
 def show_original_wrapper(plot, refined):
-    u_val, mode, u_btn = show_original(plot, refined)
-    return u_val, mode, u_btn, gr.update(visible=True), gr.update(visible=False)
+    tb_upd, col_upd, md_upd, mode, btn_upd = show_original(plot, refined)
+    return tb_upd, col_upd, md_upd, mode, btn_upd, gr.update(visible=False)
 
 def show_refined_wrapper(plot, refined):
-    u_val, mode, u_btn = show_refined(plot, refined)
-    return u_val, mode, u_btn, gr.update(visible=True), gr.update(visible=False)
+    tb_upd, col_upd, md_upd, mode, btn_upd = show_refined(plot, refined)
+    return tb_upd, col_upd, md_upd, mode, btn_upd, gr.update(visible=False)
 
 def show_chat(history, plot, genre, current_log):
     new_history = history if history else []
@@ -405,9 +425,11 @@ def show_chat(history, plot, genre, current_log):
     new_log = (current_log + "\n" + greeting_log) if (current_log and greeting_log) else (current_log or greeting_log)
     
     return (
-        gr.update(visible=False), 
+        gr.update(visible=False),  # textbox
+        gr.update(visible=False),  # refined_column
+        gr.update(),  # markdown (no change)
         "chat", 
-        gr.update(visible=True),  # Keep refine_btn visible
+        gr.update(value="🪄", visible=True),  # Keep refine_btn visible
         gr.update(visible=True), 
         new_history, 
         new_history,

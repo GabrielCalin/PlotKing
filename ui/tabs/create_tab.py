@@ -91,13 +91,21 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
                         show_chat_btn = gr.Button("C", size="sm")
                         show_refined_btn = gr.Button("R", size="sm")
                         refine_btn = gr.Button("🪄", size="sm")
-                plot_input = gr.Textbox(
+                plot_input_textbox = gr.Textbox(
                     label="Original",
                     lines=3,
                     elem_classes=["plot-textbox"],
                     placeholder="Ex: A young girl discovers a portal to another world...",
                     interactive=True,
+                    visible=True,
                 )
+                with gr.Column(visible=False, elem_classes=["plot-refined-wrapper"]) as plot_refined_column:
+                    gr.Markdown("Refined", elem_classes=["plot-refined-label"])
+                    plot_input_markdown = gr.Markdown(
+                        value="_This refined version will be used for generation (if present)._",
+                        elem_id="plot-refined-markdown",
+                        elem_classes=["plot-refined-content"]
+                    )
                 with gr.Column(visible=False, elem_classes=["chat-wrapper"]) as chat_wrapper:
                     chatbot = gr.Chatbot(label="PlotKing", height=300, type="messages", elem_id="create-chatbot", elem_classes=["small-text-chatbot"])
                     with gr.Row(elem_classes=["chat-input-row"]):
@@ -410,17 +418,17 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
     show_original_btn.click(
         fn=show_original_wrapper, 
         inputs=[plot_state, refined_plot_state], 
-        outputs=[plot_input, current_mode, refine_btn, plot_input, chat_wrapper]
+        outputs=[plot_input_textbox, plot_refined_column, plot_input_markdown, current_mode, refine_btn, chat_wrapper]
     )
     show_refined_btn.click(
         fn=show_refined_wrapper, 
         inputs=[plot_state, refined_plot_state], 
-        outputs=[plot_input, current_mode, refine_btn, plot_input, chat_wrapper]
+        outputs=[plot_input_textbox, plot_refined_column, plot_input_markdown, current_mode, refine_btn, chat_wrapper]
     )
     show_chat_btn.click(
         fn=show_chat,
         inputs=[chat_history, plot_state, genre_input, status_output],
-        outputs=[plot_input, current_mode, refine_btn, chat_wrapper, chatbot, chat_history, status_output]
+        outputs=[plot_input_textbox, plot_refined_column, plot_input_markdown, current_mode, refine_btn, chat_wrapper, chatbot, chat_history, status_output]
     )
 
     # Chat interactions
@@ -453,12 +461,12 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
     refine_btn.click(
         fn=refine_or_clear_dispatcher,
         inputs=[plot_state, refined_plot_state, current_mode, genre_input, chat_history, status_output],
-        outputs=[plot_input, refined_plot_state, current_mode, refine_btn, chat_wrapper, status_output, chat_msg, send_btn]
+        outputs=[plot_input_textbox, plot_refined_column, plot_input_markdown, refined_plot_state, current_mode, refine_btn, chat_wrapper, status_output, chat_msg, send_btn]
     )
 
     # Textbox sync
-    plot_input.change(
-        fn=sync_textbox, inputs=[plot_input, current_mode], outputs=[plot_state, refined_plot_state]
+    plot_input_textbox.change(
+        fn=sync_textbox, inputs=[plot_input_textbox, current_mode], outputs=[plot_state, refined_plot_state]
     )
 
     # === Project management wiring ===
@@ -480,7 +488,9 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
         fn=load_project,
         inputs=[project_dropdown, status_output],
         outputs=[
-            plot_input,
+            plot_input_textbox,
+            plot_refined_column,
+            plot_input_markdown,
             genre_input,
             chapters_input,
             anpc_input,
@@ -527,7 +537,9 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
         fn=new_project,
         inputs=[status_output],
         outputs=[
-            plot_input,
+            plot_input_textbox,
+            plot_refined_column,
+            plot_input_markdown,
             genre_input,
             chapters_input,
             anpc_input,

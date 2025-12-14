@@ -88,6 +88,23 @@
   transform: translateY(var(--header-nudge));
 }
 
+/* Refined Plot Wrapper */
+.plot-refined-wrapper {
+  padding: 12px !important;
+}
+
+.plot-refined-label p {
+  margin: 0 !important;
+  color: var(--block-title-text-color) !important;
+  font-weight: var(--block-title-text-weight) !important;
+  font-size: var(--block-title-text-size) !important;
+  line-height: var(--line-sm) !important;
+}
+
+.plot-refined-content {
+  margin-top: 0 !important;
+}
+
 /* === Header Bar === */
 #bk-header {
   background-color: #f1f1f1;
