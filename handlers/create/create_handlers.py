@@ -417,7 +417,7 @@ def show_chat(history, plot, genre, current_log):
             try:
                 greeting = call_llm_chat(plot, genre, [], "START_SESSION", timeout=10)
                 new_history.append({"role": "assistant", "content": greeting})
-                greeting_log = ts_prefix("💬 PlotKing chat initialized.")
+                greeting_log = ts_prefix("💬 Plot King chat initialized.")
             except Exception:
                 pass
 
@@ -483,7 +483,7 @@ def bot_reply_chat_message(history, plot, genre, current_log):
         history,          # State
         current_log,      # Log (unchanged)
         gr.update(interactive=True), # Enable Send
-        gr.update(interactive=True, placeholder="Discuss with PlotKing..."),   # Enable Input
+        gr.update(interactive=True, placeholder="Discuss with Plot King..."),   # Enable Input
     )
 
 def reset_chat_handler(plot, genre, current_log):

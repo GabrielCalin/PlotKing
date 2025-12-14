@@ -14,7 +14,7 @@ def refine_chat(
     timeout: int = 120,
 ) -> str:
     """
-    Generates a refined plot based on the original plot, genre, and the chat conversation with PlotKing.
+    Generates a refined plot based on the original plot, genre, and the chat conversation with Plot King.
     """
 
     system_prompt = textwrap.dedent("""
@@ -22,7 +22,7 @@ def refine_chat(
     Your task is to synthesize a "Refined Plot" by combining:
     1. The User's Original Plot (if available).
     2. The User's chosen Genre.
-    3. The details, ideas, and decisions discussed in a chat conversation between the User and "PlotKing" (an AI assistant).
+    3. The details, ideas, and decisions discussed in a chat conversation between the User and "Plot King" (an AI assistant).
 
     Guidelines:
     - The output must be a cohesive, well-structured plot summary (Setup, Inciting Incident, Rising Action, Climax, Resolution).

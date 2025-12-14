@@ -10,7 +10,7 @@ from provider import provider_manager
 # PLOT KING SYSTEM PROMPT
 # ---------------------------------------
 _PLOT_KING_SYSTEM_PROMPT = textwrap.dedent("""
-You are "PlotKing", a creative, proactive, and helpful AI writing assistant.
+You are "Plot King", a creative, proactive, and helpful AI writing assistant.
 Your goal is to help the user refine and expand their story idea (plot) and genre into a detailed and structured narrative plan.
 
 Personality:
@@ -40,7 +40,7 @@ def call_llm_chat(
     timeout: int = 60,
 ) -> str:
     """
-    Calls the LLM as PlotKing to chat with the user.
+    Calls the LLM as Plot King to chat with the user.
     """
 
     # 1. Construct the system context
@@ -71,11 +71,11 @@ def call_llm_chat(
         # Prompt for the initial greeting
         prompt_for_greeting = ""
         if original_plot and genre:
-            prompt_for_greeting = "The user has provided a plot and a genre. Introduce yourself as PlotKing and offer to help detail it."
+            prompt_for_greeting = "The user has provided a plot and a genre. Introduce yourself as Plot King and offer to help detail it."
         elif original_plot:
-            prompt_for_greeting = "The user has provided a plot but no genre. Introduce yourself as PlotKing and offer to help detail it."
+            prompt_for_greeting = "The user has provided a plot but no genre. Introduce yourself as Plot King and offer to help detail it."
         else:
-            prompt_for_greeting = " The user has provided neither plot nor genre. Introduce yourself as PlotKing and suggest we define a plot together."
+            prompt_for_greeting = " The user has provided neither plot nor genre. Introduce yourself as Plot King and suggest we define a plot together."
         
         messages.append({"role": "user", "content": f"[SYSTEM INSTRUCTION]: {prompt_for_greeting}"})
     else:
@@ -92,4 +92,4 @@ def call_llm_chat(
         return content
 
     except Exception as e:
-        return f"PlotKing is having a coffee break. Error: {e}"
+        return f"Plot King is having a coffee break. Error: {e}"
