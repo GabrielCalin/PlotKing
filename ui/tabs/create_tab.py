@@ -109,7 +109,7 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
                         max_height=300
                     )
                 with gr.Column(visible=False, elem_classes=["chat-wrapper"]) as chat_wrapper:
-                    chatbot = gr.Chatbot(label="PlotKing", height=300, type="messages", elem_id="create-chatbot", elem_classes=["small-text-chatbot"])
+                    chatbot = gr.Chatbot(label="PlotKing", height=300, type="messages", elem_id="create-chatbot", elem_classes=["small-text-chatbot"], avatar_images=("images/user_avatar.png", "images/plotking_avatar.png"))
                     with gr.Row(elem_classes=["chat-input-row"]):
                         chat_msg = gr.Textbox(scale=20, show_label=False, placeholder="Discuss with PlotKing...", container=False, lines=1, max_lines=10, elem_id="chat-input-create")
                         send_btn = gr.Button("Send", scale=1, min_width=80)
