@@ -412,7 +412,7 @@ def show_chat(history, plot, genre):
 def user_submit_chat_message(msg, history):
     if not msg.strip():
         # If empty, do nothing but keep controls enabled (or handle as no-op)
-        return gr.update(), history, history, gr.update(), gr.update(), gr.update(), gr.update()
+        return gr.update(), history, history, gr.update(), gr.update()
     
     # Optimistic update: Show user message immediately
     history.append({"role": "user", "content": msg})
@@ -423,8 +423,6 @@ def user_submit_chat_message(msg, history):
         history,            # Update state
         gr.update(interactive=False), # Disable Send
         gr.update(interactive=False), # Disable Input
-        gr.update(interactive=False), # Disable Clear
-        gr.update(interactive=False)  # Disable Refine
     )
 
 def bot_reply_chat_message(history, plot, genre, current_log):
@@ -434,7 +432,7 @@ def bot_reply_chat_message(history, plot, genre, current_log):
     
     if not history or history[-1]["role"] != "user":
         # Should not happen in normal flow
-        return history, history, current_log, gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True)
+        return history, history, current_log, gr.update(interactive=True), gr.update(interactive=True)
 
     user_msg = history[-1]["content"]
     # We pass history EXCLUDING the last message to the LLM helper if the helper appends user_msg itself?
@@ -459,8 +457,6 @@ def bot_reply_chat_message(history, plot, genre, current_log):
         log_msg,          # Log
         gr.update(interactive=True), # Enable Send
         gr.update(interactive=True, placeholder="Discuss with PlotKing..."),   # Enable Input
-        gr.update(interactive=True), # Enable Clear
-        gr.update(interactive=True)  # Enable Refine
     )
 
 def reset_chat_handler(plot, genre, current_log):
