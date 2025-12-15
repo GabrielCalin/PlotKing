@@ -38,24 +38,25 @@ def call_llm_expand_plot(
     ### 1. Title
     - Write a concise, evocative **book title** (invent one if not provided).
 
-    ### 2. Key Characters
+    ### 2. Key Characters & Arcs
     - List **ALL important characters** mentioned in the user plot, plus any new ones you create necessary for the story. **Do not limit the number of characters.**
-    - For each, provide a **short 1–2 sentence description** explaining their role, traits, or motivation.
+    - For each character, provide:
+      - A **short description** (role, traits, motivation).
+      - Their **Internal & External Arcs**: goals, flaws, and how they change over the course of the story.
 
     ### 3. World / Setting Overview
     - Briefly describe the **universe, world, or setting** where the story takes place.
 
-    ### 4. Character Arcs
-    - Describe the internal and external arcs for the key characters. Focus on their goals, flaws, and how they change over the course of the story.
 
-    ### 5. Subplots
+
+    ### 4. Subplots
     - Identify and outline the key subplots that run alongside the main narrative. Explain how they weave into the larger story.
 
     ### [Optional Additional Sections]
     - If needed, add specific sections for elements like "### Historical Setting", "### Magic System" (for Fantasy), "### Key Elements & Interactions", etc.
     - Include these sections if present in the USER PLOT or if it makes sense for the story. Adapt to the plot.
 
-    ### 6. Plot Summary
+    ### 5. Plot Summary
     - Present a **highly detailed and comprehensive** plot, written in **factual paragraphs** (not bullet points).
     - **Expand creatively** upon the user's ideas to flesh out the story, filling in gaps with logical and exciting events.
     - **CRITICAL:** Do NOT contradict any detail provided by the user. Ensure all original points are integrated seamlessly.
