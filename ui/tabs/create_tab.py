@@ -81,7 +81,7 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
                 delete_project_btn = gr.Button("❌ Delete", size="sm")
 
     # ---- Inputs (plot + genre + params) ----
-    with gr.Row(equal_height=True):
+    with gr.Row():
         with gr.Column(scale=3):
             with gr.Column(elem_classes=["plot-wrapper"]):
                 with gr.Row(elem_classes=["plot-header"]):
@@ -116,21 +116,20 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
                         gr.Column(scale=0, min_width=10, elem_classes=["spacer-right"]) # Spacer
             genre_input = gr.Textbox(label="Genre", placeholder="Ex: fantasy, science fiction", lines=2)
 
-        with gr.Column(scale=1):
-            with gr.Group(elem_classes=["tight-group"]):
-                chapters_input = gr.Number(label="Number of Chapters", value=5, precision=0)
-                anpc_input = gr.Number(
-                    label="Average Number of Pages per Chapter",
-                    value=5,
-                    precision=0,
-                    interactive=True,
-                )
-                run_mode = gr.Dropdown(
-                    label="Run Mode",
-                    choices=list(RUN_MODE_CHOICES.values()),
-                    value=RUN_MODE_CHOICES["FULL"],
-                    interactive=True,
-                )
+        with gr.Column(scale=1, elem_classes=["tight-group"]):
+            chapters_input = gr.Number(label="Number of Chapters", value=5, precision=0)
+            anpc_input = gr.Number(
+                label="Average Number of Pages per Chapter",
+                value=5,
+                precision=0,
+                interactive=True,
+            )
+            run_mode = gr.Dropdown(
+                label="Run Mode",
+                choices=list(RUN_MODE_CHOICES.values()),
+                value=RUN_MODE_CHOICES["FULL"],
+                interactive=True,
+            )
 
     # ---- Top controls ----
     with gr.Row():
