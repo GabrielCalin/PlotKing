@@ -161,7 +161,7 @@ def call_llm_edit_chapter(
             timeout=timeout,
             temperature=0.8,
             top_p=0.95,
-            max_tokens=8000
+            max_tokens=16000
         )
         
         # Parse JSON response (suportă atât JSON pur cât și wrappat în tag-uri)

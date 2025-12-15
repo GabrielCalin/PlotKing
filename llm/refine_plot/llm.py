@@ -69,7 +69,7 @@ def refine_plot(user_plot: str, genre: str,
             timeout=300,
             temperature=0.8,
             top_p=0.9,
-            max_tokens=1200
+            max_tokens=8000
         )
         return content
     except Exception as e:

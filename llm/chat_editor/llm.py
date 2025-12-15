@@ -180,7 +180,7 @@ def call_llm_chat(
             timeout=timeout,
             temperature=0.8,
             top_p=0.95,
-            max_tokens=8000
+            max_tokens=16000
         )
 
         # Try to extract JSON using your custom extractor

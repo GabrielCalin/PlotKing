@@ -129,7 +129,7 @@ def call_llm_rewrite_editor(
             timeout=timeout,
             temperature=0.7,
             top_p=0.95,
-            max_tokens=2000
+            max_tokens=4000
         )
         
         try:

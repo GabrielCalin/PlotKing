@@ -90,7 +90,7 @@ def call_llm_chat(
             messages=messages,
             timeout=timeout,
             temperature=0.8,
-            max_tokens=2000
+            max_tokens=4000
         )
         return content
 

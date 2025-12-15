@@ -11,7 +11,7 @@ def call_llm_expand_plot(
     model: str = "mistral",
     api_url: str = "http://localhost:1234/v1/chat/completions",
     temperature: float = 0.7,
-    max_tokens: int = 4096,
+    max_tokens: int = 8192,
 ) -> str:
     """
     LLM-only: transformă plotul scurt într-un blueprint Markdown (1500–2000 cuvinte).

@@ -131,7 +131,7 @@ def call_llm_edit_plot(
             timeout=timeout,
             temperature=0.7,
             top_p=0.95,
-            max_tokens=4096
+            max_tokens=8192
         )
         
         # Parse JSON response (suportă atât JSON pur cât și wrappat în tag-uri)

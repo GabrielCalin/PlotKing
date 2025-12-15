@@ -68,7 +68,7 @@ def refine_chat(
             messages=messages,
             timeout=timeout,
             temperature=0.7,
-            max_tokens=8000
+            max_tokens=16000
         )
         return content
 

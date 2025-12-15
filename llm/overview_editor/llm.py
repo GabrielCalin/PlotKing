@@ -168,7 +168,7 @@ The user edited Chapter {chapter_index}. You need to:
             timeout=timeout,
             temperature=0.6,
             top_p=0.95,
-            max_tokens=8000
+            max_tokens=16000
         )
         
         # Parse JSON response (suportă atât JSON pur cât și wrappat în tag-uri)
