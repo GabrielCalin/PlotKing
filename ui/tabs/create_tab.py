@@ -167,7 +167,7 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
             current_chapter_output = gr.Markdown(elem_id="current-chapter-output", height=360)
 
     # ---- Logs / Validation ----
-    status_output = gr.Textbox(label="🧠 Process Log", lines=15)
+    status_output = gr.Textbox(label="🧠 Process Log", lines=15, interactive=False)
     validation_feedback = gr.Textbox(label="🧩 Validation Feedback", lines=8)
 
     # ========= Generator WRAPPERS =========
