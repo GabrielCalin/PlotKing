@@ -125,6 +125,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: relative;
 
   font-family: "Inter", "Roboto", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   color: #2b2b2b;
@@ -155,6 +156,24 @@
   text-overflow: ellipsis;
   justify-content: flex-end;
   text-align: right;
+}
+
+/* Header save button (centered) */
+#header-save-btn {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  background: none !important;
+  border: 1px solid #ccc !important;
+  border-radius: 4px !important;
+  padding: 4px 8px !important;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+#header-save-btn:hover {
+  opacity: 1;
+  background-color: #e8e8e8 !important;
 }
 
 /* Emoji carte albastră mic */

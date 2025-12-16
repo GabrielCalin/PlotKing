@@ -8,6 +8,7 @@ from ui.tabs.editor_tab import render_editor_tab
 from ui.tabs.export_tab import render_export_tab
 from ui.tabs.settings_tab import render_settings_tab
 from handlers.create.create_handlers import list_projects
+from state.overall_state import reset_all_states
 
 
 def create_interface():
@@ -15,6 +16,7 @@ def create_interface():
         # === Header aplicație (în afara tab-urilor) ===
         with gr.Row(elem_id="bk-header"):
             gr.HTML("<div id='bk-title'>📖 PlotKing – AI Story Builder</div>")
+            header_save_btn = gr.Button("💾", size="sm", visible=False, elem_id="header-save-btn")
             current_project_label = gr.HTML("<div id='bk-project'>(No project loaded)</div>")
 
         # Două state-uri separate pentru sincronizare bidirecțională:
@@ -29,6 +31,7 @@ def create_interface():
                 # returnăm project_dropdown ca să-l putem popula la load
                 project_dropdown = render_create_tab(
                     current_project_label,
+                    header_save_btn,
                     editor_sections_epoch=editor_sections_epoch,
                     create_sections_epoch=create_sections_epoch
                 )
@@ -48,6 +51,13 @@ def create_interface():
             with gr.Tab("⚙️ Settings"):
                 refresh_tasks_fn, task_dropdowns, refresh_models_fn, model_selector_comp, load_model_details_fn, model_input_components = render_settings_tab()
 
+        # === Reset all states on refresh ===
+        demo.load(
+            fn=reset_all_states,
+            inputs=None,
+            outputs=None,
+        )
+        
         # === Populate project list on startup ===
         demo.load(
             fn=lambda: (
