@@ -103,7 +103,7 @@ def call_llm_version_diff(
             timeout=timeout,
             temperature=0.3,
             top_p=0.9,
-            max_tokens=2000
+            max_tokens=4000
         )
     except Exception as e:
         return ("ERROR", {"error": str(e)})

@@ -183,7 +183,7 @@ def call_llm_generate_chapter(
             timeout=timeout,
             temperature=temperature if temperature is not None else 0.8,
             top_p=top_p if top_p is not None else 0.95,
-            max_tokens=max_tokens if max_tokens is not None else 8000
+            max_tokens=max_tokens if max_tokens is not None else 16000
         )
         if not content:
             return "Error: model returned empty content"
@@ -239,7 +239,7 @@ def call_llm_revise_chapter(
             timeout=timeout,
             temperature=temperature if temperature is not None else 0.8,
             top_p=top_p if top_p is not None else 0.95,
-            max_tokens=max_tokens if max_tokens is not None else 8000
+            max_tokens=max_tokens if max_tokens is not None else 16000
         )
         if not content:
             return "Error: model returned empty content"

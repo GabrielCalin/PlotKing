@@ -8,7 +8,7 @@ from provider import provider_manager
 DEFAULT_PARAMS = {
     "temperature": 0.6,
     "top_p": 0.9,
-    "max_tokens": 1000,
+    "max_tokens": 4000,
 }
 
 
@@ -95,7 +95,7 @@ def call_llm_validate_overview(
             timeout=timeout,
             temperature=_params.get("temperature", 0.6),
             top_p=_params.get("top_p", 0.9),
-            max_tokens=_params.get("max_tokens", 1000)
+            max_tokens=_params.get("max_tokens", 4000)
         )
     except Exception as e:
         return ("ERROR", f"Validation request failed: {e}")

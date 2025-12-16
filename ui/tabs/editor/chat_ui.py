@@ -12,7 +12,7 @@ def create_chat_ui():
             value=[{"role": "assistant", "content": PLOT_KING_GREETING}],
             height=350,
             elem_id="editor-chatbot",
-            avatar_images=(None, "https://api.dicebear.com/7.x/bottts/svg?seed=PlotKing"),
+            avatar_images=("images/user_avatar.png", "images/plotking_avatar.png"),
             bubble_full_width=False,
             type="messages"
         )

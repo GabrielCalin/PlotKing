@@ -382,6 +382,8 @@ def generate_book_outline_stream(
         state = checkpoint
         if run_mode is not None:
             state.run_mode = run_mode
+        elif state.run_mode == RUN_MODE_CHOICES["OVERVIEW"] and state.chapters_overview and len(state.chapters_full or []) < (state.num_chapters or 1):
+            state.run_mode = RUN_MODE_CHOICES["FULL"]
         if refresh_from:
             log_ui(state.status_log, "🔁 Regeneration requested...")
             state = apply_refresh_point(state, refresh_from)
@@ -407,5 +409,7 @@ def generate_book_outline_stream_resume(checkpoint: PipelineContext):
     Wrapper simplu pentru resume - apelează implementarea comună direct cu checkpoint-ul.
     """
     clear_stop()
+    if checkpoint.run_mode == RUN_MODE_CHOICES["OVERVIEW"] and checkpoint.chapters_overview and len(checkpoint.chapters_full or []) < (checkpoint.num_chapters or 1):
+        checkpoint.run_mode = RUN_MODE_CHOICES["FULL"]
     yield from _generate_book_outline_stream_impl(checkpoint)
 

@@ -1,91 +1,117 @@
-.tight-group > *:not(:last-child) {
-    margin-bottom: 4px !important;
+.tight-group>*:not(:last-child) {
+  margin-bottom: 4px !important;
 }
 
 .plot-wrapper {
-    border: 1px solid var(--block-border-color);
-    border-radius: var(--block-radius);
-    overflow: hidden;
-    height: auto !important;
+  border: 1px solid var(--block-border-color);
+  border-radius: var(--block-radius);
+  overflow: hidden;
+  height: auto !important;
 }
 
 .plot-header {
-    display: flex;
-    align-items: center;
-    flex-wrap: nowrap;
-    gap: 8px;
-    background-color: var(--block-label-background-fill);
-    padding: 4px 8px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    border-bottom: 1px solid var(--block-border-color);
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 8px;
+  background-color: var(--block-label-background-fill);
+  padding: 4px 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--block-border-color);
 }
 
-.plot-header > :first-child {
-    flex: 1 1 auto;
-    min-width: 0;
+.plot-header> :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
-.plot-header > .plot-buttons {
-    margin-left: auto;
-    flex: 0 0 auto !important;
-    width: auto !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: flex-end !important;
-    gap: 3px;
-    white-space: nowrap;
+.plot-header>.plot-buttons {
+  margin-left: auto;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 3px;
+  white-space: nowrap;
 }
 
 .plot-buttons button {
-    background: none !important;
-    border: none !important;
-    box-shadow: none !important;
-    padding: 0 4px !important;
-    min-width: auto !important;
-    height: auto !important;
-    font-size: 0.9rem !important;
-    opacity: 0.65;
-    transition: opacity 0.15s;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: right !important;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 4px !important;
+  min-width: auto !important;
+  height: auto !important;
+  font-size: 0.9rem !important;
+  opacity: 0.65;
+  transition: opacity 0.15s;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: right !important;
 }
 
 .plot-buttons button:hover {
-    opacity: 1;
+  opacity: 1;
 }
 
 .plot-wrapper,
 .gr-column {
-    align-self: flex-start !important;
+  align-self: flex-start !important;
 }
 
 .plot-wrapper .plot-textbox,
 .plot-wrapper .gr-textbox {
-    margin-top: 0 !important;
+  margin-top: 0 !important;
 }
 
 :root {
-    --header-nudge: 1px;
+  --header-nudge: 1px;
 }
 
-.plot-header :is(p,h1,h2,h3,h4,h5,h6) {
-    margin: 0 !important;
-    line-height: 1.2 !important;
-    display: flex !important;
-    align-items: center !important;
+.plot-header :is(p, h1, h2, h3, h4, h5, h6) {
+  margin: 0 !important;
+  line-height: 1.2 !important;
+  display: flex !important;
+  align-items: center !important;
 }
 
-.plot-header > .plot-buttons {
-    align-items: center !important;
+.plot-header>.plot-buttons {
+  align-items: center !important;
 }
 
 .plot-buttons button,
 .plot-buttons a {
-    align-items: center !important;
-    justify-content: right !important;
-    transform: translateY(var(--header-nudge));
+  align-items: center !important;
+  justify-content: right !important;
+  transform: translateY(var(--header-nudge));
+}
+
+/* Refined Plot Wrapper */
+.plot-refined-wrapper {
+  padding: 12px !important;
+  border: 1px solid var(--block-border-color) !important;
+  border-radius: var(--block-radius) !important;
+}
+
+.plot-refined-label p {
+  margin: 0 !important;
+  color: var(--block-title-text-color) !important;
+  font-weight: var(--block-title-text-weight) !important;
+  font-size: var(--block-title-text-size) !important;
+  line-height: var(--line-sm) !important;
+}
+
+.plot-refined-content {
+  margin-top: 0 !important;
+}
+
+#plot-refined-markdown {
+  border: 1px solid var(--block-border-color) !important;
+  border-radius: var(--block-radius) !important;
+  padding: 8px !important;
+  overflow-y: auto !important;
 }
 
 /* === Header Bar === */
@@ -142,16 +168,66 @@
 @media (max-width: 640px) {
   #bk-header {
     flex-direction: column;
-    align-items: flex-start; /* aliniere stânga pe mobil */
+    align-items: flex-start;
+    /* aliniere stânga pe mobil */
     gap: 4px;
   }
+
   #bk-title {
     font-size: 0.85rem;
   }
+
   #bk-project {
     font-size: 0.8rem;
-    justify-content: flex-start; /* pe mobil: textul merge stânga */
-    text-align: left;            /* aliniere stânga */
-    width: 100%;                 /* ocupă toată lățimea containerului */
+    justify-content: flex-start;
+    /* pe mobil: textul merge stânga */
+    text-align: left;
+    /* aliniere stânga */
+    width: 100%;
+    /* ocupă toată lățimea containerului */
   }
+}
+
+/* Chat Styles */
+/* Create Tab Chatbot Font Size */
+#create-chatbot {
+  font-size: 0.85rem !important;
+}
+
+#create-chatbot .message-wrap .message {
+  font-size: 0.85rem !important;
+  line-height: 1.4 !important;
+}
+
+#create-chatbot .message-wrap .message .prose {
+  font-size: 0.85rem !important;
+}
+
+#create-chatbot .message-wrap .message .prose p {
+  font-size: 0.85rem !important;
+}
+
+#create-chatbot .user-message,
+#create-chatbot .bot-message {
+  font-size: 0.85rem !important;
+}
+
+/* Create Tab Chat Input Scrollbar Fix */
+#chat-input-create textarea {
+  overflow-y: auto !important;
+}
+
+#chat-input-create textarea:placeholder-shown {
+  overflow-y: hidden !important;
+}
+
+.chat-input-row {
+  align-items: flex-start !important;
+  gap: 8px !important;
+  margin-top: 5px !important;
+}
+
+.spacer-right {
+  min-width: 5px !important;
+  flex-grow: 0 !important;
 }

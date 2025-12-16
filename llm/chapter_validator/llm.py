@@ -117,7 +117,7 @@ def call_llm_validate_chapter(
             timeout=timeout,
             temperature=0.3,
             top_p=0.9,
-            max_tokens=1000
+            max_tokens=2000
         )
     except Exception as e:
         return ("ERROR", str(e))

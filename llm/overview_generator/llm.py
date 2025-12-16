@@ -16,7 +16,7 @@ def call_llm_generate_overview(
     model: str = "mistral",
     api_url: str = "http://localhost:1234/v1/chat/completions",
     temperature: float = 0.6,
-    max_tokens: int = 4096,
+    max_tokens: int = 32000,
 ) -> str:
     """
     LLM-only: generează sau revizuiește overview-ul pe capitole.

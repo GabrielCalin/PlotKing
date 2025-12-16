@@ -16,9 +16,19 @@ from handlers.create.create_handlers import (
     refresh_chapter,
     show_original,
     show_refined,
-    refine_or_clear,
+    show_refined,
+    refine_or_clear_dispatcher,
     sync_textbox,
+
     refresh_create_from_checkpoint,
+    show_original_wrapper,
+    show_refined_wrapper,
+    show_chat,
+
+    user_submit_chat_message,
+    bot_reply_chat_message,
+    bot_reply_chat_message,
+    reset_chat_handler,
 )
 from handlers.create.project_manager import (
     save_project,
@@ -26,6 +36,7 @@ from handlers.create.project_manager import (
     delete_project,
     new_project,
 )
+from llm.refine_chat.llm import refine_chat
 from pipeline.constants import RUN_MODE_CHOICES
 from pipeline.runner_create import generate_book_outline_stream
 from llm.refine_plot.llm import refine_plot
@@ -39,6 +50,7 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
     refined_plot_state = gr.State("")
     current_mode = gr.State("original")
     chapters_state = gr.State([])
+    chat_history = gr.State([])
 
     # ---- helper: bump epoch (pt. sincronizare Create → Editor) ----
     def _bump_editor_epoch(epoch):
@@ -69,39 +81,55 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
                 delete_project_btn = gr.Button("❌ Delete", size="sm")
 
     # ---- Inputs (plot + genre + params) ----
-    with gr.Row(equal_height=True):
+    with gr.Row():
         with gr.Column(scale=3):
             with gr.Column(elem_classes=["plot-wrapper"]):
                 with gr.Row(elem_classes=["plot-header"]):
                     gr.Markdown("Plot Description", elem_id="plot-title")
                     with gr.Row(elem_classes=["plot-buttons"]):
                         show_original_btn = gr.Button("O", size="sm")
+                        show_chat_btn = gr.Button("C", size="sm")
                         show_refined_btn = gr.Button("R", size="sm")
                         refine_btn = gr.Button("🪄", size="sm")
-                plot_input = gr.Textbox(
+                plot_input_textbox = gr.Textbox(
                     label="Original",
                     lines=3,
                     elem_classes=["plot-textbox"],
                     placeholder="Ex: A young girl discovers a portal to another world...",
                     interactive=True,
+                    visible=True,
                 )
+                with gr.Column(visible=False, elem_classes=["plot-refined-wrapper"]) as plot_refined_column:
+                    gr.Markdown("Refined", elem_classes=["plot-refined-label"])
+                    plot_input_markdown = gr.Markdown(
+                        value="_This refined version will be used for generation (if present)._",
+                        elem_id="plot-refined-markdown",
+                        elem_classes=["plot-refined-content"],
+                        min_height=80,
+                        max_height=300
+                    )
+                with gr.Column(visible=False, elem_classes=["chat-wrapper"]) as chat_wrapper:
+                    chatbot = gr.Chatbot(label="Plot King", height=300, type="messages", elem_id="create-chatbot", elem_classes=["small-text-chatbot"], avatar_images=("images/user_avatar.png", "images/plotking_avatar.png"))
+                    with gr.Row(elem_classes=["chat-input-row"]):
+                        chat_msg = gr.Textbox(scale=20, show_label=False, placeholder="Discuss with Plot King...", container=False, lines=1, max_lines=10, elem_id="chat-input-create")
+                        send_btn = gr.Button("Send", scale=1, min_width=80)
+                        gr.Column(scale=0, min_width=10, elem_classes=["spacer-right"]) # Spacer
             genre_input = gr.Textbox(label="Genre", placeholder="Ex: fantasy, science fiction", lines=2)
 
-        with gr.Column(scale=1):
-            with gr.Group(elem_classes=["tight-group"]):
-                chapters_input = gr.Number(label="Number of Chapters", value=5, precision=0)
-                anpc_input = gr.Number(
-                    label="Average Number of Pages per Chapter",
-                    value=5,
-                    precision=0,
-                    interactive=True,
-                )
-                run_mode = gr.Dropdown(
-                    label="Run Mode",
-                    choices=list(RUN_MODE_CHOICES.values()),
-                    value=RUN_MODE_CHOICES["FULL"],
-                    interactive=True,
-                )
+        with gr.Column(scale=1, elem_classes=["tight-group"]):
+            chapters_input = gr.Number(label="Number of Chapters", value=5, precision=0)
+            anpc_input = gr.Number(
+                label="Average Number of Pages per Chapter",
+                value=5,
+                precision=0,
+                interactive=True,
+            )
+            run_mode = gr.Dropdown(
+                label="Run Mode",
+                choices=list(RUN_MODE_CHOICES.values()),
+                value=RUN_MODE_CHOICES["FULL"],
+                interactive=True,
+            )
 
     # ---- Top controls ----
     with gr.Row():
@@ -138,7 +166,7 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
             current_chapter_output = gr.Markdown(elem_id="current-chapter-output", height=360)
 
     # ---- Logs / Validation ----
-    status_output = gr.Textbox(label="🧠 Process Log", lines=15)
+    status_output = gr.Textbox(label="🧠 Process Log", lines=15, interactive=False)
     validation_feedback = gr.Textbox(label="🧩 Validation Feedback", lines=8)
 
     # ========= Generator WRAPPERS =========
@@ -153,6 +181,8 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
 
     def _refresh_chapter(selected_name):
         yield from refresh_chapter(generate_book_outline_stream, selected_name)
+
+    # ---- Chat Handlers are now in create_handlers.py ----
 
     # ---- Wiring ----
 
@@ -387,22 +417,57 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
 
     # Plot toggles
     show_original_btn.click(
-        fn=show_original, inputs=[plot_state, refined_plot_state], outputs=[plot_input, current_mode, refine_btn]
+        fn=show_original_wrapper, 
+        inputs=[plot_state, refined_plot_state], 
+        outputs=[plot_input_textbox, plot_refined_column, plot_input_markdown, current_mode, refine_btn, chat_wrapper]
     )
     show_refined_btn.click(
-        fn=show_refined, inputs=[plot_state, refined_plot_state], outputs=[plot_input, current_mode, refine_btn]
+        fn=show_refined_wrapper, 
+        inputs=[plot_state, refined_plot_state], 
+        outputs=[plot_input_textbox, plot_refined_column, plot_input_markdown, current_mode, refine_btn, chat_wrapper]
+    )
+    show_chat_btn.click(
+        fn=show_chat,
+        inputs=[chat_history, plot_state, genre_input, status_output],
+        outputs=[plot_input_textbox, plot_refined_column, plot_input_markdown, current_mode, refine_btn, chat_wrapper, chatbot, chat_history, status_output]
     )
 
+    # Chat interactions
+    # Chat interactions: 
+    # 1. User submits -> update UI immediately, disable controls
+    # 2. Bot replies -> call LLM, update UI, enable controls
+    
+    def _chat_submit_chain(start_fn, trigger):
+        trigger(
+            fn=user_submit_chat_message,
+            inputs=[chat_msg, chat_history],
+            outputs=[chat_msg, chatbot, chat_history, send_btn, chat_msg]
+        ).then(
+            fn=bot_reply_chat_message,
+            inputs=[chat_history, plot_state, genre_input, status_output],
+            outputs=[chatbot, chat_history, status_output, send_btn, chat_msg]
+        )
+
+    _chat_submit_chain(user_submit_chat_message, chat_msg.submit)
+    _chat_submit_chain(user_submit_chat_message, send_btn.click)
+
+    # Chatbot clear event
+    chatbot.clear(
+        fn=reset_chat_handler,
+        inputs=[plot_state, genre_input, status_output],
+        outputs=[chatbot, chat_history, status_output]
+    )
+    
     # Refine / Clear
     refine_btn.click(
-        fn=lambda plot, refined, mode, genre: refine_or_clear(plot, refined, mode, genre, refine_plot),
-        inputs=[plot_state, refined_plot_state, current_mode, genre_input],
-        outputs=[plot_input, refined_plot_state, current_mode, refine_btn],
+        fn=refine_or_clear_dispatcher,
+        inputs=[plot_state, refined_plot_state, current_mode, genre_input, chat_history, status_output],
+        outputs=[plot_input_textbox, plot_refined_column, plot_input_markdown, refined_plot_state, current_mode, refine_btn, chat_wrapper, status_output, chat_msg, send_btn]
     )
 
     # Textbox sync
-    plot_input.change(
-        fn=sync_textbox, inputs=[plot_input, current_mode], outputs=[plot_state, refined_plot_state]
+    plot_input_textbox.change(
+        fn=sync_textbox, inputs=[plot_input_textbox, current_mode], outputs=[plot_state, refined_plot_state]
     )
 
     # === Project management wiring ===
@@ -424,7 +489,9 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
         fn=load_project,
         inputs=[project_dropdown, status_output],
         outputs=[
-            plot_input,
+            plot_input_textbox,
+            plot_refined_column,
+            plot_input_markdown,
             genre_input,
             chapters_input,
             anpc_input,
@@ -471,7 +538,9 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
         fn=new_project,
         inputs=[status_output],
         outputs=[
-            plot_input,
+            plot_input_textbox,
+            plot_refined_column,
+            plot_input_markdown,
             genre_input,
             chapters_input,
             anpc_input,

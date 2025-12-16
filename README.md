@@ -10,23 +10,31 @@ PlotKing is an interactive **AI Book Generator** that helps writers generate, va
 
 PlotKing follows a structured pipeline to ensure high-quality output:
 
-1.  **Create**: You define the core idea, genre, and structure. The AI expands this into a detailed plot, chapter overview, and full chapters.
-2.  **Edit**: You review the generated content. You can rewrite sections with AI, chat with the AI for suggestions, or manually edit text. The unique **Validation System** ensures your changes don't break the story's continuity.
-3.  **Export**: Once satisfied, you export your novel to a formatted EPUB file, ready for reading or publishing.
+1.  **Refine**: You define the core idea, genre, and structure. You can refine this manually, use AI refine to automatically expand and enhance your plot, or have a conversation with Plot King AI to brainstorm and detail your story concept.
+2.  **Create**: Using the refined input from the previous step, the AI expands this into a detailed plot, chapter overview, and full chapters.
+3.  **Edit**: You review the generated content. You can rewrite sections with AI, chat with the AI for suggestions, or manually edit text. The unique **Validation System** ensures your changes don't break the story's continuity.
+4.  **Export**: Once satisfied, you export your novel to a formatted EPUB file, ready for reading or publishing.
 
 ---
 
 ## ✨ Key Features
 
-### 1. Create: From Idea to Structure
+### 1. Refine: Shape Your Story Concept
+![Refine](images/refine.png)
+Before creating your book, refine your story idea through multiple approaches:
+-   **Manual Input**: Directly write and edit your plot description, genre, and structure.
+-   **AI Refine**: Use the AI refine button to automatically expand and enhance your plot with creative details, proper structure, and genre-appropriate elements.
+-   **Chat with Plot King**: Have a conversation with Plot King AI to brainstorm ideas, discuss characters, settings, conflicts, and narrative details. The AI helps you explore different aspects of your story and fills in gaps.
+
+### 2. Create: From Idea to Structure
 ![Create](images/create.png)
-The creation process is broken down into logical steps to maintain coherence:
--   **Plot Expansion**: Turn a short idea into a rich, multi-paragraph synopsis.
+The creation process uses your refined input and is broken down into logical steps to maintain coherence:
+-   **Plot Expansion**: Turn your refined idea into a rich, multi-paragraph synopsis.
 -   **Chapter Outline**: The system generates an outline of chapters based on the expanded plot.
 -   **Full Generation**: Each chapter is written individually, with the AI referencing the plot and previous chapters to maintain context.
 -   **Automatic Validation**: After generating a chapter, a separate AI agent reads it to ensure it matches the outline. If it fails, it auto-regenerates until it passes.
 
-### 2. Edit: Advanced AI-Assisted Writing
+### 3. Edit: Advanced AI-Assisted Writing
 ![Edit](images/edit.png)
 The Editor tab is where the magic happens. It's not just a text box; it's a suite of tools:
 
@@ -45,7 +53,7 @@ When you make changes (manually or via AI), PlotKing doesn't just overwrite your
 -   **Draft Review**: You can compare the **Checkpoint** (original) vs. **Draft** (new) using the **comparison view** ⚖️.
 -   **Selective Apply**: You choose which AI suggestions to keep and which to discard or regenerate.
 
-### 3. Export: Publish Ready
+### 4. Export: Publish Ready
 ![Export](images/export.png)
 Turn your project into a finished product:
 -   **EPUB Generation**: Creates a professional e-book file compatible with most readers.
@@ -53,14 +61,14 @@ Turn your project into a finished product:
 -   **Customization**: Choose fonts (Georgia, Palatino, etc.) and set font sizes for the output file.
 -   **Cover Art**: Upload a custom cover image or **generate** one using AI, to be embedded in the EPUB.
 
-### 4. Project Management
+### 5. Project Management
 Keep your stories organized:
 -   **Save**: Persist your current progress, including plot and chapters.
 -   **Load**: Switch between different story projects easily.
 -   **New**: Start a fresh project from scratch.
 -   **Delete**: Remove unwanted projects.
 
-### 5. Settings: Configurable Models & Task Assignments
+### 6. Settings: Configurable Models & Task Assignments
 -   **Models**: Support for multiple providers (LM Studio, OpenAI, Gemini, xAI for LLM tasks; Automatic1111 and OpenAI for image generation) with configurable local endpoints, API keys, and provider-specific settings.
 -   **Tasks**: Assign different models to specific tasks for optimal performance and easy switching.
 
