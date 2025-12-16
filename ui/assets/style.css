@@ -282,6 +282,12 @@
   .html-container .padding.svelte-phx28p {
     padding: 0 !important;
   }
+  
+  #header-save-btn {
+    position: relative !important;
+    z-index: 10 !important;
+    pointer-events: auto !important;
+  }
 }
 
 /* Chat Styles */
