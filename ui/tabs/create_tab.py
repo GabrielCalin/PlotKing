@@ -42,7 +42,7 @@ from pipeline.runner_create import generate_book_outline_stream
 from llm.refine_plot.llm import refine_plot
 
 
-def render_create_tab(current_project_label, editor_sections_epoch, create_sections_epoch):
+def render_create_tab(current_project_label, header_save_btn, editor_sections_epoch, create_sections_epoch):
     header_project = gr.State("")
 
     # ---- States ----
@@ -482,7 +482,22 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
             refined_plot_state,
             status_output,
         ],
-        outputs=[status_output, project_dropdown],
+        outputs=[status_output, project_dropdown, current_project_label, header_save_btn],
+    )
+    
+    # Header save button wiring
+    header_save_btn.click(
+        fn=save_project,
+        inputs=[
+            project_name,
+            genre_input,
+            chapters_input,
+            anpc_input,
+            plot_state,
+            refined_plot_state,
+            status_output,
+        ],
+        outputs=[status_output, project_dropdown, current_project_label, header_save_btn],
     )
 
     load_project_btn.click(
@@ -513,11 +528,9 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
             regenerate_expanded_btn,
             regenerate_overview_btn,
             regenerate_chapter_btn,
+            current_project_label,
+            header_save_btn,
         ],
-    ).then(
-        fn=lambda name: f"<div id='bk-project'>{name}</div>" if name else "<div id='bk-project'>(No project loaded)</div>",
-        inputs=[project_name],
-        outputs=[current_project_label],
     ).then(
         fn=_bump_editor_epoch,
         inputs=[editor_sections_epoch],
@@ -527,7 +540,7 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
     delete_project_btn.click(
         fn=delete_project,
         inputs=[project_dropdown, status_output],
-        outputs=[status_output, project_dropdown],
+        outputs=[status_output, project_dropdown, current_project_label, header_save_btn],
     ).then(
         fn=_bump_editor_epoch,
         inputs=[editor_sections_epoch],
@@ -561,6 +574,8 @@ def render_create_tab(current_project_label, editor_sections_epoch, create_secti
             stop_btn,
             resume_btn,
             generate_btn,
+            current_project_label,
+            header_save_btn,
         ],
     ).then(
         fn=_bump_editor_epoch,

@@ -1,6 +1,7 @@
 # ui/project_manager.py
 
 import os, re, json
+from typing import Optional
 import gradio as gr
 from utils.timestamp import ts_prefix
 from pipeline.constants import RUN_MODE_CHOICES
@@ -10,8 +11,25 @@ from state.checkpoint_manager import save_checkpoint, clear_checkpoint
 # === Config & helpers ===
 _PROJECTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "projects")
 _NAME_RE = re.compile(r'^[A-Za-z0-9 _-]+$')
+_current_project: Optional[str] = None
 
 from state.drafts_manager import DraftsManager
+
+def get_current_project() -> Optional[str]:
+    """Returnează numele proiectului curent sau None dacă nu există."""
+    return _current_project
+
+def set_current_project(name: Optional[str]) -> None:
+    """Setează numele proiectului curent."""
+    global _current_project
+    _current_project = name
+
+def _format_header_html(project_name: Optional[str]) -> str:
+    """Formatează HTML-ul pentru header."""
+    if project_name:
+        return f"<div id='bk-project'>{project_name}</div>"
+    else:
+        return "<div id='bk-project'>(No project loaded)</div>"
 
 def _ensure_projects_dir():
     os.makedirs(_PROJECTS_DIR, exist_ok=True)
@@ -49,7 +67,8 @@ def save_project(
 
     err = _validate_name(project_name)
     if err:
-        return current_status + "\n" + ts_prefix(err), gr.update(choices=list_projects(), value=None)
+        current = get_current_project()
+        return current_status + "\n" + ts_prefix(err), gr.update(choices=list_projects(), value=None), gr.update(visible=bool(current))
 
     # Procesează parametrii
     try:
@@ -94,32 +113,39 @@ def save_project(
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
     except Exception as e:
-        return current_status + "\n" + ts_prefix(f"❌ Save failed: {e}"), gr.update(choices=list_projects())
+        current = get_current_project()
+        return current_status + "\n" + ts_prefix(f"❌ Save failed: {e}"), gr.update(choices=list_projects()), gr.update(visible=bool(current))
 
     projects = list_projects()
-    msg = ts_prefix(f"💾 Saved project “{project_name.strip()}”.")
-    return current_status + "\n" + msg, gr.update(choices=projects, value=project_name.strip())
+    project_name_trimmed = project_name.strip()
+    set_current_project(project_name_trimmed)
+    msg = ts_prefix(f"💾 Saved project “{project_name_trimmed}”.")
+    header_html = _format_header_html(project_name_trimmed)
+    return current_status + "\n" + msg, gr.update(choices=projects, value=project_name_trimmed), gr.update(value=header_html), gr.update(visible=True)
 
 def load_project(selected_name, current_status):
     if not selected_name:
         msg = ts_prefix("❌ Select a project to load.")
+        header_html = _format_header_html(None)
         return (gr.update(), gr.update(), gr.update(), gr.update(),
                 gr.update(), gr.update(), gr.update(),
                 gr.update(), gr.update(), gr.update(), gr.update(),
                 gr.update(), gr.update(), gr.update(),
-                current_status + "\n" + msg)
+                current_status + "\n" + msg, gr.update(value=header_html), gr.update(visible=False))
 
     path = _project_path(selected_name)
     if not os.path.exists(path):
         msg = ts_prefix(f"❌ Project “{selected_name}” not found.")
-        return (gr.update(),)*14 + (current_status + "\n" + msg,)
+        header_html = _format_header_html(None)
+        return (gr.update(),)*14 + (current_status + "\n" + msg, gr.update(value=header_html), gr.update(visible=False))
 
     try:
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
     except Exception as e:
         msg = ts_prefix(f"❌ Failed to read project: {e}")
-        return (gr.update(),)*14 + (current_status + "\n" + msg,)
+        header_html = _format_header_html(None)
+        return (gr.update(),)*14 + (current_status + "\n" + msg, gr.update(value=header_html), gr.update(visible=False))
 
     plot_original = data.get("plot_original", "")
     plot_refined = data.get("plot_refined", "")
@@ -152,6 +178,9 @@ def load_project(selected_name, current_status):
     
     # Clear drafts on load
     DraftsManager().clear()
+    
+    # Set current project
+    set_current_project(selected_name)
 
     if not chapters_list:
         chapter_dropdown = gr.update(choices=[], value=None)
@@ -179,6 +208,7 @@ def load_project(selected_name, current_status):
         mode_value = "original"
 
     msg = ts_prefix(f"📂 Loaded project “{selected_name}”.")
+    header_html = _format_header_html(selected_name)
 
     # --- Determine visibility for control buttons ---
     expanded_visible = bool(expanded and expanded.strip())
@@ -219,24 +249,38 @@ def load_project(selected_name, current_status):
         gr.update(visible=expanded_visible),   # regenerate_expanded_btn
         gr.update(visible=overview_visible),   # regenerate_overview_btn
         gr.update(visible=chapters_visible),   # regenerate_chapter_btn
+        gr.update(value=header_html),          # header update
+        gr.update(visible=True),               # header save button
     )
 
 def delete_project(selected_name, current_status):
     if not selected_name:
-        return current_status + "\n" + ts_prefix("❌ Select a project to delete."), gr.update(choices=list_projects(), value=None)
+        header_html = _format_header_html(None)
+        current = get_current_project()
+        return current_status + "\n" + ts_prefix("❌ Select a project to delete."), gr.update(choices=list_projects(), value=None), gr.update(value=header_html), gr.update(visible=bool(current))
 
     path = _project_path(selected_name)
     if not os.path.exists(path):
-        return current_status + "\n" + ts_prefix(f"❌ Project “{selected_name}” not found."), gr.update(choices=list_projects(), value=None)
+        header_html = _format_header_html(None)
+        current = get_current_project()
+        return current_status + "\n" + ts_prefix(f"❌ Project “{selected_name}” not found."), gr.update(choices=list_projects(), value=None), gr.update(value=header_html), gr.update(visible=bool(current))
 
     try:
         os.remove(path)
     except Exception as e:
-        return current_status + "\n" + ts_prefix(f"❌ Delete failed: {e}"), gr.update(choices=list_projects(), value=None)
+        header_html = _format_header_html(None)
+        current = get_current_project()
+        return current_status + "\n" + ts_prefix(f"❌ Delete failed: {e}"), gr.update(choices=list_projects(), value=None), gr.update(value=header_html), gr.update(visible=bool(current))
 
+    # Reset current_project if it was the deleted project
+    if get_current_project() == selected_name:
+        set_current_project(None)
+    
     projects = list_projects()
     new_value = projects[0] if projects else None
-    return current_status + "\n" + ts_prefix(f"🗑️ Deleted project “{selected_name}”."), gr.update(choices=projects, value=new_value)
+    header_html = _format_header_html(get_current_project())
+    current = get_current_project()
+    return current_status + "\n" + ts_prefix(f"🗑️ Deleted project “{selected_name}”."), gr.update(choices=projects, value=new_value), gr.update(value=header_html), gr.update(visible=bool(current))
 
 def new_project(current_status):
     """
@@ -248,8 +292,12 @@ def new_project(current_status):
     
     # Clear drafts on new project
     DraftsManager().clear()
+    
+    # Reset current project
+    set_current_project(None)
 
     new_log = (current_status or "") + "\n" + ts_prefix("🆕 New project started.")
+    header_html = _format_header_html(None)
 
     return (
         gr.update(value="", label="Original", interactive=True, visible=True),   # plot_input_textbox
@@ -275,4 +323,6 @@ def new_project(current_status):
         gr.update(visible=False, interactive=False, value="🛑 Stop"),   # stop_btn
         gr.update(visible=False, interactive=False, value="▶️ Resume"), # resume_btn
         gr.update(visible=True, interactive=True, value="🚀 Generate Book"), # generate_btn
+        gr.update(value=header_html),  # header update
+        gr.update(visible=False),      # header save button
     )

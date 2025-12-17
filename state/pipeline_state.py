@@ -17,3 +17,8 @@ def clear_stop():
 def is_stop_requested():
     with _lock:
         return _pipeline_state["stop_requested"]
+
+def clear_paused():
+    """Resetează starea paused."""
+    with _lock:
+        _pipeline_state["paused"] = False
