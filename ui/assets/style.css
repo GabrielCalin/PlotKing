@@ -279,7 +279,11 @@
     width: 100%;
   }
   
-  .html-container .padding.svelte-phx28p {
+  #bk-header .html-container {
+    padding: 0 !important;
+  }
+  
+  #bk-header .html-container .padding {
     padding: 0 !important;
   }
   
