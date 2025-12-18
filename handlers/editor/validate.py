@@ -44,6 +44,19 @@ def _get_generated_drafts_list(plan, exclude_section):
             
     return final_list
 
+def get_draft_warning(exclude_section: str) -> str:
+    """Check for existing USER drafts in other sections and return a warning markdown string."""
+    drafts_mgr = DraftsManager()
+    user_drafts = drafts_mgr.get_user_drafts()
+    
+    # Exclude current section since we are validating it actively
+    other_drafts = [s for s in user_drafts if s != exclude_section]
+    
+    if other_drafts:
+        draft_names = ", ".join([f"`{d}`" for d in other_drafts])
+        return f"⚠️ **Validation is based on other drafts.**\nSome related sections are still drafts: {draft_names}.\nEnsure these drafts are consistent before applying changes."
+    return ""
+
 
 def editor_apply(section, draft, plan):
     """

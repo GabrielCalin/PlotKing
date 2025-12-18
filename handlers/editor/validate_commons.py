@@ -1,3 +1,4 @@
+# This module contains validation logic shared across multiple editing modes (Manual, Rewrite, Chat, View).
 from typing import List, Tuple, Dict, Any
 from handlers.editor.utils import format_validation_markdown
 
@@ -54,7 +55,8 @@ def editor_validate(section, draft):
         plan = None
 
     # Append draft warning to message if applicable
-    warning_msg = _get_draft_warnings(section)
+    from handlers.editor.validate import get_draft_warning
+    warning_msg = get_draft_warning(section)
     if warning_msg:
         msg = warning_msg + "\n\n" + msg
 
@@ -110,21 +112,4 @@ def _build_candidate_sections(section: str, checkpoint) -> List[Tuple[str, str]]
         unique.append((name, content))
     return unique
 
-def _get_draft_warnings(exclude_section: str) -> str:
-    """Check for existing USER drafts in other sections and return a warning markdown string."""
-    from state.drafts_manager import DraftsManager
-    drafts_mgr = DraftsManager()
-    user_drafts = drafts_mgr.get_user_drafts()
-    
-    # Exclude current section since we are validating it actively
-    other_drafts = [s for s in user_drafts if s != exclude_section]
-    
-    if other_drafts:
-        draft_names = ", ".join([f"`{d}`" for d in other_drafts])
-        return f"""
-> [!WARNING]
-> **Validation Context Alert**: The following sections have active **User Drafts** that were used for validation context instead of the checkpoint versions: {draft_names}.
-> Ensure these drafts are consistent before applying major changes.
-"""
-    return ""
 
