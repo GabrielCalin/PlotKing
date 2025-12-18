@@ -292,13 +292,6 @@ def keep_draft_handler(section, content, status_log):
     new_log, status_update = append_status(status_log, msg)
 
     # Return updates to switch to View mode and show correct buttons
-    # We need to update:
-    # 1. Viewer MD (with draft content)
-    # 2. Status Label (Viewing: Draft)
-    # 3. View State (Draft)
-    # 4. View Mode buttons (Validate/Discard/Force Edit/Diff visible)
-    # 5. Hide editor/rewrite/chat UI
-    # 6. Mode Radio -> View
     
     return (
         gr.update(value=clean_content, visible=True), # 1. Viewer MD

@@ -85,12 +85,30 @@ def validate_draft_handler(section, current_log):
     # Initial status
     new_log, status_update = append_status(current_log, f"🔎 ({section}) Validating user draft...")
     
+    # Yield loading state immediately
+    yield (
+        gr.update(value="🔄 Validating...", visible=True), # validation_box
+        None, # pending_plan
+        gr.update(visible=True), # validation_title
+        gr.update(visible=False), # apply_updates_btn
+        gr.update(visible=False), # regenerate_btn
+        gr.update(visible=False), # continue_btn
+        gr.update(visible=False), # discard2_btn
+        gr.update(), # viewer_md
+        gr.update(visible=False), # editor_tb
+        gr.update(interactive=False), # mode_radio
+        gr.update(interactive=False), # section_dropdown
+        status_update, # status_strip
+        new_log, # status_log
+        gr.update(visible=False) # view_actions_row (hide immediately)
+    )
+
     # Run validation
     msg, plan = editor_validate(section, draft_content)
     final_log, final_status = append_status(new_log, f"✅ ({section}) Validation completed.")
     
     # Preparation for Validation Box
-    return (
+    yield (
         gr.update(value=msg, visible=True), # validation_box
         plan, # pending_plan
         gr.update(visible=True), # validation_title

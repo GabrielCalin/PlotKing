@@ -5,10 +5,14 @@ from handlers.editor.constants import Components, States
 def create_manual_ui():
     """Create UI components for Manual mode."""
     start_edit_btn = gr.Button("✍️ Start Editing", variant="primary", visible=False)
-    confirm_btn = gr.Button("✅ Validate", visible=False)
-    discard_btn = gr.Button("🗑️ Discard", visible=False)
-    force_edit_btn = gr.Button("⚡ Force Edit", visible=False)
-    keep_draft_btn = gr.Button("💾 Keep Draft", visible=False)
+    
+    with gr.Row():
+        confirm_btn = gr.Button("✅ Validate", visible=False, scale=1, min_width=0)
+        force_edit_btn = gr.Button("⚡ Force Edit", visible=False, scale=1, min_width=0)
+    
+    with gr.Row():
+        keep_draft_btn = gr.Button("💾 Keep Draft", visible=False, scale=1, min_width=0)
+        discard_btn = gr.Button("🗑️ Discard", visible=False, scale=1, min_width=0)
     
     return start_edit_btn, confirm_btn, discard_btn, force_edit_btn, keep_draft_btn
 
