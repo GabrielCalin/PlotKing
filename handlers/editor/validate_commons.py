@@ -53,6 +53,11 @@ def editor_validate(section, draft):
         msg = format_validation_markdown(result, diff_data)
         plan = None
 
+    # Append draft warning to message if applicable
+    warning_msg = _get_draft_warnings(section)
+    if warning_msg:
+        msg = warning_msg + "\n\n" + msg
+
     return msg, plan
 
 def _build_candidate_sections(section: str, checkpoint) -> List[Tuple[str, str]]:
@@ -65,7 +70,14 @@ def _build_candidate_sections(section: str, checkpoint) -> List[Tuple[str, str]]
         if not name or name == section:
             return
         from state.checkpoint_manager import get_section_content
-        content = get_section_content(name) or ""
+        from state.drafts_manager import DraftsManager
+        
+        drafts_mgr = DraftsManager()
+        # Prioritize USER draft content if exists
+        if drafts_mgr.has(name) and drafts_mgr.get_type(name) == "user":
+            content = drafts_mgr.get_content(name)
+        else:
+            content = get_section_content(name) or ""
         candidates.append((name, content))
 
     total_chapters = len(checkpoint.chapters_full or [])
@@ -97,4 +109,22 @@ def _build_candidate_sections(section: str, checkpoint) -> List[Tuple[str, str]]
         seen.add(name)
         unique.append((name, content))
     return unique
+
+def _get_draft_warnings(exclude_section: str) -> str:
+    """Check for existing USER drafts in other sections and return a warning markdown string."""
+    from state.drafts_manager import DraftsManager
+    drafts_mgr = DraftsManager()
+    user_drafts = drafts_mgr.get_user_drafts()
+    
+    # Exclude current section since we are validating it actively
+    other_drafts = [s for s in user_drafts if s != exclude_section]
+    
+    if other_drafts:
+        draft_names = ", ".join([f"`{d}`" for d in other_drafts])
+        return f"""
+> [!WARNING]
+> **Validation Context Alert**: The following sections have active **User Drafts** that were used for validation context instead of the checkpoint versions: {draft_names}.
+> Ensure these drafts are consistent before applying major changes.
+"""
+    return ""
 

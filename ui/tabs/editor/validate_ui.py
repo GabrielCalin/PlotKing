@@ -32,14 +32,14 @@ def create_validate_ui():
         
         # Auto-Generated Drafts (impacted sections)
         gr.Markdown("**Auto-Generated Drafts**")
-        generated_drafts_list = gr.CheckboxGroup(
-            label="AI-Generated Sections",
-            choices=[],
-            value=[],
-            interactive=True
-        )
+        with gr.Row():
+            generated_drafts_list = gr.CheckboxGroup(label="AI-Generated Drafts", choices=[], interactive=True)
         
         with gr.Row():
+            drafts_to_keep_list = gr.CheckboxGroup(label="Drafts To Keep (if not accepted)", choices=[], interactive=False)
+        
+        with gr.Row():
+            mark_keep_btn = gr.Button("📑 Mark Drafts to Keep", size="sm")
             btn_draft_accept_all = gr.Button("✅ Accept All", size="sm", variant="primary", scale=1, min_width=0)
             btn_draft_revert = gr.Button("❌ Revert All", size="sm", variant="stop", scale=1, min_width=0)
         with gr.Row():
@@ -50,7 +50,7 @@ def create_validate_ui():
         continue_btn = gr.Button("🔁 Back", scale=1, min_width=0, visible=False)
         discard2_btn = gr.Button("🗑️ Discard", scale=1, min_width=0, visible=False)
         
-    return validation_title, validation_box, apply_updates_btn, stop_updates_btn, regenerate_btn, draft_review_panel, original_draft_checkbox, generated_drafts_list, btn_draft_accept_all, btn_draft_revert, btn_draft_accept_selected, btn_draft_regenerate, continue_btn, discard2_btn
+    return validation_title, validation_box, apply_updates_btn, stop_updates_btn, regenerate_btn, draft_review_panel, original_draft_checkbox, generated_drafts_list, drafts_to_keep_list, mark_keep_btn, btn_draft_accept_all, btn_draft_revert, btn_draft_accept_selected, btn_draft_regenerate, continue_btn, discard2_btn
 
 def create_validate_handlers(components, states):
     """Wire events for Validation and Draft Review components."""
@@ -71,6 +71,8 @@ def create_validate_handlers(components, states):
     btn_draft_regenerate = components[Components.BTN_DRAFT_REGENERATE]
     original_draft_checkbox = components[Components.ORIGINAL_DRAFT_CHECKBOX]
     generated_drafts_list = components[Components.GENERATED_DRAFTS_LIST]
+    drafts_to_keep_list = components[Components.DRAFTS_TO_KEEP_LIST]
+    mark_keep_btn = components[Components.MARK_KEEP_BTN]
     
     # Shared components
     section_dropdown = components[Components.SECTION_DROPDOWN]
@@ -105,6 +107,11 @@ def create_validate_handlers(components, states):
             components[Components.BTN_DRAFT],
             components[Components.BTN_DIFF],
             states[States.CURRENT_VIEW_STATE],
+            drafts_to_keep_list,
+            components[Components.KEEP_DRAFT_BTN],
+            components[Components.REWRITE_KEEP_DRAFT_BTN],
+            components[Components.CHAT_KEEP_DRAFT_BTN],
+            components[Components.VIEW_ACTIONS_ROW],
         ],
         queue=True,
     )
@@ -131,6 +138,10 @@ def create_validate_handlers(components, states):
             status_log,
             components[Components.CHAT_SECTION],
             components[Components.STATUS_ROW],
+            components[Components.KEEP_DRAFT_BTN],
+            components[Components.REWRITE_KEEP_DRAFT_BTN],
+            components[Components.CHAT_KEEP_DRAFT_BTN],
+            components[Components.VIEW_ACTIONS_ROW],
         ],
     )
 
@@ -155,6 +166,12 @@ def create_validate_handlers(components, states):
             components[Components.BTN_DRAFT],
             components[Components.BTN_DIFF],
             states[States.CURRENT_VIEW_STATE],
+            original_draft_checkbox,
+            drafts_to_keep_list,
+            components[Components.KEEP_DRAFT_BTN],
+            components[Components.REWRITE_KEEP_DRAFT_BTN],
+            components[Components.CHAT_KEEP_DRAFT_BTN],
+            components[Components.VIEW_ACTIONS_ROW],
         ],
     )
 
@@ -177,22 +194,30 @@ def create_validate_handlers(components, states):
     )
     
     # Draft Review Handlers
+    from handlers.editor.validate import mark_drafts_to_keep_handler
+
+    mark_keep_btn.click(
+        fn=mark_drafts_to_keep_handler,
+        inputs=[original_draft_checkbox, generated_drafts_list],
+        outputs=[drafts_to_keep_list]
+    )
+
     btn_draft_accept_all.click(
         fn=draft_accept_all,
         inputs=[selected_section, status_log, create_sections_epoch],
-        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, create_sections_epoch, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], current_md, mode_radio]
+        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, create_sections_epoch, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], current_md, mode_radio, components[Components.VIEW_ACTIONS_ROW]]
     )
     
     btn_draft_revert.click(
         fn=draft_revert_all,
         inputs=[selected_section, status_log],
-        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], current_md, mode_radio]
+        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], current_md, mode_radio, components[Components.VIEW_ACTIONS_ROW]]
     )
     
     btn_draft_accept_selected.click(
         fn=draft_accept_selected,
-        inputs=[selected_section, original_draft_checkbox, generated_drafts_list, status_log, create_sections_epoch],
-        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, create_sections_epoch, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], current_md, mode_radio]
+        inputs=[selected_section, original_draft_checkbox, generated_drafts_list, status_log, create_sections_epoch, drafts_to_keep_list], # Passed drafts_to_keep
+        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, create_sections_epoch, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], current_md, mode_radio, components[Components.VIEW_ACTIONS_ROW]]
     )
     
     btn_draft_regenerate.click(

@@ -23,6 +23,7 @@ def chat_handler(section, message, history, current_text, initial_text, current_
             gr.update(), # chat_force_edit_btn
             gr.update(), # chat_actions_row_2
             gr.update(), # chat_validate_btn
+            gr.update(), # chat_keep_draft_btn
             current_log,
             gr.update(), # status_strip
             current_text, # current_md
@@ -53,6 +54,7 @@ def chat_handler(section, message, history, current_text, initial_text, current_
         gr.update(), # chat_force_edit_btn
         gr.update(), # chat_actions_row_2
         gr.update(), # chat_validate_btn
+        gr.update(), # chat_keep_draft_btn
         new_log,
         status_update,
         current_text,
@@ -101,6 +103,7 @@ def chat_handler(section, message, history, current_text, initial_text, current_
                 gr.update(visible=True), # chat_force_edit_btn
                 gr.update(visible=True), # chat_actions_row_2
                 gr.update(visible=True), # chat_validate_btn
+                gr.update(visible=True), # chat_keep_draft_btn
                 final_log,
                 final_status,
                 new_content, # update current_md
@@ -127,6 +130,7 @@ def chat_handler(section, message, history, current_text, initial_text, current_
                 gr.update(), # chat_force_edit_btn
                 gr.update(), # chat_actions_row_2
                 gr.update(), # chat_validate_btn
+                gr.update(), # chat_keep_draft_btn
                 final_log,
                 final_status,
                 current_text, # current_md unchanged
@@ -155,6 +159,7 @@ def chat_handler(section, message, history, current_text, initial_text, current_
             gr.update(), # chat_force_edit_btn
             gr.update(), # chat_actions_row_2
             gr.update(), # chat_validate_btn
+            gr.update(), # chat_keep_draft_btn
             final_log,
             final_status,
             current_text,
@@ -241,6 +246,7 @@ def discard_handler(section, current_log):
         gr.update(visible=False), # chat_force_edit_btn
         gr.update(visible=False), # chat_actions_row_2
         gr.update(visible=False), # chat_validate_btn
+        gr.update(visible=False), # chat_keep_draft_btn
         clean_text, # current_md
         new_log,
         status_update,
@@ -274,6 +280,7 @@ def force_edit_handler(section, current_text, current_log, create_epoch):
         gr.update(visible=False), # chat_force_edit_btn
         gr.update(visible=False), # chat_actions_row_2
         gr.update(visible=False), # chat_validate_btn
+        gr.update(visible=False), # chat_keep_draft_btn
         updated_text, # current_md
         new_log,
         status_update,
@@ -308,7 +315,11 @@ def continue_edit(section, current_log):
         gr.update(interactive=True), # unlock Section
         status_update,
         new_log,
-        gr.update(visible=True),    # SHOW Chat Section
-        gr.update(visible=True),    # status_row - show (draft exists after validate)
+        gr.update(visible=True),    # 17. SHOW Chat Section
+        gr.update(visible=True),    # 18. status_row - show (draft exists after validate)
+        gr.update(visible=False),   # 19. hide manual keep draft
+        gr.update(visible=False),   # 20. hide rewrite keep draft
+        gr.update(visible=True),    # 21. SHOW Chat Keep Draft
+        gr.update(visible=False),   # 22. hide view actions row
     )
 

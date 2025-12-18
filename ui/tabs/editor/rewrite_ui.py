@@ -30,12 +30,14 @@ def create_rewrite_ui():
         rewrite_validate_btn = gr.Button("✅ Validate", visible=False)
         rewrite_discard_btn = gr.Button("🗑️ Discard", visible=False)
         rewrite_force_edit_btn = gr.Button("⚡ Force Edit", visible=False)
+        rewrite_keep_draft_btn = gr.Button("💾 Keep Draft", visible=False)
         
-    return rewrite_section, rewrite_selected_preview, preset_dropdown, rewrite_instructions_tb, rewrite_btn, rewrite_validate_btn, rewrite_discard_btn, rewrite_force_edit_btn
+    return rewrite_section, rewrite_selected_preview, preset_dropdown, rewrite_instructions_tb, rewrite_btn, rewrite_validate_btn, rewrite_discard_btn, rewrite_force_edit_btn, rewrite_keep_draft_btn
 
 def create_rewrite_handlers(components, states):
     """Wire events for Rewrite mode components."""
     from handlers.editor.rewrite import handle_text_selection, rewrite_handler, rewrite_discard, rewrite_force_edit, rewrite_validate
+    from handlers.editor.utils import keep_draft_handler
     
     rewrite_section = components[Components.REWRITE_SECTION]
     rewrite_selected_preview = components[Components.REWRITE_SELECTED_PREVIEW]
@@ -45,6 +47,7 @@ def create_rewrite_handlers(components, states):
     rewrite_validate_btn = components[Components.REWRITE_VALIDATE_BTN]
     rewrite_discard_btn = components[Components.REWRITE_DISCARD_BTN]
     rewrite_force_edit_btn = components[Components.REWRITE_FORCE_EDIT_BTN]
+    rewrite_keep_draft_btn = components[Components.REWRITE_KEEP_DRAFT_BTN]
     
     # Shared components
     editor_tb = components[Components.EDITOR_TB]
@@ -77,6 +80,7 @@ def create_rewrite_handlers(components, states):
             rewrite_validate_btn,
             rewrite_discard_btn,
             rewrite_force_edit_btn,
+            rewrite_keep_draft_btn,
             rewrite_btn,
             components[Components.STATUS_STRIP],
             status_log,
@@ -98,6 +102,7 @@ def create_rewrite_handlers(components, states):
             rewrite_validate_btn,
             rewrite_discard_btn,
             rewrite_force_edit_btn,
+            rewrite_keep_draft_btn,
             rewrite_btn,
             rewrite_selected_preview,
             components[Components.STATUS_STRIP],
@@ -157,9 +162,38 @@ def create_rewrite_handlers(components, states):
             components[Components.SECTION_DROPDOWN],
             components[Components.STATUS_STRIP],
             status_log,
+            components[Components.STATUS_ROW], # Add output to match Manual validate
         ],
         queue=True,
         show_progress=False,
+    )
+    
+    rewrite_keep_draft_btn.click(
+        fn=keep_draft_handler,
+        inputs=[selected_section, current_md, status_log],
+        outputs=[
+            components[Components.VIEWER_MD],
+            components[Components.STATUS_LABEL],
+            states[States.CURRENT_VIEW_STATE],
+            components[Components.BTN_CHECKPOINT],
+            components[Components.BTN_DRAFT],
+            components[Components.BTN_DIFF],
+            components[Components.MODE_RADIO],
+            components[Components.SECTION_DROPDOWN],
+            components[Components.VIEW_ACTIONS_ROW],
+            states[States.STATUS_LOG],    # new_log
+            components[Components.STATUS_STRIP], # status_log component
+            # Manual Mode UI items to hide
+            components[Components.START_EDIT_BTN],
+            components[Components.CONFIRM_BTN],
+            components[Components.DISCARD_BTN],
+            components[Components.FORCE_EDIT_BTN],
+            components[Components.KEEP_DRAFT_BTN],
+            # Rewrite Mode items to hide
+            rewrite_section,
+            # Chat Mode items to hide
+            components[Components.CHAT_SECTION],
+        ]
     )
 
 

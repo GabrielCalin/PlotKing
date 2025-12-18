@@ -84,6 +84,7 @@ def rewrite_handler(section, selected_txt, selected_idx, instructions, current_t
         gr.update(visible=False),  # rewrite_validate_btn
         gr.update(visible=False),  # rewrite_discard_btn
         gr.update(visible=False),  # rewrite_force_edit_btn
+        gr.update(visible=False),  # rewrite_keep_draft_btn
         gr.update(visible=False),  # rewrite_btn
         status_update,
         current_log,
@@ -106,6 +107,7 @@ def rewrite_handler(section, selected_txt, selected_idx, instructions, current_t
             gr.update(visible=True),   # rewrite_validate_btn
             gr.update(visible=True),   # rewrite_discard_btn
             gr.update(visible=True),   # rewrite_force_edit_btn
+            gr.update(visible=True),   # rewrite_keep_draft_btn
             gr.update(visible=True),   # rewrite_btn
             final_status,
             final_log,
@@ -125,6 +127,7 @@ def rewrite_handler(section, selected_txt, selected_idx, instructions, current_t
             gr.update(visible=False),  # rewrite_validate_btn
             gr.update(visible=False),  # rewrite_discard_btn
             gr.update(visible=False),  # rewrite_force_edit_btn
+            gr.update(visible=False),  # rewrite_keep_draft_btn
             gr.update(visible=True),   # rewrite_btn
             final_status,
             final_log,
@@ -144,6 +147,7 @@ def rewrite_discard(section, current_log):
         gr.update(visible=False),  # rewrite_validate_btn
         gr.update(visible=False),  # rewrite_discard_btn
         gr.update(visible=False),  # rewrite_force_edit_btn
+        gr.update(visible=False),  # rewrite_keep_draft_btn
         gr.update(visible=True, interactive=False),  # rewrite_btn - disabled pentru că selected_text este empty
         gr.update(value=""),  # rewrite_selected_preview
         status_update,  # status_strip
@@ -207,6 +211,7 @@ def rewrite_validate(section, draft_with_highlight, current_log):
         gr.update(interactive=False),  # section_dropdown (Dropdown)
         gr.update(value=new_log, visible=True),  # status_strip (Textbox)
         new_log,  # status_log (State)
+        gr.update(visible=False), # status_row (hidden)
     )
     
     msg, plan = editor_validate(section, draft_clean)
@@ -228,6 +233,7 @@ def rewrite_validate(section, draft_with_highlight, current_log):
         gr.update(interactive=False),  # section_dropdown (Dropdown)
         gr.update(value=final_log, visible=True),  # status_strip (Textbox)
         final_log,  # status_log (State)
+        gr.update(visible=False), # status_row (hidden)
     )
 
 def confirm_edit(section, draft, current_log):
@@ -261,7 +267,11 @@ def continue_edit(section, current_log, current_md):
         gr.update(interactive=False), # keep Section locked
         status_update,
         new_log,
-        gr.update(visible=False),   # hide Chat Section
-        gr.update(visible=False),   # status_row (hidden)
+        gr.update(visible=False),   # 17. hide Chat Section
+        gr.update(visible=False),   # 18. status_row (hidden while editing)
+        gr.update(visible=False),   # 19. hide manual keep draft
+        gr.update(visible=True),    # 20. show Rewrite Keep Draft
+        gr.update(visible=False),   # 21. hide chat keep draft
+        gr.update(visible=False),   # 22. hide view actions row
     )
 

@@ -47,6 +47,15 @@ class Components(str, Enum):
     VIEWER_MD = "viewer_md"
     EDITOR_TB = "editor_tb"
     STATUS_STRIP = "status_strip"
+    KEEP_DRAFT_BTN = "keep_draft_btn"
+    REWRITE_KEEP_DRAFT_BTN = "rewrite_keep_draft_btn"
+    CHAT_KEEP_DRAFT_BTN = "chat_keep_draft_btn"
+    DRAFTS_TO_KEEP_LIST = "drafts_to_keep_list"
+    MARK_KEEP_BTN = "mark_keep_btn"
+    VIEW_VALIDATE_BTN = "view_validate_btn"
+    VIEW_DISCARD_BTN = "view_discard_btn"
+    VIEW_FORCE_EDIT_BTN = "view_force_edit_btn"
+    VIEW_ACTIONS_ROW = "view_actions_row"
     _CONTINUE_EDIT_DISPATCHER = "_continue_edit_dispatcher"
 
 class States(str, Enum):

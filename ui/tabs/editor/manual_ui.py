@@ -8,17 +8,20 @@ def create_manual_ui():
     confirm_btn = gr.Button("✅ Validate", visible=False)
     discard_btn = gr.Button("🗑️ Discard", visible=False)
     force_edit_btn = gr.Button("⚡ Force Edit", visible=False)
+    keep_draft_btn = gr.Button("💾 Keep Draft", visible=False)
     
-    return start_edit_btn, confirm_btn, discard_btn, force_edit_btn
+    return start_edit_btn, confirm_btn, discard_btn, force_edit_btn, keep_draft_btn
 
 def create_manual_handlers(components, states):
     """Wire events for Manual mode components."""
     from handlers.editor.manual import start_edit, confirm_edit, discard_from_manual, force_edit
+    from handlers.editor.utils import keep_draft_handler
     
     start_edit_btn = components[Components.START_EDIT_BTN]
     confirm_btn = components[Components.CONFIRM_BTN]
     discard_btn = components[Components.DISCARD_BTN]
     force_edit_btn = components[Components.FORCE_EDIT_BTN]
+    keep_draft_btn = components[Components.KEEP_DRAFT_BTN]
     
     # Shared components
     current_md = states[States.CURRENT_MD]
@@ -36,6 +39,7 @@ def create_manual_handlers(components, states):
             confirm_btn,
             discard_btn,
             force_edit_btn,
+            keep_draft_btn,
             components[Components.VIEWER_MD],
             editor_tb,
             components[Components.MODE_RADIO],
@@ -62,6 +66,7 @@ def create_manual_handlers(components, states):
             components[Components.STATUS_STRIP],
             status_log,
             components[Components.STATUS_ROW],
+            keep_draft_btn,
         ],
         queue=True,
         show_progress=False,
@@ -80,6 +85,7 @@ def create_manual_handlers(components, states):
             components[Components.MODE_RADIO], components[Components.SECTION_DROPDOWN], components[Components.STATUS_STRIP],
             status_log,
             components[Components.STATUS_ROW],
+            keep_draft_btn,
         ],
     )
 
@@ -95,7 +101,36 @@ def create_manual_handlers(components, states):
             status_log,
             create_sections_epoch,
             components[Components.STATUS_ROW],
+            keep_draft_btn,
         ],
+    )
+    
+    keep_draft_btn.click(
+        fn=keep_draft_handler,
+        inputs=[selected_section, editor_tb, status_log],
+        outputs=[
+            components[Components.VIEWER_MD],
+            components[Components.STATUS_LABEL],
+            states[States.CURRENT_VIEW_STATE],
+            components[Components.BTN_CHECKPOINT],
+            components[Components.BTN_DRAFT],
+            components[Components.BTN_DIFF],
+            components[Components.MODE_RADIO],
+            components[Components.SECTION_DROPDOWN],
+            components[Components.VIEW_ACTIONS_ROW],
+            states[States.STATUS_LOG],    # new_log
+            components[Components.STATUS_STRIP], # status_log component
+            # Manual Mode UI items to hide
+            start_edit_btn,
+            confirm_btn,
+            discard_btn,
+            force_edit_btn,
+            keep_draft_btn,
+            # Rewrite Mode items to hide
+            components[Components.REWRITE_SECTION],
+            # Chat Mode items to hide
+            components[Components.CHAT_SECTION],
+        ]
     )
 
 

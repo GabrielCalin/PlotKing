@@ -273,3 +273,55 @@ def format_validation_markdown(
 {raw_details}
 ```
 """
+
+def keep_draft_handler(section, content, status_log):
+    """
+    Save the current content as a USER draft and switch to View mode.
+    """
+    if not section:
+        return gr.update(), gr.update(), status_log
+        
+    from state.drafts_manager import DraftsManager
+    from handlers.editor.constants import Components, States
+    
+    drafts_mgr = DraftsManager()
+    drafts_mgr.add_user_draft(section, content) # Salveaza explicit ca USER draft
+    
+    msg = f"💾 Saved draft for **{section}**."
+    new_log, status_update = append_status(status_log, msg)
+
+    # Return updates to switch to View mode and show correct buttons
+    # We need to update:
+    # 1. Viewer MD (with draft content)
+    # 2. Status Label (Viewing: Draft)
+    # 3. View State (Draft)
+    # 4. View Mode buttons (Validate/Discard/Force Edit/Diff visible)
+    # 5. Hide editor/rewrite/chat UI
+    # 6. Mode Radio -> View
+    
+    return (
+        gr.update(value=content, visible=True), # 1. Viewer MD
+        gr.update(value="**Viewing:** <span style='color:red;'>Draft</span>"), # 2. Status Label
+        "Draft", # 3. Current View State
+        gr.update(visible=True, interactive=True), # 4. Checkpoint Btn
+        gr.update(visible=True, interactive=True), # 5. Draft Btn
+        gr.update(visible=True, interactive=True), # 6. Diff Btn
+        gr.update(value="View", interactive=True), # 7. Mode Radio
+        gr.update(interactive=True), # 8. Section Dropdown
+        gr.update(visible=True),     # 9. View Actions Row
+        new_log,       # 10. Status Log State (new_log)
+        status_update, # 11. Status Strip (text update)
+        
+        # Hide Manual UI
+        gr.update(visible=False), # 12. Start Edit
+        gr.update(visible=False), # 13. Confirm
+        gr.update(visible=False), # 14. Discard
+        gr.update(visible=False), # 15. Force Edit
+        gr.update(visible=False), # 16. Keep Draft (Manual)
+        
+        # Hide Rewrite UI
+        gr.update(visible=False), # 17. Rewrite Section
+        
+        # Hide Chat UI
+        gr.update(visible=False), # 18. Chat Section
+    )

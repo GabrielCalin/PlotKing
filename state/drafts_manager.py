@@ -2,8 +2,9 @@ from enum import Enum
 from typing import Dict, List, Optional, Any
 
 class DraftType(Enum):
-    ORIGINAL = "original"   # Editat de user (Manual/Chat/Rewrite)
+    ORIGINAL = "original"   # Snapshot for validation (checkpoint content at start of flow)
     GENERATED = "generated" # Generat de AI (Pipeline)
+    USER = "user"           # Draft explicit salvat de user (Keep Draft)
 
 class DraftsManager:
     """
@@ -26,10 +27,17 @@ class DraftsManager:
         self._drafts.clear()
         
     def add_original(self, section: str, content: str) -> None:
-        """Add a draft marked as ORIGINAL (user edited)."""
+        """Add a draft marked as ORIGINAL (snapshot for validation)."""
         self._drafts[section] = {
             "content": content,
             "type": DraftType.ORIGINAL.value
+        }
+
+    def add_user_draft(self, section: str, content: str) -> None:
+        """Add a draft marked as USER (explicit keep draft)."""
+        self._drafts[section] = {
+            "content": content,
+            "type": DraftType.USER.value
         }
         
     def add_generated(self, section: str, content: str) -> None:
@@ -66,6 +74,10 @@ class DraftsManager:
     def get_generated_drafts(self) -> List[str]:
         """Get list of section names that are GENERATED drafts."""
         return [k for k, v in self._drafts.items() if v["type"] == DraftType.GENERATED.value]
+
+    def get_user_drafts(self) -> List[str]:
+        """Get list of section names that are USER drafts."""
+        return [k for k, v in self._drafts.items() if v["type"] == DraftType.USER.value]
 
     def get_all_content(self) -> Dict[str, str]:
         """Get all drafts as a simple {section: content} dict."""

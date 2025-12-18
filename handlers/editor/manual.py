@@ -5,7 +5,15 @@ from handlers.editor.constants import Components, States
 from state.checkpoint_manager import get_section_content, save_section
 
 def start_edit(curr_text, section, current_log):
-    """Switch to edit mode — locks Section + Mode."""
+    """Switch to edit mode — locks Section + Mode. Prefer Draft if exists."""
+    from state.drafts_manager import DraftsManager
+    drafts_mgr = DraftsManager()
+    
+    if section and drafts_mgr.has(section):
+        content = drafts_mgr.get_content(section)
+    else:
+        content = get_section_content(section) or ""
+        
     new_log, status_update = append_status(current_log, f"✍️ ({section}) Editing started.")
     return (
         gr.update(visible=False),     # hide Start
@@ -13,8 +21,9 @@ def start_edit(curr_text, section, current_log):
         gr.update(visible=True),      # show Confirm
         gr.update(visible=True),      # show Discard
         gr.update(visible=True),      # show Force Edit
+        gr.update(visible=True),      # show Keep Draft
         gr.update(visible=False),     # hide Markdown viewer
-        gr.update(visible=True, value=curr_text, interactive=True),  # show Textbox editor and enable editing
+        gr.update(visible=True, value=content, interactive=True),  # show Textbox editor with DRAFT content
         gr.update(interactive=False), # lock Mode
         gr.update(interactive=False), # lock Section
         status_update,
@@ -53,6 +62,7 @@ def confirm_edit(section, draft, current_log):
         gr.update(value=new_log, visible=True),  # show Process Log with "Validation started"
         new_log,  # status_log state
         gr.update(visible=False), # status_row (hidden)
+        gr.update(visible=False), # hide Keep Draft
     )
     
     # Apelează validarea (blocant) - folosim draft_clean (fără highlight-uri)
@@ -81,6 +91,7 @@ def confirm_edit(section, draft, current_log):
         gr.update(value=final_log, visible=True),  # show Process Log with "Validation completed"
         final_log,  # status_log state
         gr.update(visible=False), # status_row (hidden)
+        gr.update(visible=False), # hide Keep Draft
     )
 
 def force_edit(section, draft, current_log, create_epoch):
@@ -104,14 +115,22 @@ def force_edit(section, draft, current_log, create_epoch):
         new_log,
         new_create_epoch,  # bump create_sections_epoch to notify Create tab
         gr.update(visible=True), # status_row (visible)
+        gr.update(visible=False),# hide Keep Draft
     )
 
 def discard_from_manual(section, current_log):
     """Revert changes from Manual edit mode — unlock Section + Mode, show Start Editing button."""
-    text = get_section_content(section) or "_Empty_"
+    from state.drafts_manager import DraftsManager
+    drafts_mgr = DraftsManager()
+    
+    if section and drafts_mgr.has(section):
+        text = drafts_mgr.get_content(section)
+    else:
+        text = get_section_content(section) or "_Empty_"
+        
     new_log, status_update = append_status(current_log, f"🗑️ ({section}) Changes discarded.")
     return (
-        gr.update(value=text, visible=True),  # update and show Viewer
+        gr.update(value=text, visible=True),  # update and show Viewer (prefer draft)
         gr.update(value="", visible=False),   # clear and hide Editor
         gr.update(value="", visible=False),  # clear and hide Validation Box
         None,  # clear pending_plan
@@ -120,16 +139,17 @@ def discard_from_manual(section, current_log):
         gr.update(visible=False),   # hide Regenerate
         gr.update(visible=False),   # hide Continue Editing
         gr.update(visible=False),   # hide Discard2
-        gr.update(visible=True),    # show Start Editing (will be hidden by _toggle_mode if not Manual mode)
+        gr.update(visible=True),    # show Start Editing
         gr.update(visible=False),   # hide Validate
         gr.update(visible=False),   # hide Discard
         gr.update(visible=False),   # hide Force Edit
-        gr.update(visible=False),   # hide Rewrite Section (will be shown by _toggle_mode if Rewrite mode)
+        gr.update(visible=False),   # hide Rewrite Section
         gr.update(interactive=True),# unlock Mode
         gr.update(interactive=True),# unlock Section
         status_update,
         new_log,
         gr.update(visible=True), # status_row (visible)
+        gr.update(visible=False),# hide Keep Draft
     )
 
 def continue_edit(section, current_log):
@@ -153,7 +173,11 @@ def continue_edit(section, current_log):
         gr.update(interactive=False), # keep Section locked
         status_update,
         new_log,
-        gr.update(visible=False),   # hide Chat Section
-        gr.update(visible=False),   # status_row (hidden)
+        gr.update(visible=False),   # 17. hide Chat Section
+        gr.update(visible=False),   # 18. status_row (hidden while editing)
+        gr.update(visible=True),    # 19. show Keep Draft (Manual)
+        gr.update(visible=False),   # 20. hide rewrite keep draft
+        gr.update(visible=False),   # 21. hide chat keep draft
+        gr.update(visible=False),   # 22. hide view actions row
     )
 
