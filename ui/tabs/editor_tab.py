@@ -277,11 +277,14 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         from handlers.editor.rewrite import continue_edit as rewrite_continue_edit
         from handlers.editor.chat import continue_edit as chat_continue_edit
         from handlers.editor.manual import continue_edit as manual_continue_edit
+        from handlers.editor.view import continue_edit as view_continue_edit
         
         if current_mode == "Rewrite":
             return rewrite_continue_edit(section, current_log, current_md)
         elif current_mode == "Chat":
             return chat_continue_edit(section, current_log)
+        elif current_mode == "View":
+            return view_continue_edit(section, current_log)
         else:
             return manual_continue_edit(section, current_log)
 

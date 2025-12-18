@@ -106,3 +106,38 @@ def validate_draft_handler(section, current_log):
         final_log, # status_log
         gr.update(visible=False) # view_actions_row (hide while looking at validation results)
     )
+
+def continue_edit(section, current_log):
+    """Return to View mode after validation."""
+    new_log, status_update = append_status(current_log, f"🔁 ({section}) Return to view.")
+    
+    from state.drafts_manager import DraftsManager
+    drafts_mgr = DraftsManager()
+    is_user_draft = False
+    if section and drafts_mgr.has(section) and drafts_mgr.get_type(section) == "user":
+        is_user_draft = True
+
+    return (
+        gr.update(visible=False),   # hide Validation Title
+        gr.update(visible=False),   # hide Validation Box
+        gr.update(visible=False),   # hide Apply Updates
+        gr.update(visible=False),   # hide Regenerate
+        gr.update(visible=False),   # hide Continue Editing
+        gr.update(visible=False),   # hide Discard2
+        gr.update(visible=False),   # hide Validate (Manual)
+        gr.update(visible=False),   # hide Discard (Manual)
+        gr.update(visible=False),   # hide Force Edit (Manual)
+        gr.update(visible=False),   # hide Rewrite Section
+        gr.update(visible=True),    # SHOW viewer_md
+        gr.update(visible=False),   # hide editor_tb
+        gr.update(value="View", interactive=True), # unlock Mode/Set to View
+        gr.update(interactive=True), # unlock Section
+        status_update,
+        new_log,
+        gr.update(visible=False),   # hide Chat Section
+        gr.update(visible=True),    # SHOW status_row
+        gr.update(visible=False),   # hide Keep Draft (Manual)
+        gr.update(visible=False),   # hide rewrite keep draft
+        gr.update(visible=False),   # hide chat keep draft
+        gr.update(visible=is_user_draft), # SHOW view actions row if it was a user draft
+    )

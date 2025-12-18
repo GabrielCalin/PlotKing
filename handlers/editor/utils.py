@@ -285,7 +285,8 @@ def keep_draft_handler(section, content, status_log):
     from handlers.editor.constants import Components, States
     
     drafts_mgr = DraftsManager()
-    drafts_mgr.add_user_draft(section, content) # Salveaza explicit ca USER draft
+    clean_content = remove_highlight(content)
+    drafts_mgr.add_user_draft(section, clean_content) # Salveaza explicit ca USER draft
     
     msg = f"💾 Saved draft for **{section}**."
     new_log, status_update = append_status(status_log, msg)
@@ -300,7 +301,7 @@ def keep_draft_handler(section, content, status_log):
     # 6. Mode Radio -> View
     
     return (
-        gr.update(value=content, visible=True), # 1. Viewer MD
+        gr.update(value=clean_content, visible=True), # 1. Viewer MD
         gr.update(value="**Viewing:** <span style='color:red;'>Draft</span>"), # 2. Status Label
         "Draft", # 3. Current View State
         gr.update(visible=True, interactive=True), # 4. Checkpoint Btn
