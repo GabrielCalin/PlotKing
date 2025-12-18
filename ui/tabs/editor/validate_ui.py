@@ -39,12 +39,13 @@ def create_validate_ui():
             drafts_to_keep_list = gr.CheckboxGroup(label="Drafts To Keep (if not accepted)", choices=[], interactive=False)
         
         with gr.Row():
-            mark_keep_btn = gr.Button("📑 Mark Drafts to Keep", size="sm")
             btn_draft_accept_all = gr.Button("✅ Accept All", size="sm", variant="primary", scale=1, min_width=0)
             btn_draft_revert = gr.Button("❌ Revert All", size="sm", variant="stop", scale=1, min_width=0)
         with gr.Row():
             btn_draft_accept_selected = gr.Button("✔️ Accept Selected", size="sm", scale=1, min_width=0, interactive=False)
             btn_draft_regenerate = gr.Button("🔄 Regenerate Selected", size="sm", scale=1, min_width=0, interactive=False)
+        with gr.Row():
+            mark_keep_btn = gr.Button("📑 Mark Drafts to Keep", size="sm", scale=1, min_width=0)
 
     with gr.Row(elem_classes=["validation-row"]):
         continue_btn = gr.Button("🔁 Back", scale=1, min_width=0, visible=False)

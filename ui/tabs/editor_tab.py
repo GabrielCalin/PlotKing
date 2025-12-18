@@ -155,7 +155,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         # Check specifically for USER draft to enable view actions
         is_user_draft = False
         draft_type = drafts_mgr.get_type(name)
-        if draft_type == "user":
+        from state.drafts_manager import DraftType
+        if draft_type == DraftType.USER.value:
             is_user_draft = True
         
         if has_draft:
@@ -226,8 +227,9 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             
             # Recalculate View Actions (Validate, Discard, etc.) for View mode
             if mode == "View":
+                from state.drafts_manager import DraftsManager, DraftType
                 drafts_mgr = DraftsManager()
-                is_user_draft = (drafts_mgr.get_type(section) == "user")
+                is_user_draft = (drafts_mgr.get_type(section) == DraftType.USER.value)
                 view_actions_upd = gr.update(visible=is_user_draft)
         else:
             # Fallback if no section

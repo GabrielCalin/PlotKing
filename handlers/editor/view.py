@@ -129,10 +129,10 @@ def continue_edit(section, current_log):
     """Return to View mode after validation."""
     new_log, status_update = append_status(current_log, f"🔁 ({section}) Return to view.")
     
-    from state.drafts_manager import DraftsManager
+    from state.drafts_manager import DraftsManager, DraftType
     drafts_mgr = DraftsManager()
     is_user_draft = False
-    if section and drafts_mgr.has(section) and drafts_mgr.get_type(section) == "user":
+    if section and drafts_mgr.has(section) and drafts_mgr.get_type(section) == DraftType.USER.value:
         is_user_draft = True
 
     return (

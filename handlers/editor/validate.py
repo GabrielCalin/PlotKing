@@ -4,7 +4,7 @@ from utils.logger import merge_logs
 from handlers.editor.utils import append_status, remove_highlight
 from handlers.editor.constants import Components, States
 from state.checkpoint_manager import save_section, get_checkpoint, get_section_content
-from state.drafts_manager import DraftsManager
+from state.drafts_manager import DraftsManager, DraftType
 
 _stop_flag = False
 
@@ -39,7 +39,7 @@ def _get_generated_drafts_list(plan, exclude_section):
     
     final_list = []
     for s in generated_drafts:
-        if drafts_mgr.get_type(s) != "user":
+        if drafts_mgr.get_type(s) != DraftType.USER.value:
             final_list.append(s)
             
     return final_list
@@ -422,7 +422,7 @@ def draft_accept_selected(current_section, original_selected, generated_selected
     for section in all_drafts:
         # If it wasn't saved (removed) and wasn't converted to USER (type changed), it might still be ORIGINAL/GENERATED.
         dtype = drafts_mgr.get_type(section)
-        if dtype in ["original", "generated"]:
+        if dtype in [DraftType.ORIGINAL.value, DraftType.GENERATED.value]:
             drafts_mgr.remove(section)
 
     new_log, status_update = append_status(current_log, f"✅ Accepted {saved_count} drafts. {len(drafts_to_keep or [])} drafts kept as User Drafts.")

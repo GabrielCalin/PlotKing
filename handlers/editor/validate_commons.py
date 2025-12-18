@@ -72,11 +72,11 @@ def _build_candidate_sections(section: str, checkpoint) -> List[Tuple[str, str]]
         if not name or name == section:
             return
         from state.checkpoint_manager import get_section_content
-        from state.drafts_manager import DraftsManager
+        from state.drafts_manager import DraftsManager, DraftType
         
         drafts_mgr = DraftsManager()
         # Prioritize USER draft content if exists
-        if drafts_mgr.has(name) and drafts_mgr.get_type(name) == "user":
+        if drafts_mgr.has(name) and drafts_mgr.get_type(name) == DraftType.USER.value:
             content = drafts_mgr.get_content(name)
         else:
             content = get_section_content(name) or ""
