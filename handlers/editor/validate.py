@@ -22,26 +22,17 @@ def should_stop():
     return _stop_flag
 
 def _get_generated_drafts_list(plan, exclude_section):
-    """Helper to generate the list of auto-generated drafts from plan.
-    Returns ALL impacted sections from plan, even if they don't have drafts yet.
-    This allows user to regenerate sections that were stopped before completion.
+    """Helper to generate the list of drafts for review.
+    Returns ALL impacted sections from plan (except the one being edited).
     """
     if not plan:
         return []
+        
     impacted_sections = plan.get("impacted_sections", [])
-    generated_drafts = [s for s in impacted_sections if s != exclude_section]
     
-    # Also include any generated drafts that might not be in the plan
-    drafts_mgr = DraftsManager()
-    for s in drafts_mgr.get_generated_drafts():
-        if s != exclude_section and s not in generated_drafts:
-            generated_drafts.append(s)
+    # Simple list comprehension as requested: just the impacted sections from plan
+    final_list = [s for s in impacted_sections if s != exclude_section]
     
-    final_list = []
-    for s in generated_drafts:
-        if drafts_mgr.get_type(s) != DraftType.USER.value:
-            final_list.append(s)
-            
     return final_list
 
 def get_draft_warning(exclude_section: str) -> str:
