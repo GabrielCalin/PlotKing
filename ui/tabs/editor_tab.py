@@ -469,7 +469,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         # Outputs: UI changes to show Validation Box etc. similar to Manual/Rewrite validate
         outputs=[
              validation_box, pending_plan, validation_title, apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
-             viewer_md, editor_tb, mode_radio, section_dropdown, status_strip, status_log, view_actions_row
+             viewer_md, editor_tb, mode_radio, section_dropdown, status_strip, status_log, view_actions_row,
+             current_md
         ],
         queue=True,
         show_progress=False,

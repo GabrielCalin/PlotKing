@@ -80,7 +80,7 @@ def validate_draft_handler(section, current_log):
     drafts_mgr = DraftsManager()
     if not drafts_mgr.has_type(section, DraftType.USER.value):
         new_log, status_update = append_status(current_log, f"⚠️ No user draft found for validation in {section}.")
-        return [gr.update(), None, gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), status_update, new_log, gr.update()]
+        return [gr.update(), None, gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), status_update, new_log, gr.update(), gr.update()]
 
     draft_content = drafts_mgr.get_content(section, DraftType.USER.value)
     
@@ -102,7 +102,8 @@ def validate_draft_handler(section, current_log):
         gr.update(interactive=False), # section_dropdown
         status_update, # status_strip
         new_log, # status_log
-        gr.update(visible=False) # view_actions_row (hide immediately)
+        gr.update(visible=False), # view_actions_row (hide immediately)
+        draft_content # 15. current_md state update
     )
 
     # Run validation
@@ -124,7 +125,8 @@ def validate_draft_handler(section, current_log):
         gr.update(interactive=False), # section_dropdown
         final_status, # status_strip
         final_log, # status_log
-        gr.update(visible=False) # view_actions_row (hide while looking at validation results)
+        gr.update(visible=False), # view_actions_row (hide while looking at validation results)
+        draft_content # 15. current_md state update
     )
     
 def continue_edit(section, current_log):
