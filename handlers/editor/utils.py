@@ -281,12 +281,13 @@ def keep_draft_handler(section, content, status_log):
     if not section:
         return gr.update(), gr.update(), status_log
         
-    from state.drafts_manager import DraftsManager
+    from state.drafts_manager import DraftsManager, DraftType
     from handlers.editor.constants import Components, States
     
     drafts_mgr = DraftsManager()
     clean_content = remove_highlight(content)
     drafts_mgr.add_user_draft(section, clean_content) # Salveaza explicit ca USER draft
+    drafts_mgr.remove(section, DraftType.CHAT.value) # Sterge chat draft daca exista, acum ca e salvat ca USER draft
     
     msg = f"💾 Saved draft for **{section}**."
     new_log, status_update = append_status(status_log, msg)
