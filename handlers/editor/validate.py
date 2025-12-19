@@ -101,8 +101,9 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
 
     # In Rewrite mode, use current_md (without highlights) instead of draft from editor_tb
     if current_mode == "Rewrite" and current_md:
-        draft_clean = remove_highlight(current_md)
-        draft_to_save = draft_clean
+        draft_to_save = remove_highlight(current_md)
+    elif current_mode == "View" and current_md:
+        draft_to_save = remove_highlight(current_md)
     elif current_mode == "Chat" and current_md:
         draft_to_save = current_md
     else:
