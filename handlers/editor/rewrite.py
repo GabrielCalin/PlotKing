@@ -138,9 +138,16 @@ def rewrite_handler(section, selected_txt, selected_idx, instructions, current_t
         )
 
 def rewrite_discard(section, current_log):
-    """Discard rewrite changes - switch back to Text Box non-interactive. Always use checkpoint as source of truth."""
+    """Discard rewrite changes - fallback to draft if exists, else checkpoint."""
+    from state.drafts_manager import DraftsManager, DraftType
+    drafts_mgr = DraftsManager()
+    
+    # Priority: USER Draft > Checkpoint
+    clean_text = drafts_mgr.get_content(section, DraftType.USER.value)
+    if clean_text is None:
+        clean_text = get_section_content(section) or "_Empty_"
+        
     new_log, status_update = append_status(current_log, f"🗑️ ({section}) Rewrite discarded.")
-    clean_text = get_section_content(section) or "_Empty_"
     return (
         gr.update(visible=True, value=clean_text, interactive=False),  # editor_tb
         gr.update(visible=False, value=clean_text),  # viewer_md - resetat la textul curat din checkpoint
