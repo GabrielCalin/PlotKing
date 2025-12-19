@@ -189,6 +189,9 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
 
     def _toggle_mode(mode, current_log, current_text, section, view_state):
+        from state.drafts_manager import DraftsManager, DraftType
+        drafts_mgr = DraftsManager()
+        
         # Prevent duplicates in log
         last_msg = f"🔄 Mode changed to {mode}."
         
@@ -227,9 +230,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             
             # Recalculate View Actions (Validate, Discard, etc.) for View mode
             if mode == "View":
-                from state.drafts_manager import DraftsManager, DraftType
-                drafts_mgr = DraftsManager()
-                is_user_draft = (drafts_mgr.get_type(section) == DraftType.USER.value)
+                is_user_draft = drafts_mgr.has_type(section, DraftType.USER.value)
                 view_actions_upd = gr.update(visible=is_user_draft)
         else:
             # Fallback if no section
@@ -237,10 +238,10 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
         editor_update = gr.update(visible=False)
         if mode == "Rewrite":
-            # For Rewrite mode, editor_tb ALWAYS shows the latest draft content if it exists, otherwise checkpoint
-            drafts_mgr = DraftsManager()
-            if section and drafts_mgr.has(section):
-                content = drafts_mgr.get_content(section)
+            # For Rewrite mode, editor_tb should prioritize User draft if available, 
+            # consistent with Manual mode requirement "neaparat user trebuie".
+            if section and drafts_mgr.has_type(section, DraftType.USER.value):
+                content = drafts_mgr.get_content(section, DraftType.USER.value)
             else:
                 content = get_section_content(section) or ""
             editor_update = gr.update(visible=True, interactive=False, value=content)

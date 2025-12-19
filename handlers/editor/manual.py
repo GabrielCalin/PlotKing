@@ -6,11 +6,11 @@ from state.checkpoint_manager import get_section_content, save_section
 
 def start_edit(curr_text, section, current_log):
     """Switch to edit mode — locks Section + Mode. Prefer Draft if exists."""
-    from state.drafts_manager import DraftsManager
+    from state.drafts_manager import DraftsManager, DraftType
     drafts_mgr = DraftsManager()
     
-    if section and drafts_mgr.has(section):
-        content = drafts_mgr.get_content(section)
+    if section and drafts_mgr.has_type(section, DraftType.USER.value):
+        content = drafts_mgr.get_content(section, DraftType.USER.value)
     else:
         content = get_section_content(section) or ""
         
@@ -120,11 +120,11 @@ def force_edit(section, draft, current_log, create_epoch):
 
 def discard_from_manual(section, current_log):
     """Revert changes from Manual edit mode — unlock Section + Mode, show Start Editing button."""
-    from state.drafts_manager import DraftsManager
+    from state.drafts_manager import DraftsManager, DraftType
     drafts_mgr = DraftsManager()
     
-    if section and drafts_mgr.has(section):
-        text = drafts_mgr.get_content(section)
+    if section and drafts_mgr.has_type(section, DraftType.USER.value):
+        text = drafts_mgr.get_content(section, DraftType.USER.value)
     else:
         text = get_section_content(section) or "_Empty_"
         

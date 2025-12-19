@@ -2,7 +2,7 @@
 import gradio as gr
 from handlers.editor.validate_commons import editor_validate
 from handlers.editor.utils import append_status
-from state.drafts_manager import DraftsManager
+from state.drafts_manager import DraftsManager, DraftType
 from handlers.editor.constants import Components, States
 from llm.chat_editor.llm import call_llm_chat
 from state.checkpoint_manager import get_section_content, save_section
@@ -90,7 +90,7 @@ def chat_handler(section, message, history, current_text, initial_text, current_
         if new_content:
             # Edits were made - create draft and show status_row
             drafts_mgr = DraftsManager()
-            drafts_mgr.add_original(section, new_content)
+            drafts_mgr.add_user_draft(section, new_content)
             
             final_log, final_status = append_status(new_log, f"✅ ({section}) Plot King made edits.")
             yield (

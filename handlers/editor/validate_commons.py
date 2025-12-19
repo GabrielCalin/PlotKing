@@ -76,8 +76,8 @@ def _build_candidate_sections(section: str, checkpoint) -> List[Tuple[str, str]]
         
         drafts_mgr = DraftsManager()
         # Prioritize USER draft content if exists
-        if drafts_mgr.has(name) and drafts_mgr.get_type(name) == DraftType.USER.value:
-            content = drafts_mgr.get_content(name)
+        if drafts_mgr.has_type(name, DraftType.USER.value):
+            content = drafts_mgr.get_content(name, DraftType.USER.value)
         else:
             content = get_section_content(name) or ""
         candidates.append((name, content))

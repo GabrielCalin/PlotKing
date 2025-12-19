@@ -72,15 +72,17 @@ def validate_draft_handler(section, current_log):
     """Trigger validation using the USER draft content from View mode."""
     from handlers.editor.validate_commons import editor_validate
     
+    from state.drafts_manager import DraftType
+    
     if not section:
         return [gr.update()] * 14 # Fallback
         
     drafts_mgr = DraftsManager()
-    if not drafts_mgr.has(section):
-        new_log, status_update = append_status(current_log, f"⚠️ No draft found for validation in {section}.")
+    if not drafts_mgr.has_type(section, DraftType.USER.value):
+        new_log, status_update = append_status(current_log, f"⚠️ No user draft found for validation in {section}.")
         return [gr.update(), None, gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), status_update, new_log, gr.update()]
 
-    draft_content = drafts_mgr.get_content(section)
+    draft_content = drafts_mgr.get_content(section, DraftType.USER.value)
     
     # Initial status
     new_log, status_update = append_status(current_log, f"🔎 ({section}) Validating user draft...")
@@ -124,16 +126,14 @@ def validate_draft_handler(section, current_log):
         final_log, # status_log
         gr.update(visible=False) # view_actions_row (hide while looking at validation results)
     )
-
+    
 def continue_edit(section, current_log):
     """Return to View mode after validation."""
     new_log, status_update = append_status(current_log, f"🔁 ({section}) Return to view.")
     
     from state.drafts_manager import DraftsManager, DraftType
     drafts_mgr = DraftsManager()
-    is_user_draft = False
-    if section and drafts_mgr.has(section) and drafts_mgr.get_type(section) == DraftType.USER.value:
-        is_user_draft = True
+    is_user_draft = drafts_mgr.has_type(section, DraftType.USER.value)
 
     return (
         gr.update(visible=False),   # hide Validation Title

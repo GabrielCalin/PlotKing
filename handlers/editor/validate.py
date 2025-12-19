@@ -119,7 +119,7 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
         drafts_mgr.add_original(section, draft_to_save)
         
         # Reuse draft_accept_selected to save and get common return values
-        draft_panel, status_strip_upd, status_log_val, epoch_val, status_row_upd, status_label_upd, btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, viewer_upd, current_md_val, mode_radio_upd = draft_accept_selected(
+        draft_panel, status_strip_upd, status_log_val, epoch_val, status_row_upd, status_label_upd, btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, viewer_upd, current_md_val, mode_radio_upd, view_actions_row_upd = draft_accept_selected(
             current_section=section,
             original_selected=[section],
             generated_selected=[],
@@ -169,8 +169,8 @@ def apply_updates(section, draft, plan, current_log, create_epoch, current_mode,
     # Yield initial status
     new_log, status_update = append_status(current_log, f"✅ ({section}) Starting update pipeline...")
     
-    # Initial DraftsManager state (should have the original draft)
-    if not drafts_mgr.has(section):
+    # Initial DraftsManager state (ensure the version we are validating is in the ORIGINAL slot for review)
+    if not drafts_mgr.has_type(section, DraftType.ORIGINAL.value):
         drafts_mgr.add_original(section, draft_to_save)
 
     yield (
@@ -380,43 +380,73 @@ def draft_accept_selected(current_section, original_selected, generated_selected
     """Save selected drafts to checkpoint, discard unselected, and close panel."""
     drafts_mgr = DraftsManager()
     
-    # Combine user selections for ACCEPTANCE (saving to checkpoint)
-    sections_to_save = set()
-    if original_selected:
-        sections_to_save.update(original_selected)
-    if generated_selected:
-        sections_to_save.update(generated_selected)
+    # 1. Identify sections to save to CHECKPOINT (Accept)
+    # Mapping: section -> content
+    to_save_checkpoint = {}
     
-    # Process "Drafts To Keep" (User wants to SAVE AS USER DRAFT instead of discarding)
+    if generated_selected:
+        for section in generated_selected:
+            # Explicitly fetch GENERATED content
+            if drafts_mgr.has_type(section, DraftType.GENERATED.value):
+                content = drafts_mgr.get_content(section, DraftType.GENERATED.value)
+                to_save_checkpoint[section] = content
+                
+    if original_selected:
+        for section in original_selected:
+            # Explicitly fetch ORIGINAL content (snapshot)
+            # Only if not already selected via generated (Generated usually preferred if both selected? User shouldn't be able to select both for same sec ideally)
+            if section not in to_save_checkpoint and drafts_mgr.has_type(section, DraftType.ORIGINAL.value):
+                content = drafts_mgr.get_content(section, DraftType.ORIGINAL.value)
+                to_save_checkpoint[section] = content
+
+    # 2. Identify sections to KEEP AS USER DRAFT
+    drafts_kept_count = 0
     if drafts_to_keep:
         for section in drafts_to_keep:
-            # Only keep if NOT being saved to checkpoint.
-            if section not in sections_to_save:
-                # Get current draft content (ORIGINAL or GENERATED)
-                if drafts_mgr.has(section):
-                    content = drafts_mgr.get_content(section)
-                    # Convert to USER draft
-                    drafts_mgr.add_user_draft(section, content)
+            if section in to_save_checkpoint:
+                continue # Already saving to checkpoint, no need to keep draft
+            
+            # Logic: If GENERATED exists (from generated list), promote it to USER.
+            if drafts_mgr.has_type(section, DraftType.GENERATED.value):
+                content = drafts_mgr.get_content(section, DraftType.GENERATED.value)
+                drafts_mgr.add_user_draft(section, content)
+                # Remove generated component since it's now User
+                drafts_mgr.remove(section, DraftType.GENERATED.value)
+                drafts_kept_count += 1
+            elif drafts_mgr.has_type(section, DraftType.ORIGINAL.value):
+                # Keeping original as user draft?
+                content = drafts_mgr.get_content(section, DraftType.ORIGINAL.value)
+                drafts_mgr.add_user_draft(section, content)
+                drafts_mgr.remove(section, DraftType.ORIGINAL.value)
+                drafts_kept_count += 1
 
-    # Save ACCEPTED sections to checkpoint (overwrites any USER draft if it existed)
+    # 3. Apply Saves to Checkpoint & Cleanup Accepted
     saved_count = 0
-    for section in sections_to_save:
-        if drafts_mgr.has(section):
-            content = drafts_mgr.get_content(section)
-            save_section(section, content)
-            saved_count += 1
-            # Remove from drafts manager after saving to checkpoint
-            drafts_mgr.remove(section) 
+    for section, content in to_save_checkpoint.items():
+        save_section(section, content)
+        saved_count += 1
+        # Accepted -> Clear ALL drafts for this section
+        drafts_mgr.remove(section) 
     
-    # For any remaining drafts that were NOT kept as user drafts and NOT accepted, we should discard them.
-    all_drafts = list(drafts_mgr._drafts.keys())
-    for section in all_drafts:
-        # If it wasn't saved (removed) and wasn't converted to USER (type changed), it might still be ORIGINAL/GENERATED.
-        dtype = drafts_mgr.get_type(section)
-        if dtype in [DraftType.ORIGINAL.value, DraftType.GENERATED.value]:
-            drafts_mgr.remove(section)
+    # 4. Discard Unselected / Cleanup
+    # Iterate all known sections in manager
+    all_sections = list(drafts_mgr.get_all_content().keys())
+    
+    for section in all_sections:
+        if section in to_save_checkpoint:
+            continue # Already handled (removed)
+            
+        # Clean up GENERATED (discard AI proposal)
+        if drafts_mgr.has_type(section, DraftType.GENERATED.value):
+            drafts_mgr.remove(section, DraftType.GENERATED.value)
+            
+        # Clean up ORIGINAL (cleanup snapshot)
+        if drafts_mgr.has_type(section, DraftType.ORIGINAL.value):
+            drafts_mgr.remove(section, DraftType.ORIGINAL.value)
+            
+        # USER drafts are LEFT ALONE (Preserved)
 
-    new_log, status_update = append_status(current_log, f"✅ Accepted {saved_count} drafts. {len(drafts_to_keep or [])} drafts kept as User Drafts.")
+    new_log, status_update = append_status(current_log, f"✅ Accepted {saved_count} drafts. {drafts_kept_count} drafts kept as User Drafts.")
     new_epoch = (create_epoch or 0) + 1
     
     # Get fresh content for viewer (checkpoint content)
