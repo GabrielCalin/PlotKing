@@ -13,8 +13,14 @@ def editor_rewrite(section, selected_text, instructions):
     """
     if not selected_text:
         return {"success": False, "message": "No text selected."}
+        
+    from state.drafts_manager import DraftsManager, DraftType
+    drafts_mgr = DraftsManager()
     
-    full_content = get_section_content(section)
+    # Priority: USER Draft > Checkpoint
+    full_content = drafts_mgr.get_content(section, DraftType.USER.value)
+    if full_content is None:
+        full_content = get_section_content(section)
     
     context_before = ""
     context_after = ""
@@ -73,7 +79,13 @@ def rewrite_handler(section, selected_txt, selected_idx, instructions, current_t
     """Handle rewrite button click - call handler and replace selected text."""
     start_idx, end_idx = selected_idx if isinstance(selected_idx, (list, tuple)) and len(selected_idx) == 2 else (None, None)
     
-    original_text = get_section_content(section)
+    from state.drafts_manager import DraftsManager, DraftType
+    drafts_mgr = DraftsManager()
+    
+    # Priority: USER Draft > Checkpoint
+    original_text = drafts_mgr.get_content(section, DraftType.USER.value)
+    if original_text is None:
+        original_text = get_section_content(section)
     
     new_log, status_update = append_status(current_log, f"🔄 ({section}) Rewriting selected text...")
     
