@@ -90,7 +90,7 @@ def chat_handler(section, message, history, current_text, initial_text, current_
         if new_content:
             # Edits were made - create draft and show status_row
             drafts_mgr = DraftsManager()
-            drafts_mgr.add_user_draft(section, new_content)
+            drafts_mgr.add_chat(section, new_content)
             
             final_log, final_status = append_status(new_log, f"✅ ({section}) Plot King made edits.")
             yield (
@@ -230,33 +230,54 @@ def validate_handler(section, current_text, current_log):
 
 def discard_handler(section, current_log):
     """
-    Discards chat edits and reverts to checkpoint. Removes draft from DraftsManager.
+    Discards Chat draft. Falls back to USER draft if exists, otherwise Checkpoint.
     """
     drafts_manager = DraftsManager()
-    if drafts_manager.has(section):
-        drafts_manager.remove(section)
-
-    clean_text = get_section_content(section) or "_Empty_"
-    new_log, status_update = append_status(current_log, f"🗑️ ({section}) Chat edits discarded.")
     
+    # 1. Remove ONLY Chat draft
+    if drafts_manager.has_type(section, DraftType.CHAT.value):
+        drafts_manager.remove(section, DraftType.CHAT.value)
+        msg_text = f"🗑️ ({section}) Chat edits discarded."
+    else:
+        msg_text = f"⚠️ ({section}) No chat edits found."
+        
+    new_log, status_update = append_status(current_log, msg_text)
+
+    # 2. Determine fallback content
+    user_draft_content = drafts_manager.get_content(section, DraftType.USER.value)
+    
+    if user_draft_content:
+        # Fallback to User Draft
+        updated_text = user_draft_content
+        mode_label = "**Viewing:** <span style='color:red;'>Draft</span>"
+        view_state = "Draft"
+        btns_visible = True
+        
+    else:
+        # Fallback to Checkpoint
+        updated_text = get_section_content(section) or ""
+        mode_label = "**Viewing:** <span style='color:red;'>Checkpoint</span>"
+        view_state = "Checkpoint"
+        btns_visible = False
+
     return (
-        gr.update(value=clean_text), # viewer_md
+        gr.update(value=updated_text), # viewer_md
         gr.update(visible=False), # chat_actions_row_1
         gr.update(visible=False), # chat_discard_btn
         gr.update(visible=False), # chat_force_edit_btn
         gr.update(visible=False), # chat_actions_row_2
         gr.update(visible=False), # chat_validate_btn
         gr.update(visible=False), # chat_keep_draft_btn
-        clean_text, # current_md
+        updated_text, # current_md
         new_log,
         status_update,
-        gr.update(visible=True), # status_row - show (but buttons hidden if no drafts)
-        gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), # status_label - show Checkpoint
-        gr.update(visible=False), # btn_checkpoint - hide (no draft = no point showing C only)
-        gr.update(visible=False), # btn_draft - hide
-        gr.update(visible=False), # btn_diff - hide
-        "Checkpoint", # current_view_state
-        gr.update(interactive=True), # mode_radio - ENABLED
+        gr.update(visible=True), # status_row - always visible in Chat
+        gr.update(value=mode_label), # status_label
+        gr.update(visible=btns_visible), # btn_checkpoint
+        gr.update(visible=btns_visible, interactive=btns_visible), # btn_draft
+        gr.update(visible=btns_visible, interactive=btns_visible), # btn_diff
+        view_state, # current_view_state
+        gr.update(interactive=True), # mode_radio
     )
 
 def force_edit_handler(section, current_text, current_log, create_epoch):
@@ -268,7 +289,8 @@ def force_edit_handler(section, current_text, current_log, create_epoch):
     new_log, status_update = append_status(current_log, f"⚡ ({section}) Synced (forced from Chat).")
     new_create_epoch = (create_epoch or 0) + 1
     
-    # Remove draft for this section since changes are saved to checkpoint
+    new_create_epoch = (create_epoch or 0) + 1
+    
     drafts_manager = DraftsManager()
     if drafts_manager.has(section):
         drafts_manager.remove(section)

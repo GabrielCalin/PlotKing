@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Any
 class DraftType(Enum):
     ORIGINAL = "original"   # Snapshot for validation (checkpoint content at start of flow)
     GENERATED = "generated" # Generat de AI (Pipeline)
+    CHAT = "chat"           # Draft din conversatie chat
     USER = "user"           # Draft explicit salvat de user (Keep Draft)
 
 class DraftsManager:
@@ -44,6 +45,12 @@ class DraftsManager:
         if section not in self._drafts:
             self._drafts[section] = {}
         self._drafts[section][DraftType.GENERATED.value] = content
+
+    def add_chat(self, section: str, content: str) -> None:
+        """Add a draft marked as CHAT (Chat session)."""
+        if section not in self._drafts:
+            self._drafts[section] = {}
+        self._drafts[section][DraftType.CHAT.value] = content
         
     def remove(self, section: str, draft_type: str = None) -> bool:
         """
@@ -85,6 +92,9 @@ class DraftsManager:
         if DraftType.GENERATED.value in drafts:
             # AI Proposal takes precedence in UI by default
             return drafts[DraftType.GENERATED.value]
+        if DraftType.CHAT.value in drafts:
+            # Chat session changes
+            return drafts[DraftType.CHAT.value]
         if DraftType.USER.value in drafts:
             # User manual edit
             return drafts[DraftType.USER.value]
@@ -112,6 +122,8 @@ class DraftsManager:
         
         if DraftType.GENERATED.value in drafts:
             return DraftType.GENERATED.value
+        if DraftType.CHAT.value in drafts:
+            return DraftType.CHAT.value
         if DraftType.USER.value in drafts:
             return DraftType.USER.value
         if DraftType.ORIGINAL.value in drafts:
@@ -133,6 +145,10 @@ class DraftsManager:
     def get_user_drafts(self) -> List[str]:
         """Get list of section names that have a USER draft."""
         return [s for s, d in self._drafts.items() if DraftType.USER.value in d]
+
+    def get_chat_drafts(self) -> List[str]:
+        """Get list of section names that have a CHAT draft."""
+        return [s for s, d in self._drafts.items() if DraftType.CHAT.value in d]
 
     def get_all_content(self) -> Dict[str, str]:
         """
