@@ -87,7 +87,7 @@ def create_validate_handlers(components, states):
     
     apply_updates_btn.click(
         fn=apply_updates,
-        inputs=[section_dropdown, editor_tb, pending_plan, status_log, create_sections_epoch, mode_radio, current_md],
+        inputs=[section_dropdown, pending_plan, status_log, create_sections_epoch, mode_radio, current_md],
         outputs=[
             components[Components.VIEWER_MD], components[Components.STATUS_STRIP],
             editor_tb,

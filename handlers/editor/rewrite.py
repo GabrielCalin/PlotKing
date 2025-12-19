@@ -212,6 +212,7 @@ def rewrite_validate(section, draft_with_highlight, current_log):
         gr.update(value=new_log, visible=True),  # status_strip (Textbox)
         new_log,  # status_log (State)
         gr.update(visible=False), # status_row (hidden)
+        draft_with_highlight # 16. current_md state update (WITH HIGHLIGHTS)
     )
     
     msg, plan = editor_validate(section, draft_clean)
@@ -234,6 +235,7 @@ def rewrite_validate(section, draft_with_highlight, current_log):
         gr.update(value=final_log, visible=True),  # status_strip (Textbox)
         final_log,  # status_log (State)
         gr.update(visible=False), # status_row (hidden)
+        draft_with_highlight # 16. current_md state update (WITH HIGHLIGHTS)
     )
 
 def confirm_edit(section, draft, current_log):

@@ -63,6 +63,7 @@ def confirm_edit(section, draft, current_log):
         new_log,  # status_log state
         gr.update(visible=False), # status_row (hidden)
         gr.update(visible=False), # hide Keep Draft
+        draft # 22. current_md state update
     )
     
     # Apelează validarea (blocant) - folosim draft_clean (fără highlight-uri)
@@ -92,6 +93,7 @@ def confirm_edit(section, draft, current_log):
         final_log,  # status_log state
         gr.update(visible=False), # status_row (hidden)
         gr.update(visible=False), # hide Keep Draft
+        draft # 22. current_md state update
     )
 
 def force_edit(section, draft, current_log, create_epoch):

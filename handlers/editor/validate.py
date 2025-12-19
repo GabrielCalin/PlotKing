@@ -89,25 +89,17 @@ def editor_apply(section, draft, plan):
     return drafts
 
 
-def apply_updates(section, draft, plan, current_log, create_epoch, current_mode, current_md):
+def apply_updates(section, plan, current_log, create_epoch, current_mode, draft_content):
     """
-    Aplică modificările și rulează pipeline-ul de editare dacă există secțiuni impactate.
-    Este generator dacă există plan, altfel returnează direct.
-    For Chat mode, current_md already contains the draft, so we use it directly.
-    Uses DraftsManager for draft storage.
+    Apply updates based on validation plan or save directly if no plan.
+    Consolidated logic: 'draft_content' is the single source of truth (from current_md state).
     """
     # Reset stop signal at start
     clear_stop()
-
-    # In Rewrite mode, use current_md (without highlights) instead of draft from editor_tb
-    if current_mode == "Rewrite" and current_md:
-        draft_to_save = remove_highlight(current_md)
-    elif current_mode == "View" and current_md:
-        draft_to_save = remove_highlight(current_md)
-    elif current_mode == "Chat" and current_md:
-        draft_to_save = current_md
-    else:
-        draft_to_save = draft
+    
+    # Simple logic: the incoming draft_content IS the candidate text.
+    # We just ensure it's clean of any UI-specific markup (like red highlights).
+    draft_to_save = remove_highlight(draft_content or "")
     
     base_log = current_log
     current_epoch = create_epoch or 0

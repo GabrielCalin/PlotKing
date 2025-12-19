@@ -163,6 +163,7 @@ def create_rewrite_handlers(components, states):
             components[Components.STATUS_STRIP],
             status_log,
             components[Components.STATUS_ROW], # Add output to match Manual validate
+            current_md,
         ],
         queue=True,
         show_progress=False,
