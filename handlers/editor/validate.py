@@ -167,7 +167,8 @@ def apply_updates(section, plan, current_log, create_epoch, current_mode, draft_
             gr.update(visible=False), # 28. keep_draft_btn
             gr.update(visible=False), # 29. rewrite_keep_draft_btn
             gr.update(visible=False), # 30. chat_keep_draft_btn
-            gr.update(visible=False)  # 31. view_actions_row
+            gr.update(visible=False), # 31. view_actions_row
+            []                        # 32. generated_drafts_choices_state
         )
         return
 
@@ -209,7 +210,8 @@ def apply_updates(section, plan, current_log, create_epoch, current_mode, draft_
         gr.update(visible=False), # 29. keep_draft_btn
         gr.update(visible=False), # 30. rewrite_keep_draft_btn
         gr.update(visible=False), # 31. chat_keep_draft_btn
-        gr.update(visible=False)  # 32. view_actions_row
+        gr.update(visible=False), # 32. view_actions_row
+        []                        # 33. generated_drafts_choices_state
     )
 
     # Call editor_apply which yields pipeline results
@@ -262,7 +264,8 @@ def apply_updates(section, plan, current_log, create_epoch, current_mode, draft_
             gr.update(visible=False), # 29. keep_draft_btn
             gr.update(visible=False), # 30. rewrite_keep_draft_btn
             gr.update(visible=False), # 31. chat_keep_draft_btn
-            gr.update(visible=False)  # 32. view_actions_row
+            gr.update(visible=False), # 32. view_actions_row
+            generated_drafts          # 33. generated_drafts_choices_state
         )
             
         # Check stop after processing and saving results
@@ -317,7 +320,8 @@ def apply_updates(section, plan, current_log, create_epoch, current_mode, draft_
         gr.update(visible=False), # 29. keep_draft_btn
         gr.update(visible=False), # 30. rewrite_keep_draft_btn
         gr.update(visible=False), # 31. chat_keep_draft_btn
-        gr.update(visible=False)  # 32. view_actions_row
+        gr.update(visible=False), # 32. view_actions_row
+        generated_drafts          # 33. generated_drafts_choices_state
     )
 
 def draft_accept_all(current_section, plan, current_log, create_epoch):
@@ -417,6 +421,8 @@ def draft_accept_selected(current_section, original_selected, generated_selected
     drafts_kept_count = 0
     if drafts_to_keep:
         for section in drafts_to_keep:
+            if section == "None": # Placeholder for no drafts to keep
+                continue
             if section in to_save_checkpoint:
                 continue # Already saving to checkpoint, no need to keep draft
             
@@ -600,39 +606,49 @@ def discard_from_validate(section, current_log):
         gr.update(visible=False),                   # 12. Discard
         gr.update(visible=False),                   # 13. Force Edit
         gr.update(visible=False),                   # 14. Rewrite Section
-        gr.update(value="View", interactive=True),   # 15. Mode Radio
-        gr.update(interactive=True),                 # 16. Section Dropdown
-        status_update,                               # 17. Status Strip
-        new_log,                                     # 18. Status Log State
-        content,                                     # 19. current_md
-        gr.update(visible=False),                    # 20. draft panel (hidden)
-        gr.update(choices=[], value=[]),             # 21. generated list
-        gr.update(visible=True),                     # 22. status_row
-        gr.update(value=mode_label),                 # 23. status_label
-        gr.update(visible=btns_visible),             # 24. btn_checkpoint
-        gr.update(visible=btns_visible, interactive=btns_visible), # 25. btn_draft
-        gr.update(visible=btns_visible, interactive=btns_visible), # 26. btn_diff
-        view_state,                                  # 27. view_state
-        gr.update(choices=[], value=[]),             # 28. original_draft_checkbox
-        gr.update(value=[], choices=[]),             # 29. drafts_to_keep_list
-        gr.update(visible=False),                    # 30. keep_draft_btn
-        gr.update(visible=False),                    # 31. rewrite_keep_draft_btn
-        gr.update(visible=False),                    # 32. chat_keep_draft_btn
-        gr.update(visible=btns_visible)                     # 33. view_actions_row
+        gr.update(value="View", interactive=True),   # mode_radio
+        gr.update(interactive=True),                 # section_dropdown
+        status_update,                               # status_strip
+        new_log,                                     # status_log
+        content,                                     # current_md
+        gr.update(visible=False),                    # draft_review_panel
+        gr.update(choices=[], value=[]),             # generated_drafts_list
+        gr.update(visible=True),                     # status_row
+        gr.update(value=mode_label),                 # status_label
+        gr.update(visible=btns_visible),             # btn_checkpoint
+        gr.update(visible=btns_visible, interactive=btns_visible), # btn_draft
+        gr.update(visible=btns_visible, interactive=btns_visible), # btn_diff
+        view_state,                                  # view_state
+        gr.update(choices=[], value=[]),             # original_draft_checkbox
+        gr.update(value=[], choices=[]),             # drafts_to_keep_list
+        gr.update(visible=False),                    # keep_draft_btn
+        gr.update(visible=False),                    # rewrite_keep_draft_btn
+        gr.update(visible=False),                    # chat_keep_draft_btn
+        gr.update(visible=btns_visible),             # view_actions_row
+        []                                           # generated_drafts_choices_state
     )
 
-def mark_drafts_to_keep_handler(original_selected, generated_selected):
+def mark_drafts_to_keep_handler(generated_selected):
     """
     Populate Drafts To Keep with selected items from other lists.
     """
-    combined = []
-    if original_selected:
-        combined.extend(original_selected)
-    if generated_selected:
-        combined.extend(generated_selected)
+    if not generated_selected:
+        # User wants a None checkbox, checked and non-interactive
+        return gr.update(choices=["None"], value=["None"], interactive=False, visible=True)
     
-    # Return as choices and formatted values (all selected)
-    return gr.update(choices=combined, value=combined, visible=True)
+    # Return as choices and formatted values (all selected), non-interactive as requested
+    return gr.update(choices=generated_selected, value=generated_selected, interactive=False, visible=True)
+
+def select_all_gen_handler(choices):
+    """Select all items in Auto-Generated Drafts."""
+    if not choices:
+        return []
+    # Force value to be a new list to ensure Gradio detects change if needed
+    return list(choices)
+
+def unselect_all_gen_handler():
+    """Unselect all items in Auto-Generated Drafts."""
+    return []
 
 def update_draft_buttons(original_selected, generated_selected):
     """Enable/disable draft action buttons based on selections."""

@@ -42,6 +42,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     chat_history = gr.State([{"role": "assistant", "content": PLOT_KING_GREETING}])
     initial_text_before_chat = gr.State("")
     current_view_state = gr.State("Checkpoint") # Checkpoint, Draft, Diff
+    generated_drafts_choices = gr.State([])
 
     # ---- (0) Empty state message (visible by default) ----
     empty_msg = gr.Markdown(
@@ -79,7 +80,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             chat_section, chatbot, chat_input, chat_send_btn, chat_clear_btn, chat_actions_row_1, chat_discard_btn, chat_force_edit_btn, chat_actions_row_2, chat_validate_btn, chat_keep_draft_btn = Chat.create_chat_ui()
             
             # Validation & Draft Review UI
-            validation_title, validation_box, apply_updates_btn, stop_updates_btn, regenerate_btn, draft_review_panel, original_draft_checkbox, generated_drafts_list, drafts_to_keep_list, mark_keep_btn, btn_draft_accept_all, btn_draft_revert, btn_draft_accept_selected, btn_draft_regenerate, continue_btn, discard2_btn = Validate.create_validate_ui()
+            validation_title, validation_box, apply_updates_btn, stop_updates_btn, regenerate_btn, draft_review_panel, original_draft_checkbox, generated_drafts_list, drafts_to_keep_list, mark_keep_btn, btn_draft_accept_all, btn_draft_revert, btn_draft_accept_selected, btn_draft_regenerate, continue_btn, discard2_btn, select_all_gen_btn, unselect_all_gen_btn, _ = Validate.create_validate_ui(generated_drafts_choices)
 
         # ---- (1b) Right Column: Viewer / Editor ----
         with gr.Column(scale=3):
@@ -446,6 +447,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         Components.VIEW_FORCE_EDIT_BTN: view_force_edit_btn,
         Components.VIEW_ACTIONS_ROW: view_actions_row,
         Components._CONTINUE_EDIT_DISPATCHER: _continue_edit_dispatcher,
+        Components.SELECT_ALL_GEN_BTN: select_all_gen_btn,
+        Components.UNSELECT_ALL_GEN_BTN: unselect_all_gen_btn,
     }
     
     # States dictionary
@@ -461,6 +464,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         States.INITIAL_TEXT_BEFORE_CHAT: initial_text_before_chat,
         States.CURRENT_VIEW_STATE: current_view_state,
         States.CREATE_SECTIONS_EPOCH: create_sections_epoch,
+        States.GENERATED_DRAFTS_CHOICES: generated_drafts_choices,
     }
 
     Manual.create_manual_handlers(components, states)

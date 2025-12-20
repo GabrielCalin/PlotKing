@@ -2,7 +2,7 @@
 import gradio as gr
 from handlers.editor.constants import Components, States
 
-def create_validate_ui():
+def create_validate_ui(generated_drafts_choices_state):
     """Create UI components for Validation and Draft Review."""
     # Validation Result
     validation_title = gr.Markdown("🔎 **Validation Result**", visible=False)
@@ -27,16 +27,23 @@ def create_validate_ui():
             label="Originally Edited Section",
             choices=[],
             value=[],
-            interactive=True
+
+            interactive=False
         )
         
-        # Auto-Generated Drafts (impacted sections)
         gr.Markdown("**Auto-Generated Drafts**")
+        with gr.Row():
+             select_all_gen_btn = gr.Button("Select All", size="sm", scale=1, min_width=0)
+             unselect_all_gen_btn = gr.Button("Unselect All", size="sm", scale=1, min_width=0)
+             mark_keep_btn = gr.Button("📑 Mark to Keep", size="sm", scale=1, min_width=0)
         with gr.Row():
             generated_drafts_list = gr.CheckboxGroup(label="AI-Generated Drafts", choices=[], interactive=True)
         
+        gr.Markdown("**Drafts To Keep**")
         with gr.Row():
-            drafts_to_keep_list = gr.CheckboxGroup(label="Drafts To Keep (if not accepted)", choices=[], interactive=False)
+            # "Preserved If Not Accepted" checkbox list, non-interactive
+            drafts_to_keep_list = gr.CheckboxGroup(label="Preserved If Not Accepted", choices=[], interactive=False)
+
         
         with gr.Row():
             btn_draft_accept_all = gr.Button("✅ Accept All", size="sm", variant="primary", scale=1, min_width=0)
@@ -44,21 +51,20 @@ def create_validate_ui():
         with gr.Row():
             btn_draft_accept_selected = gr.Button("✔️ Accept Selected", size="sm", scale=1, min_width=0, interactive=False)
             btn_draft_regenerate = gr.Button("🔄 Regenerate Selected", size="sm", scale=1, min_width=0, interactive=False)
-        with gr.Row():
-            mark_keep_btn = gr.Button("📑 Mark Drafts to Keep", size="sm", scale=1, min_width=0)
+
 
     with gr.Row(elem_classes=["validation-row"]):
         continue_btn = gr.Button("🔁 Back", scale=1, min_width=0, visible=False)
         discard2_btn = gr.Button("🗑️ Discard", scale=1, min_width=0, visible=False)
         
-    return validation_title, validation_box, apply_updates_btn, stop_updates_btn, regenerate_btn, draft_review_panel, original_draft_checkbox, generated_drafts_list, drafts_to_keep_list, mark_keep_btn, btn_draft_accept_all, btn_draft_revert, btn_draft_accept_selected, btn_draft_regenerate, continue_btn, discard2_btn
+    return validation_title, validation_box, apply_updates_btn, stop_updates_btn, regenerate_btn, draft_review_panel, original_draft_checkbox, generated_drafts_list, drafts_to_keep_list, mark_keep_btn, btn_draft_accept_all, btn_draft_revert, btn_draft_accept_selected, btn_draft_regenerate, continue_btn, discard2_btn, select_all_gen_btn, unselect_all_gen_btn, generated_drafts_choices_state
 
 def create_validate_handlers(components, states):
     """Wire events for Validation and Draft Review components."""
     from handlers.editor.validate import (
         apply_updates, request_stop, discard_from_validate, regenerate_dispatcher,
         draft_accept_all, draft_revert_all, draft_accept_selected, draft_regenerate_selected,
-        update_draft_buttons
+        update_draft_buttons, mark_drafts_to_keep_handler, select_all_gen_handler, unselect_all_gen_handler
     )
     
     apply_updates_btn = components[Components.APPLY_UPDATES_BTN]
@@ -74,6 +80,8 @@ def create_validate_handlers(components, states):
     generated_drafts_list = components[Components.GENERATED_DRAFTS_LIST]
     drafts_to_keep_list = components[Components.DRAFTS_TO_KEEP_LIST]
     mark_keep_btn = components[Components.MARK_KEEP_BTN]
+    select_all_gen_btn = components[Components.SELECT_ALL_GEN_BTN]
+    unselect_all_gen_btn = components[Components.UNSELECT_ALL_GEN_BTN]
     
     # Shared components
     section_dropdown = components[Components.SECTION_DROPDOWN]
@@ -83,7 +91,11 @@ def create_validate_handlers(components, states):
     create_sections_epoch = states[States.CREATE_SECTIONS_EPOCH]
     mode_radio = components[Components.MODE_RADIO]
     current_md = states[States.CURRENT_MD]
+    current_md = states[States.CURRENT_MD]
     selected_section = states[States.SELECTED_SECTION]
+    
+    # Local state for Generated Drafts Choices (for Select All)
+    generated_drafts_choices_state = gr.State([])
     
     apply_updates_btn.click(
         fn=apply_updates,
@@ -113,6 +125,7 @@ def create_validate_handlers(components, states):
             components[Components.REWRITE_KEEP_DRAFT_BTN],
             components[Components.CHAT_KEEP_DRAFT_BTN],
             components[Components.VIEW_ACTIONS_ROW],
+            generated_drafts_choices_state,
         ],
         queue=True,
     )
@@ -173,6 +186,7 @@ def create_validate_handlers(components, states):
             components[Components.REWRITE_KEEP_DRAFT_BTN],
             components[Components.CHAT_KEEP_DRAFT_BTN],
             components[Components.VIEW_ACTIONS_ROW],
+            generated_drafts_choices_state,
         ],
     )
 
@@ -199,8 +213,20 @@ def create_validate_handlers(components, states):
 
     mark_keep_btn.click(
         fn=mark_drafts_to_keep_handler,
-        inputs=[original_draft_checkbox, generated_drafts_list],
+        inputs=[generated_drafts_list],
         outputs=[drafts_to_keep_list]
+    )
+
+    select_all_gen_btn.click(
+        fn=lambda choices: [c for c in choices], 
+        inputs=[generated_drafts_choices_state], 
+        outputs=[generated_drafts_list]
+    )
+    
+    unselect_all_gen_btn.click(
+        fn=unselect_all_gen_handler, 
+        inputs=None,
+        outputs=[generated_drafts_list]
     )
 
     btn_draft_accept_all.click(
