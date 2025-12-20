@@ -27,11 +27,12 @@ def create_rewrite_ui():
             interactive=True,
         )
         rewrite_btn = gr.Button("🔄 Rewrite", variant="primary", interactive=False)
-        rewrite_validate_btn = gr.Button("✅ Validate", visible=False)
-        rewrite_discard_btn = gr.Button("🗑️ Discard", visible=False)
-        rewrite_force_edit_btn = gr.Button("⚡ Force Edit", visible=False)
-        rewrite_keep_draft_btn = gr.Button("💾 Keep Draft", visible=False)
-        
+        with gr.Row():
+            rewrite_validate_btn = gr.Button("✅ Validate", visible=False, scale=1, min_width=0)
+            rewrite_force_edit_btn = gr.Button("⚡ Force Edit", visible=False, scale=1, min_width=0)
+        with gr.Row():
+            rewrite_keep_draft_btn = gr.Button("💾 Keep Draft", visible=False, scale=1, min_width=0)
+            rewrite_discard_btn = gr.Button("🗑️ Discard", visible=False, scale=1, min_width=0)        
     return rewrite_section, rewrite_selected_preview, preset_dropdown, rewrite_instructions_tb, rewrite_btn, rewrite_validate_btn, rewrite_discard_btn, rewrite_force_edit_btn, rewrite_keep_draft_btn
 
 def create_rewrite_handlers(components, states):
