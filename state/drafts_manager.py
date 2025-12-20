@@ -27,6 +27,22 @@ class DraftsManager:
     def clear(self) -> None:
         """Clear all drafts (e.g. on new project)."""
         self._drafts.clear()
+
+    def keep_only_user_drafts(self, sections: List[str]) -> None:
+        """
+        Clear only GENERATED, CHAT, and ORIGINAL drafts for the specified sections.
+        Preserves USER drafts and does not touch sections not in the list.
+        """
+        for section in sections:
+            if section in self._drafts:
+                # Remove all types except USER
+                for dtype in list(self._drafts[section].keys()):
+                    if dtype != DraftType.USER.value:
+                        del self._drafts[section][dtype]
+                
+                # If section empty now, remove it
+                if not self._drafts[section]:
+                    del self._drafts[section]
         
     def add_original(self, section: str, content: str) -> None:
         """Add a draft marked as ORIGINAL (snapshot for validation)."""

@@ -35,6 +35,18 @@ def _get_generated_drafts_list(plan, exclude_section):
     
     return final_list
 
+def _get_revert_state(section):
+    """Calculate basic state variables after a revert/accept."""
+    drafts_mgr = DraftsManager()
+    # Priority: only USER draft remains after cleanup
+    content = drafts_mgr.get_content(section, DraftType.USER.value)
+    
+    if content is not None:
+        return content, "Draft", "**Viewing:** <span style='color:red;'>Draft</span>", True
+    else:
+        content = get_section_content(section) or ""
+        return content, "Checkpoint", "**Viewing:** <span style='color:red;'>Checkpoint</span>", False
+
 def get_draft_warning(exclude_section: str) -> str:
     """Check for existing USER drafts in other sections and return a warning markdown string."""
     drafts_mgr = DraftsManager()
@@ -308,66 +320,73 @@ def apply_updates(section, plan, current_log, create_epoch, current_mode, draft_
         gr.update(visible=False)  # 32. view_actions_row
     )
 
-def draft_accept_all(current_section, current_log, create_epoch):
-    """Save all drafts to checkpoint."""
+def draft_accept_all(current_section, plan, current_log, create_epoch):
+    """Save only the drafts involved in this session to checkpoint."""
     drafts_mgr = DraftsManager()
-    all_drafts = drafts_mgr.get_all_content()
     
-    if not all_drafts:
-        return gr.update(visible=False), gr.update(visible=False), current_log, create_epoch, gr.update(visible=True), gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), gr.update(interactive=True), gr.update(visible=False), gr.update(visible=False), "Checkpoint", gr.update(), gr.update(interactive=True)
-
-    for section, content in all_drafts.items():
-        save_section(section, content)
+    # Identify involved sections: originally edited + impacted
+    impacted = _get_generated_drafts_list(plan, None)
+    edited = plan.get("edited_section", current_section) if plan else current_section
+    sections_to_save = list(set(impacted + [edited, current_section]))
     
-    # Clear drafts after saving
-    drafts_mgr.clear()
-
+    for section in sections_to_save:
+        content = drafts_mgr.get_content(section)
+        if content is not None:
+            save_section(section, content)
+            # Fully remove drafts for accepted sections (they are now in checkpoint)
+            drafts_mgr.remove(section)
+            
     new_log, status_update = append_status(current_log, "✅ All drafts accepted and saved.")
     new_epoch = (create_epoch or 0) + 1
     
-    # Get fresh content for viewer
-    fresh_content = get_section_content(current_section) or ""
+    content, view_state, mode_label, btns_visible = _get_revert_state(current_section)
     
     return (
-        gr.update(visible=False), # Hide draft panel
-        status_update,
-        new_log,
-        new_epoch,
-        gr.update(visible=True), # status_row
-        gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), # status_label
-        gr.update(visible=False), # btn_checkpoint - HIDDEN (no draft = no point showing C only)
-        gr.update(visible=False), # btn_draft
-        gr.update(visible=False), # btn_diff
-        "Checkpoint", # current_view_state
-        gr.update(value=fresh_content), # Update viewer with fresh content
-        fresh_content, # Update current_md
-        gr.update(interactive=True), # mode_radio - ENABLED
-        gr.update(visible=False) # view_actions_row
+        gr.update(visible=False), # 1. Hide draft panel
+        status_update,            # 2. Status Strip
+        new_log,                  # 3. Status Log
+        new_epoch,                # 4. new_epoch
+        gr.update(visible=True),   # 5. status_row
+        gr.update(value=mode_label), # 6. status_label
+        gr.update(visible=btns_visible), # 7. btn_checkpoint
+        gr.update(visible=btns_visible, interactive=btns_visible), # 8. btn_draft
+        gr.update(visible=btns_visible, interactive=btns_visible), # 9. btn_diff
+        view_state,               # 10. current_view_state
+        gr.update(value=content), # 11. Update viewer
+        content,                  # 12. Update current_md
+        gr.update(value="View", interactive=True), # 13. mode_radio
+        gr.update(visible=False)   # 14. view_actions_row
     )
 
-def draft_revert_all(current_section, current_log):
-    """Discard all drafts."""
-    DraftsManager().clear()
+def draft_revert_all(current_section, plan, current_log):
+    """Discard only session-related generated and original drafts, preserve user drafts."""
+    drafts_mgr = DraftsManager()
+    impacted = _get_generated_drafts_list(plan, None)
+    edited = plan.get("edited_section", current_section) if plan else current_section
+    sections = list(set(impacted + [edited, current_section]))
+    
+    drafts_mgr.keep_only_user_drafts(sections)
+    
     new_log, status_update = append_status(current_log, "❌ All drafts reverted.")
-    
-    # Get fresh content for viewer (original checkpoint content)
-    fresh_content = get_section_content(current_section) or ""
-    
+    content, view_state, mode_label, btns_visible = _get_revert_state(current_section)
+
     return (
-        gr.update(visible=False), # Hide draft panel
-        status_update,
-        new_log,
-        gr.update(visible=True), # status_row
-        gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), # status_label
-        gr.update(visible=False), # btn_checkpoint - HIDDEN
-        gr.update(visible=False), # btn_draft
-        gr.update(visible=False), # btn_diff
-        "Checkpoint", # current_view_state
-        gr.update(value=fresh_content), # Update viewer with fresh content
-        fresh_content, # Update current_md
-        gr.update(interactive=True), # mode_radio - ENABLED
-        gr.update(visible=False) # view_actions_row
+        gr.update(visible=False), # 1. Hide draft panel
+        status_update,            # 2. Status Strip
+        new_log,                  # 3. Status Log
+        gr.update(visible=True),   # 4. status_row
+        gr.update(value=mode_label), # 5. status_label
+        gr.update(visible=btns_visible), # 6. btn_checkpoint
+        gr.update(visible=btns_visible, interactive=btns_visible), # 7. btn_draft
+        gr.update(visible=btns_visible, interactive=btns_visible), # 8. btn_diff
+        view_state,               # 9. current_view_state
+        gr.update(value=content), # 10. Update viewer
+        content,                  # 11. Update current_md
+        gr.update(value="View", interactive=True), # 12. mode_radio
+        gr.update(visible=False)   # 13. view_actions_row
     )
+
+
 
 def draft_accept_selected(current_section, original_selected, generated_selected, current_log, create_epoch, drafts_to_keep=None):
     """Save selected drafts to checkpoint, discard unselected, and close panel."""
@@ -421,46 +440,31 @@ def draft_accept_selected(current_section, original_selected, generated_selected
         # Accepted -> Clear ALL drafts for this section
         drafts_mgr.remove(section) 
     
-    # 4. Discard Unselected / Cleanup
-    # Iterate all known sections in manager
-    all_sections = list(drafts_mgr.get_all_content().keys())
-    
-    for section in all_sections:
-        if section in to_save_checkpoint:
-            continue # Already handled (removed)
-            
-        # Clean up GENERATED (discard AI proposal)
-        if drafts_mgr.has_type(section, DraftType.GENERATED.value):
-            drafts_mgr.remove(section, DraftType.GENERATED.value)
-            
-        # Clean up ORIGINAL (cleanup snapshot)
-        if drafts_mgr.has_type(section, DraftType.ORIGINAL.value):
-            drafts_mgr.remove(section, DraftType.ORIGINAL.value)
-            
-        # USER drafts are LEFT ALONE (Preserved)
+    # 4. Discard Unselected / Cleanup & Reset UI
+    remaining_sections = list(drafts_mgr.get_all_content().keys())
+    drafts_mgr.keep_only_user_drafts(remaining_sections)
 
     new_log, status_update = append_status(current_log, f"✅ Accepted {saved_count} drafts. {drafts_kept_count} drafts kept as User Drafts.")
     new_epoch = (create_epoch or 0) + 1
     
-    # Get fresh content for viewer (checkpoint content)
-    viewer_val = get_section_content(current_section) or ""
-
-    # ALWAYS close the panel
+    content, view_state, mode_label, btns_visible = _get_revert_state(current_section)
+    
+    # Return updates explicitly
     return (
-        gr.update(visible=False), # Hide panel
-        status_update,
-        new_log,
-        new_epoch,
-        gr.update(visible=True), # status_row
-        gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), # status_label
-        gr.update(visible=False), # btn_checkpoint - HIDDEN
-        gr.update(visible=False), # btn_draft
-        gr.update(visible=False), # btn_diff
-        "Checkpoint", # current_view_state
-        gr.update(value=viewer_val), # Update viewer
-        viewer_val, # Update current_md
-        gr.update(interactive=True), # mode_radio - ENABLED
-        gr.update(visible=False) # view_actions_row
+        gr.update(visible=False), # 1. Hide panel
+        status_update,            # 2. Status Strip
+        new_log,                  # 3. Status Log
+        new_epoch,                # 4. new_epoch
+        gr.update(visible=True),   # 5. status_row
+        gr.update(value=mode_label), # 6. status_label
+        gr.update(visible=btns_visible), # 7. btn_checkpoint
+        gr.update(visible=btns_visible, interactive=btns_visible), # 8. btn_draft
+        gr.update(visible=btns_visible, interactive=btns_visible), # 9. btn_diff
+        view_state,               # 10. current_view_state
+        gr.update(value=content), # 11. Update viewer
+        content,                  # 12. Update current_md
+        gr.update(value="View", interactive=True), # 13. mode_radio
+        gr.update(visible=False)   # 14. view_actions_row
     )
 
 def draft_regenerate_selected(generated_selected, plan, section, current_log, create_epoch):
@@ -574,11 +578,12 @@ def draft_regenerate_selected(generated_selected, plan, section, current_log, cr
     )
 
 def discard_from_validate(section, current_log):
-    """Revert changes from validation — return to View mode with no buttons visible. Always use checkpoint as source of truth."""
-    clean_text = get_section_content(section) or "_Empty_"
+    """Revert changes from validation — return to View mode. Preserve USER drafts if exists."""
     new_log, status_update = append_status(current_log, f"🗑️ ({section}) Changes discarded.")
+    content, view_state, mode_label, btns_visible = _get_revert_state(section)
+
     return (
-        gr.update(value=clean_text, visible=True),  # 1. Viewer
+        gr.update(value=content, visible=True),     # 1. Viewer
         gr.update(value="", visible=False),         # 2. Editor
         gr.update(value="", visible=False),         # 3. Validation Box
         None,                                       # 4. pending_plan
@@ -592,20 +597,20 @@ def discard_from_validate(section, current_log):
         gr.update(visible=False),                   # 12. Discard
         gr.update(visible=False),                   # 13. Force Edit
         gr.update(visible=False),                   # 14. Rewrite Section
-        gr.update(value="View", interactive=True),  # 15. Mode Radio
+        gr.update(value="View", interactive=True),   # 15. Mode Radio
         gr.update(interactive=True),                 # 16. Section Dropdown
         status_update,                               # 17. Status Strip
         new_log,                                     # 18. Status Log State
-        clean_text,                                  # 19. current_md
-        gr.update(visible=False),                    # 20. draft panel
+        content,                                     # 19. current_md
+        gr.update(visible=False),                    # 20. draft panel (hidden)
         gr.update(choices=[], value=[]),             # 21. generated list
         gr.update(visible=True),                     # 22. status_row
-        gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), # 23. status_label
-        gr.update(visible=False),                    # 24. btn_checkpoint (hidden if no draft)
-        gr.update(visible=False),                    # 25. btn_draft
-        gr.update(visible=False),                    # 26. btn_diff
-        "Checkpoint",                                # 27. view_state
-        gr.update(value=False),                      # 28. original_draft_checkbox
+        gr.update(value=mode_label),                 # 23. status_label
+        gr.update(visible=btns_visible),             # 24. btn_checkpoint
+        gr.update(visible=btns_visible, interactive=btns_visible), # 25. btn_draft
+        gr.update(visible=btns_visible, interactive=btns_visible), # 26. btn_diff
+        view_state,                                  # 27. view_state
+        gr.update(choices=[], value=[]),             # 28. original_draft_checkbox
         gr.update(value=[], choices=[]),             # 29. drafts_to_keep_list
         gr.update(visible=False),                    # 30. keep_draft_btn
         gr.update(visible=False),                    # 31. rewrite_keep_draft_btn

@@ -205,13 +205,13 @@ def create_validate_handlers(components, states):
 
     btn_draft_accept_all.click(
         fn=draft_accept_all,
-        inputs=[selected_section, status_log, create_sections_epoch],
+        inputs=[selected_section, pending_plan, status_log, create_sections_epoch],
         outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, create_sections_epoch, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], current_md, mode_radio, components[Components.VIEW_ACTIONS_ROW]]
     )
     
     btn_draft_revert.click(
         fn=draft_revert_all,
-        inputs=[selected_section, status_log],
+        inputs=[selected_section, pending_plan, status_log],
         outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], current_md, mode_radio, components[Components.VIEW_ACTIONS_ROW]]
     )
     
