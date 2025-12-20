@@ -355,7 +355,7 @@ def draft_accept_all(current_section, plan, current_log, create_epoch):
         gr.update(value=content), # 11. Update viewer
         content,                  # 12. Update current_md
         gr.update(value="View", interactive=True), # 13. mode_radio
-        gr.update(visible=False)   # 14. view_actions_row
+        gr.update(visible=btns_visible)   # 14. view_actions_row
     )
 
 def draft_revert_all(current_section, plan, current_log):
@@ -383,7 +383,7 @@ def draft_revert_all(current_section, plan, current_log):
         gr.update(value=content), # 10. Update viewer
         content,                  # 11. Update current_md
         gr.update(value="View", interactive=True), # 12. mode_radio
-        gr.update(visible=False)   # 13. view_actions_row
+        gr.update(visible=btns_visible)   # 13. view_actions_row
     )
 
 
@@ -464,7 +464,7 @@ def draft_accept_selected(current_section, original_selected, generated_selected
         gr.update(value=content), # 11. Update viewer
         content,                  # 12. Update current_md
         gr.update(value="View", interactive=True), # 13. mode_radio
-        gr.update(visible=False)   # 14. view_actions_row
+        gr.update(visible=btns_visible)   # 14. view_actions_row
     )
 
 def draft_regenerate_selected(generated_selected, plan, section, current_log, create_epoch):
@@ -615,7 +615,7 @@ def discard_from_validate(section, current_log):
         gr.update(visible=False),                    # 30. keep_draft_btn
         gr.update(visible=False),                    # 31. rewrite_keep_draft_btn
         gr.update(visible=False),                    # 32. chat_keep_draft_btn
-        gr.update(visible=False)                     # 33. view_actions_row
+        gr.update(visible=btns_visible)                     # 33. view_actions_row
     )
 
 def mark_drafts_to_keep_handler(original_selected, generated_selected):
