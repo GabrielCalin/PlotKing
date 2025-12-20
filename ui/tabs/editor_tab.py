@@ -143,7 +143,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(choices=sections, value=default),  # dropdown update
         )
 
-    def _load_section_content(name):
+    def _load_section_content(name, pending_plan):
         if not name:
             return "_Empty_", None, "", gr.update(value="View"), "", [], "", \
                    gr.update(visible=True), gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), \
@@ -167,7 +167,12 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             btn_cp_upd = gr.update(visible=True, interactive=True)
             btn_dr_upd = gr.update(visible=True, interactive=True)
             btn_df_upd = gr.update(visible=True, interactive=True)
-            view_actions_upd = gr.update(visible=is_user_draft)
+            
+            if pending_plan:
+                # If in validation/review session, HIDE manual actions regardless of drafts
+                view_actions_upd = gr.update(visible=False)
+            else:
+                view_actions_upd = gr.update(visible=is_user_draft)
         else:
             text = get_section_content(name) or "_Empty_"
             view_state = "Checkpoint"
@@ -188,7 +193,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
 
 
-    def _toggle_mode(mode, current_log, current_text, section, view_state):
+    def _toggle_mode(mode, current_log, current_text, section, view_state, pending_plan):
         from state.drafts_manager import DraftsManager, DraftType
         drafts_mgr = DraftsManager()
         
@@ -231,7 +236,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             # Recalculate View Actions (Validate, Discard, etc.) for View mode
             if mode == "View":
                 is_user_draft = drafts_mgr.has_type(section, DraftType.USER.value)
-                view_actions_upd = gr.update(visible=is_user_draft)
+                # Hide if in validation (pending_plan active)
+                view_actions_upd = gr.update(visible=is_user_draft and not pending_plan)
         else:
             # Fallback if no section
             viewer_update = gr.update(visible=(mode != "Rewrite"), value=current_text) if current_text else gr.update(visible=(mode != "Rewrite"))
@@ -322,7 +328,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     section_dropdown.change(
         fn=_load_section_content,
-        inputs=[section_dropdown],
+        inputs=[section_dropdown, pending_plan],
         outputs=[viewer_md, selected_section, current_md, mode_radio, original_text_before_rewrite, chat_history, initial_text_before_chat, status_row, status_label, btn_checkpoint, btn_draft, btn_diff, current_view_state, view_actions_row],
     )
 
@@ -369,7 +375,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     mode_radio.change(
         fn=_toggle_mode,
-        inputs=[mode_radio, status_log, current_md, selected_section, current_view_state],
+        inputs=[mode_radio, status_log, current_md, selected_section, current_view_state, pending_plan],
         outputs=[
             start_edit_btn, confirm_btn, discard_btn, force_edit_btn, keep_draft_btn,
             rewrite_section, chat_section, status_strip, status_log, editor_tb, viewer_md, 
