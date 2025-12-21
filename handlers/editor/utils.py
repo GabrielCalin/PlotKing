@@ -320,3 +320,34 @@ def keep_draft_handler(section, content, status_log):
         # Hide Chat UI
         gr.update(visible=False), # 18. Chat Section
     )
+
+def sort_drafts(draft_list):
+    """
+    Sort drafts based on priority:
+    1. Expanded Plot
+    2. Chapters Overview
+    3. Chapter X (Numeric)
+    4. Others (Alpha)
+    """
+    if not draft_list:
+        return []
+    
+    def sort_key(item):
+        if item == "Expanded Plot":
+            return (0, 0)
+        if item == "Chapters Overview":
+            return (1, 0)
+        
+        # Check for Chapter X
+        if item.startswith("Chapter "):
+            try:
+                # Extract number for numeric sort
+                parts = item.split(" ")
+                if len(parts) > 1 and parts[1].isdigit():
+                     return (2, int(parts[1]))
+            except:
+                pass
+        
+        return (3, item)
+
+    return sorted(draft_list, key=sort_key)

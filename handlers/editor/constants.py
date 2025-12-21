@@ -57,8 +57,12 @@ class Components(str, Enum):
     VIEW_FORCE_EDIT_BTN = "view_force_edit_btn"
     VIEW_ACTIONS_ROW = "view_actions_row"
     _CONTINUE_EDIT_DISPATCHER = "_continue_edit_dispatcher"
+    MOVE_TO_KEEP_BTN = "move_to_keep_btn"      # ⬇️ Move to Keep
+    MOVE_TO_GEN_BTN = "move_to_gen_btn"  # ⬆️ Move to Generated
     SELECT_ALL_GEN_BTN = "select_all_gen_btn"
     UNSELECT_ALL_GEN_BTN = "unselect_all_gen_btn"
+    SELECT_ALL_KEEP_BTN = "select_all_keep_btn"
+    UNSELECT_ALL_KEEP_BTN = "unselect_all_keep_btn"
 
 class States(str, Enum):
     SELECTED_SECTION = "selected_section"
@@ -68,10 +72,11 @@ class States(str, Enum):
     SELECTED_TEXT = "selected_text"
     SELECTED_INDICES = "selected_indices"
     ORIGINAL_TEXT_BEFORE_REWRITE = "original_text_before_rewrite"
-    CURRENT_DRAFTS = "current_drafts"
     CHAT_HISTORY = "chat_history"
     INITIAL_TEXT_BEFORE_CHAT = "initial_text_before_chat"
     CURRENT_VIEW_STATE = "current_view_state"
     CREATE_SECTIONS_EPOCH = "create_sections_epoch"
     GENERATED_DRAFTS_CHOICES = "generated_drafts_choices"
+    KEEP_DRAFTS_CHOICES = "keep_drafts_choices"
+
 

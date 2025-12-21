@@ -80,7 +80,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             chat_section, chatbot, chat_input, chat_send_btn, chat_clear_btn, chat_actions_row_1, chat_discard_btn, chat_force_edit_btn, chat_actions_row_2, chat_validate_btn, chat_keep_draft_btn = Chat.create_chat_ui()
             
             # Validation & Draft Review UI
-            validation_title, validation_box, apply_updates_btn, stop_updates_btn, regenerate_btn, draft_review_panel, original_draft_checkbox, generated_drafts_list, drafts_to_keep_list, mark_keep_btn, btn_draft_accept_all, btn_draft_revert, btn_draft_accept_selected, btn_draft_regenerate, continue_btn, discard2_btn, select_all_gen_btn, unselect_all_gen_btn, _ = Validate.create_validate_ui(generated_drafts_choices)
+            validation_title, validation_box, apply_updates_btn, stop_updates_btn, regenerate_btn, draft_review_panel, original_draft_checkbox, generated_drafts_list, drafts_to_keep_list, mark_keep_btn, btn_draft_accept_all, btn_draft_revert, btn_draft_accept_selected, btn_draft_regenerate, continue_btn, discard2_btn, select_all_gen_btn, unselect_all_gen_btn, select_all_keep_btn, unselect_all_keep_btn, move_to_gen_btn, generated_drafts_choices, keep_drafts_choices = Validate.create_validate_ui(generated_drafts_choices)
 
         # ---- (1b) Right Column: Viewer / Editor ----
         with gr.Column(scale=3):
@@ -449,6 +449,10 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         Components._CONTINUE_EDIT_DISPATCHER: _continue_edit_dispatcher,
         Components.SELECT_ALL_GEN_BTN: select_all_gen_btn,
         Components.UNSELECT_ALL_GEN_BTN: unselect_all_gen_btn,
+        Components.SELECT_ALL_KEEP_BTN: select_all_keep_btn,
+        Components.UNSELECT_ALL_KEEP_BTN: unselect_all_keep_btn,
+        Components.MOVE_TO_GEN_BTN: move_to_gen_btn,
+        Components.MOVE_TO_KEEP_BTN: mark_keep_btn, # Alias mark_keep_btn to standard constant if needed, but ui uses MARK_KEEP_BTN key too
     }
     
     # States dictionary
@@ -465,6 +469,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         States.CURRENT_VIEW_STATE: current_view_state,
         States.CREATE_SECTIONS_EPOCH: create_sections_epoch,
         States.GENERATED_DRAFTS_CHOICES: generated_drafts_choices,
+        States.KEEP_DRAFTS_CHOICES: keep_drafts_choices,
     }
 
     Manual.create_manual_handlers(components, states)
