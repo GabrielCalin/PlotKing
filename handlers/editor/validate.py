@@ -673,7 +673,7 @@ def mark_drafts_to_keep_handler(generated_selected, current_generated_choices, c
     # 1. generated_drafts_list (update choices/value)
     # 2. drafts_to_keep_list (update choices/value)
     return (
-        gr.update(choices=new_generated_choices, value=[]), 
+        gr.update(choices=new_generated_choices, value=new_generated_choices), 
         gr.update(choices=new_keep_choices, value=new_keep_choices, interactive=True, visible=True),
         new_generated_choices,
         new_keep_choices
@@ -698,7 +698,7 @@ def move_to_generated_handler(keep_selected, current_keep_choices, current_gener
 
     return (
         gr.update(choices=new_generated_choices, value=new_generated_choices),
-        gr.update(choices=new_keep_choices, value=[]),
+        gr.update(choices=new_keep_choices, value=new_keep_choices),
         new_generated_choices,
         new_keep_choices
     )
