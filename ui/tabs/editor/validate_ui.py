@@ -21,31 +21,41 @@ def create_validate_ui(generated_drafts_choices_state):
     with gr.Column(visible=False) as draft_review_panel:
         gr.Markdown("### 📝 Draft Review")
         
-        # Original Draft (the manually edited section) - now a checkbox
-        gr.Markdown("**Original Draft**")
+        # Original Draft Header
+        with gr.Row(elem_classes=["editor-status-row"]):
+             with gr.Column(scale=2, min_width=0):
+                 gr.Markdown("**Original Draft**")
+             
         original_draft_checkbox = gr.CheckboxGroup(
             label="Originally Edited Section",
             choices=[],
             value=[],
-
             interactive=False
         )
         
-        gr.Markdown("**Auto-Generated Drafts**")
-        with gr.Row():
-             select_all_gen_btn = gr.Button("☑️", size="sm", scale=0, min_width=40)
-             unselect_all_gen_btn = gr.Button("⬜", size="sm", scale=0, min_width=40)
-             mark_keep_btn = gr.Button("⬇️", size="sm", scale=0, min_width=40) # Move TO Keep
-        with gr.Row():
-            generated_drafts_list = gr.CheckboxGroup(label="AI-Generated Drafts", choices=[], interactive=True)
+        # Auto-Generated Drafts Header
+        with gr.Row(elem_classes=["editor-status-row"]):
+             with gr.Column(scale=4, min_width=0):
+                 gr.Markdown("**Auto-Generated Drafts**")
+             with gr.Column(scale=3, min_width=0):
+                 with gr.Row(elem_classes=["editor-status-buttons"]):
+                      select_all_gen_btn = gr.Button("☑️", size="sm", elem_classes=["status-btn"])
+                      unselect_all_gen_btn = gr.Button("⬜", size="sm", elem_classes=["status-btn"])
+                      mark_keep_btn = gr.Button("⬇️", size="sm", elem_classes=["status-btn"]) # Move TO Keep
         
-        gr.Markdown("**Drafts To Keep**")
-        with gr.Row():
-             select_all_keep_btn = gr.Button("☑️", size="sm", scale=0, min_width=40)
-             unselect_all_keep_btn = gr.Button("⬜", size="sm", scale=0, min_width=40)
-             move_to_gen_btn = gr.Button("⬆️", size="sm", scale=0, min_width=40) # Move TO Generated
-        with gr.Row():
-            drafts_to_keep_list = gr.CheckboxGroup(label="When Accept Selected", choices=[], interactive=True)
+        generated_drafts_list = gr.CheckboxGroup(label="AI-Generated Drafts", choices=[], interactive=True)
+        
+        # Drafts To Keep Header
+        with gr.Row(elem_classes=["editor-status-row"]):
+             with gr.Column(scale=4, min_width=0):
+                 gr.Markdown("**Drafts To Keep**")
+             with gr.Column(scale=3, min_width=0):
+                 with gr.Row(elem_classes=["editor-status-buttons"]):
+                      select_all_keep_btn = gr.Button("☑️", size="sm", elem_classes=["status-btn"])
+                      unselect_all_keep_btn = gr.Button("⬜", size="sm", elem_classes=["status-btn"])
+                      move_to_gen_btn = gr.Button("⬆️", size="sm", elem_classes=["status-btn"]) # Move TO Generated
+        
+        drafts_to_keep_list = gr.CheckboxGroup(label="When Accept Selected", choices=[], interactive=True)
 
         
         with gr.Row():
