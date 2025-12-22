@@ -93,6 +93,7 @@ def chat_handler(section, message, history, current_text, initial_text, current_
             drafts_mgr.add_chat(section, new_content)
             
             final_log, final_status = append_status(new_log, f"✅ ({section}) Plot King made edits.")
+            draft_display_name = DraftsManager.get_display_name(DraftType.CHAT.value)
             yield (
                 gr.update(value="", interactive=True),
                 new_history,
@@ -110,7 +111,7 @@ def chat_handler(section, message, history, current_text, initial_text, current_
                 gr.update(interactive=True), # chat_input enable
                 gr.update(interactive=True), # chat_clear_btn enable
                 gr.update(visible=True), # status_row - show
-                gr.update(value="**Viewing:** <span style='color:red;'>Draft</span>"), # status_label - show Draft
+                gr.update(value=f"**Viewing:** <span style='color:red;'>{draft_display_name}</span>"), # status_label - show Draft
                 gr.update(visible=True, interactive=True), # btn_checkpoint - visible
                 gr.update(visible=True, interactive=True), # btn_draft
                 gr.update(visible=True, interactive=True), # btn_diff
@@ -251,7 +252,8 @@ def discard_handler(section, current_log):
     if user_draft_content:
         # Fallback to User Draft
         updated_text = user_draft_content
-        mode_label = "**Viewing:** <span style='color:red;'>Draft</span>"
+        draft_display_name = DraftsManager.get_display_name(DraftType.USER.value)
+        mode_label = f"**Viewing:** <span style='color:red;'>{draft_display_name}</span>"
         view_state = "Draft"
         btns_visible = True
         

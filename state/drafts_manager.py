@@ -146,6 +146,13 @@ class DraftsManager:
             return DraftType.ORIGINAL.value
         return None
 
+    @staticmethod
+    def get_display_name(draft_type: Optional[str]) -> str:
+        """Get display name for draft type: capitalize first letter + ' Draft'."""
+        if not draft_type:
+            return "Draft"
+        return draft_type.capitalize() + " Draft"
+
     def has(self, section: str) -> bool:
         """Check if ANY draft exists for section."""
         return section in self._drafts and bool(self._drafts[section])

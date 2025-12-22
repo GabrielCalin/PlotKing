@@ -42,7 +42,9 @@ def _get_revert_state(section):
     content = drafts_mgr.get_content(section, DraftType.USER.value)
     
     if content is not None:
-        return content, "Draft", "**Viewing:** <span style='color:red;'>Draft</span>", True
+        draft_type = DraftType.USER.value
+        draft_display_name = DraftsManager.get_display_name(draft_type)
+        return content, "Draft", f"**Viewing:** <span style='color:red;'>{draft_display_name}</span>", True
     else:
         content = get_section_content(section) or ""
         return content, "Checkpoint", "**Viewing:** <span style='color:red;'>Checkpoint</span>", False
@@ -204,7 +206,7 @@ def apply_updates(section, plan, current_log, create_epoch, current_mode, draft_
         gr.update(choices=[], value=[]), # original_draft_checkbox
         gr.update(choices=[], value=[]), # generated_drafts_list
         gr.update(visible=True), # status_row - SHOW
-        gr.update(value="**Viewing:** <span style='color:red;'>Draft</span>"), # status_label
+        gr.update(value=f"**Viewing:** <span style='color:red;'>{DraftsManager.get_display_name(drafts_mgr.get_type(section))}</span>"), # status_label
         gr.update(visible=True, interactive=True), # btn_checkpoint - VISIBLE
         gr.update(visible=True, interactive=True), # btn_draft
         gr.update(visible=True, interactive=True), # btn_diff

@@ -163,7 +163,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         if has_draft:
             text = drafts_mgr.get_content(name)
             view_state = "Draft"
-            label = "**Viewing:** <span style='color:red;'>Draft</span>"
+            draft_display_name = DraftsManager.get_display_name(draft_type)
+            label = f"**Viewing:** <span style='color:red;'>{draft_display_name}</span>"
             # Buttons: Checkpoint (visible, enabled), Draft (visible), Diff (visible)
             btn_cp_upd = gr.update(visible=True, interactive=True)
             btn_dr_upd = gr.update(visible=True, interactive=True)
@@ -329,7 +330,9 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         if view_type == "Checkpoint":
             return original_text, "**Viewing:** <span style='color:red;'>Checkpoint</span>", "Checkpoint"
         elif view_type == "Draft":
-            return draft_text, "**Viewing:** <span style='color:red;'>Draft</span>", "Draft"
+            draft_type = drafts_mgr.get_type(section)
+            draft_display_name = DraftsManager.get_display_name(draft_type)
+            return draft_text, f"**Viewing:** <span style='color:red;'>{draft_display_name}</span>", "Draft"
         elif view_type == "Diff":
             # Reuse diff_handler logic from utils to get HTML
             # diff_handler returns (viewer_update, btn_update)

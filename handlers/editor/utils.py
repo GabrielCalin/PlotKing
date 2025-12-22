@@ -293,10 +293,11 @@ def keep_draft_handler(section, content, status_log):
     new_log, status_update = append_status(status_log, msg)
 
     # Return updates to switch to View mode and show correct buttons
+    draft_display_name = DraftsManager.get_display_name(DraftType.USER.value)
     
     return (
         gr.update(value=clean_content, visible=True), # 1. Viewer MD
-        gr.update(value="**Viewing:** <span style='color:red;'>Draft</span>"), # 2. Status Label
+        gr.update(value=f"**Viewing:** <span style='color:red;'>{draft_display_name}</span>"), # 2. Status Label
         "Draft", # 3. Current View State
         gr.update(visible=True, interactive=True), # 4. Checkpoint Btn
         gr.update(visible=True, interactive=True), # 5. Draft Btn
