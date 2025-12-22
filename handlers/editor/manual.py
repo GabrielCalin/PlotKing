@@ -55,6 +55,7 @@ def confirm_edit(section, draft, current_log):
         gr.update(visible=False),   # hide Discard
         gr.update(visible=False),   # hide Force Edit
         gr.update(visible=False),   # hide Start Editing
+        gr.update(visible=False),   # hide Manual Section
         gr.update(visible=False),   # hide Rewrite Section
         gr.update(visible=viewer_visible, value=viewer_text),  # show/hide viewer_md based on mode
         gr.update(visible=editor_visible, interactive=False),  # show/hide Editor based on mode
@@ -86,6 +87,7 @@ def confirm_edit(section, draft, current_log):
         gr.update(visible=False),   # hide Discard
         gr.update(visible=False),   # hide Force Edit
         gr.update(visible=False),   # hide Start Editing
+        gr.update(visible=False),   # hide Manual Section
         gr.update(visible=False),   # hide Rewrite Section
         gr.update(visible=viewer_visible, value=viewer_text),  # show/hide viewer_md based on mode
         gr.update(visible=editor_visible, interactive=False),  # show/hide Editor based on mode

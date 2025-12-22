@@ -65,6 +65,7 @@ def create_manual_handlers(components, states):
             components[Components.APPLY_UPDATES_BTN], components[Components.REGENERATE_BTN], components[Components.CONTINUE_BTN], components[Components.DISCARD2_BTN],
             confirm_btn, discard_btn, force_edit_btn,
             start_edit_btn,
+            components[Components.MANUAL_SECTION],
             components[Components.REWRITE_SECTION],
             components[Components.VIEWER_MD],
             editor_tb,
