@@ -194,12 +194,9 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
 
 
-    def _toggle_mode(mode, current_log, current_text, section, view_state, pending_plan):
+    def _toggle_mode(mode, current_text, section, view_state, pending_plan):
         from state.drafts_manager import DraftsManager, DraftType
         drafts_mgr = DraftsManager()
-        
-        # Prevent duplicates in log
-        last_msg = f"🔄 Mode changed to {mode}."
         
         # --- Mode-specific UI updates ---
         # Manual Mode
@@ -257,26 +254,9 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 content = get_section_content(section) or ""
             editor_update = gr.update(visible=True, interactive=False, value=content)
 
-        # Build return values based on current_log
-        if current_log:
-            lines = current_log.strip().split("\n")
-            if lines:
-                last_line = lines[-1]
-                if last_msg in last_line or "Adapting" in last_line or "Validation completed" in last_line:
-                    return (
-                        manual_section_upd, start_edit_upd, confirm_upd, discard_upd, force_edit_upd, keep_manual_draft_upd,
-                        rewrite_section_upd, chat_section_upd, validation_section_upd,
-                        gr.update(value=current_log), current_log,
-                        editor_update, viewer_update,
-                        rewrite_btn_upd, rewrite_action_upd, rewrite_action_upd, rewrite_action_upd, rewrite_keep_draft_upd,
-                        status_row_upd, view_actions_upd, status_label_upd
-                    )
-
-        new_log, status_update = append_status(current_log, last_msg)
         return (
             manual_section_upd, start_edit_upd, confirm_upd, discard_upd, force_edit_upd, keep_manual_draft_upd,
             rewrite_section_upd, chat_section_upd, validation_section_upd,
-            status_update, new_log,
             editor_update, viewer_update,
             rewrite_btn_upd, rewrite_action_upd, rewrite_action_upd, rewrite_action_upd, rewrite_keep_draft_upd,
             status_row_upd, view_actions_upd, status_label_upd
@@ -380,10 +360,10 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     mode_radio.change(
         fn=_toggle_mode,
-        inputs=[mode_radio, status_log, current_md, selected_section, current_view_state, pending_plan],
+        inputs=[mode_radio, current_md, selected_section, current_view_state, pending_plan],
         outputs=[
             manual_section, start_edit_btn, confirm_btn, discard_btn, force_edit_btn, keep_draft_btn,
-            rewrite_section, chat_section, validation_section, status_strip, status_log, editor_tb, viewer_md, 
+            rewrite_section, chat_section, validation_section, editor_tb, viewer_md, 
             rewrite_btn, rewrite_validate_btn, rewrite_discard_btn, rewrite_force_edit_btn, rewrite_keep_draft_btn, 
             status_row, view_actions_row, status_label
         ]
