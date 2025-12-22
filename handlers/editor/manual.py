@@ -174,6 +174,7 @@ def continue_edit(section, current_log):
         gr.update(visible=True),    # show Validate
         gr.update(visible=True),    # show Discard
         gr.update(visible=True),    # show Force Edit
+        gr.update(visible=True),    # show Manual Section
         gr.update(visible=False),   # hide Rewrite Section
         gr.update(visible=False),   # hide viewer_md
         gr.update(visible=True, interactive=True),  # show Editor and enable editing

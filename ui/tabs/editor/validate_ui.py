@@ -165,6 +165,7 @@ def create_validate_handlers(components, states):
             components[Components.VALIDATION_TITLE], components[Components.VALIDATION_BOX], components[Components.VALIDATION_SECTION],
             apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
             components[Components.CONFIRM_BTN], components[Components.DISCARD_BTN], components[Components.FORCE_EDIT_BTN],
+            components[Components.MANUAL_SECTION],
             components[Components.REWRITE_SECTION],
             components[Components.VIEWER_MD],
             editor_tb,
