@@ -56,7 +56,7 @@ def create_validate_ui(generated_drafts_choices_state):
                           unselect_all_keep_btn = gr.Button("⬜", size="sm", elem_classes=["status-btn"])
                           move_to_gen_btn = gr.Button("⬆️", size="sm", elem_classes=["status-btn"]) # Move TO Generated
             
-            drafts_to_keep_list = gr.CheckboxGroup(label="When Accept Selected", choices=[], interactive=True)
+            drafts_to_keep_list = gr.CheckboxGroup(label="AI-Generated Drafts", choices=[], interactive=True)
 
             
             with gr.Row():
