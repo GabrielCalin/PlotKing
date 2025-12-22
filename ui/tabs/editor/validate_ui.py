@@ -34,10 +34,10 @@ def create_validate_ui(generated_drafts_choices_state):
                 interactive=False
             )
             
-            # Auto-Generated Drafts Header
+            # Drafts To Commit Header
             with gr.Row(elem_classes=["editor-status-row"]):
                  with gr.Column(scale=4, min_width=0):
-                     gr.Markdown("**Auto-Generated Drafts**")
+                     gr.Markdown("**Drafts To Commit**")
                  with gr.Column(scale=3, min_width=0):
                      with gr.Row(elem_classes=["editor-status-buttons"]):
                           select_all_gen_btn = gr.Button("☑️", size="sm", elem_classes=["status-btn"])
