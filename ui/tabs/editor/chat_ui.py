@@ -195,6 +195,7 @@ def create_chat_handlers(components, states):
             components[Components.CHAT_SECTION],
             components[Components.VALIDATION_TITLE],
             components[Components.VALIDATION_BOX],
+            components[Components.VALIDATION_SECTION],
             components[Components.APPLY_UPDATES_BTN],
             components[Components.REGENERATE_BTN],
             components[Components.CONTINUE_BTN],

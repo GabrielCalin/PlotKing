@@ -46,6 +46,7 @@ def confirm_edit(section, draft, current_log):
         None,  # pending_plan (placeholder)
         gr.update(visible=True),    # show Validation Title
         gr.update(value="🔄 Validating...", visible=True),   # show Validation Box with loading message
+        gr.update(visible=True),    # show Validation Section
         gr.update(visible=False),   # hide Apply Updates (until validation completes)
         gr.update(visible=False),   # hide Regenerate (until validation completes)
         gr.update(visible=False),   # hide Continue Editing (until validation completes)
@@ -76,6 +77,7 @@ def confirm_edit(section, draft, current_log):
         plan,  # pending_plan
         gr.update(visible=True),    # show Validation Title
         gr.update(value=msg, visible=True),   # show Validation Box with message
+        gr.update(visible=True),    # show Validation Section
         gr.update(visible=True),    # show Apply Updates
         gr.update(visible=True),    # show Regenerate
         gr.update(visible=True),    # show Continue Editing
@@ -137,6 +139,7 @@ def discard_from_manual(section, current_log):
         gr.update(value="", visible=False),  # clear and hide Validation Box
         None,  # clear pending_plan
         gr.update(visible=False),   # hide Validation Title
+        gr.update(visible=False),   # hide Validation Section
         gr.update(visible=False),   # hide Apply Updates
         gr.update(visible=False),   # hide Regenerate
         gr.update(visible=False),   # hide Continue Editing
@@ -161,6 +164,7 @@ def continue_edit(section, current_log):
     return (
         gr.update(visible=False),   # hide Validation Title
         gr.update(visible=False),   # hide Validation Box
+        gr.update(visible=False),   # hide Validation Section
         gr.update(visible=False),   # hide Apply Updates
         gr.update(visible=False),   # hide Regenerate
         gr.update(visible=False),   # hide Continue Editing

@@ -71,7 +71,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             )
 
             # Manual Mode UI
-            start_edit_btn, confirm_btn, discard_btn, force_edit_btn, keep_draft_btn = Manual.create_manual_ui()
+            manual_section, start_edit_btn, confirm_btn, discard_btn, force_edit_btn, keep_draft_btn = Manual.create_manual_ui()
             
             # Rewrite Mode UI
             rewrite_section, rewrite_selected_preview, preset_dropdown, rewrite_instructions_tb, rewrite_btn, rewrite_validate_btn, rewrite_discard_btn, rewrite_force_edit_btn, rewrite_keep_draft_btn = Rewrite.create_rewrite_ui()
@@ -80,7 +80,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             chat_section, chatbot, chat_input, chat_send_btn, chat_clear_btn, chat_actions_row_1, chat_discard_btn, chat_force_edit_btn, chat_actions_row_2, chat_validate_btn, chat_keep_draft_btn = Chat.create_chat_ui()
             
             # Validation & Draft Review UI
-            validation_title, validation_box, apply_updates_btn, stop_updates_btn, regenerate_btn, draft_review_panel, original_draft_checkbox, generated_drafts_list, drafts_to_keep_list, mark_keep_btn, btn_draft_accept_all, btn_draft_revert, btn_draft_accept_selected, btn_draft_regenerate, continue_btn, discard2_btn, select_all_gen_btn, unselect_all_gen_btn, select_all_keep_btn, unselect_all_keep_btn, move_to_gen_btn, generated_drafts_choices, keep_drafts_choices = Validate.create_validate_ui(generated_drafts_choices)
+            validation_section, validation_title, validation_box, apply_updates_btn, stop_updates_btn, regenerate_btn, draft_review_panel, original_draft_checkbox, generated_drafts_list, drafts_to_keep_list, mark_keep_btn, btn_draft_accept_all, btn_draft_revert, btn_draft_accept_selected, btn_draft_regenerate, continue_btn, discard2_btn, select_all_gen_btn, unselect_all_gen_btn, select_all_keep_btn, unselect_all_keep_btn, move_to_gen_btn, generated_drafts_choices, keep_drafts_choices = Validate.create_validate_ui(generated_drafts_choices)
 
         # ---- (1b) Right Column: Viewer / Editor ----
         with gr.Column(scale=3):
@@ -203,6 +203,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         
         # --- Mode-specific UI updates ---
         # Manual Mode
+        manual_section_upd = gr.update(visible=(mode == "Manual"))
         manual_btn_visible = (mode == "Manual")
         start_edit_upd = gr.update(visible=manual_btn_visible)
         confirm_upd = gr.update(visible=False)
@@ -219,6 +220,9 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         
         # Chat Mode
         chat_section_upd = gr.update(visible=(mode == "Chat"))
+        
+        # Validation Section (shown when validation is active or when pending_plan exists)
+        validation_section_upd = gr.update(visible=(pending_plan is not None))
         
         # --- Common UI updates (Viewer, Status Bar) ---
         status_row_upd = gr.update(visible=(mode != "Rewrite")) # Hide status bar in Rewrite
@@ -260,8 +264,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 last_line = lines[-1]
                 if last_msg in last_line or "Adapting" in last_line or "Validation completed" in last_line:
                     return (
-                        start_edit_upd, confirm_upd, discard_upd, force_edit_upd, keep_manual_draft_upd,
-                        rewrite_section_upd, chat_section_upd, 
+                        manual_section_upd, start_edit_upd, confirm_upd, discard_upd, force_edit_upd, keep_manual_draft_upd,
+                        rewrite_section_upd, chat_section_upd, validation_section_upd,
                         gr.update(value=current_log), current_log,
                         editor_update, viewer_update,
                         rewrite_btn_upd, rewrite_action_upd, rewrite_action_upd, rewrite_action_upd, rewrite_keep_draft_upd,
@@ -270,8 +274,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
         new_log, status_update = append_status(current_log, last_msg)
         return (
-            start_edit_upd, confirm_upd, discard_upd, force_edit_upd, keep_manual_draft_upd,
-            rewrite_section_upd, chat_section_upd, 
+            manual_section_upd, start_edit_upd, confirm_upd, discard_upd, force_edit_upd, keep_manual_draft_upd,
+            rewrite_section_upd, chat_section_upd, validation_section_upd,
             status_update, new_log,
             editor_update, viewer_update,
             rewrite_btn_upd, rewrite_action_upd, rewrite_action_upd, rewrite_action_upd, rewrite_keep_draft_upd,
@@ -378,8 +382,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         fn=_toggle_mode,
         inputs=[mode_radio, status_log, current_md, selected_section, current_view_state, pending_plan],
         outputs=[
-            start_edit_btn, confirm_btn, discard_btn, force_edit_btn, keep_draft_btn,
-            rewrite_section, chat_section, status_strip, status_log, editor_tb, viewer_md, 
+            manual_section, start_edit_btn, confirm_btn, discard_btn, force_edit_btn, keep_draft_btn,
+            rewrite_section, chat_section, validation_section, status_strip, status_log, editor_tb, viewer_md, 
             rewrite_btn, rewrite_validate_btn, rewrite_discard_btn, rewrite_force_edit_btn, rewrite_keep_draft_btn, 
             status_row, view_actions_row, status_label
         ]
@@ -393,6 +397,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     components = {
         Components.SECTION_DROPDOWN: section_dropdown,
         Components.MODE_RADIO: mode_radio,
+        Components.MANUAL_SECTION: manual_section,
         Components.START_EDIT_BTN: start_edit_btn,
         Components.CONFIRM_BTN: confirm_btn,
         Components.DISCARD_BTN: discard_btn,
@@ -418,6 +423,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         Components.CHAT_ACTIONS_ROW_2: chat_actions_row_2,
         Components.CHAT_VALIDATE_BTN: chat_validate_btn,
         Components.CHAT_KEEP_DRAFT_BTN: chat_keep_draft_btn,
+        Components.VALIDATION_SECTION: validation_section,
         Components.VALIDATION_TITLE: validation_title,
         Components.VALIDATION_BOX: validation_box,
         Components.APPLY_UPDATES_BTN: apply_updates_btn,
@@ -483,7 +489,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         inputs=[selected_section, status_log],
         # Outputs: UI changes to show Validation Box etc. similar to Manual/Rewrite validate
         outputs=[
-             validation_box, pending_plan, validation_title, apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
+             validation_box, pending_plan, validation_title, validation_section, apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
              viewer_md, editor_tb, mode_radio, section_dropdown, status_strip, status_log, view_actions_row,
              current_md
         ],

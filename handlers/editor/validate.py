@@ -142,6 +142,7 @@ def apply_updates(section, plan, current_log, create_epoch, current_mode, draft_
             gr.update(visible=False), # editor_tb
             gr.update(visible=False), # validation_title
             gr.update(visible=False), # validation_box
+            gr.update(visible=False), # validation_section
             gr.update(visible=False), # apply_updates_btn
             gr.update(visible=False), # stop_updates_btn - HIDDEN (no pipeline)
             gr.update(visible=False), # regenerate_btn
@@ -186,6 +187,7 @@ def apply_updates(section, plan, current_log, create_epoch, current_mode, draft_
         gr.update(visible=False), # editor
         gr.update(visible=False), # validation_title
         gr.update(visible=False), # validation_box
+        gr.update(visible=True), # validation_section - SHOW to display stop button
         gr.update(visible=False), # apply_updates_btn
         gr.update(visible=True, interactive=True), # stop_updates_btn
         gr.update(visible=False), # regenerate_btn
@@ -238,18 +240,19 @@ def apply_updates(section, plan, current_log, create_epoch, current_mode, draft_
         yield (
             gr.update(), # viewer_md - NO CHANGE
             gr.update(value=new_log, visible=True),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
+            gr.update(visible=False), # editor_tb
+            gr.update(visible=False), # validation_title
+            gr.update(visible=False), # validation_box
+            gr.update(visible=True), # validation_section - SHOW to display stop button
+            gr.update(visible=False), # apply_updates_btn
             gr.update(visible=True), # stop_btn
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
-            gr.update(visible=False),
+            gr.update(visible=False), # regenerate_btn
+            gr.update(visible=False), # continue_btn
+            gr.update(visible=False), # discard2_btn
+            gr.update(visible=False), # start_edit_btn
+            gr.update(visible=False), # rewrite_section
             gr.update(value="View", interactive=False), # mode_radio - DISABLED
-            gr.update(interactive=True),
+            gr.update(interactive=True), # section_dropdown
             draft_to_save, # current_md - keep updating state just in case
             new_log,
             current_epoch,
@@ -294,19 +297,20 @@ def apply_updates(section, plan, current_log, create_epoch, current_mode, draft_
     
     yield (
         gr.update(), # viewer_md - NO CHANGE (user might be viewing a different section)
-        gr.update(value=new_log, visible=True),
-        gr.update(visible=False),
-        gr.update(visible=False),
-        gr.update(visible=False),
-        gr.update(visible=False),
+        gr.update(value=new_log, visible=True), # status_strip
+        gr.update(visible=False), # editor_tb
+        gr.update(visible=False), # validation_title
+        gr.update(visible=False), # validation_box
+        gr.update(visible=True), # validation_section - SHOW to display draft_review_panel
+        gr.update(visible=False), # apply_updates_btn
         gr.update(visible=False), # stop_btn hidden
-        gr.update(visible=False),
-        gr.update(visible=False),
-        gr.update(visible=False),
-        gr.update(visible=False),
-        gr.update(visible=False),
+        gr.update(visible=False), # regenerate_btn
+        gr.update(visible=False), # continue_btn
+        gr.update(visible=False), # discard2_btn
+        gr.update(visible=False), # start_edit_btn
+        gr.update(visible=False), # rewrite_section
         gr.update(value="View", interactive=False), # mode_radio - DISABLED during review
-        gr.update(interactive=True),
+        gr.update(interactive=True), # section_dropdown
         viewer_content, # current_md
         new_log,
         current_epoch,
@@ -615,6 +619,7 @@ def discard_from_validate(section, current_log):
         gr.update(value="", visible=False),         # 3. Validation Box
         None,                                       # 4. pending_plan
         gr.update(visible=False),                   # 5. Validation Title
+        gr.update(visible=False),                   # 5b. Validation Section
         gr.update(visible=False),                   # 6. Apply Updates
         gr.update(visible=False),                   # 7. Regenerate
         gr.update(visible=False),                   # 8. Continue Editing
@@ -740,6 +745,7 @@ def regenerate_dispatcher(section, editor_text, current_log, mode, current_md):
         gr.update(value="🔄 Validating..."), # validation_box
         None, # pending_plan
         gr.update(visible=True), # validation_title
+        gr.update(visible=True), # validation_section
         gr.update(visible=False), # apply_updates_btn
         gr.update(visible=False), # regenerate_btn
         gr.update(visible=False), # continue_btn
@@ -765,6 +771,7 @@ def regenerate_dispatcher(section, editor_text, current_log, mode, current_md):
         gr.update(value=msg), # validation_box
         plan, # pending_plan
         gr.update(visible=True), # validation_title
+        gr.update(visible=True), # validation_section
         gr.update(visible=True), # apply_updates_btn
         gr.update(visible=True), # regenerate_btn
         gr.update(visible=True), # continue_btn

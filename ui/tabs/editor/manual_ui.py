@@ -4,17 +4,18 @@ from handlers.editor.constants import Components, States
 
 def create_manual_ui():
     """Create UI components for Manual mode."""
-    start_edit_btn = gr.Button("✍️ Start Editing", variant="primary", visible=False)
+    with gr.Column(visible=False) as manual_section:
+        start_edit_btn = gr.Button("✍️ Start Editing", variant="primary", visible=False)
+        
+        with gr.Row():
+            confirm_btn = gr.Button("✅ Validate", visible=False, scale=1, min_width=0)
+            force_edit_btn = gr.Button("⚡ Force Edit", visible=False, scale=1, min_width=0)
+        
+        with gr.Row():
+            keep_draft_btn = gr.Button("💾 Keep Draft", visible=False, scale=1, min_width=0)
+            discard_btn = gr.Button("🗑️ Discard", visible=False, scale=1, min_width=0)
     
-    with gr.Row():
-        confirm_btn = gr.Button("✅ Validate", visible=False, scale=1, min_width=0)
-        force_edit_btn = gr.Button("⚡ Force Edit", visible=False, scale=1, min_width=0)
-    
-    with gr.Row():
-        keep_draft_btn = gr.Button("💾 Keep Draft", visible=False, scale=1, min_width=0)
-        discard_btn = gr.Button("🗑️ Discard", visible=False, scale=1, min_width=0)
-    
-    return start_edit_btn, confirm_btn, discard_btn, force_edit_btn, keep_draft_btn
+    return manual_section, start_edit_btn, confirm_btn, discard_btn, force_edit_btn, keep_draft_btn
 
 def create_manual_handlers(components, states):
     """Wire events for Manual mode components."""
@@ -60,6 +61,7 @@ def create_manual_handlers(components, states):
         outputs=[
             components[Components.VALIDATION_BOX], states[States.PENDING_PLAN],
             components[Components.VALIDATION_TITLE], components[Components.VALIDATION_BOX],
+            components[Components.VALIDATION_SECTION],
             components[Components.APPLY_UPDATES_BTN], components[Components.REGENERATE_BTN], components[Components.CONTINUE_BTN], components[Components.DISCARD2_BTN],
             confirm_btn, discard_btn, force_edit_btn,
             start_edit_btn,
@@ -82,7 +84,7 @@ def create_manual_handlers(components, states):
         inputs=[selected_section, status_log],
         outputs=[
             components[Components.VIEWER_MD], editor_tb, components[Components.VALIDATION_BOX], states[States.PENDING_PLAN],
-            components[Components.VALIDATION_TITLE],
+            components[Components.VALIDATION_TITLE], components[Components.VALIDATION_SECTION],
             components[Components.APPLY_UPDATES_BTN], components[Components.REGENERATE_BTN], components[Components.CONTINUE_BTN], components[Components.DISCARD2_BTN],
             start_edit_btn,
             confirm_btn, discard_btn, force_edit_btn,

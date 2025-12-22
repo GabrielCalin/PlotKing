@@ -190,6 +190,7 @@ def rewrite_force_edit(section, draft_with_highlight, current_log, create_epoch)
         gr.update(visible=False),  # editor_tb
         gr.update(visible=False),  # validation_title
         gr.update(visible=False),  # validation_box
+        gr.update(visible=False),  # validation_section
         gr.update(visible=False),  # apply_updates_btn
         gr.update(visible=False),  # regenerate_btn
         gr.update(visible=False),  # continue_btn
@@ -219,6 +220,7 @@ def rewrite_validate(section, draft_with_highlight, current_log):
         None,  # pending_plan (State)
         gr.update(visible=True),  # validation_title (Markdown)
         gr.update(value="🔄 Validating...", visible=True),  # validation_box (Markdown)
+        gr.update(visible=True),  # validation_section (Column)
         gr.update(visible=False),  # apply_updates_btn (Button)
         gr.update(visible=False),  # regenerate_btn (Button)
         gr.update(visible=False),  # continue_btn (Button)
@@ -242,6 +244,7 @@ def rewrite_validate(section, draft_with_highlight, current_log):
         plan,  # pending_plan (State)
         gr.update(visible=True),  # validation_title (Markdown)
         gr.update(value=msg, visible=True),  # validation_box (Markdown)
+        gr.update(visible=True),  # validation_section (Column)
         gr.update(visible=True),  # apply_updates_btn (Button)
         gr.update(visible=True),  # regenerate_btn (Button)
         gr.update(visible=True),  # continue_btn (Button)
@@ -274,6 +277,7 @@ def continue_edit(section, current_log, current_md):
     return (
         gr.update(visible=False),   # hide Validation Title
         gr.update(visible=False),   # hide Validation Box
+        gr.update(visible=False),   # hide Validation Section
         gr.update(visible=False),   # hide Apply Updates
         gr.update(visible=False),   # hide Regenerate
         gr.update(visible=False),   # hide Continue Editing

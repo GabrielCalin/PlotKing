@@ -199,6 +199,7 @@ def validate_handler(section, current_text, current_log):
         gr.update(visible=False), # chat_group
         gr.update(visible=True), # validation_title
         gr.update(value="🔄 Validating...", visible=True), # validation_box
+        gr.update(visible=True), # validation_section
         gr.update(visible=False), # apply_updates_btn
         gr.update(visible=False), # regenerate_btn
         gr.update(visible=False), # continue_btn
@@ -217,6 +218,7 @@ def validate_handler(section, current_text, current_log):
         gr.update(visible=False), # chat_group
         gr.update(visible=True), # validation_title
         gr.update(value=msg, visible=True), # validation_box
+        gr.update(visible=True), # validation_section
         gr.update(visible=True), # apply_updates_btn
         gr.update(visible=True), # regenerate_btn
         gr.update(visible=True), # continue_btn
@@ -323,6 +325,7 @@ def continue_edit(section, current_log):
     return (
         gr.update(visible=False),   # hide Validation Title
         gr.update(visible=False),   # hide Validation Box
+        gr.update(visible=False),   # hide Validation Section
         gr.update(visible=False),   # hide Apply Updates
         gr.update(visible=False),   # hide Regenerate
         gr.update(visible=False),   # hide Continue Editing
