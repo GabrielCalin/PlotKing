@@ -218,6 +218,9 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         
         # Chat Mode
         chat_section_upd = gr.update(visible=(mode == "Chat"))
+        # Hide chat action buttons when entering Chat mode - they'll be shown only after a draft is created
+        chat_actions_row_1_upd = gr.update(visible=False)
+        chat_actions_row_2_upd = gr.update(visible=False)
         
         # Validation Section (shown when validation is active or when pending_plan exists)
         validation_section_upd = gr.update(visible=(pending_plan is not None))
@@ -260,7 +263,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             rewrite_section_upd, chat_section_upd, validation_section_upd,
             editor_update, viewer_update,
             rewrite_btn_upd, rewrite_action_upd, rewrite_action_upd, rewrite_action_upd, rewrite_keep_draft_upd,
-            status_row_upd, view_actions_upd, status_label_upd
+            status_row_upd, view_actions_upd, status_label_upd,
+            chat_actions_row_1_upd, chat_actions_row_2_upd
         )
 
     # ====== Dispatchers ======
@@ -368,7 +372,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             manual_section, start_edit_btn, confirm_btn, discard_btn, force_edit_btn, keep_draft_btn,
             rewrite_section, chat_section, validation_section, editor_tb, viewer_md, 
             rewrite_btn, rewrite_validate_btn, rewrite_discard_btn, rewrite_force_edit_btn, rewrite_keep_draft_btn, 
-            status_row, view_actions_row, status_label
+            status_row, view_actions_row, status_label,
+            chat_actions_row_1, chat_actions_row_2
         ]
     )
     
