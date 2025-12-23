@@ -126,7 +126,7 @@ def apply_updates(section, plan, current_log, create_epoch, current_mode, draft_
         drafts_mgr.add_original(section, draft_to_save)
         
         # Reuse draft_accept_selected to save and get common return values
-        draft_panel, status_strip_upd, status_log_val, epoch_val, status_row_upd, status_label_upd, btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, viewer_upd, current_md_val, mode_radio_upd, view_actions_row_upd = draft_accept_selected(
+        draft_panel, status_strip_upd, status_log_val, epoch_val, status_row_upd, status_label_upd, btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, viewer_upd, current_md_val, mode_radio_upd, view_actions_row_upd, pending_plan_val, generated_drafts_choices_state_val, keep_drafts_choices_state_val = draft_accept_selected(
             current_section=section,
             original_selected=[section],
             generated_selected=[],
@@ -170,9 +170,9 @@ def apply_updates(section, plan, current_log, create_epoch, current_mode, draft_
             gr.update(visible=False), # 28. keep_draft_btn
             gr.update(visible=False), # 29. rewrite_keep_draft_btn
             gr.update(visible=False), # 30. chat_keep_draft_btn
-            gr.update(visible=False), # 31. view_actions_row
-            [],                        # 32. generated_drafts_choices_state
-            []                         # 33. keep_drafts_choices_state
+            view_actions_row_upd, # 31. view_actions_row - from draft_accept_selected
+            generated_drafts_choices_state_val, # 32. generated_drafts_choices_state - from draft_accept_selected
+            keep_drafts_choices_state_val # 33. keep_drafts_choices_state - from draft_accept_selected
         )
         return
 
