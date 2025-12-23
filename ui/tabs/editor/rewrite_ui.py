@@ -89,6 +89,7 @@ def create_rewrite_handlers(components, states):
             selected_text,
             selected_indices,
             original_text_before_rewrite,
+            components[Components.MODE_RADIO],
         ],
         queue=True,
         show_progress=False,
@@ -112,6 +113,7 @@ def create_rewrite_handlers(components, states):
             selected_indices,
             current_md,
             original_text_before_rewrite,
+            components[Components.MODE_RADIO],
         ],
     )
 

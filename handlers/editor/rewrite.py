@@ -104,6 +104,7 @@ def rewrite_handler(section, selected_txt, selected_idx, instructions, current_t
         selected_txt,
         selected_idx,
         original_text,
+        gr.update(interactive=False),  # mode_radio - non-interactiv când se face rewrite
     )
     
     result = editor_rewrite(section, selected_txt, instructions)
@@ -127,6 +128,7 @@ def rewrite_handler(section, selected_txt, selected_idx, instructions, current_t
             selected_txt,
             selected_idx,
             original_text,
+            gr.update(interactive=False),  # mode_radio - non-interactiv după rewrite
         )
     else:
         message = result.get("message", "Rewrite failed.")
@@ -147,6 +149,7 @@ def rewrite_handler(section, selected_txt, selected_idx, instructions, current_t
             selected_txt,
             selected_idx,
             original_text,
+            gr.update(interactive=True),  # mode_radio - interactiv dacă rewrite eșuează
         )
 
 def rewrite_discard(section, current_log):
@@ -175,6 +178,7 @@ def rewrite_discard(section, current_log):
         None,  # selected_indices
         clean_text,  # current_md - resetat la textul din checkpoint
         clean_text,  # original_text_before_rewrite - resetat la textul din checkpoint
+        gr.update(interactive=True),  # mode_radio - interactiv după discard
     )
 
 def rewrite_force_edit(section, draft_with_highlight, current_log, create_epoch):
