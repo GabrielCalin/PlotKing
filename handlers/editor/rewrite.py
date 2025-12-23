@@ -285,6 +285,7 @@ def continue_edit(section, current_log, current_md):
         gr.update(visible=False),   # hide Validate
         gr.update(visible=False),   # hide Discard
         gr.update(visible=False),   # hide Force Edit
+        gr.update(visible=False),   # hide Manual Section
         gr.update(visible=True),    # show Rewrite Section
         gr.update(visible=True, value=current_md),  # show viewer_md with highlighted text
         gr.update(visible=False),   # hide editor_tb
