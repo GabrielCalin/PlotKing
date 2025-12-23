@@ -178,6 +178,7 @@ def create_validate_handlers(components, states):
             components[Components.REWRITE_KEEP_DRAFT_BTN],
             components[Components.CHAT_KEEP_DRAFT_BTN],
             components[Components.VIEW_ACTIONS_ROW],
+            pending_plan,
         ],
     )
 

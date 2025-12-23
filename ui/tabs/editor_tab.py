@@ -295,7 +295,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     view_discard_btn.click(
         fn=discard_draft_handler,
         inputs=[selected_section, status_log],
-        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_log, status_strip, view_actions_row]
+        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_log, status_strip, view_actions_row, current_md, initial_text_before_chat]
     )
     
     view_force_edit_btn.click(

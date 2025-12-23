@@ -303,5 +303,6 @@ def continue_edit(section, current_log, current_md):
         gr.update(visible=True),    # 20. show Rewrite Keep Draft
         gr.update(visible=False),   # 21. hide chat keep draft
         gr.update(visible=False),   # 22. hide view actions row
+        None,  # 23. pending_plan - clear plan when going back
     )
 

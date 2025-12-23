@@ -188,5 +188,6 @@ def continue_edit(section, current_log):
         gr.update(visible=False),   # 20. hide rewrite keep draft
         gr.update(visible=False),   # 21. hide chat keep draft
         gr.update(visible=False),   # 22. hide view actions row
+        None,  # 23. pending_plan - clear plan when going back
     )
 
