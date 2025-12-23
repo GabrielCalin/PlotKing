@@ -37,7 +37,7 @@ def discard_draft_handler(section, status_log):
 def force_edit_draft_handler(section, status_log, create_sections_epoch):
     """Write draft content directly to Checkpoint and remove draft."""
     if not section:
-        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), status_log, create_sections_epoch, gr.update(visible=False)
+        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), status_log, create_sections_epoch, gr.update(visible=False), "", ""
         
     drafts_mgr = DraftsManager()
     content = drafts_mgr.get_content(section)
@@ -45,8 +45,10 @@ def force_edit_draft_handler(section, status_log, create_sections_epoch):
     if not content:
         msg = f"⚠️ No draft found for **{section}**."
         new_log, status_update = append_status(status_log, msg)
-        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), status_update, new_log, create_sections_epoch, gr.update(visible=False)
-        
+        # Get checkpoint content as fallback
+        checkpoint_content = get_section_content(section) or ""
+        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), status_update, new_log, create_sections_epoch, gr.update(visible=False), checkpoint_content, checkpoint_content
+    
     # Save to checkpoint
     save_section(section, content)
     drafts_mgr.remove(section) # Remove draft after saving
@@ -67,7 +69,9 @@ def force_edit_draft_handler(section, status_log, create_sections_epoch):
         new_log,
         status_update,
         new_epoch,
-        gr.update(visible=False) # view_actions_row
+        gr.update(visible=False), # view_actions_row
+        content,  # current_md - update to checkpoint content (saved draft)
+        content,  # initial_text_before_chat - update to checkpoint content (saved draft)
     )
 
 def validate_draft_handler(section, current_log):
