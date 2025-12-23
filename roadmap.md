@@ -7,7 +7,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 ## ✍️ Phase 4 — Story Growth and Structure Control
 
 18. **Global Draft System**  
-   - Support for undo/redo + quick save project.
+   - Support for undo/redo drafts.
 
 19. **Add Empty Chapters (Writer Assist Mode)**  
    - Let users insert blank chapters manually.  
