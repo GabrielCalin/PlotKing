@@ -2,7 +2,7 @@
 import gradio as gr
 from handlers.editor.validate_commons import editor_validate
 from handlers.editor.utils import append_status
-from state.drafts_manager import DraftsManager
+from state.drafts_manager import DraftsManager, DraftType
 from handlers.editor.constants import Components, States
 from llm.chat_editor.llm import call_llm_chat
 from state.checkpoint_manager import get_section_content, save_section
@@ -23,6 +23,7 @@ def chat_handler(section, message, history, current_text, initial_text, current_
             gr.update(), # chat_force_edit_btn
             gr.update(), # chat_actions_row_2
             gr.update(), # chat_validate_btn
+            gr.update(), # chat_keep_draft_btn
             current_log,
             gr.update(), # status_strip
             current_text, # current_md
@@ -53,6 +54,7 @@ def chat_handler(section, message, history, current_text, initial_text, current_
         gr.update(), # chat_force_edit_btn
         gr.update(), # chat_actions_row_2
         gr.update(), # chat_validate_btn
+        gr.update(), # chat_keep_draft_btn
         new_log,
         status_update,
         current_text,
@@ -88,9 +90,10 @@ def chat_handler(section, message, history, current_text, initial_text, current_
         if new_content:
             # Edits were made - create draft and show status_row
             drafts_mgr = DraftsManager()
-            drafts_mgr.add_original(section, new_content)
+            drafts_mgr.add_chat(section, new_content)
             
             final_log, final_status = append_status(new_log, f"✅ ({section}) Plot King made edits.")
+            draft_display_name = DraftsManager.get_display_name(DraftType.CHAT.value)
             yield (
                 gr.update(value="", interactive=True),
                 new_history,
@@ -101,13 +104,14 @@ def chat_handler(section, message, history, current_text, initial_text, current_
                 gr.update(visible=True), # chat_force_edit_btn
                 gr.update(visible=True), # chat_actions_row_2
                 gr.update(visible=True), # chat_validate_btn
+                gr.update(visible=True), # chat_keep_draft_btn
                 final_log,
                 final_status,
                 new_content, # update current_md
                 gr.update(interactive=True), # chat_input enable
                 gr.update(interactive=True), # chat_clear_btn enable
                 gr.update(visible=True), # status_row - show
-                gr.update(value="**Viewing:** <span style='color:red;'>Draft</span>"), # status_label - show Draft
+                gr.update(value=f"**Viewing:** <span style='color:red;'>{draft_display_name}</span>"), # status_label - show Draft
                 gr.update(visible=True, interactive=True), # btn_checkpoint - visible
                 gr.update(visible=True, interactive=True), # btn_draft
                 gr.update(visible=True, interactive=True), # btn_diff
@@ -127,6 +131,7 @@ def chat_handler(section, message, history, current_text, initial_text, current_
                 gr.update(), # chat_force_edit_btn
                 gr.update(), # chat_actions_row_2
                 gr.update(), # chat_validate_btn
+                gr.update(), # chat_keep_draft_btn
                 final_log,
                 final_status,
                 current_text, # current_md unchanged
@@ -155,6 +160,7 @@ def chat_handler(section, message, history, current_text, initial_text, current_
             gr.update(), # chat_force_edit_btn
             gr.update(), # chat_actions_row_2
             gr.update(), # chat_validate_btn
+            gr.update(), # chat_keep_draft_btn
             final_log,
             final_status,
             current_text,
@@ -194,6 +200,7 @@ def validate_handler(section, current_text, current_log):
         gr.update(visible=False), # chat_group
         gr.update(visible=True), # validation_title
         gr.update(value="🔄 Validating...", visible=True), # validation_box
+        gr.update(visible=True), # validation_section
         gr.update(visible=False), # apply_updates_btn
         gr.update(visible=False), # regenerate_btn
         gr.update(visible=False), # continue_btn
@@ -212,6 +219,7 @@ def validate_handler(section, current_text, current_log):
         gr.update(visible=False), # chat_group
         gr.update(visible=True), # validation_title
         gr.update(value=msg, visible=True), # validation_box
+        gr.update(visible=True), # validation_section
         gr.update(visible=True), # apply_updates_btn
         gr.update(visible=True), # regenerate_btn
         gr.update(visible=True), # continue_btn
@@ -225,32 +233,55 @@ def validate_handler(section, current_text, current_log):
 
 def discard_handler(section, current_log):
     """
-    Discards chat edits and reverts to checkpoint. Removes draft from DraftsManager.
+    Discards Chat draft. Falls back to USER draft if exists, otherwise Checkpoint.
     """
     drafts_manager = DraftsManager()
-    if drafts_manager.has(section):
-        drafts_manager.remove(section)
-
-    clean_text = get_section_content(section) or "_Empty_"
-    new_log, status_update = append_status(current_log, f"🗑️ ({section}) Chat edits discarded.")
     
+    # 1. Remove ONLY Chat draft
+    if drafts_manager.has_type(section, DraftType.CHAT.value):
+        drafts_manager.remove(section, DraftType.CHAT.value)
+        msg_text = f"🗑️ ({section}) Chat edits discarded."
+    else:
+        msg_text = f"⚠️ ({section}) No chat edits found."
+        
+    new_log, status_update = append_status(current_log, msg_text)
+
+    # 2. Determine fallback content
+    user_draft_content = drafts_manager.get_content(section, DraftType.USER.value)
+    
+    if user_draft_content:
+        # Fallback to User Draft
+        updated_text = user_draft_content
+        draft_display_name = DraftsManager.get_display_name(DraftType.USER.value)
+        mode_label = f"**Viewing:** <span style='color:red;'>{draft_display_name}</span>"
+        view_state = "Draft"
+        btns_visible = True
+        
+    else:
+        # Fallback to Checkpoint
+        updated_text = get_section_content(section) or ""
+        mode_label = "**Viewing:** <span style='color:red;'>Checkpoint</span>"
+        view_state = "Checkpoint"
+        btns_visible = False
+
     return (
-        gr.update(value=clean_text), # viewer_md
+        gr.update(value=updated_text), # viewer_md
         gr.update(visible=False), # chat_actions_row_1
         gr.update(visible=False), # chat_discard_btn
         gr.update(visible=False), # chat_force_edit_btn
         gr.update(visible=False), # chat_actions_row_2
         gr.update(visible=False), # chat_validate_btn
-        clean_text, # current_md
+        gr.update(visible=False), # chat_keep_draft_btn
+        updated_text, # current_md
         new_log,
         status_update,
-        gr.update(visible=True), # status_row - show (but buttons hidden if no drafts)
-        gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), # status_label - show Checkpoint
-        gr.update(visible=False), # btn_checkpoint - hide (no draft = no point showing C only)
-        gr.update(visible=False), # btn_draft - hide
-        gr.update(visible=False), # btn_diff - hide
-        "Checkpoint", # current_view_state
-        gr.update(interactive=True), # mode_radio - ENABLED
+        gr.update(visible=True), # status_row - always visible in Chat
+        gr.update(value=mode_label), # status_label
+        gr.update(visible=btns_visible), # btn_checkpoint
+        gr.update(visible=btns_visible, interactive=btns_visible), # btn_draft
+        gr.update(visible=btns_visible, interactive=btns_visible), # btn_diff
+        view_state, # current_view_state
+        gr.update(interactive=True), # mode_radio
     )
 
 def force_edit_handler(section, current_text, current_log, create_epoch):
@@ -262,7 +293,8 @@ def force_edit_handler(section, current_text, current_log, create_epoch):
     new_log, status_update = append_status(current_log, f"⚡ ({section}) Synced (forced from Chat).")
     new_create_epoch = (create_epoch or 0) + 1
     
-    # Remove draft for this section since changes are saved to checkpoint
+    new_create_epoch = (create_epoch or 0) + 1
+    
     drafts_manager = DraftsManager()
     if drafts_manager.has(section):
         drafts_manager.remove(section)
@@ -274,6 +306,7 @@ def force_edit_handler(section, current_text, current_log, create_epoch):
         gr.update(visible=False), # chat_force_edit_btn
         gr.update(visible=False), # chat_actions_row_2
         gr.update(visible=False), # chat_validate_btn
+        gr.update(visible=False), # chat_keep_draft_btn
         updated_text, # current_md
         new_log,
         status_update,
@@ -294,6 +327,7 @@ def continue_edit(section, current_log):
     return (
         gr.update(visible=False),   # hide Validation Title
         gr.update(visible=False),   # hide Validation Box
+        gr.update(visible=False),   # hide Validation Section
         gr.update(visible=False),   # hide Apply Updates
         gr.update(visible=False),   # hide Regenerate
         gr.update(visible=False),   # hide Continue Editing
@@ -301,6 +335,7 @@ def continue_edit(section, current_log):
         gr.update(visible=False),   # hide Validate (Manual)
         gr.update(visible=False),   # hide Discard (Manual)
         gr.update(visible=False),   # hide Force Edit (Manual)
+        gr.update(visible=False),   # hide Manual Section
         gr.update(visible=False),   # hide Rewrite Section
         gr.update(),  # viewer_md - don't update (user might be viewing diff)
         gr.update(visible=False),   # hide editor_tb
@@ -308,7 +343,12 @@ def continue_edit(section, current_log):
         gr.update(interactive=True), # unlock Section
         status_update,
         new_log,
-        gr.update(visible=True),    # SHOW Chat Section
-        gr.update(visible=True),    # status_row - show (draft exists after validate)
+        gr.update(visible=True),    # 17. SHOW Chat Section
+        gr.update(visible=True),    # 18. status_row - show (draft exists after validate)
+        gr.update(visible=False),   # 19. hide manual keep draft
+        gr.update(visible=False),   # 20. hide rewrite keep draft
+        gr.update(visible=True),    # 21. SHOW Chat Keep Draft
+        gr.update(visible=False),   # 22. hide view actions row
+        None,  # 23. pending_plan - clear plan when going back
     )
 

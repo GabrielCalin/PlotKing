@@ -273,3 +273,82 @@ def format_validation_markdown(
 {raw_details}
 ```
 """
+
+def keep_draft_handler(section, content, status_log):
+    """
+    Save the current content as a USER draft and switch to View mode.
+    """
+    if not section:
+        return gr.update(), gr.update(), status_log
+        
+    from state.drafts_manager import DraftsManager, DraftType
+    from handlers.editor.constants import Components, States
+    
+    drafts_mgr = DraftsManager()
+    clean_content = remove_highlight(content)
+    drafts_mgr.add_user_draft(section, clean_content) # Salveaza explicit ca USER draft
+    drafts_mgr.remove(section, DraftType.CHAT.value) # Sterge chat draft daca exista, acum ca e salvat ca USER draft
+    
+    msg = f"💾 Saved draft for **{section}**."
+    new_log, status_update = append_status(status_log, msg)
+
+    # Return updates to switch to View mode and show correct buttons
+    draft_display_name = DraftsManager.get_display_name(DraftType.USER.value)
+    
+    return (
+        gr.update(value=clean_content, visible=True), # 1. Viewer MD
+        gr.update(value=f"**Viewing:** <span style='color:red;'>{draft_display_name}</span>"), # 2. Status Label
+        "Draft", # 3. Current View State
+        gr.update(visible=True, interactive=True), # 4. Checkpoint Btn
+        gr.update(visible=True, interactive=True), # 5. Draft Btn
+        gr.update(visible=True, interactive=True), # 6. Diff Btn
+        gr.update(value="View", interactive=True), # 7. Mode Radio
+        gr.update(interactive=True), # 8. Section Dropdown
+        gr.update(visible=True),     # 9. View Actions Row
+        new_log,       # 10. Status Log State (new_log)
+        status_update, # 11. Status Strip (text update)
+        
+        # Hide Manual UI
+        gr.update(visible=False), # 12. Start Edit
+        gr.update(visible=False), # 13. Confirm
+        gr.update(visible=False), # 14. Discard
+        gr.update(visible=False), # 15. Force Edit
+        gr.update(visible=False), # 16. Keep Draft (Manual)
+        
+        # Hide Rewrite UI
+        gr.update(visible=False), # 17. Rewrite Section
+        
+        # Hide Chat UI
+        gr.update(visible=False), # 18. Chat Section
+    )
+
+def sort_drafts(draft_list):
+    """
+    Sort drafts based on priority:
+    1. Expanded Plot
+    2. Chapters Overview
+    3. Chapter X (Numeric)
+    4. Others (Alpha)
+    """
+    if not draft_list:
+        return []
+    
+    def sort_key(item):
+        if item == "Expanded Plot":
+            return (0, 0)
+        if item == "Chapters Overview":
+            return (1, 0)
+        
+        # Check for Chapter X
+        if item.startswith("Chapter "):
+            try:
+                # Extract number for numeric sort
+                parts = item.split(" ")
+                if len(parts) > 1 and parts[1].isdigit():
+                     return (2, int(parts[1]))
+            except:
+                pass
+        
+        return (3, item)
+
+    return sorted(draft_list, key=sort_key)

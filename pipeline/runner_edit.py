@@ -17,7 +17,7 @@ from llm.overview_editor import run_overview_editor
 from llm.chapter_editor import run_chapter_editor
 
 from utils.logger import log_ui
-from state.drafts_manager import DraftsManager
+from state.drafts_manager import DraftsManager, DraftType
 
 
 def _get_section_impact(impact_data: dict, section_name: str) -> str:
@@ -112,7 +112,10 @@ def run_edit_pipeline_stream(
                 drafts
             )
             
-            original_plot = state.expanded_plot or ""
+            # Priority: USER Draft > Checkpoint content
+            original_plot = drafts.get_content("Expanded Plot", DraftType.USER.value)
+            if original_plot is None:
+                original_plot = state.expanded_plot or ""
             state = run_plot_editor(
                 context=state,
                 original_plot=original_plot,
@@ -156,7 +159,10 @@ def run_edit_pipeline_stream(
                 drafts
             )
             
-            original_overview = state.chapters_overview or ""
+            # Priority: USER Draft > Checkpoint content
+            original_overview = drafts.get_content("Chapters Overview", DraftType.USER.value)
+            if original_overview is None:
+                original_overview = state.chapters_overview or ""
             state = run_overview_editor(
                 context=state,
                 original_overview=original_overview,
@@ -211,7 +217,10 @@ def run_edit_pipeline_stream(
             drafts
         )
         
-        original_chapter = state.chapters_full[chapter_num - 1] or ""
+        # Priority: USER Draft > Checkpoint content
+        original_chapter = drafts.get_content(chapter_name, DraftType.USER.value)
+        if original_chapter is None:
+            original_chapter = state.chapters_full[chapter_num - 1] or ""
         edited_chapter = run_chapter_editor(
             context=state,
             chapter_index=chapter_num,

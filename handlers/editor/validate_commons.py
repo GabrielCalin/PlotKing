@@ -1,3 +1,4 @@
+# This module contains validation logic shared across multiple editing modes (Manual, Rewrite, Chat, View).
 from typing import List, Tuple, Dict, Any
 from handlers.editor.utils import format_validation_markdown
 
@@ -53,6 +54,12 @@ def editor_validate(section, draft):
         msg = format_validation_markdown(result, diff_data)
         plan = None
 
+    # Append draft warning to message if applicable
+    from handlers.editor.validate import get_draft_warning
+    warning_msg = get_draft_warning(section)
+    if warning_msg:
+        msg = warning_msg + "\n\n" + msg
+
     return msg, plan
 
 def _build_candidate_sections(section: str, checkpoint) -> List[Tuple[str, str]]:
@@ -65,7 +72,14 @@ def _build_candidate_sections(section: str, checkpoint) -> List[Tuple[str, str]]
         if not name or name == section:
             return
         from state.checkpoint_manager import get_section_content
-        content = get_section_content(name) or ""
+        from state.drafts_manager import DraftsManager, DraftType
+        
+        drafts_mgr = DraftsManager()
+        # Prioritize USER draft content if exists
+        if drafts_mgr.has_type(name, DraftType.USER.value):
+            content = drafts_mgr.get_content(name, DraftType.USER.value)
+        else:
+            content = get_section_content(name) or ""
         candidates.append((name, content))
 
     total_chapters = len(checkpoint.chapters_full or [])
@@ -97,4 +111,5 @@ def _build_candidate_sections(section: str, checkpoint) -> List[Tuple[str, str]]
         seen.add(name)
         unique.append((name, content))
     return unique
+
 

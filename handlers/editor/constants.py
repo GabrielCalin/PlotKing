@@ -7,6 +7,7 @@ class Components(str, Enum):
     CONFIRM_BTN = "confirm_btn"
     DISCARD_BTN = "discard_btn"
     FORCE_EDIT_BTN = "force_edit_btn"
+    MANUAL_SECTION = "manual_section"
     REWRITE_SECTION = "rewrite_section"
     REWRITE_SELECTED_PREVIEW = "rewrite_selected_preview"
     PRESET_DROPDOWN = "preset_dropdown"
@@ -16,6 +17,7 @@ class Components(str, Enum):
     REWRITE_DISCARD_BTN = "rewrite_discard_btn"
     REWRITE_FORCE_EDIT_BTN = "rewrite_force_edit_btn"
     CHAT_SECTION = "chat_section"
+    VALIDATION_SECTION = "validation_section"
     CHATBOT = "chatbot"
     CHAT_INPUT = "chat_input"
     CHAT_SEND_BTN = "chat_send_btn"
@@ -47,7 +49,22 @@ class Components(str, Enum):
     VIEWER_MD = "viewer_md"
     EDITOR_TB = "editor_tb"
     STATUS_STRIP = "status_strip"
+    KEEP_DRAFT_BTN = "keep_draft_btn"
+    REWRITE_KEEP_DRAFT_BTN = "rewrite_keep_draft_btn"
+    CHAT_KEEP_DRAFT_BTN = "chat_keep_draft_btn"
+    DRAFTS_TO_KEEP_LIST = "drafts_to_keep_list"
+    MARK_KEEP_BTN = "mark_keep_btn"
+    VIEW_VALIDATE_BTN = "view_validate_btn"
+    VIEW_DISCARD_BTN = "view_discard_btn"
+    VIEW_FORCE_EDIT_BTN = "view_force_edit_btn"
+    VIEW_ACTIONS_ROW = "view_actions_row"
     _CONTINUE_EDIT_DISPATCHER = "_continue_edit_dispatcher"
+    MOVE_TO_KEEP_BTN = "move_to_keep_btn"      # ⬇️ Move to Keep
+    MOVE_TO_GEN_BTN = "move_to_gen_btn"  # ⬆️ Move to Generated
+    SELECT_ALL_GEN_BTN = "select_all_gen_btn"
+    UNSELECT_ALL_GEN_BTN = "unselect_all_gen_btn"
+    SELECT_ALL_KEEP_BTN = "select_all_keep_btn"
+    UNSELECT_ALL_KEEP_BTN = "unselect_all_keep_btn"
 
 class States(str, Enum):
     SELECTED_SECTION = "selected_section"
@@ -57,9 +74,11 @@ class States(str, Enum):
     SELECTED_TEXT = "selected_text"
     SELECTED_INDICES = "selected_indices"
     ORIGINAL_TEXT_BEFORE_REWRITE = "original_text_before_rewrite"
-    CURRENT_DRAFTS = "current_drafts"
     CHAT_HISTORY = "chat_history"
     INITIAL_TEXT_BEFORE_CHAT = "initial_text_before_chat"
     CURRENT_VIEW_STATE = "current_view_state"
     CREATE_SECTIONS_EPOCH = "create_sections_epoch"
+    GENERATED_DRAFTS_CHOICES = "generated_drafts_choices"
+    KEEP_DRAFTS_CHOICES = "keep_drafts_choices"
+
 

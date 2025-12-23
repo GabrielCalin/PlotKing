@@ -13,8 +13,14 @@ def editor_rewrite(section, selected_text, instructions):
     """
     if not selected_text:
         return {"success": False, "message": "No text selected."}
+        
+    from state.drafts_manager import DraftsManager, DraftType
+    drafts_mgr = DraftsManager()
     
-    full_content = get_section_content(section)
+    # Priority: USER Draft > Checkpoint
+    full_content = drafts_mgr.get_content(section, DraftType.USER.value)
+    if full_content is None:
+        full_content = get_section_content(section)
     
     context_before = ""
     context_after = ""
@@ -73,7 +79,13 @@ def rewrite_handler(section, selected_txt, selected_idx, instructions, current_t
     """Handle rewrite button click - call handler and replace selected text."""
     start_idx, end_idx = selected_idx if isinstance(selected_idx, (list, tuple)) and len(selected_idx) == 2 else (None, None)
     
-    original_text = get_section_content(section)
+    from state.drafts_manager import DraftsManager, DraftType
+    drafts_mgr = DraftsManager()
+    
+    # Priority: USER Draft > Checkpoint
+    original_text = drafts_mgr.get_content(section, DraftType.USER.value)
+    if original_text is None:
+        original_text = get_section_content(section)
     
     new_log, status_update = append_status(current_log, f"🔄 ({section}) Rewriting selected text...")
     
@@ -84,6 +96,7 @@ def rewrite_handler(section, selected_txt, selected_idx, instructions, current_t
         gr.update(visible=False),  # rewrite_validate_btn
         gr.update(visible=False),  # rewrite_discard_btn
         gr.update(visible=False),  # rewrite_force_edit_btn
+        gr.update(visible=False),  # rewrite_keep_draft_btn
         gr.update(visible=False),  # rewrite_btn
         status_update,
         current_log,
@@ -91,6 +104,7 @@ def rewrite_handler(section, selected_txt, selected_idx, instructions, current_t
         selected_txt,
         selected_idx,
         original_text,
+        gr.update(interactive=False),  # mode_radio - non-interactiv când se face rewrite
     )
     
     result = editor_rewrite(section, selected_txt, instructions)
@@ -106,6 +120,7 @@ def rewrite_handler(section, selected_txt, selected_idx, instructions, current_t
             gr.update(visible=True),   # rewrite_validate_btn
             gr.update(visible=True),   # rewrite_discard_btn
             gr.update(visible=True),   # rewrite_force_edit_btn
+            gr.update(visible=True),   # rewrite_keep_draft_btn
             gr.update(visible=True),   # rewrite_btn
             final_status,
             final_log,
@@ -113,6 +128,7 @@ def rewrite_handler(section, selected_txt, selected_idx, instructions, current_t
             selected_txt,
             selected_idx,
             original_text,
+            gr.update(interactive=False),  # mode_radio - non-interactiv după rewrite
         )
     else:
         message = result.get("message", "Rewrite failed.")
@@ -125,6 +141,7 @@ def rewrite_handler(section, selected_txt, selected_idx, instructions, current_t
             gr.update(visible=False),  # rewrite_validate_btn
             gr.update(visible=False),  # rewrite_discard_btn
             gr.update(visible=False),  # rewrite_force_edit_btn
+            gr.update(visible=False),  # rewrite_keep_draft_btn
             gr.update(visible=True),   # rewrite_btn
             final_status,
             final_log,
@@ -132,18 +149,27 @@ def rewrite_handler(section, selected_txt, selected_idx, instructions, current_t
             selected_txt,
             selected_idx,
             original_text,
+            gr.update(interactive=True),  # mode_radio - interactiv dacă rewrite eșuează
         )
 
 def rewrite_discard(section, current_log):
-    """Discard rewrite changes - switch back to Text Box non-interactive. Always use checkpoint as source of truth."""
+    """Discard rewrite changes - fallback to draft if exists, else checkpoint."""
+    from state.drafts_manager import DraftsManager, DraftType
+    drafts_mgr = DraftsManager()
+    
+    # Priority: USER Draft > Checkpoint
+    clean_text = drafts_mgr.get_content(section, DraftType.USER.value)
+    if clean_text is None:
+        clean_text = get_section_content(section) or "_Empty_"
+        
     new_log, status_update = append_status(current_log, f"🗑️ ({section}) Rewrite discarded.")
-    clean_text = get_section_content(section) or "_Empty_"
     return (
         gr.update(visible=True, value=clean_text, interactive=False),  # editor_tb
         gr.update(visible=False, value=clean_text),  # viewer_md - resetat la textul curat din checkpoint
         gr.update(visible=False),  # rewrite_validate_btn
         gr.update(visible=False),  # rewrite_discard_btn
         gr.update(visible=False),  # rewrite_force_edit_btn
+        gr.update(visible=False),  # rewrite_keep_draft_btn
         gr.update(visible=True, interactive=False),  # rewrite_btn - disabled pentru că selected_text este empty
         gr.update(value=""),  # rewrite_selected_preview
         status_update,  # status_strip
@@ -152,6 +178,7 @@ def rewrite_discard(section, current_log):
         None,  # selected_indices
         clean_text,  # current_md - resetat la textul din checkpoint
         clean_text,  # original_text_before_rewrite - resetat la textul din checkpoint
+        gr.update(interactive=True),  # mode_radio - interactiv după discard
     )
 
 def rewrite_force_edit(section, draft_with_highlight, current_log, create_epoch):
@@ -167,6 +194,7 @@ def rewrite_force_edit(section, draft_with_highlight, current_log, create_epoch)
         gr.update(visible=False),  # editor_tb
         gr.update(visible=False),  # validation_title
         gr.update(visible=False),  # validation_box
+        gr.update(visible=False),  # validation_section
         gr.update(visible=False),  # apply_updates_btn
         gr.update(visible=False),  # regenerate_btn
         gr.update(visible=False),  # continue_btn
@@ -196,6 +224,7 @@ def rewrite_validate(section, draft_with_highlight, current_log):
         None,  # pending_plan (State)
         gr.update(visible=True),  # validation_title (Markdown)
         gr.update(value="🔄 Validating...", visible=True),  # validation_box (Markdown)
+        gr.update(visible=True),  # validation_section (Column)
         gr.update(visible=False),  # apply_updates_btn (Button)
         gr.update(visible=False),  # regenerate_btn (Button)
         gr.update(visible=False),  # continue_btn (Button)
@@ -207,6 +236,8 @@ def rewrite_validate(section, draft_with_highlight, current_log):
         gr.update(interactive=False),  # section_dropdown (Dropdown)
         gr.update(value=new_log, visible=True),  # status_strip (Textbox)
         new_log,  # status_log (State)
+        gr.update(visible=False), # status_row (hidden)
+        draft_with_highlight # 16. current_md state update (WITH HIGHLIGHTS)
     )
     
     msg, plan = editor_validate(section, draft_clean)
@@ -217,6 +248,7 @@ def rewrite_validate(section, draft_with_highlight, current_log):
         plan,  # pending_plan (State)
         gr.update(visible=True),  # validation_title (Markdown)
         gr.update(value=msg, visible=True),  # validation_box (Markdown)
+        gr.update(visible=True),  # validation_section (Column)
         gr.update(visible=True),  # apply_updates_btn (Button)
         gr.update(visible=True),  # regenerate_btn (Button)
         gr.update(visible=True),  # continue_btn (Button)
@@ -228,6 +260,8 @@ def rewrite_validate(section, draft_with_highlight, current_log):
         gr.update(interactive=False),  # section_dropdown (Dropdown)
         gr.update(value=final_log, visible=True),  # status_strip (Textbox)
         final_log,  # status_log (State)
+        gr.update(visible=False), # status_row (hidden)
+        draft_with_highlight # 16. current_md state update (WITH HIGHLIGHTS)
     )
 
 def confirm_edit(section, draft, current_log):
@@ -247,6 +281,7 @@ def continue_edit(section, current_log, current_md):
     return (
         gr.update(visible=False),   # hide Validation Title
         gr.update(visible=False),   # hide Validation Box
+        gr.update(visible=False),   # hide Validation Section
         gr.update(visible=False),   # hide Apply Updates
         gr.update(visible=False),   # hide Regenerate
         gr.update(visible=False),   # hide Continue Editing
@@ -254,6 +289,7 @@ def continue_edit(section, current_log, current_md):
         gr.update(visible=False),   # hide Validate
         gr.update(visible=False),   # hide Discard
         gr.update(visible=False),   # hide Force Edit
+        gr.update(visible=False),   # hide Manual Section
         gr.update(visible=True),    # show Rewrite Section
         gr.update(visible=True, value=current_md),  # show viewer_md with highlighted text
         gr.update(visible=False),   # hide editor_tb
@@ -261,7 +297,12 @@ def continue_edit(section, current_log, current_md):
         gr.update(interactive=False), # keep Section locked
         status_update,
         new_log,
-        gr.update(visible=False),   # hide Chat Section
-        gr.update(visible=False),   # status_row (hidden)
+        gr.update(visible=False),   # 17. hide Chat Section
+        gr.update(visible=False),   # 18. status_row (hidden while editing)
+        gr.update(visible=False),   # 19. hide manual keep draft
+        gr.update(visible=True),    # 20. show Rewrite Keep Draft
+        gr.update(visible=False),   # 21. hide chat keep draft
+        gr.update(visible=False),   # 22. hide view actions row
+        None,  # 23. pending_plan - clear plan when going back
     )
 

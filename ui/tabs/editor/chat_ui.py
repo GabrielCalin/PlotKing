@@ -33,13 +33,15 @@ def create_chat_ui():
             chat_force_edit_btn = gr.Button("⚡ Force Edit", scale=1, min_width=0)
         
         with gr.Row(visible=False) as chat_actions_row_2:
+            chat_keep_draft_btn = gr.Button("💾 Keep Draft", scale=1, min_width=0)
             chat_validate_btn = gr.Button("✅ Validate", scale=1, min_width=0)
 
-    return chat_section, chatbot, chat_input, chat_send_btn, chat_clear_btn, chat_actions_row_1, chat_discard_btn, chat_force_edit_btn, chat_actions_row_2, chat_validate_btn
+    return chat_section, chatbot, chat_input, chat_send_btn, chat_clear_btn, chat_actions_row_1, chat_discard_btn, chat_force_edit_btn, chat_actions_row_2, chat_validate_btn, chat_keep_draft_btn
 
 def create_chat_handlers(components, states):
     """Wire events for Chat mode components."""
     from handlers.editor.chat import chat_handler, clear_chat, validate_handler, discard_handler, force_edit_handler
+    from handlers.editor.utils import keep_draft_handler
     
     chat_input = components[Components.CHAT_INPUT]
     chat_send_btn = components[Components.CHAT_SEND_BTN]
@@ -47,6 +49,7 @@ def create_chat_handlers(components, states):
     chat_discard_btn = components[Components.CHAT_DISCARD_BTN]
     chat_force_edit_btn = components[Components.CHAT_FORCE_EDIT_BTN]
     chat_validate_btn = components[Components.CHAT_VALIDATE_BTN]
+    chat_keep_draft_btn = components[Components.CHAT_KEEP_DRAFT_BTN]
     chatbot = components[Components.CHATBOT]
     
     # Shared components
@@ -78,6 +81,7 @@ def create_chat_handlers(components, states):
             chat_force_edit_btn,
             components[Components.CHAT_ACTIONS_ROW_2],
             chat_validate_btn,
+            chat_keep_draft_btn,
             status_log,
             components[Components.STATUS_STRIP],
             current_md,
@@ -107,6 +111,7 @@ def create_chat_handlers(components, states):
             chat_force_edit_btn,
             components[Components.CHAT_ACTIONS_ROW_2],
             chat_validate_btn,
+            chat_keep_draft_btn,
             status_log,
             components[Components.STATUS_STRIP],
             current_md,
@@ -144,6 +149,7 @@ def create_chat_handlers(components, states):
             chat_force_edit_btn,
             components[Components.CHAT_ACTIONS_ROW_2],
             chat_validate_btn,
+            chat_keep_draft_btn,
             current_md,
             status_log,
             components[Components.STATUS_STRIP],
@@ -167,6 +173,7 @@ def create_chat_handlers(components, states):
             chat_force_edit_btn,
             components[Components.CHAT_ACTIONS_ROW_2],
             chat_validate_btn,
+            chat_keep_draft_btn,
             current_md,
             status_log,
             components[Components.STATUS_STRIP],
@@ -188,6 +195,7 @@ def create_chat_handlers(components, states):
             components[Components.CHAT_SECTION],
             components[Components.VALIDATION_TITLE],
             components[Components.VALIDATION_BOX],
+            components[Components.VALIDATION_SECTION],
             components[Components.APPLY_UPDATES_BTN],
             components[Components.REGENERATE_BTN],
             components[Components.CONTINUE_BTN],
@@ -197,6 +205,34 @@ def create_chat_handlers(components, states):
             components[Components.STATUS_STRIP],
             states[States.PENDING_PLAN],
             mode_radio,
+        ]
+    )
+
+    chat_keep_draft_btn.click(
+        fn=keep_draft_handler,
+        inputs=[selected_section, current_md, status_log],
+        outputs=[
+            components[Components.VIEWER_MD],
+            components[Components.STATUS_LABEL],
+            states[States.CURRENT_VIEW_STATE],
+            components[Components.BTN_CHECKPOINT],
+            components[Components.BTN_DRAFT],
+            components[Components.BTN_DIFF],
+            components[Components.MODE_RADIO],
+            components[Components.SECTION_DROPDOWN],
+            components[Components.VIEW_ACTIONS_ROW],
+            states[States.STATUS_LOG],    # new_log
+            components[Components.STATUS_STRIP], # status_log component
+            # Manual Mode UI items to hide
+            components[Components.START_EDIT_BTN],
+            components[Components.CONFIRM_BTN],
+            components[Components.DISCARD_BTN],
+            components[Components.FORCE_EDIT_BTN],
+            components[Components.KEEP_DRAFT_BTN],
+            # Rewrite Mode items to hide
+            components[Components.REWRITE_SECTION],
+            # Chat Mode items to hide
+            components[Components.CHAT_SECTION],
         ]
     )
 
