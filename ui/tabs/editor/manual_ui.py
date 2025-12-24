@@ -107,6 +107,11 @@ def create_manual_handlers(components, states):
             create_sections_epoch,
             components[Components.STATUS_ROW],
             keep_draft_btn,
+            components[Components.STATUS_LABEL],
+            components[Components.BTN_CHECKPOINT],
+            components[Components.BTN_DRAFT],
+            components[Components.BTN_DIFF],
+            states[States.CURRENT_VIEW_STATE],
         ],
     )
     

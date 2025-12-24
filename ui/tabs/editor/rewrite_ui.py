@@ -137,6 +137,11 @@ def create_rewrite_handlers(components, states):
             selected_text,
             selected_indices,
             components[Components.STATUS_ROW],
+            components[Components.STATUS_LABEL],
+            components[Components.BTN_CHECKPOINT],
+            components[Components.BTN_DRAFT],
+            components[Components.BTN_DIFF],
+            states[States.CURRENT_VIEW_STATE],
         ],
     )
 

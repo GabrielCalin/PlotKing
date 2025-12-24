@@ -200,6 +200,11 @@ def rewrite_force_edit(section, viewer_content, current_log, create_epoch):
         "",  # selected_text
         None,  # selected_indices
         gr.update(visible=True), # status_row (visible)
+        gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), # status_label - show Checkpoint
+        gr.update(visible=False), # btn_checkpoint - hide (no draft = no point showing C only)
+        gr.update(visible=False), # btn_draft - hide
+        gr.update(visible=False), # btn_diff - hide
+        "Checkpoint", # current_view_state
     )
 
 def rewrite_validate(section, viewer_content, current_log):

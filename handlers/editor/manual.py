@@ -121,6 +121,11 @@ def force_edit(section, draft, current_log, create_epoch):
         new_create_epoch,  # bump create_sections_epoch to notify Create tab
         gr.update(visible=True), # status_row (visible)
         gr.update(visible=False),# hide Keep Draft
+        gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), # status_label - show Checkpoint
+        gr.update(visible=False), # btn_checkpoint - hide (no draft = no point showing C only)
+        gr.update(visible=False), # btn_draft - hide
+        gr.update(visible=False), # btn_diff - hide
+        "Checkpoint", # current_view_state
     )
 
 def discard_from_manual(section, current_log):
