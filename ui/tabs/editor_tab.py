@@ -28,19 +28,14 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     # ====== States ======
     selected_section = gr.State(None)
-    current_md = gr.State("")
     pending_plan = gr.State(None)
     status_log = gr.State("")  # pentru append la status_strip
     selected_text = gr.State("")  # textul selectat de user
     selected_indices = gr.State(None)  # [start, end] indices pentru selectie
 
-    original_text_before_rewrite = gr.State("")  # textul original inainte de rewrite
-    # current_drafts removed - using DraftsManager singleton
-    
     # Chat States
     from ui.tabs.editor.chat_ui import PLOT_KING_GREETING
     chat_history = gr.State([{"role": "assistant", "content": PLOT_KING_GREETING}])
-    initial_text_before_chat = gr.State("")
     current_view_state = gr.State("Checkpoint") # Checkpoint, Draft, Diff
     generated_drafts_choices = gr.State([])
 
@@ -146,9 +141,11 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     def _load_section_content(name, pending_plan):
         if not name:
-            return "_Empty_", None, "", gr.update(value="View"), "", [], "", \
+            from ui.tabs.editor.chat_ui import PLOT_KING_GREETING
+            initial_greeting = [{"role": "assistant", "content": PLOT_KING_GREETING}]
+            return "_Empty_", None, gr.update(value="View"), initial_greeting, \
                    gr.update(visible=True), gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), \
-                   gr.update(interactive=False, visible=False), gr.update(visible=False), gr.update(visible=False), "Checkpoint", gr.update(visible=False)
+                   gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), "Checkpoint", gr.update(visible=False)
         
         # Check if we have a draft for this section
         drafts_mgr = DraftsManager()
@@ -189,13 +186,13 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         from ui.tabs.editor.chat_ui import PLOT_KING_GREETING
         initial_greeting = [{"role": "assistant", "content": PLOT_KING_GREETING}]
         
-        return text, name, text, gr.update(value="View"), text, initial_greeting, text, \
+        return text, name, gr.update(value="View"), initial_greeting, \
                gr.update(visible=True), gr.update(value=label), btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, view_actions_upd
 
 
 
 
-    def _toggle_mode(mode, current_text, section, view_state, pending_plan):
+    def _toggle_mode(mode, section, view_state, pending_plan):
         from state.drafts_manager import DraftsManager, DraftType
         drafts_mgr = DraftsManager()
         
@@ -246,7 +243,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 view_actions_upd = gr.update(visible=is_user_draft and not pending_plan)
         else:
             # Fallback if no section
-            viewer_update = gr.update(visible=(mode != "Rewrite"), value=current_text) if current_text else gr.update(visible=(mode != "Rewrite"))
+            viewer_update = gr.update(visible=(mode != "Rewrite"))
 
         editor_update = gr.update(visible=False)
         if mode == "Rewrite":
@@ -271,7 +268,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
 
 
-    def _continue_edit_dispatcher(section, current_log, current_mode, current_md):
+    def _continue_edit_dispatcher(section, current_log, current_mode, viewer_md=None):
         """Dispatch continue_edit to appropriate module based on mode."""
         from handlers.editor.rewrite import continue_edit as rewrite_continue_edit
         from handlers.editor.chat import continue_edit as chat_continue_edit
@@ -279,7 +276,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         from handlers.editor.view import continue_edit as view_continue_edit
         
         if current_mode == "Rewrite":
-            return rewrite_continue_edit(section, current_log, current_md)
+            return rewrite_continue_edit(section, current_log, viewer_md)
         elif current_mode == "Chat":
             return chat_continue_edit(section, current_log)
         elif current_mode == "View":
@@ -295,13 +292,13 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     view_discard_btn.click(
         fn=discard_draft_handler,
         inputs=[selected_section, status_log],
-        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_log, status_strip, view_actions_row, current_md, initial_text_before_chat]
+        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_log, status_strip, view_actions_row]
     )
     
     view_force_edit_btn.click(
         fn=force_edit_draft_handler,
         inputs=[selected_section, status_log, create_sections_epoch],
-        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_log, status_strip, create_sections_epoch, view_actions_row, current_md, initial_text_before_chat]
+        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_log, status_strip, create_sections_epoch, view_actions_row]
     )
 
     # ---- Sincronizare Create → Editor: refresh Editor tab când Create modifică checkpoint ----
@@ -319,7 +316,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     section_dropdown.change(
         fn=_load_section_content,
         inputs=[section_dropdown, pending_plan],
-        outputs=[viewer_md, selected_section, current_md, mode_radio, original_text_before_rewrite, chat_history, initial_text_before_chat, status_row, status_label, btn_checkpoint, btn_draft, btn_diff, current_view_state, view_actions_row],
+        outputs=[viewer_md, selected_section, mode_radio, chat_history, status_row, status_label, btn_checkpoint, btn_draft, btn_diff, current_view_state, view_actions_row],
     )
 
     def _handle_view_switch(view_type, section):
@@ -367,7 +364,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     mode_radio.change(
         fn=_toggle_mode,
-        inputs=[mode_radio, current_md, selected_section, current_view_state, pending_plan],
+        inputs=[mode_radio, selected_section, current_view_state, pending_plan],
         outputs=[
             manual_section, start_edit_btn, confirm_btn, discard_btn, force_edit_btn, keep_draft_btn,
             rewrite_section, chat_section, validation_section, editor_tb, viewer_md, 
@@ -452,14 +449,11 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     # States dictionary
     states = {
         States.SELECTED_SECTION: selected_section,
-        States.CURRENT_MD: current_md,
         States.PENDING_PLAN: pending_plan,
         States.STATUS_LOG: status_log,
         States.SELECTED_TEXT: selected_text,
         States.SELECTED_INDICES: selected_indices,
-        States.ORIGINAL_TEXT_BEFORE_REWRITE: original_text_before_rewrite,
         States.CHAT_HISTORY: chat_history,
-        States.INITIAL_TEXT_BEFORE_CHAT: initial_text_before_chat,
         States.CURRENT_VIEW_STATE: current_view_state,
         States.CREATE_SECTIONS_EPOCH: create_sections_epoch,
         States.GENERATED_DRAFTS_CHOICES: generated_drafts_choices,
@@ -478,8 +472,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         # Outputs: UI changes to show Validation Box etc. similar to Manual/Rewrite validate
         outputs=[
              validation_box, pending_plan, validation_title, validation_section, apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
-             viewer_md, editor_tb, mode_radio, section_dropdown, status_strip, status_log, view_actions_row,
-             current_md
+             viewer_md, editor_tb, mode_radio, section_dropdown, status_strip, status_log, view_actions_row
         ],
         queue=True,
         show_progress=False,
@@ -488,13 +481,13 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     view_discard_btn.click(
         fn=discard_draft_handler,
         inputs=[selected_section, status_log],
-        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_strip, status_log, view_actions_row, current_md, initial_text_before_chat]
+        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_strip, status_log, view_actions_row]
     )
 
     view_force_edit_btn.click(
         fn=force_edit_draft_handler,
         inputs=[selected_section, status_log, create_sections_epoch],
-        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_strip, status_log, create_sections_epoch, view_actions_row, current_md, initial_text_before_chat]
+        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_strip, status_log, create_sections_epoch, view_actions_row]
     )
 
     return section_dropdown

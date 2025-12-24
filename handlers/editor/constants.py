@@ -68,14 +68,11 @@ class Components(str, Enum):
 
 class States(str, Enum):
     SELECTED_SECTION = "selected_section"
-    CURRENT_MD = "current_md"
     PENDING_PLAN = "pending_plan"
     STATUS_LOG = "status_log"
     SELECTED_TEXT = "selected_text"
     SELECTED_INDICES = "selected_indices"
-    ORIGINAL_TEXT_BEFORE_REWRITE = "original_text_before_rewrite"
     CHAT_HISTORY = "chat_history"
-    INITIAL_TEXT_BEFORE_CHAT = "initial_text_before_chat"
     CURRENT_VIEW_STATE = "current_view_state"
     CREATE_SECTIONS_EPOCH = "create_sections_epoch"
     GENERATED_DRAFTS_CHOICES = "generated_drafts_choices"

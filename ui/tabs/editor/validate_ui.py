@@ -109,17 +109,32 @@ def create_validate_handlers(components, states):
     status_log = states[States.STATUS_LOG]
     create_sections_epoch = states[States.CREATE_SECTIONS_EPOCH]
     mode_radio = components[Components.MODE_RADIO]
-    current_md = states[States.CURRENT_MD]
-    current_md = states[States.CURRENT_MD]
     selected_section = states[States.SELECTED_SECTION]
     
     # Local state for Generated Drafts Choices (for Select All)
     generated_drafts_choices_state = states[States.GENERATED_DRAFTS_CHOICES]
     keep_drafts_choices_state = states[States.KEEP_DRAFTS_CHOICES]
     
+    def get_text_to_validate(section, current_mode, editor_text, viewer_content):
+        """Get text to validate from Gradio components based on mode."""
+        from state.overall_state import get_current_section_content
+        from handlers.editor.utils import remove_highlight
+        
+        if current_mode == "Manual":
+            return editor_text or ""
+        elif current_mode == "Rewrite":
+            return remove_highlight(viewer_content or "")
+        else:  # Chat or View
+            return get_current_section_content(section)
+    
+    def apply_updates_wrapper(section, plan, current_log, create_epoch, current_mode, editor_text, viewer_content):
+        """Wrapper to get draft content and call apply_updates."""
+        draft_content = get_text_to_validate(section, current_mode, editor_text, viewer_content)
+        return apply_updates(section, plan, current_log, create_epoch, draft_content)
+    
     apply_updates_btn.click(
-        fn=apply_updates,
-        inputs=[section_dropdown, pending_plan, status_log, create_sections_epoch, mode_radio, current_md],
+        fn=apply_updates_wrapper,
+        inputs=[section_dropdown, pending_plan, status_log, create_sections_epoch, mode_radio, editor_tb, components[Components.VIEWER_MD]],
         outputs=[
             components[Components.VIEWER_MD], components[Components.STATUS_STRIP],
             editor_tb,
@@ -128,7 +143,6 @@ def create_validate_handlers(components, states):
             components[Components.START_EDIT_BTN],
             components[Components.REWRITE_SECTION],
             mode_radio, section_dropdown,
-            current_md,
             status_log,
             create_sections_epoch,
             components[Components.DRAFT_REVIEW_PANEL],
@@ -160,7 +174,7 @@ def create_validate_handlers(components, states):
     
     continue_btn.click(
         fn=components[Components._CONTINUE_EDIT_DISPATCHER],
-        inputs=[selected_section, status_log, mode_radio, current_md],
+        inputs=[selected_section, status_log, mode_radio, components[Components.VIEWER_MD]],
         outputs=[
             components[Components.VALIDATION_TITLE], components[Components.VALIDATION_BOX], components[Components.VALIDATION_SECTION],
             apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
@@ -194,7 +208,6 @@ def create_validate_handlers(components, states):
             components[Components.REWRITE_SECTION],
             mode_radio, section_dropdown, components[Components.STATUS_STRIP],
             status_log,
-            current_md,
             components[Components.DRAFT_REVIEW_PANEL],
             generated_drafts_list,
             components[Components.STATUS_ROW],
@@ -214,9 +227,14 @@ def create_validate_handlers(components, states):
         ],
     )
 
+    def regenerate_dispatcher_wrapper(section, current_log, current_mode, editor_text, viewer_content):
+        """Wrapper to get text to validate and call regenerate_dispatcher."""
+        text_to_validate = get_text_to_validate(section, current_mode, editor_text, viewer_content)
+        return regenerate_dispatcher(section, text_to_validate, current_log)
+    
     regenerate_btn.click(
-        fn=regenerate_dispatcher,
-        inputs=[selected_section, editor_tb, status_log, mode_radio, current_md],
+        fn=regenerate_dispatcher_wrapper,
+        inputs=[selected_section, status_log, mode_radio, editor_tb, components[Components.VIEWER_MD]],
         outputs=[
             components[Components.VALIDATION_BOX],
             pending_plan,
@@ -277,19 +295,19 @@ def create_validate_handlers(components, states):
     btn_draft_accept_all.click(
         fn=draft_accept_all,
         inputs=[selected_section, pending_plan, status_log, create_sections_epoch],
-        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, create_sections_epoch, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], current_md, mode_radio, components[Components.VIEW_ACTIONS_ROW], states[States.PENDING_PLAN], generated_drafts_choices_state, keep_drafts_choices_state]
+        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, create_sections_epoch, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], mode_radio, components[Components.VIEW_ACTIONS_ROW], states[States.PENDING_PLAN], generated_drafts_choices_state, keep_drafts_choices_state]
     )
     
     btn_draft_revert.click(
         fn=draft_revert_all,
         inputs=[selected_section, pending_plan, status_log],
-        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], current_md, mode_radio, components[Components.VIEW_ACTIONS_ROW], states[States.PENDING_PLAN], generated_drafts_choices_state, keep_drafts_choices_state]
+        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], mode_radio, components[Components.VIEW_ACTIONS_ROW], states[States.PENDING_PLAN], generated_drafts_choices_state, keep_drafts_choices_state]
     )
     
     btn_draft_accept_selected.click(
         fn=draft_accept_selected,
         inputs=[selected_section, original_draft_checkbox, generated_drafts_list, status_log, create_sections_epoch, drafts_to_keep_list], # Passed drafts_to_keep
-        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, create_sections_epoch, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], current_md, mode_radio, components[Components.VIEW_ACTIONS_ROW], states[States.PENDING_PLAN], generated_drafts_choices_state, keep_drafts_choices_state]
+        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, create_sections_epoch, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], mode_radio, components[Components.VIEW_ACTIONS_ROW], states[States.PENDING_PLAN], generated_drafts_choices_state, keep_drafts_choices_state]
     )
     
     btn_draft_regenerate.click(

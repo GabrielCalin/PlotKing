@@ -4,15 +4,10 @@ from handlers.editor.utils import append_status, remove_highlight
 from handlers.editor.constants import Components, States
 from state.checkpoint_manager import get_section_content, save_section
 
-def start_edit(curr_text, section, current_log):
+def start_edit(section, current_log):
     """Switch to edit mode — locks Section + Mode. Prefer Draft if exists."""
-    from state.drafts_manager import DraftsManager, DraftType
-    drafts_mgr = DraftsManager()
-    
-    if section and drafts_mgr.has_type(section, DraftType.USER.value):
-        content = drafts_mgr.get_content(section, DraftType.USER.value)
-    else:
-        content = get_section_content(section) or ""
+    from state.overall_state import get_current_section_content
+    content = get_current_section_content(section)
         
     new_log, status_update = append_status(current_log, f"✍️ ({section}) Editing started.")
     return (
@@ -64,8 +59,7 @@ def confirm_edit(section, draft, current_log):
         gr.update(value=new_log, visible=True),  # show Process Log with "Validation started"
         new_log,  # status_log state
         gr.update(visible=False), # status_row (hidden)
-        gr.update(visible=False), # hide Keep Draft
-        draft # 22. current_md state update
+        gr.update(visible=False) # hide Keep Draft
     )
     
     # Apelează validarea (blocant) - folosim draft_clean (fără highlight-uri)
@@ -96,16 +90,22 @@ def confirm_edit(section, draft, current_log):
         gr.update(value=final_log, visible=True),  # show Process Log with "Validation completed"
         final_log,  # status_log state
         gr.update(visible=False), # status_row (hidden)
-        gr.update(visible=False), # hide Keep Draft
-        draft # 22. current_md state update
+        gr.update(visible=False) # hide Keep Draft
     )
 
 def force_edit(section, draft, current_log, create_epoch):
     """Apply changes directly without validation — unlocks controls after."""
+    from state.drafts_manager import DraftsManager
     save_section(section, draft)
     updated_text = draft
     new_log, status_update = append_status(current_log, f"⚡ ({section}) Synced (forced).")
     new_create_epoch = (create_epoch or 0) + 1  # Bump create_sections_epoch to notify Create tab
+    
+    # Remove all drafts after saving to checkpoint
+    drafts_manager = DraftsManager()
+    if drafts_manager.has(section):
+        drafts_manager.remove(section)
+    
     return (
         gr.update(value=updated_text, visible=True),  # update and show Viewer
         status_update,
@@ -117,7 +117,6 @@ def force_edit(section, draft, current_log, create_epoch):
         gr.update(visible=False),   # hide Rewrite Section (will be shown by _toggle_mode if Rewrite mode)
         gr.update(interactive=True),# unlock Mode
         gr.update(interactive=True),# unlock Section
-        updated_text,  # update current_md state with the new text
         new_log,
         new_create_epoch,  # bump create_sections_epoch to notify Create tab
         gr.update(visible=True), # status_row (visible)

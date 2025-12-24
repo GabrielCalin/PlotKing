@@ -14,13 +14,10 @@ def editor_rewrite(section, selected_text, instructions):
     if not selected_text:
         return {"success": False, "message": "No text selected."}
         
-    from state.drafts_manager import DraftsManager, DraftType
-    drafts_mgr = DraftsManager()
+    from state.overall_state import get_current_section_content
     
-    # Priority: USER Draft > Checkpoint
-    full_content = drafts_mgr.get_content(section, DraftType.USER.value)
-    if full_content is None:
-        full_content = get_section_content(section)
+    # Use get_current_section_content for priority logic
+    full_content = get_current_section_content(section)
     
     context_before = ""
     context_after = ""
@@ -75,17 +72,13 @@ def handle_text_selection(evt: gr.SelectData):
     preview_text = format_selected_preview(stripped_value)
     return stripped_value, [new_start, new_end], preview_text, gr.update(interactive=True)
 
-def rewrite_handler(section, selected_txt, selected_idx, instructions, current_text, current_log, original_text):
+def rewrite_handler(section, selected_txt, selected_idx, instructions, current_log):
     """Handle rewrite button click - call handler and replace selected text."""
+    from state.overall_state import get_current_section_content
     start_idx, end_idx = selected_idx if isinstance(selected_idx, (list, tuple)) and len(selected_idx) == 2 else (None, None)
     
-    from state.drafts_manager import DraftsManager, DraftType
-    drafts_mgr = DraftsManager()
-    
-    # Priority: USER Draft > Checkpoint
-    original_text = drafts_mgr.get_content(section, DraftType.USER.value)
-    if original_text is None:
-        original_text = get_section_content(section)
+    # Use get_current_section_content for priority logic
+    original_text = get_current_section_content(section)
     
     new_log, status_update = append_status(current_log, f"🔄 ({section}) Rewriting selected text...")
     
@@ -100,10 +93,8 @@ def rewrite_handler(section, selected_txt, selected_idx, instructions, current_t
         gr.update(visible=False),  # rewrite_btn
         status_update,
         current_log,
-        original_text,
         selected_txt,
         selected_idx,
-        original_text,
         gr.update(interactive=False),  # mode_radio - non-interactiv când se face rewrite
     )
     
@@ -124,10 +115,8 @@ def rewrite_handler(section, selected_txt, selected_idx, instructions, current_t
             gr.update(visible=True),   # rewrite_btn
             final_status,
             final_log,
-            new_text_with_highlight,
             selected_txt,
             selected_idx,
-            original_text,
             gr.update(interactive=False),  # mode_radio - non-interactiv după rewrite
         )
     else:
@@ -145,22 +134,17 @@ def rewrite_handler(section, selected_txt, selected_idx, instructions, current_t
             gr.update(visible=True),   # rewrite_btn
             final_status,
             final_log,
-            original_text,
             selected_txt,
             selected_idx,
-            original_text,
             gr.update(interactive=True),  # mode_radio - interactiv dacă rewrite eșuează
         )
 
 def rewrite_discard(section, current_log):
     """Discard rewrite changes - fallback to draft if exists, else checkpoint."""
-    from state.drafts_manager import DraftsManager, DraftType
-    drafts_mgr = DraftsManager()
+    from state.overall_state import get_current_section_content
     
-    # Priority: USER Draft > Checkpoint
-    clean_text = drafts_mgr.get_content(section, DraftType.USER.value)
-    if clean_text is None:
-        clean_text = get_section_content(section) or "_Empty_"
+    # Use get_current_section_content for priority logic
+    clean_text = get_current_section_content(section) or "_Empty_"
         
     new_log, status_update = append_status(current_log, f"🗑️ ({section}) Rewrite discarded.")
     return (
@@ -176,18 +160,23 @@ def rewrite_discard(section, current_log):
         new_log,  # status_log
         "",  # selected_text
         None,  # selected_indices
-        clean_text,  # current_md - resetat la textul din checkpoint
-        clean_text,  # original_text_before_rewrite - resetat la textul din checkpoint
         gr.update(interactive=True),  # mode_radio - interactiv după discard
     )
 
-def rewrite_force_edit(section, draft_with_highlight, current_log, create_epoch):
+def rewrite_force_edit(section, viewer_content, current_log, create_epoch):
     """Force edit with rewritten text - remove highlight and update checkpoint."""
-    draft_clean = remove_highlight(draft_with_highlight)
+    from state.drafts_manager import DraftsManager
+    draft_clean = remove_highlight(viewer_content)
     save_section(section, draft_clean)
     updated_text = draft_clean
     new_log, status_update = append_status(current_log, f"⚡ ({section}) Synced (forced from rewrite).")
     new_create_epoch = (create_epoch or 0) + 1
+    
+    # Remove all drafts after saving to checkpoint
+    drafts_manager = DraftsManager()
+    if drafts_manager.has(section):
+        drafts_manager.remove(section)
+    
     return (
         gr.update(value=updated_text, visible=True),  # viewer_md
         status_update,  # status_strip
@@ -206,7 +195,6 @@ def rewrite_force_edit(section, draft_with_highlight, current_log, create_epoch)
         gr.update(visible=False),  # rewrite_section
         gr.update(value="View", interactive=True),  # mode_radio
         gr.update(interactive=True),  # section_dropdown
-        updated_text,  # current_md
         new_log,  # status_log
         new_create_epoch,  # create_sections_epoch
         "",  # selected_text
@@ -214,9 +202,9 @@ def rewrite_force_edit(section, draft_with_highlight, current_log, create_epoch)
         gr.update(visible=True), # status_row (visible)
     )
 
-def rewrite_validate(section, draft_with_highlight, current_log):
+def rewrite_validate(section, viewer_content, current_log):
     """Validate rewritten text - remove highlight and start validation."""
-    draft_clean = remove_highlight(draft_with_highlight)
+    draft_clean = remove_highlight(viewer_content)
     new_log, status_update = append_status(current_log, f"🔍 ({section}) Validation started (from rewrite).")
     
     yield (
@@ -230,14 +218,13 @@ def rewrite_validate(section, draft_with_highlight, current_log):
         gr.update(visible=False),  # continue_btn (Button)
         gr.update(visible=False),  # discard2_btn (Button)
         gr.update(visible=False),  # rewrite_section (Column)
-        gr.update(visible=True, value=draft_with_highlight),  # viewer_md (Markdown) - keep highlights
+        gr.update(visible=True, value=viewer_content),  # viewer_md (Markdown) - keep highlights
         gr.update(interactive=False),  # editor_tb (Textbox)
         gr.update(interactive=False),  # mode_radio (Radio)
         gr.update(interactive=False),  # section_dropdown (Dropdown)
         gr.update(value=new_log, visible=True),  # status_strip (Textbox)
         new_log,  # status_log (State)
-        gr.update(visible=False), # status_row (hidden)
-        draft_with_highlight # 16. current_md state update (WITH HIGHLIGHTS)
+        gr.update(visible=False) # status_row (hidden)
     )
     
     msg, plan = editor_validate(section, draft_clean)
@@ -254,14 +241,13 @@ def rewrite_validate(section, draft_with_highlight, current_log):
         gr.update(visible=True),  # continue_btn (Button)
         gr.update(visible=True),  # discard2_btn (Button)
         gr.update(visible=False),  # rewrite_section (Column)
-        gr.update(visible=True, value=draft_with_highlight),  # viewer_md (Markdown) - keep highlights
+        gr.update(visible=True, value=viewer_content),  # viewer_md (Markdown) - keep highlights
         gr.update(interactive=False),  # editor_tb (Textbox)
         gr.update(interactive=False),  # mode_radio (Radio)
         gr.update(interactive=False),  # section_dropdown (Dropdown)
         gr.update(value=final_log, visible=True),  # status_strip (Textbox)
         final_log,  # status_log (State)
-        gr.update(visible=False), # status_row (hidden)
-        draft_with_highlight # 16. current_md state update (WITH HIGHLIGHTS)
+        gr.update(visible=False) # status_row (hidden)
     )
 
 def confirm_edit(section, draft, current_log):
@@ -271,12 +257,19 @@ def confirm_edit(section, draft, current_log):
     # However, if the user clicks the main Validate button while in Rewrite mode (if visible), we should handle it.
     # Based on the original code, confirm_edit handled both modes.
     
-    # For Rewrite mode, draft is current_md (with highlights)
+    # For Rewrite mode, draft is viewer content (with highlights)
     return rewrite_validate(section, draft, current_log)
 
-def continue_edit(section, current_log, current_md):
+def continue_edit(section, current_log, viewer_content=None):
     """Return to editing mode. If Rewrite mode, return to Rewrite Section."""
+    from state.overall_state import get_current_section_content
     new_log, status_update = append_status(current_log, f"🔁 ({section}) Continue editing.")
+    
+    # For Rewrite mode: use viewer_content if provided (has highlights), otherwise fallback
+    if viewer_content:
+        current_content = viewer_content
+    else:
+        current_content = get_current_section_content(section)
     
     return (
         gr.update(visible=False),   # hide Validation Title
@@ -291,7 +284,7 @@ def continue_edit(section, current_log, current_md):
         gr.update(visible=False),   # hide Force Edit
         gr.update(visible=False),   # hide Manual Section
         gr.update(visible=True),    # show Rewrite Section
-        gr.update(visible=True, value=current_md),  # show viewer_md with highlighted text
+        gr.update(visible=True, value=current_content),  # show viewer_md with highlighted text
         gr.update(visible=False),   # hide editor_tb
         gr.update(value="Rewrite", interactive=False), # keep Mode locked to Rewrite
         gr.update(interactive=False), # keep Section locked

@@ -7,11 +7,20 @@ from handlers.editor.constants import Components, States
 from llm.chat_editor.llm import call_llm_chat
 from state.checkpoint_manager import get_section_content, save_section
 
-def chat_handler(section, message, history, current_text, initial_text, current_log):
+def chat_handler(section, message, history, current_log):
     """
     Handles the chat interaction with the Plot King.
     Uses OpenAI-style messages format: [{'role': 'user', 'content': '...'}, ...]
     """
+    from state.overall_state import get_current_section_content
+    from state.checkpoint_manager import get_section_content
+    
+    # Get current and initial content
+    # initial_text = checkpoint only (reference for LLM)
+    # current_text = with draft priority (active draft)
+    initial_text = get_section_content(section) or ""
+    current_text = get_current_section_content(section)
+    
     if not message:
         return (
             gr.update(value=""), # clear input
@@ -26,7 +35,6 @@ def chat_handler(section, message, history, current_text, initial_text, current_
             gr.update(), # chat_keep_draft_btn
             current_log,
             gr.update(), # status_strip
-            current_text, # current_md
             gr.update(), # chat_input (no change)
             gr.update(), # chat_clear_btn (no change)
             gr.update(), # status_row
@@ -57,7 +65,6 @@ def chat_handler(section, message, history, current_text, initial_text, current_
         gr.update(), # chat_keep_draft_btn
         new_log,
         status_update,
-        current_text,
         gr.update(interactive=False), # chat_input disable
         gr.update(interactive=False), # chat_clear_btn disable
         gr.update(), # status_row
@@ -107,7 +114,6 @@ def chat_handler(section, message, history, current_text, initial_text, current_
                 gr.update(visible=True), # chat_keep_draft_btn
                 final_log,
                 final_status,
-                new_content, # update current_md
                 gr.update(interactive=True), # chat_input enable
                 gr.update(interactive=True), # chat_clear_btn enable
                 gr.update(visible=True), # status_row - show
@@ -134,7 +140,6 @@ def chat_handler(section, message, history, current_text, initial_text, current_
                 gr.update(), # chat_keep_draft_btn
                 final_log,
                 final_status,
-                current_text, # current_md unchanged
                 gr.update(interactive=True), # chat_input enable
                 gr.update(interactive=True), # chat_clear_btn enable
                 gr.update(), # status_row - unchanged
@@ -163,7 +168,6 @@ def chat_handler(section, message, history, current_text, initial_text, current_
             gr.update(), # chat_keep_draft_btn
             final_log,
             final_status,
-            current_text,
             gr.update(interactive=True), # chat_input enable
             gr.update(interactive=True), # chat_clear_btn enable
             gr.update(), # status_row - unchanged
@@ -185,13 +189,13 @@ def clear_chat(section, current_log):
 
 
 
-def validate_handler(section, current_text, current_log):
+def validate_handler(section, current_log):
     """
     Starts validation for the chat edits. Hides Chat UI.
-    Uses existing draft from DraftsManager if available, otherwise uses current_text.
+    Uses get_current_section_content to get draft content.
     """
-    drafts_manager = DraftsManager()
-    draft_to_validate = drafts_manager.get_content(section) or current_text
+    from state.overall_state import get_current_section_content
+    draft_to_validate = get_current_section_content(section)
     
     new_log, status_update = append_status(current_log, f"🔍 ({section}) Validation started (from Chat).")
     
@@ -272,7 +276,6 @@ def discard_handler(section, current_log):
         gr.update(visible=False), # chat_actions_row_2
         gr.update(visible=False), # chat_validate_btn
         gr.update(visible=False), # chat_keep_draft_btn
-        updated_text, # current_md
         new_log,
         status_update,
         gr.update(visible=True), # status_row - always visible in Chat
@@ -284,10 +287,12 @@ def discard_handler(section, current_log):
         gr.update(interactive=True), # mode_radio
     )
 
-def force_edit_handler(section, current_text, current_log, create_epoch):
+def force_edit_handler(section, current_log, create_epoch):
     """
     Force saves the chat edits to checkpoint.
     """
+    from state.overall_state import get_current_section_content
+    current_text = get_current_section_content(section)
     save_section(section, current_text)
     updated_text = current_text
     new_log, status_update = append_status(current_log, f"⚡ ({section}) Synced (forced from Chat).")
@@ -307,7 +312,6 @@ def force_edit_handler(section, current_text, current_log, create_epoch):
         gr.update(visible=False), # chat_actions_row_2
         gr.update(visible=False), # chat_validate_btn
         gr.update(visible=False), # chat_keep_draft_btn
-        updated_text, # current_md
         new_log,
         status_update,
         new_create_epoch,

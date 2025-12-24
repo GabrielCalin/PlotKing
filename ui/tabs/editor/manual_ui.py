@@ -29,7 +29,6 @@ def create_manual_handlers(components, states):
     keep_draft_btn = components[Components.KEEP_DRAFT_BTN]
     
     # Shared components
-    current_md = states[States.CURRENT_MD]
     selected_section = states[States.SELECTED_SECTION]
     status_log = states[States.STATUS_LOG]
     editor_tb = components[Components.EDITOR_TB]
@@ -37,7 +36,7 @@ def create_manual_handlers(components, states):
     
     start_edit_btn.click(
         fn=lambda *args: (*start_edit(*args), gr.update(visible=False)), # Wrap to hide status row
-        inputs=[current_md, selected_section, status_log],
+        inputs=[selected_section, status_log],
         outputs=[
             start_edit_btn,
             components[Components.REWRITE_SECTION],
@@ -73,8 +72,7 @@ def create_manual_handlers(components, states):
             components[Components.STATUS_STRIP],
             status_log,
             components[Components.STATUS_ROW],
-            keep_draft_btn,
-            current_md,
+            keep_draft_btn
         ],
         queue=True,
         show_progress=False,
@@ -105,7 +103,6 @@ def create_manual_handlers(components, states):
             confirm_btn, discard_btn, force_edit_btn, start_edit_btn,
             components[Components.REWRITE_SECTION],
             components[Components.MODE_RADIO], components[Components.SECTION_DROPDOWN],
-            current_md,
             status_log,
             create_sections_epoch,
             components[Components.STATUS_ROW],
