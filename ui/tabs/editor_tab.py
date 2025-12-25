@@ -7,14 +7,7 @@ from state.checkpoint_manager import get_sections_list, get_section_content
 
 # Import helpers and logic from new modules
 from handlers.editor.utils import (
-    append_status,
-    update_instructions_from_preset,
     diff_handler,
-)
-from handlers.editor.view import (
-    validate_draft_handler,
-    discard_draft_handler,
-    force_edit_draft_handler,
 )
 from state.drafts_manager import DraftsManager
 import ui.tabs.editor.manual_ui as Manual

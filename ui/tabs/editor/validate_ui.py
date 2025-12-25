@@ -130,7 +130,7 @@ def create_validate_handlers(components, states):
     def apply_updates_wrapper(section, plan, current_log, create_epoch, current_mode, editor_text, viewer_content):
         """Wrapper to get draft content and call apply_updates."""
         draft_content = get_text_to_validate(section, current_mode, editor_text, viewer_content)
-        return apply_updates(section, plan, current_log, create_epoch, draft_content)
+        yield from apply_updates(section, plan, current_log, create_epoch, draft_content)
     
     apply_updates_btn.click(
         fn=apply_updates_wrapper,
@@ -230,7 +230,7 @@ def create_validate_handlers(components, states):
     def regenerate_dispatcher_wrapper(section, current_log, current_mode, editor_text, viewer_content):
         """Wrapper to get text to validate and call regenerate_dispatcher."""
         text_to_validate = get_text_to_validate(section, current_mode, editor_text, viewer_content)
-        return regenerate_dispatcher(section, text_to_validate, current_log)
+        yield from regenerate_dispatcher(section, text_to_validate, current_log)
     
     regenerate_btn.click(
         fn=regenerate_dispatcher_wrapper,
