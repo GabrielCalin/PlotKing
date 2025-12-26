@@ -46,6 +46,8 @@ class Components(str, Enum):
     BTN_CHECKPOINT = "btn_checkpoint"
     BTN_DRAFT = "btn_draft"
     BTN_DIFF = "btn_diff"
+    BTN_UNDO = "btn_undo"
+    BTN_REDO = "btn_redo"
     VIEWER_MD = "viewer_md"
     EDITOR_TB = "editor_tb"
     STATUS_STRIP = "status_strip"

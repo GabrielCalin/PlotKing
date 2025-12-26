@@ -205,6 +205,8 @@ def rewrite_force_edit(section, viewer_content, current_log, create_epoch):
         gr.update(visible=False), # btn_draft - hide
         gr.update(visible=False), # btn_diff - hide
         "Checkpoint", # current_view_state
+        gr.update(visible=False), # btn_undo - hide
+        gr.update(visible=False), # btn_redo - hide
     )
 
 def rewrite_validate(section, viewer_content, current_log):

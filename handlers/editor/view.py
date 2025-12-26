@@ -6,7 +6,7 @@ from state.checkpoint_manager import get_section_content, save_section
 def discard_draft_handler(section, status_log):
     """Discard USER draft and revert view to Checkpoint content."""
     if not section:
-        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), status_log, gr.update(visible=False)
+        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), status_log, gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
         
     drafts_mgr = DraftsManager()
     if drafts_mgr.has(section):
@@ -29,7 +29,9 @@ def discard_draft_handler(section, status_log):
         gr.update(visible=False), # Diff Btn
         new_log,
         status_update,
-        gr.update(visible=False)  # view_actions_row update
+        gr.update(visible=False),  # view_actions_row update
+        gr.update(visible=False), # btn_undo - hide
+        gr.update(visible=False), # btn_redo - hide
     )
 
 def force_edit_draft_handler(section, status_log, create_sections_epoch):
@@ -67,7 +69,9 @@ def force_edit_draft_handler(section, status_log, create_sections_epoch):
         new_log,
         status_update,
         new_epoch,
-        gr.update(visible=False) # view_actions_row
+        gr.update(visible=False), # view_actions_row
+        gr.update(visible=False), # btn_undo - hide
+        gr.update(visible=False), # btn_redo - hide
     )
 
 def validate_draft_handler(section, current_log):

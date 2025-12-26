@@ -224,6 +224,8 @@ def create_validate_handlers(components, states):
             components[Components.VIEW_ACTIONS_ROW],
             generated_drafts_choices_state,
             keep_drafts_choices_state,
+            components[Components.BTN_UNDO],
+            components[Components.BTN_REDO],
         ],
     )
 
@@ -295,19 +297,19 @@ def create_validate_handlers(components, states):
     btn_draft_accept_all.click(
         fn=draft_accept_all,
         inputs=[selected_section, pending_plan, status_log, create_sections_epoch],
-        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, create_sections_epoch, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], mode_radio, components[Components.VIEW_ACTIONS_ROW], states[States.PENDING_PLAN], generated_drafts_choices_state, keep_drafts_choices_state]
+        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, create_sections_epoch, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], mode_radio, components[Components.VIEW_ACTIONS_ROW], states[States.PENDING_PLAN], generated_drafts_choices_state, keep_drafts_choices_state, components[Components.BTN_UNDO], components[Components.BTN_REDO]]
     )
     
     btn_draft_revert.click(
         fn=draft_revert_all,
         inputs=[selected_section, pending_plan, status_log],
-        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], mode_radio, components[Components.VIEW_ACTIONS_ROW], states[States.PENDING_PLAN], generated_drafts_choices_state, keep_drafts_choices_state]
+        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], mode_radio, components[Components.VIEW_ACTIONS_ROW], states[States.PENDING_PLAN], generated_drafts_choices_state, keep_drafts_choices_state, components[Components.BTN_UNDO], components[Components.BTN_REDO]]
     )
     
     btn_draft_accept_selected.click(
         fn=draft_accept_selected,
         inputs=[selected_section, original_draft_checkbox, generated_drafts_list, status_log, create_sections_epoch, drafts_to_keep_list], # Passed drafts_to_keep
-        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, create_sections_epoch, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], mode_radio, components[Components.VIEW_ACTIONS_ROW], states[States.PENDING_PLAN], generated_drafts_choices_state, keep_drafts_choices_state]
+        outputs=[components[Components.DRAFT_REVIEW_PANEL], components[Components.STATUS_STRIP], status_log, create_sections_epoch, components[Components.STATUS_ROW], components[Components.STATUS_LABEL], components[Components.BTN_CHECKPOINT], components[Components.BTN_DRAFT], components[Components.BTN_DIFF], states[States.CURRENT_VIEW_STATE], components[Components.VIEWER_MD], mode_radio, components[Components.VIEW_ACTIONS_ROW], states[States.PENDING_PLAN], generated_drafts_choices_state, keep_drafts_choices_state, components[Components.BTN_UNDO], components[Components.BTN_REDO]]
     )
     
     btn_draft_regenerate.click(

@@ -126,6 +126,8 @@ def force_edit(section, draft, current_log, create_epoch):
         gr.update(visible=False), # btn_draft - hide
         gr.update(visible=False), # btn_diff - hide
         "Checkpoint", # current_view_state
+        gr.update(visible=False), # btn_undo - hide
+        gr.update(visible=False), # btn_redo - hide
     )
 
 def discard_from_manual(section, current_log):

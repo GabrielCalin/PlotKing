@@ -268,6 +268,9 @@ def discard_handler(section, current_log):
         view_state = "Checkpoint"
         btns_visible = False
 
+    undo_visible = btns_visible
+    redo_visible = btns_visible
+    
     return (
         gr.update(value=updated_text), # viewer_md
         gr.update(visible=False), # chat_actions_row_1
@@ -285,6 +288,8 @@ def discard_handler(section, current_log):
         gr.update(visible=btns_visible, interactive=btns_visible), # btn_diff
         view_state, # current_view_state
         gr.update(interactive=True), # mode_radio
+        gr.update(visible=undo_visible), # btn_undo - hide if no draft
+        gr.update(visible=redo_visible), # btn_redo - hide if no draft
     )
 
 def force_edit_handler(section, current_log, create_epoch):
@@ -322,6 +327,8 @@ def force_edit_handler(section, current_log, create_epoch):
         gr.update(visible=False), # btn_diff - hide
         "Checkpoint", # current_view_state
         gr.update(interactive=True), # mode_radio - ENABLED
+        gr.update(visible=False), # btn_undo - hide
+        gr.update(visible=False), # btn_redo - hide
     )
 
 def continue_edit(section, current_log):

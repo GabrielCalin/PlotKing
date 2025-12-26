@@ -10,8 +10,9 @@ This document outlines the planned development milestones for the **AI Story Gen
    - Support for undo/redo drafts.
 
 19. **Add Empty Chapters (Writer Assist Mode)**  
-   - Let users insert blank chapters manually.  
-   - Intended to help writers start or continue their own text with AI assistance.
+   - Let users insert blank chapters manually as a Fill type draft.
+   - Fill drafts are not taken into account for other drafts validation until commited.
+   - When fill drafts are validated, run the current validation pipeline but make sure a new chapter is added in chapters overview and existing ones are renumbered.
 
 20. **Infill Chapters**  
    - Add the ability to insert a new chapter **between existing ones** to fill narrative gaps.  

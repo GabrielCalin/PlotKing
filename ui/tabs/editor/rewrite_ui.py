@@ -142,6 +142,8 @@ def create_rewrite_handlers(components, states):
             components[Components.BTN_DRAFT],
             components[Components.BTN_DIFF],
             states[States.CURRENT_VIEW_STATE],
+            components[Components.BTN_UNDO],
+            components[Components.BTN_REDO],
         ],
     )
 

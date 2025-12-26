@@ -366,7 +366,9 @@ def draft_accept_all(current_section, plan, current_log, create_epoch):
         gr.update(visible=btns_visible),   # 13. view_actions_row
         None, # 14. pending_plan
         [],   # 15. generated_drafts_choices_state
-        []    # 16. keep_drafts_choices_state
+        [],    # 16. keep_drafts_choices_state
+        gr.update(visible=btns_visible), # 17. btn_undo - hide if no draft
+        gr.update(visible=btns_visible), # 18. btn_redo - hide if no draft
     )
 
 def draft_revert_all(current_section, plan, current_log):
@@ -396,7 +398,9 @@ def draft_revert_all(current_section, plan, current_log):
         gr.update(visible=btns_visible),   # 13. view_actions_row
         None, # 14. pending_plan
         [],   # 15. generated_drafts_choices_state
-        []    # 16. keep_drafts_choices_state
+        [],    # 16. keep_drafts_choices_state
+        gr.update(visible=btns_visible), # 17. btn_undo - hide if no draft
+        gr.update(visible=btns_visible), # 18. btn_redo - hide if no draft
     )
 
 
@@ -481,7 +485,9 @@ def draft_accept_selected(current_section, original_selected, generated_selected
         gr.update(visible=btns_visible),   # 13. view_actions_row
         None, # 14. pending_plan
         [],   # 15. generated_drafts_choices_state
-        []    # 16. keep_drafts_choices_state
+        [],    # 16. keep_drafts_choices_state
+        gr.update(visible=btns_visible), # 17. btn_undo - hide if no draft
+        gr.update(visible=btns_visible), # 18. btn_redo - hide if no draft
     )
 
 def draft_regenerate_selected(generated_selected, plan, section, current_log, create_epoch, keep_drafts_choices_state=None):
@@ -642,7 +648,9 @@ def discard_from_validate(section, current_log):
         gr.update(visible=False),                    # chat_keep_draft_btn
         gr.update(visible=btns_visible),             # view_actions_row
         [],                                          # generated_drafts_choices_state
-        []                                           # keep_drafts_choices_state
+        [],                                           # keep_drafts_choices_state
+        gr.update(visible=btns_visible),             # btn_undo - hide if no draft
+        gr.update(visible=btns_visible),             # btn_redo - hide if no draft
     )
 
 def mark_drafts_to_keep_handler(generated_selected, current_generated_choices, current_keep_choices):
