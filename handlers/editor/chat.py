@@ -270,6 +270,10 @@ def discard_handler(section, current_log):
     # 2. Determine fallback content
     user_draft_content = drafts_manager.get_content(section, DraftType.USER.value)
     
+    # Calculate undo/redo visibility based on what remains after discard
+    from state.undo_manager import UndoManager
+    um = UndoManager()
+    
     if user_draft_content:
         # Fallback to User Draft
         updated_text = user_draft_content
@@ -277,16 +281,17 @@ def discard_handler(section, current_log):
         mode_label = f"**Viewing:** <span style='color:red;'>{draft_display_name}</span>"
         view_state = "Draft"
         btns_visible = True
+        undo_visible = um.has_undo(section, DraftType.USER.value)
+        redo_visible = um.has_redo(section, DraftType.USER.value)
         
     else:
-        # Fallback to Checkpoint
+        # Fallback to Checkpoint - no undo/redo available
         updated_text = get_section_content(section) or ""
         mode_label = "**Viewing:** <span style='color:red;'>Checkpoint</span>"
         view_state = "Checkpoint"
         btns_visible = False
-
-    undo_visible = btns_visible
-    redo_visible = btns_visible
+        undo_visible = False
+        redo_visible = False
     
     return (
         gr.update(value=updated_text), # viewer_md
