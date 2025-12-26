@@ -91,6 +91,8 @@ def create_chat_handlers(components, states):
             components[Components.BTN_DIFF],
             states[States.CURRENT_VIEW_STATE],
             mode_radio,
+            components[Components.BTN_UNDO],
+            components[Components.BTN_REDO],
         ],
     )
     
@@ -120,6 +122,8 @@ def create_chat_handlers(components, states):
             components[Components.BTN_DIFF],
             states[States.CURRENT_VIEW_STATE],
             mode_radio,
+            components[Components.BTN_UNDO],
+            components[Components.BTN_REDO],
         ],
     )
     

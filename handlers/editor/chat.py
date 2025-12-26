@@ -44,6 +44,8 @@ def chat_handler(section, message, history, current_log):
             gr.update(), # btn_diff
             "Checkpoint", # current_view_state
             gr.update(), # mode_radio (no change)
+            gr.update(), # btn_undo - unchanged
+            gr.update(), # btn_redo - unchanged
         )
 
     # Append user message to history
@@ -74,6 +76,8 @@ def chat_handler(section, message, history, current_log):
         gr.update(), # btn_diff
         "Checkpoint", # current_view_state
         gr.update(), # mode_radio (no change)
+        gr.update(), # btn_undo - unchanged
+        gr.update(), # btn_redo - unchanged
     )
 
     # Call LLM
@@ -99,6 +103,13 @@ def chat_handler(section, message, history, current_log):
             drafts_mgr = DraftsManager()
             drafts_mgr.add_chat(section, new_content)
             
+            # Calculate undo/redo visibility - check if undo stack exists for this CHAT draft
+            # Note: redo is always False when creating a new draft, as redo stack is cleared on new creation
+            from state.undo_manager import UndoManager
+            um = UndoManager()
+            undo_visible = um.has_undo(section, DraftType.CHAT.value)
+            redo_visible = False  # Redo stack is cleared when creating a new draft
+            
             final_log, final_status = append_status(new_log, f"✅ ({section}) Plot King made edits.")
             draft_display_name = DraftsManager.get_display_name(DraftType.CHAT.value)
             yield (
@@ -123,6 +134,8 @@ def chat_handler(section, message, history, current_log):
                 gr.update(visible=True, interactive=True), # btn_diff
                 "Draft", # current_view_state
                 gr.update(interactive=False), # mode_radio - DISABLED
+                gr.update(visible=undo_visible), # btn_undo - show only if undo stack exists
+                gr.update(visible=redo_visible), # btn_redo - show only if redo stack exists
             )
         else:
             # No edits, just chat
@@ -149,6 +162,8 @@ def chat_handler(section, message, history, current_log):
                 gr.update(), # btn_diff - unchanged
                 "Checkpoint", # current_view_state - unchanged
                 gr.update(), # mode_radio - unchanged
+                gr.update(), # btn_undo - unchanged
+                gr.update(), # btn_redo - unchanged
             )
             
     except Exception as e:
@@ -177,6 +192,8 @@ def chat_handler(section, message, history, current_log):
             gr.update(), # btn_diff - unchanged
             "Checkpoint", # current_view_state - unchanged
             gr.update(), # mode_radio - unchanged
+            gr.update(), # btn_undo - unchanged
+            gr.update(), # btn_redo - unchanged
         )
 
 
