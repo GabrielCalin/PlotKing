@@ -125,7 +125,7 @@ def apply_updates(section, plan, current_log, create_epoch, draft_content):
         drafts_mgr.add_original(section, draft_to_save)
         
         # Reuse draft_accept_selected to save and get common return values
-        draft_panel, status_strip_upd, status_log_val, epoch_val, status_row_upd, status_label_upd, btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, viewer_upd, mode_radio_upd, view_actions_row_upd, pending_plan_val, generated_drafts_choices_state_val, keep_drafts_choices_state_val = draft_accept_selected(
+        draft_panel, status_strip_upd, status_log_val, epoch_val, status_row_upd, status_label_upd, btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, viewer_upd, mode_radio_upd, view_actions_row_upd, pending_plan_val, generated_drafts_choices_state_val, keep_drafts_choices_state_val, btn_undo_upd, btn_redo_upd = draft_accept_selected(
             current_section=section,
             original_selected=[section],
             generated_selected=[],
@@ -170,7 +170,9 @@ def apply_updates(section, plan, current_log, create_epoch, draft_content):
             gr.update(visible=False), # 30. chat_keep_draft_btn
             view_actions_row_upd, # 31. view_actions_row - from draft_accept_selected
             generated_drafts_choices_state_val, # 32. generated_drafts_choices_state - from draft_accept_selected
-            keep_drafts_choices_state_val # 33. keep_drafts_choices_state - from draft_accept_selected
+            keep_drafts_choices_state_val, # 33. keep_drafts_choices_state - from draft_accept_selected
+            btn_undo_upd, # 34. btn_undo - from draft_accept_selected
+            btn_redo_upd # 35. btn_redo - from draft_accept_selected
         )
         return
 
@@ -214,7 +216,9 @@ def apply_updates(section, plan, current_log, create_epoch, draft_content):
         gr.update(visible=False), # 31. chat_keep_draft_btn
         gr.update(visible=False), # 32. view_actions_row
         [],                        # 33. generated_drafts_choices_state
-        []                         # 34. keep_drafts_choices_state
+        [],                        # 34. keep_drafts_choices_state
+        gr.update(visible=False), # 35. btn_undo - hide during pipeline
+        gr.update(visible=False)  # 36. btn_redo - hide during pipeline
     )
 
     # Call editor_apply which yields pipeline results
@@ -269,7 +273,9 @@ def apply_updates(section, plan, current_log, create_epoch, draft_content):
             gr.update(visible=False), # 31. chat_keep_draft_btn
             gr.update(visible=False), # 32. view_actions_row
             generated_drafts,          # 33. generated_drafts_choices_state
-            []                         # 34. keep_drafts_choices_state
+            [],                        # 34. keep_drafts_choices_state
+            gr.update(),               # 35. btn_undo - NO CHANGE
+            gr.update()                # 36. btn_redo - NO CHANGE
         )
             
         # Check stop after processing and saving results
@@ -326,7 +332,9 @@ def apply_updates(section, plan, current_log, create_epoch, draft_content):
         gr.update(visible=False), # 31. chat_keep_draft_btn
         gr.update(visible=False), # 32. view_actions_row
         generated_drafts,          # 33. generated_drafts_choices_state
-        []                         # 34. keep_drafts_choices_state
+        [],                        # 34. keep_drafts_choices_state
+        gr.update(),               # 35. btn_undo - NO CHANGE
+        gr.update()                # 36. btn_redo - NO CHANGE
     )
 
 def draft_accept_all(current_section, plan, current_log, create_epoch):

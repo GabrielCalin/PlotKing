@@ -161,6 +161,8 @@ def create_validate_handlers(components, states):
             components[Components.VIEW_ACTIONS_ROW],
             generated_drafts_choices_state,
             keep_drafts_choices_state,
+            components[Components.BTN_UNDO],
+            components[Components.BTN_REDO],
         ],
         queue=True,
     )
