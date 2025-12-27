@@ -133,12 +133,22 @@ def force_edit(section, draft, current_log, create_epoch):
 def discard_from_manual(section, current_log):
     """Revert changes from Manual edit mode — unlock Section + Mode, show Start Editing button."""
     from state.drafts_manager import DraftsManager, DraftType
+    from state.undo_manager import UndoManager
+    
     drafts_mgr = DraftsManager()
     
     if section and drafts_mgr.has_type(section, DraftType.USER.value):
         text = drafts_mgr.get_content(section, DraftType.USER.value)
+        has_draft = True
+        draft_type = DraftType.USER.value
     else:
         text = get_section_content(section) or "_Empty_"
+        has_draft = False
+        draft_type = None
+        
+    # Calculate undo/redo visibility for remaining draft
+    um = UndoManager()
+    undo_visible, redo_visible, undo_icon, redo_icon, _ = um.get_undo_redo_state(section, draft_type, has_draft)
         
     new_log, status_update = append_status(current_log, f"🗑️ ({section}) Changes discarded.")
     return (
@@ -163,6 +173,8 @@ def discard_from_manual(section, current_log):
         new_log,
         gr.update(visible=True), # status_row (visible)
         gr.update(visible=False),# hide Keep Draft
+        gr.update(visible=undo_visible, value=undo_icon), # btn_undo
+        gr.update(visible=redo_visible, value=redo_icon), # btn_redo
     )
 
 def continue_edit(section, current_log):

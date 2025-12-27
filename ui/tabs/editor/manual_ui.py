@@ -92,6 +92,8 @@ def create_manual_handlers(components, states):
             status_log,
             components[Components.STATUS_ROW],
             keep_draft_btn,
+            components[Components.BTN_UNDO],
+            components[Components.BTN_REDO],
         ],
     )
 
