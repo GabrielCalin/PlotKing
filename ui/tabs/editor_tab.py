@@ -185,7 +185,17 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             label = f"**Viewing:** <span style='color:red;'>{draft_display_name}</span>"
         
             # Undo/Redo Logic for Draft view
-            undo_upd, redo_upd, counts = _calculate_undo_redo(name, draft_type, True)
+            # Hide if validation is active, EXCEPT for Generated Drafts
+            is_generated_draft = draft_type == DraftType.GENERATED.value
+            if pending_plan is not None and (pending_plan == {} or isinstance(pending_plan, dict)) and not is_generated_draft:
+                # Validation is active, hide undo/redo buttons (except for Generated Drafts)
+                undo_upd = gr.update(visible=False)
+                redo_upd = gr.update(visible=False)
+                counts = None
+            else:
+                # Normal logic - calculate undo/redo visibility
+                # For Generated Drafts, always calculate even if pending_plan exists
+                undo_upd, redo_upd, counts = _calculate_undo_redo(name, draft_type, True)
             
             if counts:
                 current, total = counts
