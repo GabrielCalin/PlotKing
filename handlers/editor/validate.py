@@ -5,6 +5,7 @@ from handlers.editor.utils import append_status, remove_highlight, sort_drafts
 from handlers.editor.constants import Components, States
 from state.checkpoint_manager import save_section, get_checkpoint, get_section_content
 from state.drafts_manager import DraftsManager, DraftType
+from state.undo_manager import UndoManager
 
 _stop_flag = False
 
@@ -392,7 +393,6 @@ def draft_revert_all(current_section, plan, current_log):
     content, view_state, mode_label, btns_visible = _get_revert_state(current_section)
     
     # Calculate undo/redo visibility - after revert only USER draft can remain, so use normal icons
-    from state.undo_manager import UndoManager
     um = UndoManager()
     undo_visible, redo_visible, undo_icon, redo_icon, _ = um.get_undo_redo_state(
         current_section, 
@@ -486,7 +486,6 @@ def draft_accept_selected(current_section, original_selected, generated_selected
     content, view_state, mode_label, btns_visible = _get_revert_state(current_section)
     
     # Calculate undo/redo visibility
-    from state.undo_manager import UndoManager
     um = UndoManager()
     undo_visible, redo_visible, undo_icon, redo_icon, _ = um.get_undo_redo_state(
         current_section,
@@ -638,6 +637,14 @@ def discard_from_validate(section, current_log):
     """Revert changes from validation — return to View mode. Preserve USER drafts if exists."""
     new_log, status_update = append_status(current_log, f"🗑️ ({section}) Changes discarded.")
     content, view_state, mode_label, btns_visible = _get_revert_state(section)
+    
+    # Calculate undo/redo visibility based on remaining draft
+    drafts_mgr = DraftsManager()
+    draft_type = drafts_mgr.get_type(section) if drafts_mgr.has(section) else None
+    um = UndoManager()
+    undo_visible, redo_visible, undo_icon, redo_icon, _ = um.get_undo_redo_state(
+        section, draft_type, btns_visible
+    )
 
     return (
         gr.update(value=content, visible=True),     # 1. Viewer
@@ -675,8 +682,8 @@ def discard_from_validate(section, current_log):
         gr.update(visible=btns_visible),             # view_actions_row
         [],                                          # generated_drafts_choices_state
         [],                                           # keep_drafts_choices_state
-        gr.update(visible=btns_visible),             # btn_undo - hide if no draft
-        gr.update(visible=btns_visible),             # btn_redo - hide if no draft
+        gr.update(visible=undo_visible, value=undo_icon), # btn_undo
+        gr.update(visible=redo_visible, value=redo_icon), # btn_redo
     )
 
 def mark_drafts_to_keep_handler(generated_selected, current_generated_choices, current_keep_choices):
