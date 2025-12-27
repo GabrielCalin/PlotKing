@@ -6,9 +6,6 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## ✍️ Phase 4 — Story Growth and Structure Control
 
-18. **Global Draft System**  
-   - Support for undo/redo drafts.
-
 19. **Add Empty Chapters (Writer Assist Mode)**  
    - Let users insert blank chapters manually as a Fill type draft.
    - Fill drafts are not taken into account for other drafts validation until commited.
@@ -171,8 +168,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 | Feature | Status |
 |----------|--------|
-| **Global Draft System** | ⏳ In Progress |
-| **Add Empty Chapters (Writer Assist Mode)** | ⏳ Planned |
+| **Add Empty Chapters** | ⏳ In Progress |
 | **Infill Chapters** | ⏳ Planned |
 | **Outfill Chapters** | ⏳ Planned |
 | **Advanced Settings** | ⏳ Planned |

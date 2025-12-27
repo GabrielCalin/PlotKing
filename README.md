@@ -39,17 +39,19 @@ The creation process uses your refined input and is broken down into logical ste
 The Editor tab is where the magic happens. It's not just a text box; it's a suite of tools:
 
 #### 🛠️ Editing Modes
--   **View**: Read-only mode to browse your story.
+-   **View**: Read-only mode to browse your story and manage drafts.
 -   **Manual**: Standard text editor for direct changes.
 -   **Rewrite**: Select text and give instructions (e.g., "Make this dialogue more intense", "Describe the setting in more detail").
 -   **Chat**: Converse with "Plot King" to brainstorm ideas or request changes for the current section.
 
-#### 🛡️ Validation System & Drafts
+Instead of saving changes directly to your story, you can choose to save them as **user drafts**. This allows you to continue editing across different modes, refining your work until you're satisfied. You can validate and apply your changes to the final story only when you're ready.
+
+#### 🛡️ Validation System & Generated Drafts
 ![Validation](images/validation.png) 
 
-When you make changes (manually or via AI), PlotKing doesn't just overwrite your work. It creates **Drafts**.
+When you make changes that impact subsequent sections, PlotKing automatically generates **drafts** for those affected sections.
 -   **Impact Analysis**: The system analyzes how your change affects future chapters.
--   **Auto-Generated Drafts**: If your change alters the plot significantly, the AI suggests updates for subsequent chapters to maintain continuity.
+-   **Auto-Generated Drafts**: If your change alters the plot significantly, the AI automatically creates draft updates for subsequent chapters to maintain continuity.
 -   **Draft Review**: You can compare the **Checkpoint** (original) vs. **Draft** (new) using the **comparison view** ⚖️.
 -   **Selective Apply**: You choose which AI suggestions to keep and which to discard or regenerate.
 
@@ -62,11 +64,7 @@ Turn your project into a finished product:
 -   **Cover Art**: Upload a custom cover image or **generate** one using AI, to be embedded in the EPUB.
 
 ### 5. Project Management
-Keep your stories organized:
--   **Save**: Persist your current progress, including plot and chapters.
--   **Load**: Switch between different story projects easily.
--   **New**: Start a fresh project from scratch.
--   **Delete**: Remove unwanted projects.
+Save, load, create, and delete story projects.
 
 ### 6. Settings: Configurable Models & Task Assignments
 -   **Models**: Support for multiple providers (LM Studio, OpenAI, Gemini, xAI for LLM tasks; Automatic1111 and OpenAI for image generation) with configurable local endpoints, API keys, and provider-specific settings.
