@@ -543,11 +543,6 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_strip, status_log, view_actions_row, btn_undo, btn_redo]
     )
     
-    view_force_edit_btn.click(
-        fn=force_edit_draft_handler,
-        inputs=[selected_section, status_log, create_sections_epoch],
-        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_strip, status_log, create_sections_epoch, view_actions_row, btn_undo, btn_redo]
-    )
 
     # Logic: Undo/Redo Handlers
     def _undo_handler(section, view_state):
