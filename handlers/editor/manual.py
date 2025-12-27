@@ -4,15 +4,10 @@ from handlers.editor.utils import append_status, remove_highlight
 from handlers.editor.constants import Components, States
 from state.checkpoint_manager import get_section_content, save_section
 
-def start_edit(curr_text, section, current_log):
+def start_edit(section, current_log):
     """Switch to edit mode — locks Section + Mode. Prefer Draft if exists."""
-    from state.drafts_manager import DraftsManager, DraftType
-    drafts_mgr = DraftsManager()
-    
-    if section and drafts_mgr.has_type(section, DraftType.USER.value):
-        content = drafts_mgr.get_content(section, DraftType.USER.value)
-    else:
-        content = get_section_content(section) or ""
+    from state.overall_state import get_current_section_content
+    content = get_current_section_content(section)
         
     new_log, status_update = append_status(current_log, f"✍️ ({section}) Editing started.")
     return (
@@ -64,8 +59,7 @@ def confirm_edit(section, draft, current_log):
         gr.update(value=new_log, visible=True),  # show Process Log with "Validation started"
         new_log,  # status_log state
         gr.update(visible=False), # status_row (hidden)
-        gr.update(visible=False), # hide Keep Draft
-        draft # 22. current_md state update
+        gr.update(visible=False) # hide Keep Draft
     )
     
     # Apelează validarea (blocant) - folosim draft_clean (fără highlight-uri)
@@ -96,16 +90,22 @@ def confirm_edit(section, draft, current_log):
         gr.update(value=final_log, visible=True),  # show Process Log with "Validation completed"
         final_log,  # status_log state
         gr.update(visible=False), # status_row (hidden)
-        gr.update(visible=False), # hide Keep Draft
-        draft # 22. current_md state update
+        gr.update(visible=False) # hide Keep Draft
     )
 
 def force_edit(section, draft, current_log, create_epoch):
     """Apply changes directly without validation — unlocks controls after."""
+    from state.drafts_manager import DraftsManager
     save_section(section, draft)
     updated_text = draft
     new_log, status_update = append_status(current_log, f"⚡ ({section}) Synced (forced).")
     new_create_epoch = (create_epoch or 0) + 1  # Bump create_sections_epoch to notify Create tab
+    
+    # Remove all drafts after saving to checkpoint
+    drafts_manager = DraftsManager()
+    if drafts_manager.has(section):
+        drafts_manager.remove(section)
+    
     return (
         gr.update(value=updated_text, visible=True),  # update and show Viewer
         status_update,
@@ -117,22 +117,38 @@ def force_edit(section, draft, current_log, create_epoch):
         gr.update(visible=False),   # hide Rewrite Section (will be shown by _toggle_mode if Rewrite mode)
         gr.update(interactive=True),# unlock Mode
         gr.update(interactive=True),# unlock Section
-        updated_text,  # update current_md state with the new text
         new_log,
         new_create_epoch,  # bump create_sections_epoch to notify Create tab
         gr.update(visible=True), # status_row (visible)
         gr.update(visible=False),# hide Keep Draft
+        gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), # status_label - show Checkpoint
+        gr.update(visible=False), # btn_checkpoint - hide (no draft = no point showing C only)
+        gr.update(visible=False), # btn_draft - hide
+        gr.update(visible=False), # btn_diff - hide
+        "Checkpoint", # current_view_state
+        gr.update(visible=False), # btn_undo - hide
+        gr.update(visible=False), # btn_redo - hide
     )
 
 def discard_from_manual(section, current_log):
     """Revert changes from Manual edit mode — unlock Section + Mode, show Start Editing button."""
     from state.drafts_manager import DraftsManager, DraftType
+    from state.undo_manager import UndoManager
+    
     drafts_mgr = DraftsManager()
     
     if section and drafts_mgr.has_type(section, DraftType.USER.value):
         text = drafts_mgr.get_content(section, DraftType.USER.value)
+        has_draft = True
+        draft_type = DraftType.USER.value
     else:
         text = get_section_content(section) or "_Empty_"
+        has_draft = False
+        draft_type = None
+        
+    # Calculate undo/redo visibility for remaining draft
+    um = UndoManager()
+    undo_visible, redo_visible, undo_icon, redo_icon, _ = um.get_undo_redo_state(section, draft_type, has_draft)
         
     new_log, status_update = append_status(current_log, f"🗑️ ({section}) Changes discarded.")
     return (
@@ -157,6 +173,8 @@ def discard_from_manual(section, current_log):
         new_log,
         gr.update(visible=True), # status_row (visible)
         gr.update(visible=False),# hide Keep Draft
+        gr.update(visible=undo_visible, value=undo_icon), # btn_undo
+        gr.update(visible=redo_visible, value=redo_icon), # btn_redo
     )
 
 def continue_edit(section, current_log):
@@ -189,5 +207,7 @@ def continue_edit(section, current_log):
         gr.update(visible=False),   # 21. hide chat keep draft
         gr.update(visible=False),   # 22. hide view actions row
         None,  # 23. pending_plan - clear plan when going back
+        gr.update(visible=False),   # 24. btn_undo - hide (not in view mode)
+        gr.update(visible=False),   # 25. btn_redo - hide (not in view mode)
     )
 

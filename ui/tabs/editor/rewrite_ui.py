@@ -55,9 +55,7 @@ def create_rewrite_handlers(components, states):
     selected_text = states[States.SELECTED_TEXT]
     selected_indices = states[States.SELECTED_INDICES]
     selected_section = states[States.SELECTED_SECTION]
-    current_md = states[States.CURRENT_MD]
     status_log = states[States.STATUS_LOG]
-    original_text_before_rewrite = states[States.ORIGINAL_TEXT_BEFORE_REWRITE]
     create_sections_epoch = states[States.CREATE_SECTIONS_EPOCH]
     
     editor_tb.select(
@@ -74,7 +72,7 @@ def create_rewrite_handlers(components, states):
 
     rewrite_btn.click(
         fn=rewrite_handler,
-        inputs=[selected_section, selected_text, selected_indices, rewrite_instructions_tb, current_md, status_log, original_text_before_rewrite],
+        inputs=[selected_section, selected_text, selected_indices, rewrite_instructions_tb, status_log],
         outputs=[
             editor_tb,
             components[Components.VIEWER_MD],
@@ -85,10 +83,8 @@ def create_rewrite_handlers(components, states):
             rewrite_btn,
             components[Components.STATUS_STRIP],
             status_log,
-            current_md,
             selected_text,
             selected_indices,
-            original_text_before_rewrite,
             components[Components.MODE_RADIO],
         ],
         queue=True,
@@ -111,15 +107,13 @@ def create_rewrite_handlers(components, states):
             status_log,
             selected_text,
             selected_indices,
-            current_md,
-            original_text_before_rewrite,
             components[Components.MODE_RADIO],
         ],
     )
 
     rewrite_force_edit_btn.click(
         fn=rewrite_force_edit,
-        inputs=[selected_section, current_md, status_log, create_sections_epoch],
+        inputs=[selected_section, components[Components.VIEWER_MD], status_log, create_sections_epoch],
         outputs=[
             components[Components.VIEWER_MD],
             components[Components.STATUS_STRIP],
@@ -138,18 +132,24 @@ def create_rewrite_handlers(components, states):
             rewrite_section,
             components[Components.MODE_RADIO],
             components[Components.SECTION_DROPDOWN],
-            current_md,
             status_log,
             create_sections_epoch,
             selected_text,
             selected_indices,
             components[Components.STATUS_ROW],
+            components[Components.STATUS_LABEL],
+            components[Components.BTN_CHECKPOINT],
+            components[Components.BTN_DRAFT],
+            components[Components.BTN_DIFF],
+            states[States.CURRENT_VIEW_STATE],
+            components[Components.BTN_UNDO],
+            components[Components.BTN_REDO],
         ],
     )
 
     rewrite_validate_btn.click(
         fn=rewrite_validate,
-        inputs=[selected_section, current_md, status_log],
+        inputs=[selected_section, components[Components.VIEWER_MD], status_log],
         outputs=[
             components[Components.VALIDATION_BOX],
             states[States.PENDING_PLAN],
@@ -168,7 +168,6 @@ def create_rewrite_handlers(components, states):
             components[Components.STATUS_STRIP],
             status_log,
             components[Components.STATUS_ROW], # Add output to match Manual validate
-            current_md,
         ],
         queue=True,
         show_progress=False,
@@ -176,7 +175,7 @@ def create_rewrite_handlers(components, states):
     
     rewrite_keep_draft_btn.click(
         fn=keep_draft_handler,
-        inputs=[selected_section, current_md, status_log],
+        inputs=[selected_section, components[Components.VIEWER_MD], status_log],
         outputs=[
             components[Components.VIEWER_MD],
             components[Components.STATUS_LABEL],

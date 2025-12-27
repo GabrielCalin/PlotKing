@@ -5,6 +5,7 @@ from handlers.editor.utils import append_status, remove_highlight, sort_drafts
 from handlers.editor.constants import Components, States
 from state.checkpoint_manager import save_section, get_checkpoint, get_section_content
 from state.drafts_manager import DraftsManager, DraftType
+from state.undo_manager import UndoManager
 
 _stop_flag = False
 
@@ -103,16 +104,15 @@ def editor_apply(section, draft, plan):
     return drafts
 
 
-def apply_updates(section, plan, current_log, create_epoch, current_mode, draft_content):
+def apply_updates(section, plan, current_log, create_epoch, draft_content):
     """
     Apply updates based on validation plan or save directly if no plan.
-    Consolidated logic: 'draft_content' is the single source of truth (from current_md state).
+    draft_content should be passed directly from the calling mode (Manual/Rewrite/Chat).
     """
     # Reset stop signal at start
     clear_stop()
     
-    # Simple logic: the incoming draft_content IS the candidate text.
-    # We just ensure it's clean of any UI-specific markup (like red highlights).
+    # Ensure content is clean of UI-specific markup (like red highlights)
     draft_to_save = remove_highlight(draft_content or "")
     
     base_log = current_log
@@ -126,7 +126,7 @@ def apply_updates(section, plan, current_log, create_epoch, current_mode, draft_
         drafts_mgr.add_original(section, draft_to_save)
         
         # Reuse draft_accept_selected to save and get common return values
-        draft_panel, status_strip_upd, status_log_val, epoch_val, status_row_upd, status_label_upd, btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, viewer_upd, current_md_val, mode_radio_upd, view_actions_row_upd, pending_plan_val, generated_drafts_choices_state_val, keep_drafts_choices_state_val = draft_accept_selected(
+        draft_panel, status_strip_upd, status_log_val, epoch_val, status_row_upd, status_label_upd, btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, viewer_upd, mode_radio_upd, view_actions_row_upd, pending_plan_val, generated_drafts_choices_state_val, keep_drafts_choices_state_val, btn_undo_upd, btn_redo_upd = draft_accept_selected(
             current_section=section,
             original_selected=[section],
             generated_selected=[],
@@ -154,7 +154,6 @@ def apply_updates(section, plan, current_log, create_epoch, current_mode, draft_
             gr.update(visible=False), # rewrite_section
             mode_radio_upd, # mode_radio - re-enabled
             gr.update(interactive=True), # section_dropdown
-            current_md_val, # current_md - from draft_accept_selected
             new_log, # status_log - updated message
             epoch_val, # create_sections_epoch - from draft_accept_selected
             gr.update(visible=False), # draft_review_panel - HIDDEN (no drafts to review)
@@ -172,7 +171,9 @@ def apply_updates(section, plan, current_log, create_epoch, current_mode, draft_
             gr.update(visible=False), # 30. chat_keep_draft_btn
             view_actions_row_upd, # 31. view_actions_row - from draft_accept_selected
             generated_drafts_choices_state_val, # 32. generated_drafts_choices_state - from draft_accept_selected
-            keep_drafts_choices_state_val # 33. keep_drafts_choices_state - from draft_accept_selected
+            keep_drafts_choices_state_val, # 33. keep_drafts_choices_state - from draft_accept_selected
+            btn_undo_upd, # 34. btn_undo - from draft_accept_selected
+            btn_redo_upd # 35. btn_redo - from draft_accept_selected
         )
         return
 
@@ -199,7 +200,6 @@ def apply_updates(section, plan, current_log, create_epoch, current_mode, draft_
         gr.update(visible=False), # rewrite_section
         gr.update(value="View", interactive=False), # mode_radio - DISABLED
         gr.update(interactive=True), # section_dropdown
-        draft_to_save, # current_md - update with draft
         new_log, # status_log
         current_epoch, # create_sections_epoch
         gr.update(visible=False), # draft_review_panel
@@ -217,7 +217,9 @@ def apply_updates(section, plan, current_log, create_epoch, current_mode, draft_
         gr.update(visible=False), # 31. chat_keep_draft_btn
         gr.update(visible=False), # 32. view_actions_row
         [],                        # 33. generated_drafts_choices_state
-        []                         # 34. keep_drafts_choices_state
+        [],                        # 34. keep_drafts_choices_state
+        gr.update(visible=False), # 35. btn_undo - hide during pipeline
+        gr.update(visible=False)  # 36. btn_redo - hide during pipeline
     )
 
     # Call editor_apply which yields pipeline results
@@ -255,7 +257,6 @@ def apply_updates(section, plan, current_log, create_epoch, current_mode, draft_
             gr.update(visible=False), # rewrite_section
             gr.update(value="View", interactive=False), # mode_radio - DISABLED
             gr.update(interactive=True), # section_dropdown
-            draft_to_save, # current_md - keep updating state just in case
             new_log,
             current_epoch,
             gr.update(visible=False), # draft_review_panel
@@ -273,7 +274,9 @@ def apply_updates(section, plan, current_log, create_epoch, current_mode, draft_
             gr.update(visible=False), # 31. chat_keep_draft_btn
             gr.update(visible=False), # 32. view_actions_row
             generated_drafts,          # 33. generated_drafts_choices_state
-            []                         # 34. keep_drafts_choices_state
+            [],                        # 34. keep_drafts_choices_state
+            gr.update(),               # 35. btn_undo - NO CHANGE
+            gr.update()                # 36. btn_redo - NO CHANGE
         )
             
         # Check stop after processing and saving results
@@ -313,7 +316,6 @@ def apply_updates(section, plan, current_log, create_epoch, current_mode, draft_
         gr.update(visible=False), # rewrite_section
         gr.update(value="View", interactive=False), # mode_radio - DISABLED during review
         gr.update(interactive=True), # section_dropdown
-        viewer_content, # current_md
         new_log,
         current_epoch,
         gr.update(visible=True), # SHOW Draft Review Panel
@@ -331,7 +333,9 @@ def apply_updates(section, plan, current_log, create_epoch, current_mode, draft_
         gr.update(visible=False), # 31. chat_keep_draft_btn
         gr.update(visible=False), # 32. view_actions_row
         generated_drafts,          # 33. generated_drafts_choices_state
-        []                         # 34. keep_drafts_choices_state
+        [],                        # 34. keep_drafts_choices_state
+        gr.update(),               # 35. btn_undo - NO CHANGE
+        gr.update()                # 36. btn_redo - NO CHANGE
     )
 
 def draft_accept_all(current_section, plan, current_log, create_epoch):
@@ -367,12 +371,13 @@ def draft_accept_all(current_section, plan, current_log, create_epoch):
         gr.update(visible=btns_visible, interactive=btns_visible), # 9. btn_diff
         view_state,               # 10. current_view_state
         gr.update(value=content), # 11. Update viewer
-        content,                  # 12. Update current_md
-        gr.update(value="View", interactive=True), # 13. mode_radio
-        gr.update(visible=btns_visible),   # 14. view_actions_row
-        None, # 15. pending_plan
-        [],   # 16. generated_drafts_choices_state
-        []    # 17. keep_drafts_choices_state
+        gr.update(value="View", interactive=True), # 12. mode_radio
+        gr.update(visible=btns_visible),   # 13. view_actions_row
+        None, # 14. pending_plan
+        [],   # 15. generated_drafts_choices_state
+        [],    # 16. keep_drafts_choices_state
+        gr.update(visible=False, value="↩️"), # 17. btn_undo - no drafts after accept all
+        gr.update(visible=False, value="↪️"), # 18. btn_redo - no drafts after accept all
     )
 
 def draft_revert_all(current_section, plan, current_log):
@@ -386,6 +391,14 @@ def draft_revert_all(current_section, plan, current_log):
     
     new_log, status_update = append_status(current_log, "❌ All drafts reverted.")
     content, view_state, mode_label, btns_visible = _get_revert_state(current_section)
+    
+    # Calculate undo/redo visibility - after revert only USER draft can remain, so use normal icons
+    um = UndoManager()
+    undo_visible, redo_visible, undo_icon, redo_icon, _ = um.get_undo_redo_state(
+        current_section, 
+        drafts_mgr.get_type(current_section) if btns_visible and drafts_mgr.has(current_section) else None,
+        btns_visible and drafts_mgr.has(current_section)
+    )
 
     return (
         gr.update(visible=False), # 1. Hide draft panel
@@ -398,12 +411,13 @@ def draft_revert_all(current_section, plan, current_log):
         gr.update(visible=btns_visible, interactive=btns_visible), # 8. btn_diff
         view_state,               # 9. current_view_state
         gr.update(value=content), # 10. Update viewer
-        content,                  # 11. Update current_md
-        gr.update(value="View", interactive=True), # 12. mode_radio
+        gr.update(value="View", interactive=True), # 11. mode_radio
         gr.update(visible=btns_visible),   # 13. view_actions_row
         None, # 14. pending_plan
         [],   # 15. generated_drafts_choices_state
-        []    # 16. keep_drafts_choices_state
+        [],    # 16. keep_drafts_choices_state
+        gr.update(visible=undo_visible, value=undo_icon), # 17. btn_undo - normal icon (no Generated after revert)
+        gr.update(visible=redo_visible, value=redo_icon), # 18. btn_redo - normal icon (no Generated after revert)
     )
 
 
@@ -471,6 +485,14 @@ def draft_accept_selected(current_section, original_selected, generated_selected
     
     content, view_state, mode_label, btns_visible = _get_revert_state(current_section)
     
+    # Calculate undo/redo visibility
+    um = UndoManager()
+    undo_visible, redo_visible, undo_icon, redo_icon, _ = um.get_undo_redo_state(
+        current_section,
+        drafts_mgr.get_type(current_section) if btns_visible and drafts_mgr.has(current_section) else None,
+        btns_visible and drafts_mgr.has(current_section)
+    )
+    
     # Return updates explicitly
     return (
         gr.update(visible=False), # 1. Hide panel
@@ -484,12 +506,13 @@ def draft_accept_selected(current_section, original_selected, generated_selected
         gr.update(visible=btns_visible, interactive=btns_visible), # 9. btn_diff
         view_state,               # 10. current_view_state
         gr.update(value=content), # 11. Update viewer
-        content,                  # 12. Update current_md
-        gr.update(value="View", interactive=True), # 13. mode_radio
-        gr.update(visible=btns_visible),   # 14. view_actions_row
-        None, # 15. pending_plan
-        [],   # 16. generated_drafts_choices_state
-        []    # 17. keep_drafts_choices_state
+        gr.update(value="View", interactive=True), # 12. mode_radio
+        gr.update(visible=btns_visible),   # 13. view_actions_row
+        None, # 14. pending_plan
+        [],   # 15. generated_drafts_choices_state
+        [],    # 16. keep_drafts_choices_state
+        gr.update(visible=undo_visible, value=undo_icon), # 17. btn_undo
+        gr.update(visible=redo_visible, value=redo_icon), # 18. btn_redo
     )
 
 def draft_regenerate_selected(generated_selected, plan, section, current_log, create_epoch, keep_drafts_choices_state=None):
@@ -614,6 +637,14 @@ def discard_from_validate(section, current_log):
     """Revert changes from validation — return to View mode. Preserve USER drafts if exists."""
     new_log, status_update = append_status(current_log, f"🗑️ ({section}) Changes discarded.")
     content, view_state, mode_label, btns_visible = _get_revert_state(section)
+    
+    # Calculate undo/redo visibility based on remaining draft
+    drafts_mgr = DraftsManager()
+    draft_type = drafts_mgr.get_type(section) if drafts_mgr.has(section) else None
+    um = UndoManager()
+    undo_visible, redo_visible, undo_icon, redo_icon, _ = um.get_undo_redo_state(
+        section, draft_type, btns_visible
+    )
 
     return (
         gr.update(value=content, visible=True),     # 1. Viewer
@@ -635,7 +666,6 @@ def discard_from_validate(section, current_log):
         gr.update(interactive=True),                 # section_dropdown
         status_update,                               # status_strip
         new_log,                                     # status_log
-        content,                                     # current_md
         gr.update(visible=False),                    # draft_review_panel
         gr.update(choices=[], value=[]),             # generated_drafts_list
         gr.update(visible=True),                     # status_row
@@ -651,7 +681,9 @@ def discard_from_validate(section, current_log):
         gr.update(visible=False),                    # chat_keep_draft_btn
         gr.update(visible=btns_visible),             # view_actions_row
         [],                                          # generated_drafts_choices_state
-        []                                           # keep_drafts_choices_state
+        [],                                           # keep_drafts_choices_state
+        gr.update(visible=undo_visible, value=undo_icon), # btn_undo
+        gr.update(visible=redo_visible, value=redo_icon), # btn_redo
     )
 
 def mark_drafts_to_keep_handler(generated_selected, current_generated_choices, current_keep_choices):
@@ -735,10 +767,11 @@ def update_draft_buttons(original_selected, generated_selected):
         gr.update(interactive=can_regenerate)  # btn_draft_regenerate
     )
 
-def regenerate_dispatcher(section, editor_text, current_log, mode, current_md):
+def regenerate_dispatcher(section, text_to_validate, current_log):
     """
     Handles 'Regenerate' button click.
-    Re-runs validation logic based on the current mode and updates ONLY the Validation UI.
+    Re-runs validation logic and updates ONLY the Validation UI.
+    text_to_validate should be passed directly from the calling mode (Manual/Rewrite/Chat).
     """
     # 1. Common "Loading" State
     new_log, status_update = append_status(current_log, f"🔄 ({section}) Regenerating validation...")
@@ -756,19 +789,11 @@ def regenerate_dispatcher(section, editor_text, current_log, mode, current_md):
         new_log # status_log
     )
     
-    # 2. Determine text to validate
-    text_to_validate = ""
-    if mode == "Manual":
-        text_to_validate = editor_text
-    else:
-        # Chat and Rewrite modes use current_md state
-        text_to_validate = current_md
-        
-    # 3. Run Validation Logic
+    # 2. Run Validation Logic
     msg, plan = editor_validate(section, text_to_validate)
     final_log, final_status = append_status(new_log, f"✅ ({section}) Validation completed.")
     
-    # 4. Common "Done" State
+    # 3. Common "Done" State
     yield (
         gr.update(value=msg), # validation_box
         plan, # pending_plan

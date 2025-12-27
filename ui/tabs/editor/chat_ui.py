@@ -55,8 +55,6 @@ def create_chat_handlers(components, states):
     # Shared components
     selected_section = states[States.SELECTED_SECTION]
     chat_history = states[States.CHAT_HISTORY]
-    current_md = states[States.CURRENT_MD]
-    initial_text_before_chat = states[States.INITIAL_TEXT_BEFORE_CHAT]
     status_log = states[States.STATUS_LOG]
     create_sections_epoch = states[States.CREATE_SECTIONS_EPOCH]
     mode_radio = components[Components.MODE_RADIO]
@@ -70,7 +68,7 @@ def create_chat_handlers(components, states):
 
     chat_send_btn.click(
         fn=chat_handler,
-        inputs=[selected_section, chat_input, chat_history, current_md, initial_text_before_chat, status_log],
+        inputs=[selected_section, chat_input, chat_history, status_log],
         outputs=[
             chat_input,
             chat_history,
@@ -84,7 +82,6 @@ def create_chat_handlers(components, states):
             chat_keep_draft_btn,
             status_log,
             components[Components.STATUS_STRIP],
-            current_md,
             chat_input,
             chat_clear_btn,
             components[Components.STATUS_ROW],
@@ -94,13 +91,15 @@ def create_chat_handlers(components, states):
             components[Components.BTN_DIFF],
             states[States.CURRENT_VIEW_STATE],
             mode_radio,
+            components[Components.BTN_UNDO],
+            components[Components.BTN_REDO],
         ],
     )
     
     # Also trigger send on Enter in chat_input
     chat_input.submit(
         fn=chat_handler,
-        inputs=[selected_section, chat_input, chat_history, current_md, initial_text_before_chat, status_log],
+        inputs=[selected_section, chat_input, chat_history, status_log],
         outputs=[
             chat_input,
             chat_history,
@@ -114,7 +113,6 @@ def create_chat_handlers(components, states):
             chat_keep_draft_btn,
             status_log,
             components[Components.STATUS_STRIP],
-            current_md,
             chat_input,
             chat_clear_btn,
             components[Components.STATUS_ROW],
@@ -124,6 +122,8 @@ def create_chat_handlers(components, states):
             components[Components.BTN_DIFF],
             states[States.CURRENT_VIEW_STATE],
             mode_radio,
+            components[Components.BTN_UNDO],
+            components[Components.BTN_REDO],
         ],
     )
     
@@ -150,7 +150,6 @@ def create_chat_handlers(components, states):
             components[Components.CHAT_ACTIONS_ROW_2],
             chat_validate_btn,
             chat_keep_draft_btn,
-            current_md,
             status_log,
             components[Components.STATUS_STRIP],
             components[Components.STATUS_ROW],
@@ -160,12 +159,14 @@ def create_chat_handlers(components, states):
             components[Components.BTN_DIFF],
             states[States.CURRENT_VIEW_STATE],
             mode_radio,
+            components[Components.BTN_UNDO],
+            components[Components.BTN_REDO],
         ]
     )
     
     chat_force_edit_btn.click(
         fn=force_edit_handler,
-        inputs=[selected_section, current_md, status_log, create_sections_epoch],
+        inputs=[selected_section, status_log, create_sections_epoch],
         outputs=[
             components[Components.VIEWER_MD],
             components[Components.CHAT_ACTIONS_ROW_1],
@@ -174,7 +175,6 @@ def create_chat_handlers(components, states):
             components[Components.CHAT_ACTIONS_ROW_2],
             chat_validate_btn,
             chat_keep_draft_btn,
-            current_md,
             status_log,
             components[Components.STATUS_STRIP],
             create_sections_epoch,
@@ -185,12 +185,14 @@ def create_chat_handlers(components, states):
             components[Components.BTN_DIFF],
             states[States.CURRENT_VIEW_STATE],
             mode_radio,
+            components[Components.BTN_UNDO],
+            components[Components.BTN_REDO],
         ]
     )
     
     chat_validate_btn.click(
         fn=validate_handler,
-        inputs=[selected_section, current_md, status_log],
+        inputs=[selected_section, status_log],
         outputs=[
             components[Components.CHAT_SECTION],
             components[Components.VALIDATION_TITLE],
@@ -205,12 +207,19 @@ def create_chat_handlers(components, states):
             components[Components.STATUS_STRIP],
             states[States.PENDING_PLAN],
             mode_radio,
+            components[Components.BTN_UNDO],
+            components[Components.BTN_REDO],
         ]
     )
 
+    def chat_keep_draft_wrapper(section, status_log):
+        from state.overall_state import get_current_section_content
+        content = get_current_section_content(section)
+        return keep_draft_handler(section, content, status_log)
+    
     chat_keep_draft_btn.click(
-        fn=keep_draft_handler,
-        inputs=[selected_section, current_md, status_log],
+        fn=chat_keep_draft_wrapper,
+        inputs=[selected_section, status_log],
         outputs=[
             components[Components.VIEWER_MD],
             components[Components.STATUS_LABEL],

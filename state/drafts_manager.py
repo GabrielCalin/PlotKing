@@ -54,18 +54,39 @@ class DraftsManager:
         """Add a draft marked as USER (explicit keep draft)."""
         if section not in self._drafts:
             self._drafts[section] = {}
+        
+        # History tracking
+        from state.undo_manager import UndoManager
+        if DraftType.USER.value in self._drafts[section]:
+            old_content = self._drafts[section][DraftType.USER.value]
+            UndoManager().register_change(section, DraftType.USER.value, old_content)
+            
         self._drafts[section][DraftType.USER.value] = content
         
     def add_generated(self, section: str, content: str) -> None:
         """Add a draft marked as GENERATED (AI pipeline)."""
         if section not in self._drafts:
             self._drafts[section] = {}
+            
+        # History tracking
+        from state.undo_manager import UndoManager
+        if DraftType.GENERATED.value in self._drafts[section]:
+            old_content = self._drafts[section][DraftType.GENERATED.value]
+            UndoManager().register_change(section, DraftType.GENERATED.value, old_content)
+            
         self._drafts[section][DraftType.GENERATED.value] = content
 
     def add_chat(self, section: str, content: str) -> None:
         """Add a draft marked as CHAT (Chat session)."""
         if section not in self._drafts:
             self._drafts[section] = {}
+            
+        # History tracking
+        from state.undo_manager import UndoManager
+        if DraftType.CHAT.value in self._drafts[section]:
+            old_content = self._drafts[section][DraftType.CHAT.value]
+            UndoManager().register_change(section, DraftType.CHAT.value, old_content)
+
         self._drafts[section][DraftType.CHAT.value] = content
         
     def remove(self, section: str, draft_type: str = None) -> bool:
@@ -74,21 +95,39 @@ class DraftsManager:
         If draft_type is provided, remove only that specific draft type.
         If draft_type is None, remove ALL drafts for the section.
         """
+        from state.undo_manager import UndoManager
+
         if section not in self._drafts:
             return False
             
         if draft_type:
             if draft_type in self._drafts[section]:
                 del self._drafts[section][draft_type]
+                
+                # Clear history for this type
+                UndoManager().clear_history(section, draft_type)
+                
                 # If section dict empty, remove section key
                 if not self._drafts[section]:
                     del self._drafts[section]
                 return True
             return False
         else:
+            # Clear ALL history for this section before removing it
+            UndoManager().clear_history(section)
+            
             # Remove entire section entry
             del self._drafts[section]
             return True
+
+    def set_content_no_history(self, section: str, draft_type: str, content: str) -> None:
+        """
+        Set draft content WITHOUT triggering UndoManager history push.
+        Used by UndoManager to restore previous versions.
+        """
+        if section not in self._drafts:
+            self._drafts[section] = {}
+        self._drafts[section][draft_type] = content
         
     def get_content(self, section: str, draft_type: str = None) -> Optional[str]:
         """

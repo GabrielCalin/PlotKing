@@ -7,14 +7,7 @@ from state.checkpoint_manager import get_sections_list, get_section_content
 
 # Import helpers and logic from new modules
 from handlers.editor.utils import (
-    append_status,
-    update_instructions_from_preset,
     diff_handler,
-)
-from handlers.editor.view import (
-    validate_draft_handler,
-    discard_draft_handler,
-    force_edit_draft_handler,
 )
 from state.drafts_manager import DraftsManager
 import ui.tabs.editor.manual_ui as Manual
@@ -28,19 +21,14 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     # ====== States ======
     selected_section = gr.State(None)
-    current_md = gr.State("")
     pending_plan = gr.State(None)
     status_log = gr.State("")  # pentru append la status_strip
     selected_text = gr.State("")  # textul selectat de user
     selected_indices = gr.State(None)  # [start, end] indices pentru selectie
 
-    original_text_before_rewrite = gr.State("")  # textul original inainte de rewrite
-    # current_drafts removed - using DraftsManager singleton
-    
     # Chat States
     from ui.tabs.editor.chat_ui import PLOT_KING_GREETING
     chat_history = gr.State([{"role": "assistant", "content": PLOT_KING_GREETING}])
-    initial_text_before_chat = gr.State("")
     current_view_state = gr.State("Checkpoint") # Checkpoint, Draft, Diff
     generated_drafts_choices = gr.State([])
 
@@ -88,6 +76,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             with gr.Row(elem_classes=["editor-status-row"], visible=True) as status_row:
                 status_label = gr.Markdown("**Viewing:** Checkpoint")
                 with gr.Row(elem_classes=["editor-status-buttons"]):
+                    btn_undo = gr.Button("↩️", size="sm", elem_classes=["status-btn"], visible=False)
+                    btn_redo = gr.Button("↪️", size="sm", elem_classes=["status-btn"], visible=False)
                     btn_checkpoint = gr.Button("C", size="sm", elem_classes=["status-btn"], interactive=True)
                     btn_draft = gr.Button("D", size="sm", elem_classes=["status-btn"], visible=False)
                     btn_diff = gr.Button("⚖️", size="sm", elem_classes=["status-btn"], visible=False)
@@ -144,11 +134,22 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             gr.update(choices=sections, value=default),  # dropdown update
         )
 
+    def _calculate_undo_redo(section, draft_type, show_ui):
+        from state.undo_manager import UndoManager
+        
+        um = UndoManager()
+        undo_visible, redo_visible, undo_icon, redo_icon, counts = um.get_undo_redo_state(section, draft_type, show_ui)
+        
+        return gr.update(visible=undo_visible, value=undo_icon), gr.update(visible=redo_visible, value=redo_icon), counts
+
     def _load_section_content(name, pending_plan):
         if not name:
-            return "_Empty_", None, "", gr.update(value="View"), "", [], "", \
+            from ui.tabs.editor.chat_ui import PLOT_KING_GREETING
+            initial_greeting = [{"role": "assistant", "content": PLOT_KING_GREETING}]
+            return "_Empty_", None, gr.update(value="View"), initial_greeting, \
                    gr.update(visible=True), gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), \
-                   gr.update(interactive=False, visible=False), gr.update(visible=False), gr.update(visible=False), "Checkpoint", gr.update(visible=False)
+                   gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), "Checkpoint", gr.update(visible=False), \
+                   gr.update(visible=False), gr.update(visible=False)
         
         # Check if we have a draft for this section
         drafts_mgr = DraftsManager()
@@ -159,12 +160,33 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         from state.drafts_manager import DraftType
         if draft_type == DraftType.USER.value:
             is_user_draft = True
+            
+        undo_upd = gr.update(visible=False)
+        redo_upd = gr.update(visible=False)
         
         if has_draft:
             text = drafts_mgr.get_content(name)
             view_state = "Draft"
             draft_display_name = DraftsManager.get_display_name(draft_type)
             label = f"**Viewing:** <span style='color:red;'>{draft_display_name}</span>"
+        
+            # Undo/Redo Logic for Draft view
+            # Hide if validation is active, EXCEPT for Generated Drafts
+            is_generated_draft = draft_type == DraftType.GENERATED.value
+            if pending_plan is not None and (pending_plan == {} or isinstance(pending_plan, dict)) and not is_generated_draft:
+                # Validation is active, hide undo/redo buttons (except for Generated Drafts)
+                undo_upd = gr.update(visible=False)
+                redo_upd = gr.update(visible=False)
+                counts = None
+            else:
+                # Normal logic - calculate undo/redo visibility
+                # For Generated Drafts, always calculate even if pending_plan exists
+                undo_upd, redo_upd, counts = _calculate_undo_redo(name, draft_type, True)
+            
+            if counts:
+                current, total = counts
+                label = f"**Viewing:** <span style='color:red;'>Generated Draft {current}/{total}</span>"
+
             # Buttons: Checkpoint (visible, enabled), Draft (visible), Diff (visible)
             btn_cp_upd = gr.update(visible=True, interactive=True)
             btn_dr_upd = gr.update(visible=True, interactive=True)
@@ -189,13 +211,13 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         from ui.tabs.editor.chat_ui import PLOT_KING_GREETING
         initial_greeting = [{"role": "assistant", "content": PLOT_KING_GREETING}]
         
-        return text, name, text, gr.update(value="View"), text, initial_greeting, text, \
-               gr.update(visible=True), gr.update(value=label), btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, view_actions_upd
+        return text, name, gr.update(value="View"), initial_greeting, \
+               gr.update(visible=True), gr.update(value=label), btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, view_actions_upd, undo_upd, redo_upd
 
 
 
 
-    def _toggle_mode(mode, current_text, section, view_state, pending_plan):
+    def _toggle_mode(mode, section, view_state, pending_plan):
         from state.drafts_manager import DraftsManager, DraftType
         drafts_mgr = DraftsManager()
         
@@ -232,10 +254,14 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         status_label_upd = gr.update()
         
         # Determine viewer content and status bar items
+        # Default undo/redo to hidden if no section
+        undo_upd = gr.update(visible=False)
+        redo_upd = gr.update(visible=False)
+        
         if section:
             # Re-fetch what should be shown based on preserved view_state (Checkpoint/Draft/Diff)
             # This is CRITICAL for user's report about preserving view selection.
-            content, label, state = _handle_view_switch(view_state, section)
+            content, label, state, undo_upd, redo_upd = _handle_view_switch(view_state, section, pending_plan)
             viewer_update = gr.update(visible=(mode != "Rewrite"), value=content)
             status_label_upd = gr.update(value=label)
             
@@ -246,7 +272,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 view_actions_upd = gr.update(visible=is_user_draft and not pending_plan)
         else:
             # Fallback if no section
-            viewer_update = gr.update(visible=(mode != "Rewrite"), value=current_text) if current_text else gr.update(visible=(mode != "Rewrite"))
+            viewer_update = gr.update(visible=(mode != "Rewrite"))
+            status_label_upd = gr.update()
 
         editor_update = gr.update(visible=False)
         if mode == "Rewrite":
@@ -264,14 +291,15 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             editor_update, viewer_update,
             rewrite_btn_upd, rewrite_action_upd, rewrite_action_upd, rewrite_action_upd, rewrite_keep_draft_upd,
             status_row_upd, view_actions_upd, status_label_upd,
-            chat_actions_row_1_upd, chat_actions_row_2_upd
+            chat_actions_row_1_upd, chat_actions_row_2_upd,
+            undo_upd, redo_upd
         )
 
     # ====== Dispatchers ======
 
 
 
-    def _continue_edit_dispatcher(section, current_log, current_mode, current_md):
+    def _continue_edit_dispatcher(section, current_log, current_mode, viewer_md=None):
         """Dispatch continue_edit to appropriate module based on mode."""
         from handlers.editor.rewrite import continue_edit as rewrite_continue_edit
         from handlers.editor.chat import continue_edit as chat_continue_edit
@@ -279,7 +307,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         from handlers.editor.view import continue_edit as view_continue_edit
         
         if current_mode == "Rewrite":
-            return rewrite_continue_edit(section, current_log, current_md)
+            return rewrite_continue_edit(section, current_log, viewer_md)
         elif current_mode == "Chat":
             return chat_continue_edit(section, current_log)
         elif current_mode == "View":
@@ -295,13 +323,13 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     view_discard_btn.click(
         fn=discard_draft_handler,
         inputs=[selected_section, status_log],
-        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_log, status_strip, view_actions_row, current_md, initial_text_before_chat]
+        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_log, status_strip, view_actions_row, btn_undo, btn_redo]
     )
     
     view_force_edit_btn.click(
         fn=force_edit_draft_handler,
         inputs=[selected_section, status_log, create_sections_epoch],
-        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_log, status_strip, create_sections_epoch, view_actions_row, current_md, initial_text_before_chat]
+        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_log, status_strip, create_sections_epoch, view_actions_row, btn_undo, btn_redo]
     )
 
     # ---- Sincronizare Create → Editor: refresh Editor tab când Create modifică checkpoint ----
@@ -319,61 +347,87 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     section_dropdown.change(
         fn=_load_section_content,
         inputs=[section_dropdown, pending_plan],
-        outputs=[viewer_md, selected_section, current_md, mode_radio, original_text_before_rewrite, chat_history, initial_text_before_chat, status_row, status_label, btn_checkpoint, btn_draft, btn_diff, current_view_state, view_actions_row],
+        outputs=[viewer_md, selected_section, mode_radio, chat_history, status_row, status_label, btn_checkpoint, btn_draft, btn_diff, current_view_state, view_actions_row, btn_undo, btn_redo],
     )
 
-    def _handle_view_switch(view_type, section):
+    def _handle_view_switch(view_type, section, pending_plan=None):
+        from state.undo_manager import UndoManager
+        from state.drafts_manager import DraftsManager, DraftType
+
         if not section:
-            return gr.update(), "**Viewing:** <span style='color:red;'>Checkpoint</span>", "Checkpoint"
+            return gr.update(), "**Viewing:** <span style='color:red;'>Checkpoint</span>", "Checkpoint", gr.update(visible=False), gr.update(visible=False)
             
         original_text = get_section_content(section) or ""
         
         drafts_mgr = DraftsManager()
-        draft_text = drafts_mgr.get_content(section) if drafts_mgr.has(section) else ""
+        has_draft = drafts_mgr.has(section)
+        draft_type = drafts_mgr.get_type(section) if has_draft else None
+        draft_text = drafts_mgr.get_content(section) if has_draft else ""
         
+        # Undo/Redo Logic - hide if validation is active, EXCEPT for Generated Drafts
+        # pending_plan can be {} (placeholder) during validation or a dict (actual plan) after validation completes
+        is_generated_draft = draft_type == DraftType.GENERATED.value
+        if pending_plan is not None and (pending_plan == {} or isinstance(pending_plan, dict)) and not is_generated_draft:
+            # Validation is active (either running with placeholder {} or completed with plan dict)
+            # Hide undo/redo buttons, EXCEPT for Generated Drafts which should show undo/redo
+            undo_upd = gr.update(visible=False)
+            redo_upd = gr.update(visible=False)
+            counts = None
+        else:
+            # Normal logic - calculate undo/redo visibility
+            # For Generated Drafts, always calculate even if pending_plan exists
+            show_undo_redo = (view_type == "Draft" or view_type == "Diff") and has_draft
+            undo_upd, redo_upd, counts = _calculate_undo_redo(section, draft_type, show_undo_redo)
+
         if view_type == "Checkpoint":
-            return original_text, "**Viewing:** <span style='color:red;'>Checkpoint</span>", "Checkpoint"
+            return original_text, "**Viewing:** <span style='color:red;'>Checkpoint</span>", "Checkpoint", undo_upd, redo_upd
+            
         elif view_type == "Draft":
-            draft_type = drafts_mgr.get_type(section)
             draft_display_name = DraftsManager.get_display_name(draft_type)
-            return draft_text, f"**Viewing:** <span style='color:red;'>{draft_display_name}</span>", "Draft"
+            
+            # Special Label for Generated with counts
+            if counts:
+                current, total = counts
+                draft_display_name = f"Generated Draft {current}/{total}"
+                
+            return draft_text, f"**Viewing:** <span style='color:red;'>{draft_display_name}</span>", "Draft", undo_upd, redo_upd
+            
         elif view_type == "Diff":
             # Reuse diff_handler logic from utils to get HTML
-            # diff_handler returns (viewer_update, btn_update)
-            # We call it with diff_btn_label="⚖️ Diff" (which matches diff_label) to get the diff HTML
             diff_res, _ = diff_handler(draft_text, original_text, "⚖️ Diff", diff_label="⚖️ Diff")
-            # diff_res is a gr.update(value=html)
-            return diff_res['value'], "**Viewing:** <span style='color:red;'>Diff</span>", "Diff"
-        return original_text, "**Viewing:** <span style='color:red;'>Checkpoint</span>", "Checkpoint"
+            return diff_res['value'], "**Viewing:** <span style='color:red;'>Diff</span>", "Diff", undo_upd, redo_upd
+            
+        return original_text, "**Viewing:** <span style='color:red;'>Checkpoint</span>", "Checkpoint", undo_upd, redo_upd
 
     btn_checkpoint.click(
-        fn=lambda s: _handle_view_switch("Checkpoint", s),
-        inputs=[selected_section],
-        outputs=[viewer_md, status_label, current_view_state]
+        fn=lambda s, p: _handle_view_switch("Checkpoint", s, p),
+        inputs=[selected_section, pending_plan],
+        outputs=[viewer_md, status_label, current_view_state, btn_undo, btn_redo]
     )
     
     btn_draft.click(
-        fn=lambda s: _handle_view_switch("Draft", s),
-        inputs=[selected_section],
-        outputs=[viewer_md, status_label, current_view_state]
+        fn=lambda s, p: _handle_view_switch("Draft", s, p),
+        inputs=[selected_section, pending_plan],
+        outputs=[viewer_md, status_label, current_view_state, btn_undo, btn_redo]
     )
     
     btn_diff.click(
-        fn=lambda s: _handle_view_switch("Diff", s),
-        inputs=[selected_section],
-        outputs=[viewer_md, status_label, current_view_state]
+        fn=lambda s, p: _handle_view_switch("Diff", s, p),
+        inputs=[selected_section, pending_plan],
+        outputs=[viewer_md, status_label, current_view_state, btn_undo, btn_redo]
     )
 
 
     mode_radio.change(
         fn=_toggle_mode,
-        inputs=[mode_radio, current_md, selected_section, current_view_state, pending_plan],
+        inputs=[mode_radio, selected_section, current_view_state, pending_plan],
         outputs=[
             manual_section, start_edit_btn, confirm_btn, discard_btn, force_edit_btn, keep_draft_btn,
             rewrite_section, chat_section, validation_section, editor_tb, viewer_md, 
             rewrite_btn, rewrite_validate_btn, rewrite_discard_btn, rewrite_force_edit_btn, rewrite_keep_draft_btn, 
             status_row, view_actions_row, status_label,
-            chat_actions_row_1, chat_actions_row_2
+            chat_actions_row_1, chat_actions_row_2,
+            btn_undo, btn_redo
         ]
     )
     
@@ -433,6 +487,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         Components.BTN_CHECKPOINT: btn_checkpoint,
         Components.BTN_DRAFT: btn_draft,
         Components.BTN_DIFF: btn_diff,
+        Components.BTN_UNDO: btn_undo,
+        Components.BTN_REDO: btn_redo,
         Components.VIEWER_MD: viewer_md,
         Components.EDITOR_TB: editor_tb,
         Components.STATUS_STRIP: status_strip,
@@ -452,14 +508,11 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     # States dictionary
     states = {
         States.SELECTED_SECTION: selected_section,
-        States.CURRENT_MD: current_md,
         States.PENDING_PLAN: pending_plan,
         States.STATUS_LOG: status_log,
         States.SELECTED_TEXT: selected_text,
         States.SELECTED_INDICES: selected_indices,
-        States.ORIGINAL_TEXT_BEFORE_REWRITE: original_text_before_rewrite,
         States.CHAT_HISTORY: chat_history,
-        States.INITIAL_TEXT_BEFORE_CHAT: initial_text_before_chat,
         States.CURRENT_VIEW_STATE: current_view_state,
         States.CREATE_SECTIONS_EPOCH: create_sections_epoch,
         States.GENERATED_DRAFTS_CHOICES: generated_drafts_choices,
@@ -478,8 +531,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         # Outputs: UI changes to show Validation Box etc. similar to Manual/Rewrite validate
         outputs=[
              validation_box, pending_plan, validation_title, validation_section, apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
-             viewer_md, editor_tb, mode_radio, section_dropdown, status_strip, status_log, view_actions_row,
-             current_md
+             viewer_md, editor_tb, mode_radio, section_dropdown, status_strip, status_log, view_actions_row, btn_undo, btn_redo
         ],
         queue=True,
         show_progress=False,
@@ -488,13 +540,47 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     view_discard_btn.click(
         fn=discard_draft_handler,
         inputs=[selected_section, status_log],
-        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_strip, status_log, view_actions_row, current_md, initial_text_before_chat]
+        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_strip, status_log, view_actions_row, btn_undo, btn_redo]
+    )
+    
+
+    # Logic: Undo/Redo Handlers
+    def _undo_handler(section, view_state):
+        from state.undo_manager import UndoManager
+        from state.drafts_manager import DraftsManager
+        
+        dm = DraftsManager()
+        if section and dm.has(section):
+             dtype = dm.get_type(section)
+             if dtype:
+                 UndoManager().undo(section, dtype)
+        
+        # Refresh view
+        return _handle_view_switch(view_state, section)
+
+    def _redo_handler(section, view_state):
+        from state.undo_manager import UndoManager
+        from state.drafts_manager import DraftsManager
+        
+        dm = DraftsManager()
+        if section and dm.has(section):
+             dtype = dm.get_type(section)
+             if dtype:
+                 UndoManager().redo(section, dtype)
+        
+        # Refresh view
+        return _handle_view_switch(view_state, section)
+
+    btn_undo.click(
+        fn=_undo_handler,
+        inputs=[selected_section, current_view_state],
+        outputs=[viewer_md, status_label, current_view_state, btn_undo, btn_redo]
     )
 
-    view_force_edit_btn.click(
-        fn=force_edit_draft_handler,
-        inputs=[selected_section, status_log, create_sections_epoch],
-        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_strip, status_log, create_sections_epoch, view_actions_row, current_md, initial_text_before_chat]
+    btn_redo.click(
+        fn=_redo_handler,
+        inputs=[selected_section, current_view_state],
+        outputs=[viewer_md, status_label, current_view_state, btn_undo, btn_redo]
     )
 
     return section_dropdown

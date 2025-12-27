@@ -6,7 +6,7 @@ from state.checkpoint_manager import get_section_content, save_section
 def discard_draft_handler(section, status_log):
     """Discard USER draft and revert view to Checkpoint content."""
     if not section:
-        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), status_log, gr.update(visible=False), "", ""
+        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), status_log, gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
         
     drafts_mgr = DraftsManager()
     if drafts_mgr.has(section):
@@ -30,14 +30,14 @@ def discard_draft_handler(section, status_log):
         new_log,
         status_update,
         gr.update(visible=False),  # view_actions_row update
-        original_text,  # current_md - update to checkpoint content
-        original_text,  # initial_text_before_chat - update to checkpoint content
+        gr.update(visible=False), # btn_undo - hide
+        gr.update(visible=False), # btn_redo - hide
     )
 
 def force_edit_draft_handler(section, status_log, create_sections_epoch):
     """Write draft content directly to Checkpoint and remove draft."""
     if not section:
-        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), status_log, create_sections_epoch, gr.update(visible=False), "", ""
+        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), status_log, gr.update(), create_sections_epoch, gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
         
     drafts_mgr = DraftsManager()
     content = drafts_mgr.get_content(section)
@@ -47,7 +47,7 @@ def force_edit_draft_handler(section, status_log, create_sections_epoch):
         new_log, status_update = append_status(status_log, msg)
         # Get checkpoint content as fallback
         checkpoint_content = get_section_content(section) or ""
-        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), status_update, new_log, create_sections_epoch, gr.update(visible=False), checkpoint_content, checkpoint_content
+        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), new_log, status_update, create_sections_epoch, gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
     
     # Save to checkpoint
     save_section(section, content)
@@ -70,8 +70,8 @@ def force_edit_draft_handler(section, status_log, create_sections_epoch):
         status_update,
         new_epoch,
         gr.update(visible=False), # view_actions_row
-        content,  # current_md - update to checkpoint content (saved draft)
-        content,  # initial_text_before_chat - update to checkpoint content (saved draft)
+        gr.update(visible=False), # btn_undo - hide
+        gr.update(visible=False), # btn_redo - hide
     )
 
 def validate_draft_handler(section, current_log):
@@ -81,12 +81,12 @@ def validate_draft_handler(section, current_log):
     from state.drafts_manager import DraftType
     
     if not section:
-        return [gr.update()] * 14 # Fallback
+        return [gr.update()] * 13 # Fallback
         
     drafts_mgr = DraftsManager()
     if not drafts_mgr.has_type(section, DraftType.USER.value):
         new_log, status_update = append_status(current_log, f"⚠️ No user draft found for validation in {section}.")
-        return [gr.update(), None, gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), status_update, new_log, gr.update(), gr.update()]
+        return [gr.update(), None, gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), status_update, new_log, gr.update()]
 
     draft_content = drafts_mgr.get_content(section, DraftType.USER.value)
     
@@ -96,7 +96,7 @@ def validate_draft_handler(section, current_log):
     # Yield loading state immediately
     yield (
         gr.update(value="🔄 Validating...", visible=True), # validation_box
-        None, # pending_plan
+        {}, # pending_plan - placeholder to indicate validation is running
         gr.update(visible=True), # validation_title
         gr.update(visible=True), # validation_section
         gr.update(visible=False), # apply_updates_btn
@@ -110,7 +110,8 @@ def validate_draft_handler(section, current_log):
         status_update, # status_strip
         new_log, # status_log
         gr.update(visible=False), # view_actions_row (hide immediately)
-        draft_content # 15. current_md state update
+        gr.update(visible=False), # btn_undo - hide during validation
+        gr.update(visible=False), # btn_redo - hide during validation
     )
 
     # Run validation
@@ -134,7 +135,8 @@ def validate_draft_handler(section, current_log):
         final_status, # status_strip
         final_log, # status_log
         gr.update(visible=False), # view_actions_row (hide while looking at validation results)
-        draft_content # 15. current_md state update
+        gr.update(visible=False), # btn_undo - hide during validation
+        gr.update(visible=False), # btn_redo - hide during validation
     )
     
 def continue_edit(section, current_log):
@@ -142,8 +144,22 @@ def continue_edit(section, current_log):
     new_log, status_update = append_status(current_log, f"🔁 ({section}) Return to view.")
     
     from state.drafts_manager import DraftsManager, DraftType
+    from state.undo_manager import UndoManager
+    
     drafts_mgr = DraftsManager()
     is_user_draft = drafts_mgr.has_type(section, DraftType.USER.value)
+    
+    # Calculate undo/redo visibility for the draft that remains
+    um = UndoManager()
+    draft_type = None
+    if is_user_draft:
+        draft_type = DraftType.USER.value
+    elif drafts_mgr.has(section):
+        draft_type = drafts_mgr.get_type(section)
+    
+    undo_visible, redo_visible, undo_icon, redo_icon, _ = um.get_undo_redo_state(
+        section, draft_type, draft_type is not None
+    )
 
     return (
         gr.update(visible=False),   # hide Validation Title
@@ -171,4 +187,6 @@ def continue_edit(section, current_log):
         gr.update(visible=False),   # hide chat keep draft
         gr.update(visible=is_user_draft), # SHOW view actions row if it was a user draft
         None,  # 23. pending_plan - clear plan when going back
+        gr.update(visible=undo_visible, value=undo_icon), # btn_undo - show if available
+        gr.update(visible=redo_visible, value=redo_icon), # btn_redo - show if available
     )
