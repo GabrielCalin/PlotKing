@@ -150,18 +150,16 @@ def continue_edit(section, current_log):
     is_user_draft = drafts_mgr.has_type(section, DraftType.USER.value)
     
     # Calculate undo/redo visibility for the draft that remains
-    undo_visible = False
-    redo_visible = False
+    um = UndoManager()
+    draft_type = None
     if is_user_draft:
-        um = UndoManager()
-        undo_visible = um.has_undo(section, DraftType.USER.value)
-        redo_visible = um.has_redo(section, DraftType.USER.value)
+        draft_type = DraftType.USER.value
     elif drafts_mgr.has(section):
-        # Check for other draft types (CHAT, GENERATED, etc.)
         draft_type = drafts_mgr.get_type(section)
-        um = UndoManager()
-        undo_visible = um.has_undo(section, draft_type)
-        redo_visible = um.has_redo(section, draft_type)
+    
+    undo_visible, redo_visible, undo_icon, redo_icon, _ = um.get_undo_redo_state(
+        section, draft_type, draft_type is not None
+    )
 
     return (
         gr.update(visible=False),   # hide Validation Title
@@ -189,6 +187,6 @@ def continue_edit(section, current_log):
         gr.update(visible=False),   # hide chat keep draft
         gr.update(visible=is_user_draft), # SHOW view actions row if it was a user draft
         None,  # 23. pending_plan - clear plan when going back
-        gr.update(visible=undo_visible), # btn_undo - show if available
-        gr.update(visible=redo_visible), # btn_redo - show if available
+        gr.update(visible=undo_visible, value=undo_icon), # btn_undo - show if available
+        gr.update(visible=redo_visible, value=redo_icon), # btn_redo - show if available
     )

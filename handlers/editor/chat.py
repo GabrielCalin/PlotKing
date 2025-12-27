@@ -107,7 +107,7 @@ def chat_handler(section, message, history, current_log):
             # Note: redo is always False when creating a new draft, as redo stack is cleared on new creation
             from state.undo_manager import UndoManager
             um = UndoManager()
-            undo_visible = um.has_undo(section, DraftType.CHAT.value)
+            undo_visible, redo_visible, undo_icon, redo_icon, _ = um.get_undo_redo_state(section, DraftType.CHAT.value, True)
             redo_visible = False  # Redo stack is cleared when creating a new draft
             
             final_log, final_status = append_status(new_log, f"✅ ({section}) Plot King made edits.")
@@ -134,8 +134,8 @@ def chat_handler(section, message, history, current_log):
                 gr.update(visible=True, interactive=True), # btn_diff
                 "Draft", # current_view_state
                 gr.update(interactive=False), # mode_radio - DISABLED
-                gr.update(visible=undo_visible), # btn_undo - show only if undo stack exists
-                gr.update(visible=redo_visible), # btn_redo - show only if redo stack exists
+                gr.update(visible=undo_visible, value=undo_icon), # btn_undo - show only if undo stack exists
+                gr.update(visible=redo_visible, value=redo_icon), # btn_redo - show only if redo stack exists
             )
         else:
             # No edits, just chat
@@ -285,8 +285,7 @@ def discard_handler(section, current_log):
         mode_label = f"**Viewing:** <span style='color:red;'>{draft_display_name}</span>"
         view_state = "Draft"
         btns_visible = True
-        undo_visible = um.has_undo(section, DraftType.USER.value)
-        redo_visible = um.has_redo(section, DraftType.USER.value)
+        undo_visible, redo_visible, undo_icon, redo_icon, _ = um.get_undo_redo_state(section, DraftType.USER.value, True)
         
     else:
         # Fallback to Checkpoint - no undo/redo available
@@ -294,8 +293,7 @@ def discard_handler(section, current_log):
         mode_label = "**Viewing:** <span style='color:red;'>Checkpoint</span>"
         view_state = "Checkpoint"
         btns_visible = False
-        undo_visible = False
-        redo_visible = False
+        undo_visible, redo_visible, undo_icon, redo_icon, _ = um.get_undo_redo_state(section, None, False)
     
     return (
         gr.update(value=updated_text), # viewer_md
@@ -314,8 +312,8 @@ def discard_handler(section, current_log):
         gr.update(visible=btns_visible, interactive=btns_visible), # btn_diff
         view_state, # current_view_state
         gr.update(interactive=True), # mode_radio
-        gr.update(visible=undo_visible), # btn_undo - hide if no draft
-        gr.update(visible=redo_visible), # btn_redo - hide if no draft
+        gr.update(visible=undo_visible, value=undo_icon), # btn_undo - hide if no draft
+        gr.update(visible=redo_visible, value=redo_icon), # btn_redo - hide if no draft
     )
 
 def force_edit_handler(section, current_log, create_epoch):
@@ -368,12 +366,10 @@ def continue_edit(section, current_log):
     drafts_mgr = DraftsManager()
     has_chat_draft = drafts_mgr.has_type(section, DraftType.CHAT.value)
     
-    undo_visible = False
-    redo_visible = False
-    if has_chat_draft:
-        um = UndoManager()
-        undo_visible = um.has_undo(section, DraftType.CHAT.value)
-        redo_visible = um.has_redo(section, DraftType.CHAT.value)
+    um = UndoManager()
+    undo_visible, redo_visible, undo_icon, redo_icon, _ = um.get_undo_redo_state(
+        section, DraftType.CHAT.value if has_chat_draft else None, has_chat_draft
+    )
     
     return (
         gr.update(visible=False),   # hide Validation Title
@@ -401,7 +397,7 @@ def continue_edit(section, current_log):
         gr.update(visible=True),    # 21. SHOW Chat Keep Draft
         gr.update(visible=False),   # 22. hide view actions row
         None,  # 23. pending_plan - clear plan when going back
-        gr.update(visible=undo_visible), # btn_undo - show if available
-        gr.update(visible=redo_visible), # btn_redo - show if available
+        gr.update(visible=undo_visible, value=undo_icon), # btn_undo - show if available
+        gr.update(visible=redo_visible, value=redo_icon), # btn_redo - show if available
     )
 

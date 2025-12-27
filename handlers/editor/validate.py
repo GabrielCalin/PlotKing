@@ -367,8 +367,8 @@ def draft_accept_all(current_section, plan, current_log, create_epoch):
         None, # 14. pending_plan
         [],   # 15. generated_drafts_choices_state
         [],    # 16. keep_drafts_choices_state
-        gr.update(visible=btns_visible), # 17. btn_undo - hide if no draft
-        gr.update(visible=btns_visible), # 18. btn_redo - hide if no draft
+        gr.update(visible=False, value="↩️"), # 17. btn_undo - no drafts after accept all
+        gr.update(visible=False, value="↪️"), # 18. btn_redo - no drafts after accept all
     )
 
 def draft_revert_all(current_section, plan, current_log):
@@ -386,14 +386,11 @@ def draft_revert_all(current_section, plan, current_log):
     # Calculate undo/redo visibility - after revert only USER draft can remain, so use normal icons
     from state.undo_manager import UndoManager
     um = UndoManager()
-    undo_visible = False
-    redo_visible = False
-    
-    if btns_visible and drafts_mgr.has(current_section):
-        remaining_draft_type = drafts_mgr.get_type(current_section)
-        if remaining_draft_type:
-            undo_visible = um.has_undo(current_section, remaining_draft_type)
-            redo_visible = um.has_redo(current_section, remaining_draft_type)
+    undo_visible, redo_visible, undo_icon, redo_icon, _ = um.get_undo_redo_state(
+        current_section, 
+        drafts_mgr.get_type(current_section) if btns_visible and drafts_mgr.has(current_section) else None,
+        btns_visible and drafts_mgr.has(current_section)
+    )
 
     return (
         gr.update(visible=False), # 1. Hide draft panel
@@ -411,8 +408,8 @@ def draft_revert_all(current_section, plan, current_log):
         None, # 14. pending_plan
         [],   # 15. generated_drafts_choices_state
         [],    # 16. keep_drafts_choices_state
-        gr.update(visible=undo_visible, value="↩️"), # 17. btn_undo - normal icon (no Generated after revert)
-        gr.update(visible=redo_visible, value="↪️"), # 18. btn_redo - normal icon (no Generated after revert)
+        gr.update(visible=undo_visible, value=undo_icon), # 17. btn_undo - normal icon (no Generated after revert)
+        gr.update(visible=redo_visible, value=redo_icon), # 18. btn_redo - normal icon (no Generated after revert)
     )
 
 
@@ -480,6 +477,15 @@ def draft_accept_selected(current_section, original_selected, generated_selected
     
     content, view_state, mode_label, btns_visible = _get_revert_state(current_section)
     
+    # Calculate undo/redo visibility
+    from state.undo_manager import UndoManager
+    um = UndoManager()
+    undo_visible, redo_visible, undo_icon, redo_icon, _ = um.get_undo_redo_state(
+        current_section,
+        drafts_mgr.get_type(current_section) if btns_visible and drafts_mgr.has(current_section) else None,
+        btns_visible and drafts_mgr.has(current_section)
+    )
+    
     # Return updates explicitly
     return (
         gr.update(visible=False), # 1. Hide panel
@@ -498,8 +504,8 @@ def draft_accept_selected(current_section, original_selected, generated_selected
         None, # 14. pending_plan
         [],   # 15. generated_drafts_choices_state
         [],    # 16. keep_drafts_choices_state
-        gr.update(visible=btns_visible), # 17. btn_undo - hide if no draft
-        gr.update(visible=btns_visible), # 18. btn_redo - hide if no draft
+        gr.update(visible=undo_visible, value=undo_icon), # 17. btn_undo
+        gr.update(visible=redo_visible, value=redo_icon), # 18. btn_redo
     )
 
 def draft_regenerate_selected(generated_selected, plan, section, current_log, create_epoch, keep_drafts_choices_state=None):

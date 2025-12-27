@@ -136,24 +136,10 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
     def _calculate_undo_redo(section, draft_type, show_ui):
         from state.undo_manager import UndoManager
-        from state.drafts_manager import DraftType
         
-        undo_visible = False
-        redo_visible = False
-        undo_icon = "↩️"
-        redo_icon = "↪️"
-        counts = None
+        um = UndoManager()
+        undo_visible, redo_visible, undo_icon, redo_icon, counts = um.get_undo_redo_state(section, draft_type, show_ui)
         
-        if show_ui and section and draft_type:
-            um = UndoManager()
-            if draft_type == DraftType.GENERATED.value:
-                undo_icon = "⬅️"
-                redo_icon = "➡️"
-                counts = um.get_counts(section, draft_type)
-            
-            undo_visible = um.has_undo(section, draft_type)
-            redo_visible = um.has_redo(section, draft_type)
-            
         return gr.update(visible=undo_visible, value=undo_icon), gr.update(visible=redo_visible, value=redo_icon), counts
 
     def _load_section_content(name, pending_plan):

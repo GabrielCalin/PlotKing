@@ -125,3 +125,28 @@ class UndoManager:
         total_count = undo_count + 1 + redo_count
         
         return current_index, total_count
+    
+    def get_undo_redo_state(self, section: str, draft_type: str, show_ui: bool = True) -> Tuple[bool, bool, str, str, Optional[Tuple[int, int]]]:
+        """
+        Calculate undo/redo visibility, icons, and counts.
+        Returns: (undo_visible, redo_visible, undo_icon, redo_icon, counts)
+        - counts is only set for GENERATED drafts, None otherwise
+        """
+        from state.drafts_manager import DraftType
+        
+        undo_visible = False
+        redo_visible = False
+        undo_icon = "↩️"
+        redo_icon = "↪️"
+        counts = None
+        
+        if show_ui and section and draft_type:
+            if draft_type == DraftType.GENERATED.value:
+                undo_icon = "⬅️"
+                redo_icon = "➡️"
+                counts = self.get_counts(section, draft_type)
+            
+            undo_visible = self.has_undo(section, draft_type)
+            redo_visible = self.has_redo(section, draft_type)
+        
+        return undo_visible, redo_visible, undo_icon, redo_icon, counts
