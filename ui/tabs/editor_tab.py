@@ -265,7 +265,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         if section:
             # Re-fetch what should be shown based on preserved view_state (Checkpoint/Draft/Diff)
             # This is CRITICAL for user's report about preserving view selection.
-            content, label, state, undo_upd, redo_upd = _handle_view_switch(view_state, section)
+            content, label, state, undo_upd, redo_upd = _handle_view_switch(view_state, section, pending_plan)
             viewer_update = gr.update(visible=(mode != "Rewrite"), value=content)
             status_label_upd = gr.update(value=label)
             
@@ -354,7 +354,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         outputs=[viewer_md, selected_section, mode_radio, chat_history, status_row, status_label, btn_checkpoint, btn_draft, btn_diff, current_view_state, view_actions_row, btn_undo, btn_redo],
     )
 
-    def _handle_view_switch(view_type, section):
+    def _handle_view_switch(view_type, section, pending_plan=None):
         from state.undo_manager import UndoManager
         from state.drafts_manager import DraftsManager, DraftType
 
@@ -368,9 +368,20 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         draft_type = drafts_mgr.get_type(section) if has_draft else None
         draft_text = drafts_mgr.get_content(section) if has_draft else ""
         
-        # Undo/Redo Logic
-        show_undo_redo = (view_type == "Draft" or view_type == "Diff") and has_draft
-        undo_upd, redo_upd, counts = _calculate_undo_redo(section, draft_type, show_undo_redo)
+        # Undo/Redo Logic - hide if validation is active, EXCEPT for Generated Drafts
+        # pending_plan can be {} (placeholder) during validation or a dict (actual plan) after validation completes
+        is_generated_draft = draft_type == DraftType.GENERATED.value
+        if pending_plan is not None and (pending_plan == {} or isinstance(pending_plan, dict)) and not is_generated_draft:
+            # Validation is active (either running with placeholder {} or completed with plan dict)
+            # Hide undo/redo buttons, EXCEPT for Generated Drafts which should show undo/redo
+            undo_upd = gr.update(visible=False)
+            redo_upd = gr.update(visible=False)
+            counts = None
+        else:
+            # Normal logic - calculate undo/redo visibility
+            # For Generated Drafts, always calculate even if pending_plan exists
+            show_undo_redo = (view_type == "Draft" or view_type == "Diff") and has_draft
+            undo_upd, redo_upd, counts = _calculate_undo_redo(section, draft_type, show_undo_redo)
 
         if view_type == "Checkpoint":
             return original_text, "**Viewing:** <span style='color:red;'>Checkpoint</span>", "Checkpoint", undo_upd, redo_upd
@@ -393,20 +404,20 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         return original_text, "**Viewing:** <span style='color:red;'>Checkpoint</span>", "Checkpoint", undo_upd, redo_upd
 
     btn_checkpoint.click(
-        fn=lambda s: _handle_view_switch("Checkpoint", s),
-        inputs=[selected_section],
+        fn=lambda s, p: _handle_view_switch("Checkpoint", s, p),
+        inputs=[selected_section, pending_plan],
         outputs=[viewer_md, status_label, current_view_state, btn_undo, btn_redo]
     )
     
     btn_draft.click(
-        fn=lambda s: _handle_view_switch("Draft", s),
-        inputs=[selected_section],
+        fn=lambda s, p: _handle_view_switch("Draft", s, p),
+        inputs=[selected_section, pending_plan],
         outputs=[viewer_md, status_label, current_view_state, btn_undo, btn_redo]
     )
     
     btn_diff.click(
-        fn=lambda s: _handle_view_switch("Diff", s),
-        inputs=[selected_section],
+        fn=lambda s, p: _handle_view_switch("Diff", s, p),
+        inputs=[selected_section, pending_plan],
         outputs=[viewer_md, status_label, current_view_state, btn_undo, btn_redo]
     )
 
@@ -524,7 +535,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         # Outputs: UI changes to show Validation Box etc. similar to Manual/Rewrite validate
         outputs=[
              validation_box, pending_plan, validation_title, validation_section, apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
-             viewer_md, editor_tb, mode_radio, section_dropdown, status_strip, status_log, view_actions_row
+             viewer_md, editor_tb, mode_radio, section_dropdown, status_strip, status_log, view_actions_row, btn_undo, btn_redo
         ],
         queue=True,
         show_progress=False,

@@ -96,7 +96,7 @@ def validate_draft_handler(section, current_log):
     # Yield loading state immediately
     yield (
         gr.update(value="🔄 Validating...", visible=True), # validation_box
-        None, # pending_plan
+        {}, # pending_plan - placeholder to indicate validation is running
         gr.update(visible=True), # validation_title
         gr.update(visible=True), # validation_section
         gr.update(visible=False), # apply_updates_btn
@@ -109,7 +109,9 @@ def validate_draft_handler(section, current_log):
         gr.update(interactive=False), # section_dropdown
         status_update, # status_strip
         new_log, # status_log
-        gr.update(visible=False) # view_actions_row (hide immediately)
+        gr.update(visible=False), # view_actions_row (hide immediately)
+        gr.update(visible=False), # btn_undo - hide during validation
+        gr.update(visible=False), # btn_redo - hide during validation
     )
 
     # Run validation
@@ -132,7 +134,9 @@ def validate_draft_handler(section, current_log):
         gr.update(interactive=False), # section_dropdown
         final_status, # status_strip
         final_log, # status_log
-        gr.update(visible=False) # view_actions_row (hide while looking at validation results)
+        gr.update(visible=False), # view_actions_row (hide while looking at validation results)
+        gr.update(visible=False), # btn_undo - hide during validation
+        gr.update(visible=False), # btn_redo - hide during validation
     )
     
 def continue_edit(section, current_log):
@@ -140,8 +144,24 @@ def continue_edit(section, current_log):
     new_log, status_update = append_status(current_log, f"🔁 ({section}) Return to view.")
     
     from state.drafts_manager import DraftsManager, DraftType
+    from state.undo_manager import UndoManager
+    
     drafts_mgr = DraftsManager()
     is_user_draft = drafts_mgr.has_type(section, DraftType.USER.value)
+    
+    # Calculate undo/redo visibility for the draft that remains
+    undo_visible = False
+    redo_visible = False
+    if is_user_draft:
+        um = UndoManager()
+        undo_visible = um.has_undo(section, DraftType.USER.value)
+        redo_visible = um.has_redo(section, DraftType.USER.value)
+    elif drafts_mgr.has(section):
+        # Check for other draft types (CHAT, GENERATED, etc.)
+        draft_type = drafts_mgr.get_type(section)
+        um = UndoManager()
+        undo_visible = um.has_undo(section, draft_type)
+        redo_visible = um.has_redo(section, draft_type)
 
     return (
         gr.update(visible=False),   # hide Validation Title
@@ -169,4 +189,6 @@ def continue_edit(section, current_log):
         gr.update(visible=False),   # hide chat keep draft
         gr.update(visible=is_user_draft), # SHOW view actions row if it was a user draft
         None,  # 23. pending_plan - clear plan when going back
+        gr.update(visible=undo_visible), # btn_undo - show if available
+        gr.update(visible=redo_visible), # btn_redo - show if available
     )

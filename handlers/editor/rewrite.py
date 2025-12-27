@@ -304,5 +304,7 @@ def continue_edit(section, current_log, viewer_content=None):
         gr.update(visible=False),   # 21. hide chat keep draft
         gr.update(visible=False),   # 22. hide view actions row
         None,  # 23. pending_plan - clear plan when going back
+        gr.update(visible=False),   # 24. btn_undo - hide (not in view mode)
+        gr.update(visible=False),   # 25. btn_redo - hide (not in view mode)
     )
 

@@ -207,6 +207,8 @@ def create_chat_handlers(components, states):
             components[Components.STATUS_STRIP],
             states[States.PENDING_PLAN],
             mode_radio,
+            components[Components.BTN_UNDO],
+            components[Components.BTN_REDO],
         ]
     )
 

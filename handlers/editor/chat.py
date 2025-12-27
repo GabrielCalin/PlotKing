@@ -229,8 +229,10 @@ def validate_handler(section, current_log):
         gr.update(), # viewer_md - NO CHANGE
         new_log,
         status_update,
-        None, # pending_plan placeholder
+        {}, # pending_plan - placeholder to indicate validation is running
         gr.update(interactive=False), # mode_radio - DISABLED
+        gr.update(visible=False), # btn_undo - hide during validation
+        gr.update(visible=False), # btn_redo - hide during validation
     )
     
     msg, plan = editor_validate(section, draft_to_validate)
@@ -250,6 +252,8 @@ def validate_handler(section, current_log):
         final_status,
         plan, # pending_plan
         gr.update(interactive=False), # mode_radio - DISABLED
+        gr.update(visible=False), # btn_undo - hide during validation
+        gr.update(visible=False), # btn_redo - hide during validation
     )
 
 def discard_handler(section, current_log):
@@ -357,6 +361,20 @@ def continue_edit(section, current_log):
     """Return to editing mode. If Chat mode, return to Chat Section."""
     new_log, status_update = append_status(current_log, f"🔁 ({section}) Continue chatting.")
     
+    # Calculate undo/redo visibility for CHAT draft
+    from state.drafts_manager import DraftsManager, DraftType
+    from state.undo_manager import UndoManager
+    
+    drafts_mgr = DraftsManager()
+    has_chat_draft = drafts_mgr.has_type(section, DraftType.CHAT.value)
+    
+    undo_visible = False
+    redo_visible = False
+    if has_chat_draft:
+        um = UndoManager()
+        undo_visible = um.has_undo(section, DraftType.CHAT.value)
+        redo_visible = um.has_redo(section, DraftType.CHAT.value)
+    
     return (
         gr.update(visible=False),   # hide Validation Title
         gr.update(visible=False),   # hide Validation Box
@@ -383,5 +401,7 @@ def continue_edit(section, current_log):
         gr.update(visible=True),    # 21. SHOW Chat Keep Draft
         gr.update(visible=False),   # 22. hide view actions row
         None,  # 23. pending_plan - clear plan when going back
+        gr.update(visible=undo_visible), # btn_undo - show if available
+        gr.update(visible=redo_visible), # btn_redo - show if available
     )
 
