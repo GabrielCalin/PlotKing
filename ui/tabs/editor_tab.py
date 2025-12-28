@@ -294,12 +294,13 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
         editor_update = gr.update(visible=False)
         if mode == "Rewrite":
-            # For Rewrite mode, editor_tb should prioritize User draft if available, 
+            # For Rewrite mode, editor_tb should prioritize draft (USER/FILL) if available, 
             # consistent with Manual mode requirement "neaparat user trebuie".
-            if section and drafts_mgr.has_type(section, DraftType.USER.value):
-                content = drafts_mgr.get_content(section, DraftType.USER.value)
+            # Use get_current_section_content which prioritizes drafts over checkpoint
+            if section:
+                content = get_current_section_content(section) or ""
             else:
-                content = get_section_content(section) or ""
+                content = ""
             editor_update = gr.update(visible=True, interactive=False, value=content)
 
         return (
