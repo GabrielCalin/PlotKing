@@ -186,3 +186,21 @@
 .status-btn:hover {
   opacity: 1;
 }
+
+/* Section wrapper styling */
+.section-header-row {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  gap: 8px !important;
+  background-color: var(--block-label-background-fill);
+  padding: 4px 8px !important;
+  font-weight: 600 !important;
+  font-size: 0.9rem !important;
+  border-bottom: 1px solid var(--block-border-color);
+}
+
+.section-header-row > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}

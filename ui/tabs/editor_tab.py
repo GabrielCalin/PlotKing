@@ -45,18 +45,19 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     with gr.Row(elem_id="editor-main", visible=False) as editor_main:
         # ---- (1a) Left Column: Compact Control Panel ----
         with gr.Column(scale=1, min_width=280, elem_classes=["tight-group"]):
-            # Section Header with Add Fill Button
-            with gr.Row(elem_classes=["section-header-row"], equal_height=True):
-                gr.Markdown("**Section**", elem_classes=["section-label-md"])
-                add_fill_btn = gr.Button("➕", size="sm", elem_classes=["icon-only-btn"], min_width=30, scale=0)
-            
-            section_dropdown = gr.Dropdown(
-                choices=[],
-                value=None,
-                interactive=True,
-                show_label=False, # Hide default label, used markdown above
-                container=False
-            )
+            # Section Header with Add Fill Button - wrapped in bordered container
+            with gr.Column(elem_classes=["plot-wrapper"]):
+                with gr.Row(elem_classes=["section-header-row"], equal_height=True):
+                    gr.Markdown("Section", elem_classes=["section-label-md"])
+                    add_fill_btn = gr.Button("➕", size="sm", elem_classes=["icon-only-btn"], min_width=30, scale=0)
+                
+                section_dropdown = gr.Dropdown(
+                    choices=[],
+                    value=None,
+                    interactive=True,
+                    show_label=False, # Hide default label, used markdown above
+                    container=False
+                )
 
             mode_radio = gr.Radio(
                 label="Editing Mode",
