@@ -165,12 +165,15 @@ def continue_edit(section, current_log):
     
     drafts_mgr = DraftsManager()
     is_user_draft = drafts_mgr.has_type(section, DraftType.USER.value)
+    is_fill_draft = drafts_mgr.has_type(section, DraftType.FILL.value)
     
     # Calculate undo/redo visibility for the draft that remains
     um = UndoManager()
     draft_type = None
     if is_user_draft:
         draft_type = DraftType.USER.value
+    elif is_fill_draft:
+        draft_type = DraftType.FILL.value
     elif drafts_mgr.has(section):
         draft_type = drafts_mgr.get_type(section)
     
@@ -202,7 +205,7 @@ def continue_edit(section, current_log):
         gr.update(visible=False),   # hide Keep Draft (Manual)
         gr.update(visible=False),   # hide rewrite keep draft
         gr.update(visible=False),   # hide chat keep draft
-        gr.update(visible=is_user_draft), # SHOW view actions row if it was a user draft
+        gr.update(visible=(is_user_draft or is_fill_draft)), # SHOW view actions row if it was a user or fill draft
         None,  # 23. pending_plan - clear plan when going back
         gr.update(visible=undo_visible, value=undo_icon), # btn_undo - show if available
         gr.update(visible=redo_visible, value=redo_icon), # btn_redo - show if available

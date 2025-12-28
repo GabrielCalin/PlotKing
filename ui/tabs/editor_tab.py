@@ -283,8 +283,10 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             # Recalculate View Actions (Validate, Discard, etc.) for View mode
             if mode == "View":
                 is_user_draft = drafts_mgr.has_type(section, DraftType.USER.value)
+                is_fill_draft = drafts_mgr.has_type(section, DraftType.FILL.value)
+                # Show view actions for both USER and FILL drafts
                 # Hide if in validation (pending_plan active)
-                view_actions_upd = gr.update(visible=is_user_draft and not pending_plan)
+                view_actions_upd = gr.update(visible=(is_user_draft or is_fill_draft) and not pending_plan)
         else:
             # Fallback if no section
             viewer_update = gr.update(visible=(mode != "Rewrite"))
