@@ -156,7 +156,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             return "_Empty_", None, gr.update(value="View"), initial_greeting, \
                    gr.update(visible=True), gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), \
                    gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), "Checkpoint", gr.update(visible=False), \
-                   gr.update(visible=False), gr.update(visible=False)
+                   gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
         
         # Check if we have a draft for this section
         drafts_mgr = DraftsManager()
@@ -222,8 +222,11 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         from ui.tabs.editor.chat_ui import PLOT_KING_GREETING
         initial_greeting = [{"role": "assistant", "content": PLOT_KING_GREETING}]
         
+        # Hide add_fill_btn for "Expanded Plot" section
+        add_fill_visible = name != "Expanded Plot" if name else False
+        
         return text, name, gr.update(value="View"), initial_greeting, \
-               gr.update(visible=True), gr.update(value=label), btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, view_actions_upd, undo_upd, redo_upd
+               gr.update(visible=True), gr.update(value=label), btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, view_actions_upd, undo_upd, redo_upd, gr.update(visible=add_fill_visible)
 
 
 
@@ -359,7 +362,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     section_dropdown.change(
         fn=_load_section_content,
         inputs=[section_dropdown, pending_plan],
-        outputs=[viewer_md, selected_section, mode_radio, chat_history, status_row, status_label, btn_checkpoint, btn_draft, btn_diff, current_view_state, view_actions_row, btn_undo, btn_redo],
+        outputs=[viewer_md, selected_section, mode_radio, chat_history, status_row, status_label, btn_checkpoint, btn_draft, btn_diff, current_view_state, view_actions_row, btn_undo, btn_redo, add_fill_btn],
     )
 
     def _handle_view_switch(view_type, section, pending_plan=None):
