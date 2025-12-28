@@ -283,11 +283,18 @@ def keep_draft_handler(section, content, status_log):
         
     from state.drafts_manager import DraftsManager, DraftType
     from handlers.editor.constants import Components, States
+    from state.infill_manager import InfillManager
     
     drafts_mgr = DraftsManager()
+    im = InfillManager()
     clean_content = remove_highlight(content)
-    drafts_mgr.add_user_draft(section, clean_content) # Salveaza explicit ca USER draft
-    drafts_mgr.remove(section, DraftType.CHAT.value) # Sterge chat draft daca exista, acum ca e salvat ca USER draft
+    
+    if im.is_fill(section):
+        drafts_mgr.add_fill_draft(section, clean_content) # Save as FILL draft if it's a fill section
+    else:
+        drafts_mgr.add_user_draft(section, clean_content) # Explicitly save as USER draft
+        
+    drafts_mgr.remove(section, DraftType.CHAT.value) # Remove chat draft if exists, now saved
     
     msg = f"💾 Saved draft for **{section}**."
     new_log, status_update = append_status(status_log, msg)

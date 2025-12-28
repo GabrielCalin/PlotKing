@@ -60,6 +60,12 @@ Example 4: Chapter 4 (out of 5) is modified. Previously, Chapter 4 ended with Jo
 - Chapters Overview: IMPACTED (needs to reflect John's departure and adventure in Chapter 4 description, Chapter 5 needs adaptation. Update Chapter 4 description to mention John's decision to embark on the Everest adventure. Adapt Chapter 5 description to show John is on Everest rather than continuing from the home scene.)
 - Chapter 5: IMPACTED (must account for John being on Everest adventure, continuity broken with previous ending. Adapt the chapter to reflect that John is on his Everest adventure, not continuing from being at home. Update the opening and subsequent scenes to show John preparing for or beginning his journey to Everest, maintaining continuity with the modified Chapter 4.)
 
+Example 5: New Chapter Insertion.
+Edited Section: "Fill 2 (#1)" (A new chapter inserted between Chapter 1 and Chapter 2. Content: John packs up and secretly leaves the country at night.)
+Changes: New Chapter Created
+- Chapters Overview: IMPACTED (New chapter inserted. Add summary for the new chapter (Fill 2) explicitly stating that John makes a secret departure and leaves the country.)
+- Chapter 2: IMPACTED (Continuity broken. Previously John was in the country, now he is gone. Adapt Chapter 2 to reflect that John is already abroad, removing references to him being in the original location.)
+
 Task:
 1. Review the edited section content, change summary, and potentially impacted sections.
 2. **IMPORTANT**: SECTION EDITED ({section_name}) is the one that was modified. POTENTIAL IMPACTED SECTIONS are other sections that may need updates due to changes made in {section_name}.

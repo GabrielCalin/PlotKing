@@ -37,7 +37,7 @@ def discard_draft_handler(section, status_log):
 def force_edit_draft_handler(section, status_log, create_sections_epoch):
     """Write draft content directly to Checkpoint and remove draft."""
     if not section:
-        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), status_log, gr.update(), create_sections_epoch, gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
+        return [gr.update()] * 6 + [status_log, gr.update(), create_sections_epoch, gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)]
         
     drafts_mgr = DraftsManager()
     content = drafts_mgr.get_content(section)
@@ -46,14 +46,31 @@ def force_edit_draft_handler(section, status_log, create_sections_epoch):
         msg = f"⚠️ No draft found for **{section}**."
         new_log, status_update = append_status(status_log, msg)
         # Get checkpoint content as fallback
-        checkpoint_content = get_section_content(section) or ""
-        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), new_log, status_update, create_sections_epoch, gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
+        return [gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), new_log, status_update, create_sections_epoch, gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)]
     
-    # Save to checkpoint
-    save_section(section, content)
+    # Check for Fill
+    from state.infill_manager import InfillManager
+    from state.checkpoint_manager import insert_chapter
+    
+    im = InfillManager()
+    if im.is_fill(section):
+        idx = im.parse_fill_target(section)
+        if idx is not None:
+            # Insert new chapter
+            success = insert_chapter(idx, content)
+            if success:
+                msg = f"⚡ Force Edited Fill **{section}**. New Chapter {idx} created."
+            else:
+                msg = f"❌ Error creating Chapter {idx} from **{section}**."
+        else:
+             msg = f"❌ Could not parse target index for Fill **{section}**."
+    else:
+        # Standard Save
+        save_section(section, content)
+        msg = f"⚡ Force Edited **{section}**. Draft saved to checkpoint."
+        
     drafts_mgr.remove(section) # Remove draft after saving
     
-    msg = f"⚡ Force Edited **{section}**. Draft saved to checkpoint."
     new_log, status_update = append_status(status_log, msg)
     
     # Trigger refresh
@@ -84,11 +101,11 @@ def validate_draft_handler(section, current_log):
         return [gr.update()] * 13 # Fallback
         
     drafts_mgr = DraftsManager()
-    if not drafts_mgr.has_type(section, DraftType.USER.value):
+    if not drafts_mgr.has_type(section, DraftType.USER.value) and not drafts_mgr.has_type(section, DraftType.FILL.value):
         new_log, status_update = append_status(current_log, f"⚠️ No user draft found for validation in {section}.")
         return [gr.update(), None, gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), status_update, new_log, gr.update()]
 
-    draft_content = drafts_mgr.get_content(section, DraftType.USER.value)
+    draft_content = drafts_mgr.get_content(section) # Gets highest priority draft (Fill or User)
     
     # Initial status
     new_log, status_update = append_status(current_log, f"🔎 ({section}) Validating user draft...")

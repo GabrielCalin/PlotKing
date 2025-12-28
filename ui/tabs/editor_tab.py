@@ -3,7 +3,8 @@
 
 import gradio as gr
 from handlers.editor.rewrite_presets import REWRITE_PRESETS
-from state.checkpoint_manager import get_sections_list, get_section_content
+from state.overall_state import get_sections_list, get_current_section_content
+from state.checkpoint_manager import get_section_content
 
 # Import helpers and logic from new modules
 from handlers.editor.utils import (
@@ -44,11 +45,17 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     with gr.Row(elem_id="editor-main", visible=False) as editor_main:
         # ---- (1a) Left Column: Compact Control Panel ----
         with gr.Column(scale=1, min_width=280, elem_classes=["tight-group"]):
+            # Section Header with Add Fill Button
+            with gr.Row(elem_classes=["section-header-row"], equal_height=True):
+                gr.Markdown("**Section**", elem_classes=["section-label-md"])
+                add_fill_btn = gr.Button("➕", size="sm", elem_classes=["icon-only-btn"], min_width=30, scale=0)
+            
             section_dropdown = gr.Dropdown(
-                label="Section",
                 choices=[],
                 value=None,
                 interactive=True,
+                show_label=False, # Hide default label, used markdown above
+                container=False
             )
 
             mode_radio = gr.Radio(
@@ -158,7 +165,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         is_user_draft = False
         draft_type = drafts_mgr.get_type(name)
         from state.drafts_manager import DraftType
-        if draft_type == DraftType.USER.value:
+        if draft_type == DraftType.USER.value or draft_type == DraftType.FILL.value:
             is_user_draft = True
             
         undo_upd = gr.update(visible=False)
@@ -188,6 +195,10 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 label = f"**Viewing:** <span style='color:red;'>Generated Draft {current}/{total}</span>"
 
             # Buttons: Checkpoint (visible, enabled), Draft (visible), Diff (visible)
+            # If it's a FILL draft, Checkpoint button shouldn't really exist (no checkpoint version).
+            # But standard logic says allow switching. If we switch to Checkpoint for a Fill, it will return "" (empty).
+            # That's acceptable.
+            
             btn_cp_upd = gr.update(visible=True, interactive=True)
             btn_dr_upd = gr.update(visible=True, interactive=True)
             btn_df_upd = gr.update(visible=True, interactive=True)
@@ -213,6 +224,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         
         return text, name, gr.update(value="View"), initial_greeting, \
                gr.update(visible=True), gr.update(value=label), btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, view_actions_upd, undo_upd, redo_upd
+
 
 
 
@@ -537,12 +549,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         show_progress=False,
     )
 
-    view_discard_btn.click(
-        fn=discard_draft_handler,
-        inputs=[selected_section, status_log],
-        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_strip, status_log, view_actions_row, btn_undo, btn_redo]
-    )
-    
+
 
     # Logic: Undo/Redo Handlers
     def _undo_handler(section, view_state):
@@ -583,4 +590,90 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         outputs=[viewer_md, status_label, current_view_state, btn_undo, btn_redo]
     )
 
+    # --- Add Fill Handler ---
+    def _add_fill_handler(current_section):
+        from state.infill_manager import InfillManager
+        from state.overall_state import get_sections_list
+        
+        # Create fill
+        new_fill_name = InfillManager().create_fill(current_section)
+        
+        # Refresh sections
+        new_choices = get_sections_list()
+        
+        return gr.update(choices=new_choices, value=new_fill_name)
+
+    add_fill_btn.click(
+        fn=_add_fill_handler,
+        inputs=[selected_section],
+        outputs=[section_dropdown],
+        queue=False
+    )
+    
+    # --- Update View Discard Handler for Fills ---
+    # Fills should be completely removed if discarded from View mode.
+    # While reuse of "discard_draft_handler" works (it calls DraftsManager.remove),
+    # removing a fill section means it DISAPPEARS from the dropdown list entirely.
+    # So we need to update the dropdown choices too.
+    
+    def _discard_wrapper(section, log):
+        from handlers.editor.view import discard_draft_handler
+        from state.infill_manager import InfillManager
+        from state.overall_state import get_sections_list
+        
+        # Check if fill BEFORE discarding (to know if we need to refresh list)
+        is_fill = InfillManager().is_fill(section)
+        
+        results = discard_draft_handler(section, log)
+        # discard_draft_handler returns: 
+        # [viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, 
+        #  status_log, status_strip, view_actions_row, btn_undo, btn_redo]
+        
+        # If it was a fill, we need to refresh sections.
+        # But wait, discard_draft_handler outputs do NOT include section_dropdown.
+        # So we need to handle this manually or extend the handler.
+        # Extending wrapper is easier.
+        
+        dropdown_update = gr.update()
+        current_val_update = gr.update()
+        
+        if is_fill:
+            # Refresh list
+            new_opts = get_sections_list()
+            # If current section (the fill) is gone, select something else?
+            # Ideally select the section just before it, or None?
+            # Default to Expanded Plot or first available.
+            new_val = new_opts[0] if new_opts else None
+            # If we were on Fill 3 (#1), maybe select Chapter 2?
+            # For now, let's just pick something safe.
+            # But the 'results' rely on 'section' being active? 
+            # If we change selection, we need to reload content.
+            # This complicates things.
+            # If we discard the fill, we are technically "viewing" nothing valid anymore.
+            # So let's update dropdown and let the change event handle the reset?
+            # No, click doesn't trigger change event automatically unless we set value.
+            
+            # If we change value of dropdown, it triggers _load_section_content.
+            # So we just return the dropdown update.
+            dropdown_update = gr.update(choices=new_opts, value=new_val)
+            
+            # And we ignore the other display updates because _load_section_content will overwrite them.
+            # But we must return compatible types for the click outputs.
+            # The click expects specific outputs.
+            # We must ADD section_dropdown to the output list of the button click.
+            
+        return results + (dropdown_update,)
+
+    # We need to update the click wiring for view_discard_btn to include section_dropdown
+    view_discard_btn.click(
+        fn=_discard_wrapper,
+        inputs=[selected_section, status_log],
+        # Original 11 outputs + section_dropdown
+        outputs=[
+             viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, 
+             status_log, status_strip, view_actions_row, btn_undo, btn_redo, section_dropdown
+        ]
+    )
+
     return section_dropdown
+

@@ -6,6 +6,7 @@ class DraftType(Enum):
     GENERATED = "generated" # Generat de AI (Pipeline)
     CHAT = "chat"           # Draft din conversatie chat
     USER = "user"           # Draft explicit salvat de user (Keep Draft)
+    FILL = "fill"           # New Empty Chapter Fill
 
 class DraftsManager:
     """
@@ -28,16 +29,20 @@ class DraftsManager:
         """Clear all drafts (e.g. on new project)."""
         self._drafts.clear()
 
-    def keep_only_user_drafts(self, sections: List[str]) -> None:
+    def get_all_draft_keys(self) -> List[str]:
+        """Return list of all sections currently having any draft."""
+        return list(self._drafts.keys())
+
+    def keep_only_user_and_fill_drafts(self, sections: List[str]) -> None:
         """
         Clear only GENERATED, CHAT, and ORIGINAL drafts for the specified sections.
         Preserves USER drafts and does not touch sections not in the list.
         """
         for section in sections:
             if section in self._drafts:
-                # Remove all types except USER
+                # Remove all types except USER and FILL
                 for dtype in list(self._drafts[section].keys()):
-                    if dtype != DraftType.USER.value:
+                    if dtype != DraftType.USER.value and dtype != DraftType.FILL.value:
                         del self._drafts[section][dtype]
                 
                 # If section empty now, remove it
@@ -62,6 +67,18 @@ class DraftsManager:
             UndoManager().register_change(section, DraftType.USER.value, old_content)
             
         self._drafts[section][DraftType.USER.value] = content
+
+    def add_fill_draft(self, section: str, content: str = "") -> None:
+        """Add a FILL draft."""
+        if section not in self._drafts:
+            self._drafts[section] = {}
+            
+        from state.undo_manager import UndoManager
+        if DraftType.FILL.value in self._drafts[section]:
+            old_content = self._drafts[section][DraftType.FILL.value]
+            UndoManager().register_change(section, DraftType.FILL.value, old_content)
+            
+        self._drafts[section][DraftType.FILL.value] = content
         
     def add_generated(self, section: str, content: str) -> None:
         """Add a draft marked as GENERATED (AI pipeline)."""
@@ -153,6 +170,9 @@ class DraftsManager:
         if DraftType.USER.value in drafts:
             # User manual edit
             return drafts[DraftType.USER.value]
+        if DraftType.FILL.value in drafts:
+            # Specific Fill content
+            return drafts[DraftType.FILL.value]
         if DraftType.ORIGINAL.value in drafts:
             # Snapshot
             return drafts[DraftType.ORIGINAL.value]
@@ -181,6 +201,8 @@ class DraftsManager:
             return DraftType.CHAT.value
         if DraftType.USER.value in drafts:
             return DraftType.USER.value
+        if DraftType.FILL.value in drafts:
+            return DraftType.FILL.value
         if DraftType.ORIGINAL.value in drafts:
             return DraftType.ORIGINAL.value
         return None
@@ -211,6 +233,10 @@ class DraftsManager:
     def get_chat_drafts(self) -> List[str]:
         """Get list of section names that have a CHAT draft."""
         return [s for s, d in self._drafts.items() if DraftType.CHAT.value in d]
+        
+    def get_fill_drafts(self) -> List[str]:
+        """Get list of section names that have a FILL draft."""
+        return [s for s, d in self._drafts.items() if DraftType.FILL.value in d]
 
     def get_all_content(self) -> Dict[str, str]:
         """

@@ -7,19 +7,25 @@ def editor_validate(section, draft):
     from state.checkpoint_manager import get_checkpoint, get_section_content
     from llm.version_diff import call_llm_version_diff
     from llm.impact_analyzer import call_llm_impact_analysis
+    from state.infill_manager import InfillManager
 
     checkpoint = get_checkpoint()
     if not checkpoint:
         return "Error: No checkpoint found.", None
 
-    original_version = get_section_content(section) or ""
+    im = InfillManager()
+    if im.is_fill(section):
+        result = "CHANGES_DETECTED"
+        diff_data = {"message": "New Chapter Created", "summary": "New Chapter Created"}
+    else:
+        original_version = get_section_content(section) or ""
 
-    result, diff_data = call_llm_version_diff(
-        section_type=section,
-        original_version=original_version,
-        modified_version=draft or "",
-        genre=checkpoint.genre or "",
-    )
+        result, diff_data = call_llm_version_diff(
+            section_type=section,
+            original_version=original_version,
+            modified_version=draft or "",
+            genre=checkpoint.genre or "",
+        )
 
     if result == "ERROR":
         msg = format_validation_markdown(result, diff_data)

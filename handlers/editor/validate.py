@@ -387,7 +387,7 @@ def draft_revert_all(current_section, plan, current_log):
     edited = plan.get("edited_section", current_section) if plan else current_section
     sections = list(set(impacted + [edited, current_section]))
     
-    drafts_mgr.keep_only_user_drafts(sections)
+    drafts_mgr.keep_only_user_and_fill_drafts(sections)
     
     new_log, status_update = append_status(current_log, "❌ All drafts reverted.")
     content, view_state, mode_label, btns_visible = _get_revert_state(current_section)
@@ -445,6 +445,11 @@ def draft_accept_selected(current_section, original_selected, generated_selected
                 content = drafts_mgr.get_content(section, DraftType.ORIGINAL.value)
                 to_save_checkpoint[section] = content
 
+    # 3. Apply Saves to Checkpoint & Cleanup Accepted
+    from state.infill_manager import InfillManager
+    from state.checkpoint_manager import insert_chapter
+    im = InfillManager()
+
     # 2. Identify sections to KEEP AS USER DRAFT
     drafts_kept_count = 0
     if drafts_to_keep:
@@ -461,24 +466,27 @@ def draft_accept_selected(current_section, original_selected, generated_selected
                 # Remove generated component since it's now User
                 drafts_mgr.remove(section, DraftType.GENERATED.value)
                 drafts_kept_count += 1
-            elif drafts_mgr.has_type(section, DraftType.ORIGINAL.value):
-                # Keeping original as user draft?
-                content = drafts_mgr.get_content(section, DraftType.ORIGINAL.value)
-                drafts_mgr.add_user_draft(section, content)
-                drafts_mgr.remove(section, DraftType.ORIGINAL.value)
-                drafts_kept_count += 1
 
-    # 3. Apply Saves to Checkpoint & Cleanup Accepted
+    
     saved_count = 0
     for section, content in to_save_checkpoint.items():
-        save_section(section, content)
+        if im.is_fill(section):
+            idx = im.parse_fill_target(section)
+            if idx is not None:
+                insert_chapter(idx, content)
+            else:
+                 # Fallback if parse fails? Should not happen if confirmed fill.
+                 pass
+        else:
+            save_section(section, content)
+            
         saved_count += 1
         # Accepted -> Clear ALL drafts for this section
         drafts_mgr.remove(section) 
     
     # 4. Discard Unselected / Cleanup & Reset UI
     remaining_sections = list(drafts_mgr.get_all_content().keys())
-    drafts_mgr.keep_only_user_drafts(remaining_sections)
+    drafts_mgr.keep_only_user_and_fill_drafts(remaining_sections)
 
     new_log, status_update = append_status(current_log, f"✅ Accepted {saved_count} drafts. {drafts_kept_count} drafts kept as User Drafts.")
     new_epoch = (create_epoch or 0) + 1
