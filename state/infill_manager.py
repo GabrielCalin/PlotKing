@@ -106,6 +106,17 @@ class InfillManager:
         except (IndexError, ValueError):
             return None
     
+    def parse_fill_y(self, section_name: str) -> Optional[int]:
+        """Returns Y index from 'Fill X (#Y)' if name matches pattern."""
+        if not section_name or not section_name.startswith("Fill ") or "(#" not in section_name:
+            return None
+        try:
+            parts = section_name.split(" ")
+            y_str = parts[2].strip("(#)")
+            return int(y_str)
+        except (IndexError, ValueError):
+            return None
+    
     def shift_fills_after_insert(self, inserted_chapter_index: int, removed_fill_name: str) -> None:
         """
         When a chapter is inserted at index, shift all fills with target >= index.
@@ -128,11 +139,25 @@ class InfillManager:
             except:
                 return (target, 9999)
         
+        removed_fill_y = self.parse_fill_y(removed_fill_name) if removed_fill_name else None
+        
         all_fills.sort(key=get_fill_sort_key, reverse=True)
         
         for fill_name in all_fills:
             fill_target = self.parse_fill_target(fill_name)
-            if fill_target is not None and fill_target >= inserted_chapter_index:
+            fill_y = self.parse_fill_y(fill_name)
+            
+            if fill_target is None or fill_y is None:
+                continue
+            
+            should_shift = False
+            if fill_target > inserted_chapter_index:
+                should_shift = True
+            elif fill_target == inserted_chapter_index:
+                if removed_fill_y is not None and fill_y > removed_fill_y:
+                    should_shift = True
+            
+            if should_shift:
                 new_target = fill_target + 1
                 
                 y_part = 1
