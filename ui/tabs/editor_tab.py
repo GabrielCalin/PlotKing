@@ -342,7 +342,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     view_discard_btn.click(
         fn=discard_draft_handler,
         inputs=[selected_section, status_log],
-        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_log, status_strip, view_actions_row, btn_undo, btn_redo]
+        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_log, status_strip, view_actions_row, btn_undo, btn_redo, section_dropdown]
     )
     
     view_force_edit_btn.click(
@@ -617,70 +617,6 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         queue=False
     )
     
-    # --- Update View Discard Handler for Fills ---
-    # Fills should be completely removed if discarded from View mode.
-    # While reuse of "discard_draft_handler" works (it calls DraftsManager.remove),
-    # removing a fill section means it DISAPPEARS from the dropdown list entirely.
-    # So we need to update the dropdown choices too.
-    
-    def _discard_wrapper(section, log):
-        from handlers.editor.view import discard_draft_handler
-        from state.infill_manager import InfillManager
-        from state.overall_state import get_sections_list
-        
-        # Check if fill BEFORE discarding (to know if we need to refresh list)
-        is_fill = InfillManager().is_fill(section)
-        
-        results = discard_draft_handler(section, log)
-        # discard_draft_handler returns: 
-        # [viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, 
-        #  status_log, status_strip, view_actions_row, btn_undo, btn_redo]
-        
-        # If it was a fill, we need to refresh sections.
-        # But wait, discard_draft_handler outputs do NOT include section_dropdown.
-        # So we need to handle this manually or extend the handler.
-        # Extending wrapper is easier.
-        
-        dropdown_update = gr.update()
-        current_val_update = gr.update()
-        
-        if is_fill:
-            # Refresh list
-            new_opts = get_sections_list()
-            # If current section (the fill) is gone, select something else?
-            # Ideally select the section just before it, or None?
-            # Default to Expanded Plot or first available.
-            new_val = new_opts[0] if new_opts else None
-            # If we were on Fill 3 (#1), maybe select Chapter 2?
-            # For now, let's just pick something safe.
-            # But the 'results' rely on 'section' being active? 
-            # If we change selection, we need to reload content.
-            # This complicates things.
-            # If we discard the fill, we are technically "viewing" nothing valid anymore.
-            # So let's update dropdown and let the change event handle the reset?
-            # No, click doesn't trigger change event automatically unless we set value.
-            
-            # If we change value of dropdown, it triggers _load_section_content.
-            # So we just return the dropdown update.
-            dropdown_update = gr.update(choices=new_opts, value=new_val)
-            
-            # And we ignore the other display updates because _load_section_content will overwrite them.
-            # But we must return compatible types for the click outputs.
-            # The click expects specific outputs.
-            # We must ADD section_dropdown to the output list of the button click.
-            
-        return results + (dropdown_update,)
-
-    # We need to update the click wiring for view_discard_btn to include section_dropdown
-    view_discard_btn.click(
-        fn=_discard_wrapper,
-        inputs=[selected_section, status_log],
-        # Original 11 outputs + section_dropdown
-        outputs=[
-             viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, 
-             status_log, status_strip, view_actions_row, btn_undo, btn_redo, section_dropdown
-        ]
-    )
 
     return section_dropdown
 

@@ -4,11 +4,17 @@ from state.drafts_manager import DraftsManager
 from state.checkpoint_manager import get_section_content, save_section
 
 def discard_draft_handler(section, status_log):
-    """Discard USER draft and revert view to Checkpoint content."""
+    """Discard USER/FILL draft and revert view to Checkpoint content. For fills, also updates dropdown."""
     if not section:
-        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), status_log, gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
+        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), status_log, gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update()
         
+    from state.infill_manager import InfillManager
+    from state.overall_state import get_sections_list
+    
     drafts_mgr = DraftsManager()
+    im = InfillManager()
+    is_fill = im.is_fill(section)
+    
     if drafts_mgr.has(section):
         drafts_mgr.remove(section)
         msg = f"🗑️ Discarded draft for **{section}**."
@@ -17,7 +23,12 @@ def discard_draft_handler(section, status_log):
         
     new_log, status_update = append_status(status_log, msg)
     
-    # Reload checkpoint content
+    dropdown_update = gr.update()
+    if is_fill:
+        new_opts = get_sections_list()
+        new_val = new_opts[0] if new_opts else None
+        dropdown_update = gr.update(choices=new_opts, value=new_val)
+    
     original_text = get_section_content(section) or ""
     
     return (
@@ -32,6 +43,7 @@ def discard_draft_handler(section, status_log):
         gr.update(visible=False),  # view_actions_row update
         gr.update(visible=False), # btn_undo - hide
         gr.update(visible=False), # btn_redo - hide
+        dropdown_update, # section_dropdown update
     )
 
 def force_edit_draft_handler(section, status_log, create_sections_epoch):
