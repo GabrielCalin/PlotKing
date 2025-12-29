@@ -217,6 +217,57 @@ class DraftsManager:
     def has(self, section: str) -> bool:
         """Check if ANY draft exists for section."""
         return section in self._drafts and bool(self._drafts[section])
+    
+    def move_all_drafts(self, old_section: str, new_section: str) -> bool:
+        """
+        Move all drafts from old_section to new_section.
+        Returns True if move was successful, False if old_section had no drafts.
+        """
+        if old_section not in self._drafts or not self._drafts[old_section]:
+            return False
+        
+        old_drafts = self._drafts[old_section].copy()
+        
+        for draft_type, content in old_drafts.items():
+            if draft_type == DraftType.FILL.value:
+                self.add_fill_draft(new_section, content)
+            elif draft_type == DraftType.USER.value:
+                self.add_user_draft(new_section, content)
+            elif draft_type == DraftType.GENERATED.value:
+                self.add_generated(new_section, content)
+            elif draft_type == DraftType.CHAT.value:
+                self.add_chat(new_section, content)
+            elif draft_type == DraftType.ORIGINAL.value:
+                self.add_original(new_section, content)
+        
+        self.remove(old_section)
+        return True
+    
+    def shift_chapters_after_insert(self, inserted_chapter_index: int) -> None:
+        """
+        When a chapter is inserted at index, shift all existing chapters with index >= inserted_chapter_index.
+        Chapter X -> Chapter X+1, preserving all draft types and content.
+        """
+        all_sections = list(self._drafts.keys())
+        chapter_sections = [s for s in all_sections if s.startswith("Chapter ")]
+        
+        def get_chapter_index(section_name: str) -> Optional[int]:
+            try:
+                parts = section_name.split(" ")
+                if len(parts) == 2 and parts[0] == "Chapter":
+                    return int(parts[1])
+            except (ValueError, IndexError):
+                pass
+            return None
+        
+        chapter_sections_with_index = [(s, get_chapter_index(s)) for s in chapter_sections]
+        chapter_sections_with_index = [(s, idx) for s, idx in chapter_sections_with_index if idx is not None]
+        chapter_sections_with_index.sort(key=lambda x: x[1], reverse=True)
+        
+        for old_section, chapter_idx in chapter_sections_with_index:
+            if chapter_idx >= inserted_chapter_index:
+                new_section = f"Chapter {chapter_idx + 1}"
+                self.move_all_drafts(old_section, new_section)
         
     def get_original_drafts(self) -> List[str]:
         """Get list of section names that have an ORIGINAL draft."""

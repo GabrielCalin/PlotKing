@@ -1,6 +1,6 @@
 from handlers.editor.utils import append_status
 import gradio as gr
-from state.drafts_manager import DraftsManager
+from state.drafts_manager import DraftsManager, DraftType
 from state.checkpoint_manager import get_section_content, save_section
 
 def discard_draft_handler(section, status_log):
@@ -60,7 +60,8 @@ def force_edit_draft_handler(section, status_log, create_sections_epoch):
         return [gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), new_log, status_update, create_sections_epoch, gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update()]
     
     from state.infill_manager import InfillManager
-    from state.checkpoint_manager import insert_chapter, get_sections_list, get_section_content
+    from state.checkpoint_manager import insert_chapter, get_section_content
+    from state.overall_state import get_sections_list
     
     im = InfillManager()
     new_chapter_name = None
@@ -71,6 +72,9 @@ def force_edit_draft_handler(section, status_log, create_sections_epoch):
         if idx is not None:
             success = insert_chapter(idx, content)
             if success:
+                drafts_mgr.remove(section)
+                im.shift_fills_after_insert(idx, section)
+                
                 new_chapter_name = f"Chapter {idx}"
                 new_opts = get_sections_list()
                 dropdown_update = gr.update(choices=new_opts, value=new_chapter_name)
@@ -86,8 +90,7 @@ def force_edit_draft_handler(section, status_log, create_sections_epoch):
         save_section(section, content)
         new_content = content
         msg = f"⚡ Force Edited **{section}**. Draft saved to checkpoint."
-        
-    drafts_mgr.remove(section)
+        drafts_mgr.remove(section)
     
     new_log, status_update = append_status(status_log, msg)
     new_epoch = (create_sections_epoch or 0) + 1

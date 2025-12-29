@@ -90,14 +90,58 @@ class InfillManager:
         return new_fill_name
 
     def is_fill(self, section_name: str) -> bool:
-        return section_name and section_name.startswith("Fill ") and "(#" in section_name
+        """Check if section has a FILL draft type in DraftsManager."""
+        if not section_name:
+            return False
+        drafts_mgr = DraftsManager()
+        return drafts_mgr.has_type(section_name, DraftType.FILL.value)
 
     def parse_fill_target(self, section_name: str) -> Optional[int]:
-        """Returns target chapter index X from 'Fill X (#Y)'."""
-        if not self.is_fill(section_name):
+        """Returns target chapter index X from 'Fill X (#Y)' if name matches pattern."""
+        if not section_name or not section_name.startswith("Fill ") or "(#" not in section_name:
             return None
         try:
             parts = section_name.split(" ")
             return int(parts[1])
         except (IndexError, ValueError):
             return None
+    
+    def shift_fills_after_insert(self, inserted_chapter_index: int, removed_fill_name: str) -> None:
+        """
+        When a chapter is inserted at index, shift all fills with target >= index.
+        The fill that was converted to chapter is already removed.
+        Fills are shifted: Fill X -> Fill X+1, with Y reset to 1 and incremented if needed.
+        Moves ALL drafts associated with each fill section (FILL, USER, CHAT, GENERATED, ORIGINAL).
+        Also shifts all existing chapters with index >= inserted_chapter_index.
+        """
+        drafts_mgr = DraftsManager()
+        all_fills = drafts_mgr.get_fill_drafts()
+        
+        def get_fill_sort_key(name):
+            target = self.parse_fill_target(name)
+            if target is None:
+                return (9999, 9999)
+            try:
+                parts = name.split(" ")
+                y = int(parts[2].strip("(#)"))
+                return (target, y)
+            except:
+                return (target, 9999)
+        
+        all_fills.sort(key=get_fill_sort_key, reverse=True)
+        
+        for fill_name in all_fills:
+            fill_target = self.parse_fill_target(fill_name)
+            if fill_target is not None and fill_target >= inserted_chapter_index:
+                new_target = fill_target + 1
+                
+                y_part = 1
+                new_fill_name = f"Fill {new_target} (#{y_part})"
+                
+                while drafts_mgr.has(new_fill_name):
+                    y_part += 1
+                    new_fill_name = f"Fill {new_target} (#{y_part})"
+                
+                drafts_mgr.move_all_drafts(fill_name, new_fill_name)
+        
+        drafts_mgr.shift_chapters_after_insert(inserted_chapter_index)
