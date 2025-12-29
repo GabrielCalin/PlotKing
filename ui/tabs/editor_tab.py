@@ -348,7 +348,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     view_force_edit_btn.click(
         fn=force_edit_draft_handler,
         inputs=[selected_section, status_log, create_sections_epoch],
-        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_log, status_strip, create_sections_epoch, view_actions_row, btn_undo, btn_redo]
+        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_log, status_strip, create_sections_epoch, view_actions_row, btn_undo, btn_redo, section_dropdown]
     )
 
     # ---- Sincronizare Create → Editor: refresh Editor tab când Create modifică checkpoint ----
