@@ -18,8 +18,18 @@ def editor_validate(section, draft):
         result = "CHANGES_DETECTED"
         
         chapter_num = im.parse_fill_target(section)
+        total_chapters = len(checkpoint.chapters_full or [])
+        
         if chapter_num is not None:
-            chapter_msg = f"New Chapter {chapter_num} Created"
+            if total_chapters == 0:
+                chapter_msg = f"New Chapter 1 will be created as the first chapter"
+            elif chapter_num == 1:
+                chapter_msg = f"New Chapter 1 will be inserted at the beginning, shifting all existing chapters forward by 1"
+            elif chapter_num > total_chapters:
+                chapter_msg = f"New Chapter {chapter_num} will be inserted at the end, after Chapter {total_chapters}"
+            else:
+                prev_chapter = chapter_num - 1
+                chapter_msg = f"New Chapter {chapter_num} will be inserted between existing Chapter {prev_chapter} and Chapter {chapter_num}, shifting chapters {chapter_num} onwards forward by 1"
         else:
             chapter_msg = "New Chapter Created"
         
