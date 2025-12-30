@@ -64,12 +64,14 @@ def editor_validate(section, draft):
         else:
             section_name_for_impact = section
 
+        total_chapters = len(checkpoint.chapters_full or [])
         impact_result, impact_data, impacted = call_llm_impact_analysis(
             section_name=section_name_for_impact,
             edited_section_content=draft or "",
             diff_summary=diff_summary_text,
             candidate_sections=candidates,
             is_infill=is_fill,
+            total_chapters=total_chapters,
         )
         msg = format_validation_markdown(result, diff_data, impact_result, impact_data, impacted)
         plan = {

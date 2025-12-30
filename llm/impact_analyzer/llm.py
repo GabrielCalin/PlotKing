@@ -30,17 +30,13 @@ Impact Expectations:
 **Expanded Plot changes**: Impact occurs if the change contradicts existing content or breaks continuity with other sections. All sections may be affected. **IMPORTANT**: When providing instructions for Expanded Plot adaptation, do NOT mention specific chapter numbers (e.g., "Chapter 4", "Chapter 5"). Instead, refer to events or developments in a chapter-agnostic way (e.g., "the event where Gary dies", "John's Everest adventure"). This keeps the Expanded Plot focused on the story arc rather than chapter structure.
 
 **Chapters Overview changes**: Impact occurs if the change contradicts existing content or breaks continuity. If continuity is broken, all following chapters need adaptation and should be marked as impacted. When marking Chapters Overview as impacted, you must clearly specify which chapters from Chapters Overview need adaptation in the reason.
-
-**CRITICAL INFILL RULE**:
-If IS INFILL is "yes" (indicating a new chapter insertion), then Chapters Overview is ALWAYS impacted, even if there are no contradictions. A new chapter requires:
-- adding a new chapter summary
-- shifting numbering of subsequent chapters
-- adapting summaries that follow the insertion point
+{infill_rule}
 
 **Chapter changes**: Impact occurs if the change:
 1. Contradicts something (even minor details not mentioned in Expanded Plot or Chapters Overview)
 2. Breaks continuity with following sections
 3. Introduces a major new event or plot development that affects the story's direction
+{infill_chapter_rule}
 
 For major new events: You must check continuity between the EDITED SECTION CONTENT and the following sections in POTENTIAL IMPACTED SECTIONS. If a major new event is introduced (e.g., character makes a significant decision, new plot development, location change), it requires updates in:
 - Expanded Plot (to include the new event)
@@ -67,11 +63,7 @@ Example 4: Chapter 4 (out of 5) is modified. Previously, Chapter 4 ended with Jo
 - Chapters Overview: IMPACTED (needs to reflect John's departure and adventure in Chapter 4 description, Chapter 5 needs adaptation. Update Chapter 4 description to mention John's decision to embark on the Everest adventure. Adapt Chapter 5 description to show John is on Everest rather than continuing from the home scene.)
 - Chapter 5: IMPACTED (must account for John being on Everest adventure, continuity broken with previous ending. Adapt the chapter to reflect that John is on his Everest adventure, not continuing from being at home. Update the opening and subsequent scenes to show John preparing for or beginning his journey to Everest, maintaining continuity with the modified Chapter 4.)
 
-Example 5: New Chapter Insertion.
-Edited Section: "Fill 2 (#1)" (A new chapter inserted between Chapter 1 and Chapter 2. Content: John packs up and secretly leaves the country at night.)
-Changes: New Chapter Created
-- Chapters Overview: IMPACTED (New chapter inserted. Add summary for the new chapter (Fill 2) explicitly stating that John makes a secret departure and leaves the country.)
-- Chapter 2: IMPACTED (Continuity broken. Previously John was in the country, now he is gone. Adapt Chapter 2 to reflect that John is already abroad, removing references to him being in the original location.)
+{infill_example}
 
 Task:
 1. Review the edited section content, change summary, and potentially impacted sections.
@@ -133,6 +125,7 @@ def call_llm_impact_analysis(
     diff_summary: str,
     candidate_sections: List[Tuple[str, str]],
     is_infill: bool = False,
+    total_chapters: int = 0,
     api_url: str = None,
     model_name: str = None,
     timeout: int = 300,
@@ -151,6 +144,29 @@ def call_llm_impact_analysis(
     formatted_candidates = _format_candidate_sections(candidate_sections)
     candidate_names = ", ".join(name for name, _ in candidate_sections) or "(none)"
 
+    if is_infill:
+        new_total_chapters = total_chapters + 1
+        infill_rule = f"""
+**CRITICAL INFILL RULE**:
+Since IS INFILL is "yes" (indicating a new chapter insertion), Chapters Overview is ALWAYS impacted, even if there are no contradictions. A new chapter requires:
+- adding a new chapter summary
+- shifting numbering of subsequent chapters (there will be {new_total_chapters} total chapters after insertion)
+- adapting summaries that follow the insertion point"""
+        
+        infill_chapter_rule = f"""
+**CRITICAL INFILL RULE**: 
+- POTENTIAL IMPACTED SECTIONS contain chapters that exist BEFORE the insertion. The insertion happens AFTER validation, so you must consider how existing chapters will be affected
+- You must reference chapters by their CURRENT names (before insertion) when analyzing impact"""
+        
+        infill_example = """Example 5: New Chapter Insertion.
+Edited Section: "Chapter 2 (Candidate)" (A new chapter inserted between Chapter 1 and Chapter 2. Content: John packs up and secretly leaves the country at night, fleeing from the authorities.)
+Changes: New Chapter Created
+- Chapters Overview: IMPACTED (New chapter inserted. Add summary for the new chapter (which becomes Chapter 2) explicitly stating that John makes a secret departure and leaves the country. Renumber all subsequent chapters (the new chapter becomes Chapter 2, and all following chapters shift forward by 1, so the old Chapter 2 becomes Chapter 3, etc.). Update chapter descriptions that reference the insertion point to maintain continuity.)
+- Chapter 2: IMPACTED (Continuity broken - Previously John was in the country at the start of this chapter, now he is already abroad (having left in the new Chapter 2). Adapt Chapter 2 to reflect that John is already abroad, removing references to him being in the original location and updating the opening to show he's already established in the new location.)"""
+    else:
+        infill_rule = ""
+        infill_chapter_rule = ""
+        infill_example = ""
 
     prompt = _IMPACT_PROMPT.format(
         section_name=section_name,
@@ -160,6 +176,9 @@ def call_llm_impact_analysis(
         candidate_count=len(candidate_sections),
         candidate_sections=formatted_candidates,
         candidate_names=candidate_names,
+        infill_rule=infill_rule,
+        infill_chapter_rule=infill_chapter_rule,
+        infill_example=infill_example,
     )
 
     messages = [
