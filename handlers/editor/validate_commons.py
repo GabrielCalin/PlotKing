@@ -16,7 +16,7 @@ def editor_validate(section, draft):
     im = InfillManager()
     if im.is_fill(section):
         result = "CHANGES_DETECTED"
-        diff_data = {"message": "New Chapter Created", "summary": "New Chapter Created"}
+        diff_data = {"changes": ["New Chapter Created"]}
     else:
         original_version = get_section_content(section) or ""
 
