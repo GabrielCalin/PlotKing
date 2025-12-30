@@ -39,16 +39,22 @@ def _get_generated_drafts_list(plan, exclude_section):
 def _get_revert_state(section):
     """Calculate basic state variables after a revert/accept."""
     drafts_mgr = DraftsManager()
-    # Priority: only USER draft remains after cleanup
-    content = drafts_mgr.get_content(section, DraftType.USER.value)
+    # Priority: USER draft > FILL draft > Checkpoint
+    user_content = drafts_mgr.get_content(section, DraftType.USER.value)
     
-    if content is not None:
+    if user_content is not None:
         draft_type = DraftType.USER.value
         draft_display_name = DraftsManager.get_display_name(draft_type)
-        return content, "Draft", f"**Viewing:** <span style='color:red;'>{draft_display_name}</span>", True
+        return user_content, "Draft", f"**Viewing:** <span style='color:red;'>{draft_display_name}</span>", True
     else:
-        content = get_section_content(section) or ""
-        return content, "Checkpoint", "**Viewing:** <span style='color:red;'>Checkpoint</span>", False
+        fill_content = drafts_mgr.get_content(section, DraftType.FILL.value)
+        if fill_content is not None:
+            draft_type = DraftType.FILL.value
+            draft_display_name = DraftsManager.get_display_name(draft_type)
+            return fill_content, "Draft", f"**Viewing:** <span style='color:red;'>{draft_display_name}</span>", True
+        else:
+            content = get_section_content(section) or ""
+            return content, "Checkpoint", "**Viewing:** <span style='color:red;'>Checkpoint</span>", False
 
 def get_draft_warning(exclude_section: str) -> str:
     """Check for existing USER drafts in other sections and return a warning markdown string."""
