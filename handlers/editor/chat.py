@@ -258,7 +258,7 @@ def validate_handler(section, current_log):
 
 def discard_handler(section, current_log):
     """
-    Discards Chat draft. Falls back to USER draft if exists, otherwise Checkpoint.
+    Discards Chat draft. Falls back to USER draft if exists, then FILL draft, otherwise Checkpoint.
     """
     drafts_manager = DraftsManager()
     
@@ -271,22 +271,31 @@ def discard_handler(section, current_log):
         
     new_log, status_update = append_status(current_log, msg_text)
 
-    # 2. Determine fallback content
-    user_draft_content = drafts_manager.get_content(section, DraftType.USER.value)
-    
-    # Calculate undo/redo visibility based on what remains after discard
+    # 2. Determine fallback content - check USER draft first, then FILL draft, then Checkpoint
     from state.undo_manager import UndoManager
     um = UndoManager()
     
+    # Determine draft type (priority: USER > FILL)
+    draft_type = None
+    updated_text = None
+    
+    user_draft_content = drafts_manager.get_content(section, DraftType.USER.value)
     if user_draft_content:
-        # Fallback to User Draft
+        draft_type = DraftType.USER.value
         updated_text = user_draft_content
-        draft_display_name = DraftsManager.get_display_name(DraftType.USER.value)
+    else:
+        fill_draft_content = drafts_manager.get_content(section, DraftType.FILL.value)
+        if fill_draft_content:
+            draft_type = DraftType.FILL.value
+            updated_text = fill_draft_content
+    
+    if draft_type:
+        # Fallback to Draft (USER or FILL)
+        draft_display_name = DraftsManager.get_display_name(draft_type)
         mode_label = f"**Viewing:** <span style='color:red;'>{draft_display_name}</span>"
         view_state = "Draft"
         btns_visible = True
-        undo_visible, redo_visible, undo_icon, redo_icon, _ = um.get_undo_redo_state(section, DraftType.USER.value, True)
-        
+        undo_visible, redo_visible, undo_icon, redo_icon, _ = um.get_undo_redo_state(section, draft_type, True)
     else:
         # Fallback to Checkpoint - no undo/redo available
         updated_text = get_section_content(section) or ""
