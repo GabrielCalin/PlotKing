@@ -14,10 +14,12 @@ def editor_validate(section, draft):
         return "Error: No checkpoint found.", None
 
     im = InfillManager()
-    if im.is_fill(section):
+    is_fill = im.is_fill(section)
+    chapter_num = im.parse_fill_target(section) if is_fill else None
+    
+    if is_fill:
         result = "CHANGES_DETECTED"
         
-        chapter_num = im.parse_fill_target(section)
         total_chapters = len(checkpoint.chapters_full or [])
         chapter_msg = _build_fill_chapter_message(chapter_num, total_chapters)
         
@@ -57,11 +59,17 @@ def editor_validate(section, draft):
         else:
             diff_summary_text = diff_data.get("message", "")
 
+        if is_fill and chapter_num is not None:
+            section_name_for_impact = f"Chapter {chapter_num} (Candidate)"
+        else:
+            section_name_for_impact = section
+
         impact_result, impact_data, impacted = call_llm_impact_analysis(
-            section_name=section,
+            section_name=section_name_for_impact,
             edited_section_content=draft or "",
             diff_summary=diff_summary_text,
             candidate_sections=candidates,
+            is_infill=is_fill,
         )
         msg = format_validation_markdown(result, diff_data, impact_result, impact_data, impacted)
         plan = {
@@ -81,7 +89,7 @@ def editor_validate(section, draft):
         msg = warning_msg + "\n\n" + msg
     
     # Append fill draft warning if validating a fill draft when other fill drafts exist
-    if im.is_fill(section):
+    if is_fill:
         fill_warning_msg = get_fill_draft_warning(section)
         if fill_warning_msg:
             msg = fill_warning_msg + "\n\n" + msg

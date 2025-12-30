@@ -16,6 +16,7 @@ You are a continuity analyst that identifies which story sections need updates a
 
 Inputs you receive:
 - SECTION EDITED: {section_name}
+- IS INFILL: {is_infill}
 - EDITED SECTION CONTENT (after modification):
 \"\"\"{edited_section_content}\"\"\"
 - SUMMARY OF CHANGES:
@@ -29,6 +30,12 @@ Impact Expectations:
 **Expanded Plot changes**: Impact occurs if the change contradicts existing content or breaks continuity with other sections. All sections may be affected. **IMPORTANT**: When providing instructions for Expanded Plot adaptation, do NOT mention specific chapter numbers (e.g., "Chapter 4", "Chapter 5"). Instead, refer to events or developments in a chapter-agnostic way (e.g., "the event where Gary dies", "John's Everest adventure"). This keeps the Expanded Plot focused on the story arc rather than chapter structure.
 
 **Chapters Overview changes**: Impact occurs if the change contradicts existing content or breaks continuity. If continuity is broken, all following chapters need adaptation and should be marked as impacted. When marking Chapters Overview as impacted, you must clearly specify which chapters from Chapters Overview need adaptation in the reason.
+
+**CRITICAL INFILL RULE**:
+If IS INFILL is "yes" (indicating a new chapter insertion), then Chapters Overview is ALWAYS impacted, even if there are no contradictions. A new chapter requires:
+- adding a new chapter summary
+- shifting numbering of subsequent chapters
+- adapting summaries that follow the insertion point
 
 **Chapter changes**: Impact occurs if the change:
 1. Contradicts something (even minor details not mentioned in Expanded Plot or Chapters Overview)
@@ -125,6 +132,7 @@ def call_llm_impact_analysis(
     edited_section_content: str,
     diff_summary: str,
     candidate_sections: List[Tuple[str, str]],
+    is_infill: bool = False,
     api_url: str = None,
     model_name: str = None,
     timeout: int = 300,
@@ -146,6 +154,7 @@ def call_llm_impact_analysis(
 
     prompt = _IMPACT_PROMPT.format(
         section_name=section_name,
+        is_infill="yes" if is_infill else "no",
         edited_section_content=edited_section_content or "(empty)",
         diff_summary=diff_summary or "(empty)",
         candidate_count=len(candidate_sections),
