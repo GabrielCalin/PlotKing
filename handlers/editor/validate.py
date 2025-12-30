@@ -387,7 +387,7 @@ def draft_revert_all(current_section, plan, current_log):
     edited = plan.get("edited_section", current_section) if plan else current_section
     sections = list(set(impacted + [edited, current_section]))
     
-    drafts_mgr.keep_only_user_and_fill_drafts(sections)
+    drafts_mgr.keep_only_draft_types(sections, [DraftType.USER.value, DraftType.FILL.value])
     
     new_log, status_update = append_status(current_log, "❌ All drafts reverted.")
     content, view_state, mode_label, btns_visible = _get_revert_state(current_section)
@@ -486,7 +486,7 @@ def draft_accept_selected(current_section, original_selected, generated_selected
     
     # 4. Discard Unselected / Cleanup & Reset UI
     remaining_sections = list(drafts_mgr.get_all_content().keys())
-    drafts_mgr.keep_only_user_and_fill_drafts(remaining_sections)
+    drafts_mgr.keep_only_draft_types(remaining_sections, [DraftType.USER.value])
 
     new_log, status_update = append_status(current_log, f"✅ Accepted {saved_count} drafts. {drafts_kept_count} drafts kept as User Drafts.")
     new_epoch = (create_epoch or 0) + 1

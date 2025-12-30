@@ -33,16 +33,20 @@ class DraftsManager:
         """Return list of all sections currently having any draft."""
         return list(self._drafts.keys())
 
-    def keep_only_user_and_fill_drafts(self, sections: List[str]) -> None:
+    def keep_only_draft_types(self, sections: List[str], draft_types_to_keep: List[str]) -> None:
         """
-        Clear only GENERATED, CHAT, and ORIGINAL drafts for the specified sections.
-        Preserves USER drafts and does not touch sections not in the list.
+        Clear drafts for the specified sections, keeping only the specified draft types.
+        Preserves only the draft types in draft_types_to_keep and does not touch sections not in the list.
+        
+        Args:
+            sections: List of section names to process
+            draft_types_to_keep: List of draft type values to preserve (e.g., [DraftType.USER.value, DraftType.FILL.value])
         """
         for section in sections:
             if section in self._drafts:
-                # Remove all types except USER and FILL
+                # Remove all types except those in draft_types_to_keep
                 for dtype in list(self._drafts[section].keys()):
-                    if dtype != DraftType.USER.value and dtype != DraftType.FILL.value:
+                    if dtype not in draft_types_to_keep:
                         del self._drafts[section][dtype]
                 
                 # If section empty now, remove it
