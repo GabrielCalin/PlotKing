@@ -59,40 +59,14 @@ def force_edit_draft_handler(section, status_log, create_sections_epoch):
         new_log, status_update = append_status(status_log, msg)
         return [gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), new_log, status_update, create_sections_epoch, gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update()]
     
-    from state.infill_manager import InfillManager
-    from state.checkpoint_manager import insert_chapter, get_section_content
-    from state.overall_state import get_sections_list
+    from handlers.editor.utils import force_edit_common_handler
     
-    im = InfillManager()
-    new_chapter_name = None
-    dropdown_update = gr.update()
+    new_content, msg, dropdown_update, new_log, status_update = force_edit_common_handler(section, content, status_log)
     
-    if im.is_fill(section):
-        idx = im.parse_fill_target(section)
-        if idx is not None:
-            success = insert_chapter(idx, content)
-            if success:
-                drafts_mgr.remove(section)
-                im.shift_fills_after_insert(idx, section)
-                
-                new_chapter_name = f"Chapter {idx}"
-                new_opts = get_sections_list()
-                dropdown_update = gr.update(choices=new_opts, value=new_chapter_name)
-                new_content = get_section_content(new_chapter_name) or content
-                msg = f"⚡ Force Edited Fill **{section}**. New {new_chapter_name} created."
-            else:
-                msg = f"❌ Error creating Chapter {idx} from **{section}**."
-                new_content = content
-        else:
-            msg = f"❌ Could not parse target index for Fill **{section}**."
-            new_content = content
-    else:
-        save_section(section, content)
+    if new_content is None:
         new_content = content
-        msg = f"⚡ Force Edited **{section}**. Draft saved to checkpoint."
-        drafts_mgr.remove(section)
+        new_log, status_update = append_status(status_log, f"⚡ Force Edited **{section}**. Draft saved to checkpoint.")
     
-    new_log, status_update = append_status(status_log, msg)
     new_epoch = (create_sections_epoch or 0) + 1
     
     return (

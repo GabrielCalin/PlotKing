@@ -164,18 +164,17 @@ def rewrite_discard(section, current_log):
     )
 
 def rewrite_force_edit(section, viewer_content, current_log, create_epoch):
-    """Force edit with rewritten text - remove highlight and update checkpoint."""
-    from state.drafts_manager import DraftsManager
-    draft_clean = remove_highlight(viewer_content)
-    save_section(section, draft_clean)
-    updated_text = draft_clean
-    new_log, status_update = append_status(current_log, f"⚡ ({section}) Synced (forced from rewrite).")
-    new_create_epoch = (create_epoch or 0) + 1
+    """Force edit with rewritten text - remove highlight and update checkpoint. For fills, inserts chapter and shifts."""
+    from handlers.editor.utils import force_edit_common_handler
     
-    # Remove all drafts after saving to checkpoint
-    drafts_manager = DraftsManager()
-    if drafts_manager.has(section):
-        drafts_manager.remove(section)
+    draft_clean = remove_highlight(viewer_content)
+    updated_text, msg, dropdown_update, new_log, status_update = force_edit_common_handler(section, draft_clean, current_log)
+    
+    if updated_text is None:
+        updated_text = draft_clean
+        new_log, status_update = append_status(current_log, f"⚡ ({section}) Synced (forced from rewrite).")
+    
+    new_create_epoch = (create_epoch or 0) + 1
     
     return (
         gr.update(value=updated_text, visible=True),  # viewer_md
@@ -194,7 +193,7 @@ def rewrite_force_edit(section, viewer_content, current_log, create_epoch):
         gr.update(visible=False),  # start_edit_btn
         gr.update(visible=False),  # rewrite_section
         gr.update(value="View", interactive=True),  # mode_radio
-        gr.update(interactive=True),  # section_dropdown
+        dropdown_update,  # section_dropdown update
         new_log,  # status_log
         new_create_epoch,  # create_sections_epoch
         "",  # selected_text

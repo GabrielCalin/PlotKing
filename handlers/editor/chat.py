@@ -318,20 +318,19 @@ def discard_handler(section, current_log):
 
 def force_edit_handler(section, current_log, create_epoch):
     """
-    Force saves the chat edits to checkpoint.
+    Force saves the chat edits to checkpoint. For fills, inserts chapter and shifts.
     """
     from state.overall_state import get_current_section_content
+    from handlers.editor.utils import force_edit_common_handler
+    
     current_text = get_current_section_content(section)
-    save_section(section, current_text)
-    updated_text = current_text
-    new_log, status_update = append_status(current_log, f"⚡ ({section}) Synced (forced from Chat).")
-    new_create_epoch = (create_epoch or 0) + 1
+    updated_text, msg, dropdown_update, new_log, status_update = force_edit_common_handler(section, current_text, current_log)
+    
+    if updated_text is None:
+        updated_text = current_text
+        new_log, status_update = append_status(current_log, f"⚡ ({section}) Synced (forced from Chat).")
     
     new_create_epoch = (create_epoch or 0) + 1
-    
-    drafts_manager = DraftsManager()
-    if drafts_manager.has(section):
-        drafts_manager.remove(section)
     
     return (
         gr.update(value=updated_text), # viewer_md
@@ -351,6 +350,7 @@ def force_edit_handler(section, current_log, create_epoch):
         gr.update(visible=False), # btn_diff - hide
         "Checkpoint", # current_view_state
         gr.update(interactive=True), # mode_radio - ENABLED
+        dropdown_update, # section_dropdown update
         gr.update(visible=False), # btn_undo - hide
         gr.update(visible=False), # btn_redo - hide
     )

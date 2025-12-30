@@ -94,17 +94,16 @@ def confirm_edit(section, draft, current_log):
     )
 
 def force_edit(section, draft, current_log, create_epoch):
-    """Apply changes directly without validation — unlocks controls after."""
-    from state.drafts_manager import DraftsManager
-    save_section(section, draft)
-    updated_text = draft
-    new_log, status_update = append_status(current_log, f"⚡ ({section}) Synced (forced).")
-    new_create_epoch = (create_epoch or 0) + 1  # Bump create_sections_epoch to notify Create tab
+    """Apply changes directly without validation — unlocks controls after. For fills, inserts chapter and shifts."""
+    from handlers.editor.utils import force_edit_common_handler
     
-    # Remove all drafts after saving to checkpoint
-    drafts_manager = DraftsManager()
-    if drafts_manager.has(section):
-        drafts_manager.remove(section)
+    updated_text, msg, dropdown_update, new_log, status_update = force_edit_common_handler(section, draft, current_log)
+    
+    if updated_text is None:
+        updated_text = draft
+        new_log, status_update = append_status(current_log, f"⚡ ({section}) Synced (forced).")
+    
+    new_create_epoch = (create_epoch or 0) + 1
     
     return (
         gr.update(value=updated_text, visible=True),  # update and show Viewer
@@ -116,7 +115,7 @@ def force_edit(section, draft, current_log, create_epoch):
         gr.update(visible=True),    # show Start Editing (will be hidden by _toggle_mode if not Manual mode)
         gr.update(visible=False),   # hide Rewrite Section (will be shown by _toggle_mode if Rewrite mode)
         gr.update(interactive=True),# unlock Mode
-        gr.update(interactive=True),# unlock Section
+        dropdown_update,  # section_dropdown update
         new_log,
         new_create_epoch,  # bump create_sections_epoch to notify Create tab
         gr.update(visible=True), # status_row (visible)
