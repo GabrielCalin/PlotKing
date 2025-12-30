@@ -29,28 +29,21 @@ class InfillManager:
 
         if current_section:
             if current_section == "Expanded Plot":
-                # Logic says: "dupa Expanded Plot nu are sens", but maybe we just default to Chapter 1? 
-                # Request says: "dupa Expanded Plot nu are sens". So we might return None or handle gracefully.
-                # Let's assume UI prevents this, but if called, we treat as start (Fill 1).
+                # We assume UI prevents this, but if called, we treat as start (Fill 1).
                 target_chapter_index = 1
             elif current_section == "Chapters Overview":
-                # "dupa Chapters Overview e OK, inseamna ca se doreste adaugarea unui prim capitol ca fill" -> Fill 1 (#1)
                 target_chapter_index = 1
             elif current_section.startswith("Chapter "):
                 try:
-                    # "dupa Chapter 2, atunci x e 3"
                     idx = int(current_section.split(" ")[1])
                     target_chapter_index = idx + 1
                 except ValueError:
                     target_chapter_index = 1
             elif "Fill" in current_section:
-                # "cand section selectat e alt fill ... eg, existau Fill 3 (#1) ... se va crea acum Fill 3 (#2)"
-                # Name format: "Fill 3 (#1)"
                 parts = current_section.split(" ")
                 if len(parts) >= 3 and parts[0] == "Fill":
                     try:
                         target_chapter_index = int(parts[1])
-                        # Parse (#Y)
                         y_part = parts[2].strip("(#)")
                         last_y = int(y_part)
                         fill_number = last_y + 1
@@ -59,20 +52,7 @@ class InfillManager:
         
         # Determine strict next available fill number if not derived from previous fill
         if "Fill" not in (current_section or ""):
-            # Check existing fills for this target index to find next Y
-            # We need to scan existing drafts to see if "Fill X (#?)" exists
             dm = DraftsManager()
-            drafts = dm.get_all_draft_keys() # Helper needed? Or just iterate keys
-            
-            # Since DraftsManager doesn't expose keys easily, we might need a helper or just rely on logic
-            # Actually DraftsManager.has() checks section existence.
-            # We can try incrementing Y until we find a gap? No, we need to append.
-            # "daca de ex se apasa de 2 ori pe butonul de fill ... se vor crea intai Fill 3 (#1) apoi Fill 3 (#2)"
-            
-            # This implies we blindly create #1? No, if #1 exists we make #2.
-            # We need a way to list drafts from DraftsManager.
-            # Let's add `get_all_sections()` to DraftsManager or check iteratively.
-            # Iterating is safer.
             y = 1
             while True:
                 candidate = f"Fill {target_chapter_index} (#{y})"
