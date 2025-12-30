@@ -9,6 +9,7 @@ from state.checkpoint_manager import get_section_content
 # Import helpers and logic from new modules
 from handlers.editor.utils import (
     diff_handler,
+    append_status,
 )
 from state.drafts_manager import DraftsManager
 import ui.tabs.editor.manual_ui as Manual
@@ -598,7 +599,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     )
 
     # --- Add Fill Handler ---
-    def _add_fill_handler(current_section):
+    def _add_fill_handler(current_section, status_log):
         from state.infill_manager import InfillManager
         from state.overall_state import get_sections_list
         
@@ -608,12 +609,16 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         # Refresh sections
         new_choices = get_sections_list()
         
-        return gr.update(choices=new_choices, value=new_fill_name)
+        # Log the action
+        new_log, status_update = append_status(status_log, f"➕ Added fill draft: **{new_fill_name}**")
+        status_update = gr.update(value=new_log, visible=True)
+        
+        return gr.update(choices=new_choices, value=new_fill_name), new_log, status_update
 
     add_fill_btn.click(
         fn=_add_fill_handler,
-        inputs=[selected_section],
-        outputs=[section_dropdown],
+        inputs=[selected_section, status_log],
+        outputs=[section_dropdown, status_log, status_strip],
         queue=False
     )
     
