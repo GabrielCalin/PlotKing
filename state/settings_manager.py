@@ -48,6 +48,7 @@ IMAGE_PROVIDERS = ["Automatic1111", "OpenAI"]
 # We will define them here.
 LLM_TASKS = [
     {"technical_name": "chapter_editor", "display_name": "Chapter Editor"},
+    {"technical_name": "chapter_summary", "display_name": "Chapter Summary"},
     {"technical_name": "chapter_validator", "display_name": "Chapter Validator"},
     {"technical_name": "chapter_writer", "display_name": "Chapter Writer"},
     {"technical_name": "chat_editor", "display_name": "Chat Editor"},

@@ -16,7 +16,23 @@ def editor_validate(section, draft):
     im = InfillManager()
     if im.is_fill(section):
         result = "CHANGES_DETECTED"
-        diff_data = {"changes": ["New Chapter Created"]}
+        
+        chapter_num = im.parse_fill_target(section)
+        if chapter_num is not None:
+            chapter_msg = f"New Chapter {chapter_num} Created"
+        else:
+            chapter_msg = "New Chapter Created"
+        
+        from llm.chapter_summary import call_llm_chapter_summary
+        chapter_summary = call_llm_chapter_summary(
+            chapter_content=draft or "",
+        )
+        
+        changes_list = [chapter_msg]
+        if chapter_summary and not chapter_summary.startswith("Error"):
+            changes_list.append(f"Summary: {chapter_summary}")
+        
+        diff_data = {"changes": changes_list}
     else:
         original_version = get_section_content(section) or ""
 
