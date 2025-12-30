@@ -32,12 +32,8 @@ def get_sections_list() -> List[str]:
     base_sections = get_checkpoint_sections()
     
     # 2. Get Fills
-    from state.infill_manager import InfillManager
     dm = DraftsManager()
-    im = InfillManager()
-    
-    all_draft_keys = dm.get_all_draft_keys()
-    fill_keys = [k for k in all_draft_keys if im.is_fill(k)]
+    fill_keys = dm.get_fill_drafts()
     
     if not fill_keys:
         return base_sections

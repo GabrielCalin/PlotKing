@@ -32,6 +32,10 @@ class DraftsManager:
     def get_all_draft_keys(self) -> List[str]:
         """Return list of all sections currently having any draft."""
         return list(self._drafts.keys())
+    
+    def get_draft_keys_by_type(self, draft_type: str) -> List[str]:
+        """Get list of section names that have a draft of the specified type."""
+        return [s for s, d in self._drafts.items() if draft_type in d]
 
     def keep_only_draft_types(self, sections: List[str], draft_types_to_keep: List[str]) -> None:
         """
@@ -279,19 +283,19 @@ class DraftsManager:
         
     def get_generated_drafts(self) -> List[str]:
         """Get list of section names that have a GENERATED draft."""
-        return [s for s, d in self._drafts.items() if DraftType.GENERATED.value in d]
+        return self.get_draft_keys_by_type(DraftType.GENERATED.value)
 
     def get_user_drafts(self) -> List[str]:
         """Get list of section names that have a USER draft."""
-        return [s for s, d in self._drafts.items() if DraftType.USER.value in d]
+        return self.get_draft_keys_by_type(DraftType.USER.value)
 
     def get_chat_drafts(self) -> List[str]:
         """Get list of section names that have a CHAT draft."""
-        return [s for s, d in self._drafts.items() if DraftType.CHAT.value in d]
+        return self.get_draft_keys_by_type(DraftType.CHAT.value)
         
     def get_fill_drafts(self) -> List[str]:
         """Get list of section names that have a FILL draft."""
-        return [s for s, d in self._drafts.items() if DraftType.FILL.value in d]
+        return self.get_draft_keys_by_type(DraftType.FILL.value)
 
     def get_all_content(self) -> Dict[str, str]:
         """
