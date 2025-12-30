@@ -69,6 +69,19 @@ def get_draft_warning(exclude_section: str) -> str:
         return f"⚠️ **Validation is based on other drafts.**\nSome related sections are still drafts: {draft_names}.\nEnsure these drafts are consistent before applying changes."
     return ""
 
+def get_fill_draft_warning(exclude_section: str) -> str:
+    """Check for existing FILL drafts in other sections and return a warning markdown string."""
+    drafts_mgr = DraftsManager()
+    fill_drafts = drafts_mgr.get_fill_drafts()
+    
+    # Exclude current section since we are validating it actively
+    other_fills = [s for s in fill_drafts if s != exclude_section]
+    
+    if other_fills:
+        fill_names = ", ".join([f"`{d}`" for d in other_fills])
+        return f"⚠️ **Multiple fill drafts present.**\nOther fill drafts exist: {fill_names}.\nThe current fill will not be validated against other fill drafts."
+    return ""
+
 
 def editor_apply(section, draft, plan):
     """

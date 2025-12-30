@@ -61,10 +61,16 @@ def editor_validate(section, draft):
         plan = None
 
     # Append draft warning to message if applicable
-    from handlers.editor.validate import get_draft_warning
+    from handlers.editor.validate import get_draft_warning, get_fill_draft_warning
     warning_msg = get_draft_warning(section)
     if warning_msg:
         msg = warning_msg + "\n\n" + msg
+    
+    # Append fill draft warning if validating a fill draft when other fill drafts exist
+    if im.is_fill(section):
+        fill_warning_msg = get_fill_draft_warning(section)
+        if fill_warning_msg:
+            msg = fill_warning_msg + "\n\n" + msg
 
     return msg, plan
 
