@@ -131,6 +131,15 @@ def _build_candidate_sections(section: str, checkpoint) -> List[Tuple[str, str]]
         add("Chapters Overview")
         for idx in range(1, total_chapters + 1):
             add(f"Chapter {idx}")
+    elif section.startswith("Fill"):
+        add("Expanded Plot")
+        add("Chapters Overview")
+        from state.infill_manager import InfillManager
+        im = InfillManager()
+        chapter_num = im.parse_fill_target(section)
+        if chapter_num:
+            for idx in range(chapter_num, total_chapters + 1):
+                add(f"Chapter {idx}")
     elif section.startswith("Chapter "):
         add("Expanded Plot")
         add("Chapters Overview")
