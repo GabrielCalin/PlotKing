@@ -158,7 +158,7 @@ class DraftsManager:
         """
         Get draft content.
         If draft_type is specified, return that content.
-        If NOT specified, return based on Priority: GENERATED > USER > ORIGINAL.
+        If NOT specified, return based on Priority: ORIGINAL > GENERATED > CHAT > USER > FILL.
         """
         if section not in self._drafts:
             return None
@@ -169,6 +169,9 @@ class DraftsManager:
             return drafts.get(draft_type)
             
         # Priority Fallback
+        if DraftType.ORIGINAL.value in drafts:
+            # Snapshot - highest priority
+            return drafts[DraftType.ORIGINAL.value]
         if DraftType.GENERATED.value in drafts:
             # AI Proposal takes precedence in UI by default
             return drafts[DraftType.GENERATED.value]
@@ -181,9 +184,6 @@ class DraftsManager:
         if DraftType.FILL.value in drafts:
             # Specific Fill content
             return drafts[DraftType.FILL.value]
-        if DraftType.ORIGINAL.value in drafts:
-            # Snapshot
-            return drafts[DraftType.ORIGINAL.value]
             
         return None
         
@@ -196,13 +196,15 @@ class DraftsManager:
     def get_type(self, section: str) -> Optional[str]:
         """
         Get the 'primary' draft type present, following priority:
-        GENERATED > USER > ORIGINAL.
+        ORIGINAL > GENERATED > CHAT > USER > FILL.
         Used for determining UI state (View Actions compatibility).
         """
         if section not in self._drafts:
             return None
         drafts = self._drafts[section]
         
+        if DraftType.ORIGINAL.value in drafts:
+            return DraftType.ORIGINAL.value
         if DraftType.GENERATED.value in drafts:
             return DraftType.GENERATED.value
         if DraftType.CHAT.value in drafts:
@@ -211,8 +213,6 @@ class DraftsManager:
             return DraftType.USER.value
         if DraftType.FILL.value in drafts:
             return DraftType.FILL.value
-        if DraftType.ORIGINAL.value in drafts:
-            return DraftType.ORIGINAL.value
         return None
 
     @staticmethod
