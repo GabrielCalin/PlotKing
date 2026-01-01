@@ -22,16 +22,7 @@ def editor_validate(section, draft):
         total_chapters = len(checkpoint.chapters_full or [])
         chapter_msg = _build_fill_chapter_message(chapter_num, total_chapters)
         
-        from llm.chapter_summary import call_llm_chapter_summary
-        chapter_summary = call_llm_chapter_summary(
-            chapter_content=draft or "",
-        )
-        
-        changes_list = [chapter_msg]
-        if chapter_summary and not chapter_summary.startswith("Error"):
-            changes_list.append(f"Summary: {chapter_summary}")
-        
-        diff_data = {"changes": changes_list}
+        diff_data = {"changes": [chapter_msg]}
     else:
         original_version = get_section_content(section) or ""
 
