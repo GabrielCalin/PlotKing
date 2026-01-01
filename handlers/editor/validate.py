@@ -580,6 +580,7 @@ def draft_regenerate_selected(generated_selected, plan, section, current_log, cr
     edited_section = plan.get("edited_section", section)
     diff_data = plan.get("diff_data", {})
     impact_data = plan.get("impact_data", {})
+    fill_name = plan.get("fill_name")
     
     # Prepare initial UI updates
     # Use edited_section as the source of truth for the original draft
@@ -606,6 +607,7 @@ def draft_regenerate_selected(generated_selected, plan, section, current_log, cr
         diff_data=diff_data,
         impact_data=impact_data,
         impacted_sections=filtered_impacted,
+        fill_name=fill_name,
     ):
         if isinstance(result, tuple) and len(result) >= 9:
             expanded_plot, chapters_overview, chapters_full, current_text, dropdown, counter, status_log_text, validation_text, pipeline_drafts = result
