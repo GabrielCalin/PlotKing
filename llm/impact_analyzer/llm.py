@@ -150,8 +150,10 @@ def call_llm_impact_analysis(
 **CRITICAL INFILL RULE**:
 Since IS INFILL is "yes" (indicating a new chapter insertion), Chapters Overview is ALWAYS impacted, even if there are no contradictions. A new chapter requires:
 - adding a new chapter summary
-- shifting numbering of subsequent chapters (there will be {new_total_chapters} total chapters after insertion)
-- adapting summaries that follow the insertion point"""
+- shifting numbering of subsequent chapters ONLY if they exist (there will be {new_total_chapters} total chapters after insertion)
+- adapting summaries that follow the insertion point ONLY if they exist
+
+**IMPORTANT**: To determine if renumbering is needed, check the SECTION EDITED name. If the chapter number in SECTION EDITED is greater than {total_chapters} (the current total number of chapters), then the new chapter is being inserted at the END and NO renumbering is needed (no subsequent chapters exist). If the chapter number is less than or equal to {total_chapters}, then subsequent chapters exist and must be renumbered."""
         
         infill_chapter_rule = f"""
 **CRITICAL INFILL RULE**: 
@@ -162,7 +164,12 @@ Since IS INFILL is "yes" (indicating a new chapter insertion), Chapters Overview
 Edited Section: "Chapter 2 (Candidate)" (A new chapter inserted between Chapter 1 and Chapter 2. Content: John packs up and secretly leaves the country at night, fleeing from the authorities.)
 Changes: New Chapter Created
 - Chapters Overview: IMPACTED (New chapter inserted. Add summary for the new chapter (which becomes Chapter 2) explicitly stating that John makes a secret departure and leaves the country. Renumber all subsequent chapters (the new chapter becomes Chapter 2, and all following chapters shift forward by 1, so the old Chapter 2 becomes Chapter 3, etc.). Update chapter descriptions that reference the insertion point to maintain continuity.)
-- Chapter 2: IMPACTED (Continuity broken - Previously John was in the country at the start of this chapter, now he is already abroad (having left in the new Chapter 2). Adapt Chapter 2 to reflect that John is already abroad, removing references to him being in the original location and updating the opening to show he's already established in the new location.)"""
+- Chapter 2: IMPACTED (Continuity broken - Previously John was in the country at the start of this chapter, now he is already abroad (having left in the new Chapter 2). Adapt Chapter 2 to reflect that John is already abroad, removing references to him being in the original location and updating the opening to show he's already established in the new location.)
+
+Example 6: New Chapter Insertion at the End.
+Edited Section: "Chapter 6 (Candidate)" (A new chapter inserted at the end, after Chapter 5. Current total chapters: 5. Content: John packs up and secretly leaves the country at night, fleeing from the authorities.)
+Changes: New Chapter Created
+- Chapters Overview: IMPACTED (New chapter inserted at the end. Add summary for the new chapter (which becomes Chapter 6) explicitly stating that John makes a secret departure and leaves the country. NO renumbering is needed since this is the last chapter - the chapter number (6) is greater than the current total (5), meaning no subsequent chapters exist to renumber.)"""
     else:
         infill_rule = ""
         infill_chapter_rule = ""
