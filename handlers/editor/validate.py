@@ -102,6 +102,7 @@ def editor_apply(section, draft, plan):
         diff_data = plan.get("diff_data", {})
         impact_data = plan.get("impact_data", {})
         impacted = plan.get("impacted_sections", [])
+        fill_name = plan.get("fill_name")
         
         if impacted:
             from pipeline.runner_edit import run_edit_pipeline_stream
@@ -111,6 +112,7 @@ def editor_apply(section, draft, plan):
                 diff_data=diff_data,
                 impact_data=impact_data,
                 impacted_sections=impacted,
+                fill_name=fill_name,
             ):
                 if isinstance(result, tuple) and len(result) >= 9:
                     pipeline_drafts = result[8]

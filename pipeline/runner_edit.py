@@ -44,6 +44,7 @@ def run_edit_pipeline_stream(
     diff_data: dict,
     impact_data: dict,
     impacted_sections: list,
+    fill_name: str = None,
 ):
     """
     Rulează pipeline-ul de editare pentru secțiunile impactate.
@@ -169,6 +170,7 @@ def run_edit_pipeline_stream(
                 impact_reason=impact_reason,
                 diff_summary=diff_summary,
                 edited_section=edited_section,
+                fill_name=fill_name,
             )
             drafts.add_generated("Chapters Overview", state.chapters_overview)
             log_ui(edit_log, "✅ Chapters Overview adapted.")

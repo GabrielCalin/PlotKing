@@ -16,7 +16,6 @@ def editor_validate(section, draft):
     im = InfillManager()
     is_fill = im.is_fill(section)
     chapter_num = im.parse_fill_target(section) if is_fill else None
-    
     if is_fill:
         result = "CHANGES_DETECTED"
         
@@ -75,10 +74,11 @@ def editor_validate(section, draft):
         )
         msg = format_validation_markdown(result, diff_data, impact_result, impact_data, impacted)
         plan = {
-            "edited_section": section,
+            "edited_section": section_name_for_impact,
             "diff_data": diff_data,
             "impact_data": impact_data,
             "impacted_sections": impacted,
+            "fill_name": section if is_fill else None,
         } if impact_result == "IMPACT_DETECTED" and impacted else None
     else:
         msg = format_validation_markdown(result, diff_data)
