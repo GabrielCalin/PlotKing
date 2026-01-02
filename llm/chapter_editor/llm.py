@@ -94,12 +94,15 @@ Specific Instructions:
 5. Maintain a clear, engaging, and immersive prose style appropriate for long-form fiction.
 6. Adapt writing style, pacing, and atmosphere to match the **GENRE** conventions.
 7. Target length: approximately the same as the original chapter (±10%).
+{infill_rules}
 
 You must output a JSON object with the following structure:
 {{
   "is_breaking_change": true/false,
-  "adapted_chapter": "the complete adapted Chapter {chapter_number} text in Markdown format"
+  "adapted_chapter": "the COMPLETE adapted Chapter {chapter_number} text in Markdown format from start to finish"
 }}
+
+CRITICAL: The "adapted_chapter" field MUST contain the FULL chapter text, not just the modifications. You must reproduce the entire chapter with all necessary adaptations applied. Do NOT output only a paragraph or a partial modification - output the complete chapter text.
 
 Output ONLY the JSON object, no other text or explanations.
 """).strip()
@@ -125,6 +128,7 @@ def call_llm_edit_chapter(
     edited_section: str = "",
     genre: str = "",
     anpc: Optional[int] = None,
+    is_infill: bool = False,
     *,
     # Deprecated args kept for signature compatibility but ignored (or mapped if useful)
     api_url: Optional[str] = None,
@@ -137,6 +141,18 @@ def call_llm_edit_chapter(
     """
     prev_joined = _join_previous_chapters(previous_chapters or [])
 
+    if is_infill:
+        infill_rules = textwrap.dedent("""
+        
+        CRITICAL INFILL RULES (applies when a new chapter was inserted):
+        - Chapter numbering has ALREADY been updated. The chapter number provided ({chapter_number}) is the FINAL, correct number after renumbering.
+        - Any mentions of "renumbering", "shifting", or "becoming Chapter X" in the diff_summary or impact_reason refer to changes that have ALREADY been completed. Ignore these references as they are outdated.
+        - Focus ONLY on story continuity: what contradictions exist, what continuity breaks occurred, what specific story elements need to be changed or adapted in the content.
+        - The diff_summary and impact_reason may contain outdated references to old chapter numbers or renumbering. Use ONLY the current chapter number ({chapter_number}) and focus on the story adaptation needed.
+        """).strip()
+    else:
+        infill_rules = ""
+
     prompt_text = _EDIT_CHAPTER_PROMPT.format(
         expanded_plot=expanded_plot or "",
         chapters_overview=chapters_overview or "",
@@ -147,6 +163,7 @@ def call_llm_edit_chapter(
         edited_section=edited_section or "a previous section",
         genre=genre or "unspecified",
         chapter_number=chapter_index,
+        infill_rules=infill_rules,
     )
     
     messages = [

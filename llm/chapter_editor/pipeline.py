@@ -117,5 +117,6 @@ def run_chapter_editor(
         edited_section=updated_edited_section,  # Use updated edited_section without (Candidate)
         genre=context.genre or "",
         anpc=context.anpc,
+        is_infill=fill_name is not None,
     )
 
