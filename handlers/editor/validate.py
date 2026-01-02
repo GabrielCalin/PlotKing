@@ -405,7 +405,9 @@ def draft_revert_all(current_section, plan, current_log):
     """Discard only session-related generated and original drafts, preserve user drafts."""
     drafts_mgr = DraftsManager()
     impacted = _get_generated_drafts_list(plan, None)
-    edited = plan.get("edited_section", current_section) if plan else current_section
+    fill_name = plan.get("fill_name") if plan and isinstance(plan, dict) else None
+    # For fills, use fill_name (real section name) instead of edited_section (which is "Chapter X (Candidate)")
+    edited = fill_name if fill_name else (plan.get("edited_section", current_section) if plan else current_section)
     sections = list(set(impacted + [edited, current_section]))
     
     drafts_mgr.keep_only_draft_types(sections, [DraftType.USER.value, DraftType.FILL.value])
