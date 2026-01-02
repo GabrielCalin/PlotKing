@@ -365,15 +365,35 @@ def draft_accept_all(current_section, plan, current_log, create_epoch):
     
     # Identify involved sections: originally edited + impacted
     impacted = _get_generated_drafts_list(plan, None)
-    edited = plan.get("edited_section", current_section) if plan else current_section
+    fill_name = plan.get("fill_name") if plan and isinstance(plan, dict) else None
+    # For fills, use fill_name (real section name) instead of edited_section (which is "Chapter X (Candidate)")
+    edited = fill_name if fill_name else (plan.get("edited_section", current_section) if plan else current_section)
     sections_to_save = list(set(impacted + [edited, current_section]))
     
+    from state.infill_manager import InfillManager
+    from state.checkpoint_manager import insert_chapter
+    from state.overall_state import get_sections_list
+    im = InfillManager()
+    
+    new_chapter_name = None
     for section in sections_to_save:
         content = drafts_mgr.get_content(section)
         if content is not None:
-            save_section(section, content)
+            if im.is_fill(section):
+                idx = im.parse_fill_target(section)
+                insert_chapter(idx, content)
+                im.shift_fills_after_insert(idx, section)
+                new_chapter_name = f"Chapter {idx}"
+            else:
+                save_section(section, content)
             # Fully remove drafts for accepted sections (they are now in checkpoint)
             drafts_mgr.remove(section)
+    
+    # Update dropdown if fill was accepted
+    dropdown_update = gr.update(interactive=True)
+    if new_chapter_name:
+        new_opts = get_sections_list()
+        dropdown_update = gr.update(choices=new_opts, value=new_chapter_name, interactive=True)
             
     new_log, status_update = append_status(current_log, "✅ All drafts accepted and saved.")
     new_epoch = (create_epoch or 0) + 1
@@ -399,6 +419,7 @@ def draft_accept_all(current_section, plan, current_log, create_epoch):
         [],    # 16. keep_drafts_choices_state
         gr.update(visible=False, value="↩️"), # 17. btn_undo - no drafts after accept all
         gr.update(visible=False, value="↪️"), # 18. btn_redo - no drafts after accept all
+        dropdown_update, # 19. section_dropdown update
     )
 
 def draft_revert_all(current_section, plan, current_log):
@@ -471,6 +492,7 @@ def draft_accept_selected(current_section, original_selected, generated_selected
     # 3. Apply Saves to Checkpoint & Cleanup Accepted
     from state.infill_manager import InfillManager
     from state.checkpoint_manager import insert_chapter
+    from state.overall_state import get_sections_list
     im = InfillManager()
 
     # 2. Identify sections to KEEP AS USER DRAFT
@@ -492,20 +514,26 @@ def draft_accept_selected(current_section, original_selected, generated_selected
 
     
     saved_count = 0
+    new_chapter_name = None
     for section, content in to_save_checkpoint.items():
         if im.is_fill(section):
             idx = im.parse_fill_target(section)
             if idx is not None:
                 insert_chapter(idx, content)
-            else:
-                 # Fallback if parse fails? Should not happen if confirmed fill.
-                 pass
+                im.shift_fills_after_insert(idx, section)
+                new_chapter_name = f"Chapter {idx}"
         else:
             save_section(section, content)
             
         saved_count += 1
         # Accepted -> Clear ALL drafts for this section
-        drafts_mgr.remove(section) 
+        drafts_mgr.remove(section)
+    
+    # Update dropdown if fill was accepted
+    dropdown_update = gr.update(interactive=True)
+    if new_chapter_name:
+        new_opts = get_sections_list()
+        dropdown_update = gr.update(choices=new_opts, value=new_chapter_name, interactive=True) 
     
     # 4. Discard Unselected / Cleanup & Reset UI
     remaining_sections = list(drafts_mgr.get_all_content().keys())
@@ -544,6 +572,7 @@ def draft_accept_selected(current_section, original_selected, generated_selected
         [],    # 16. keep_drafts_choices_state
         gr.update(visible=undo_visible, value=undo_icon), # 17. btn_undo
         gr.update(visible=redo_visible, value=redo_icon), # 18. btn_redo
+        dropdown_update, # 19. section_dropdown update
     )
 
 def draft_regenerate_selected(generated_selected, plan, section, current_log, create_epoch, keep_drafts_choices_state=None):
