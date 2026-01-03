@@ -147,7 +147,7 @@ def apply_updates(section, plan, current_log, create_epoch, draft_content):
         drafts_mgr.add_original(section, draft_to_save)
         
         # Reuse draft_accept_selected to save and get common return values
-        draft_panel, status_strip_upd, status_log_val, epoch_val, status_row_upd, status_label_upd, btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, viewer_upd, mode_radio_upd, view_actions_row_upd, pending_plan_val, generated_drafts_choices_state_val, keep_drafts_choices_state_val, btn_undo_upd, btn_redo_upd = draft_accept_selected(
+        draft_panel, status_strip_upd, status_log_val, epoch_val, status_row_upd, status_label_upd, btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, viewer_upd, mode_radio_upd, view_actions_row_upd, pending_plan_val, generated_drafts_choices_state_val, keep_drafts_choices_state_val, btn_undo_upd, btn_redo_upd, dropdown_upd = draft_accept_selected(
             current_section=section,
             original_selected=[section],
             generated_selected=[],
@@ -174,7 +174,7 @@ def apply_updates(section, plan, current_log, create_epoch, draft_content):
             gr.update(visible=False), # start_edit_btn
             gr.update(visible=False), # rewrite_section
             mode_radio_upd, # mode_radio - re-enabled
-            gr.update(interactive=True), # section_dropdown
+            dropdown_upd, # section_dropdown - from draft_accept_selected
             new_log, # status_log - updated message
             epoch_val, # create_sections_epoch - from draft_accept_selected
             gr.update(visible=False), # draft_review_panel - HIDDEN (no drafts to review)
