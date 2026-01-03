@@ -24,8 +24,9 @@ def run_overview_editor(
     chapter_index = None
     is_infill = fill_name is not None
     
+    drafts_mgr = DraftsManager()
+    
     if is_infill:
-        drafts_mgr = DraftsManager()
         im = InfillManager()
         if fill_name:
             chapter_index = im.parse_fill_target(fill_name)
@@ -33,8 +34,10 @@ def run_overview_editor(
     elif edited_section and edited_section.startswith("Chapter "):
         try:
             chapter_index = int(edited_section.split()[1])
-            if 1 <= chapter_index <= len(context.chapters_full or []):
-                new_chapter_content = context.chapters_full[chapter_index - 1]
+            new_chapter_content = drafts_mgr.get_content(edited_section)
+            if new_chapter_content is None:
+                if 1 <= chapter_index <= len(context.chapters_full or []):
+                    new_chapter_content = context.chapters_full[chapter_index - 1]
         except (ValueError, IndexError):
             pass
 
