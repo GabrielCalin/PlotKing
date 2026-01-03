@@ -536,7 +536,16 @@ def draft_accept_selected(current_section, original_selected, generated_selected
         dropdown_update = gr.update(choices=new_opts, value=new_chapter_name, interactive=True) 
     
     # 4. Discard Unselected / Cleanup & Reset UI
-    remaining_sections = list(drafts_mgr.get_all_content().keys())
+    # Calculate remaining_sections: sections with GENERATED drafts that are NOT accepted and NOT kept
+    all_generated_sections = drafts_mgr.get_generated_drafts()
+    accepted_sections = set(to_save_checkpoint.keys())
+    kept_sections = set(drafts_to_keep) if drafts_to_keep else set()
+    
+    remaining_sections = [
+        section for section in all_generated_sections
+        if section not in accepted_sections and section not in kept_sections
+    ]
+    
     drafts_mgr.keep_only_draft_types(remaining_sections, [DraftType.USER.value])
 
     new_log, status_update = append_status(current_log, f"✅ Accepted {saved_count} drafts. {drafts_kept_count} drafts kept as User Drafts.")
