@@ -367,8 +367,8 @@ def draft_accept_all(current_section, plan, current_log, create_epoch):
     impacted = _get_generated_drafts_list(plan, None)
     fill_name = plan.get("fill_name") if plan and isinstance(plan, dict) else None
     # For fills, use fill_name (real section name) instead of edited_section (which is "Chapter X (Candidate)")
-    edited = fill_name if fill_name else (plan.get("edited_section", current_section) if plan else current_section)
-    sections_to_save = list(set(impacted + [edited, current_section]))
+    edited = fill_name if fill_name else (plan.get("edited_section", "") if plan else "")
+    sections_to_save = [s for s in list(set(impacted + [edited])) if s]
     
     from state.infill_manager import InfillManager
     from state.checkpoint_manager import insert_chapter
@@ -377,6 +377,7 @@ def draft_accept_all(current_section, plan, current_log, create_epoch):
     
     new_chapter_name = None
     for section in sections_to_save:
+        print(f"Accepting section: {section}")
         content = drafts_mgr.get_content(section)
         if content is not None:
             if im.is_fill(section):
@@ -428,8 +429,8 @@ def draft_revert_all(current_section, plan, current_log):
     impacted = _get_generated_drafts_list(plan, None)
     fill_name = plan.get("fill_name") if plan and isinstance(plan, dict) else None
     # For fills, use fill_name (real section name) instead of edited_section (which is "Chapter X (Candidate)")
-    edited = fill_name if fill_name else (plan.get("edited_section", current_section) if plan else current_section)
-    sections = list(set(impacted + [edited, current_section]))
+    edited = fill_name if fill_name else (plan.get("edited_section", "") if plan else "")
+    sections = [s for s in list(set(impacted + [edited])) if s]
     
     drafts_mgr.keep_only_draft_types(sections, [DraftType.USER.value, DraftType.FILL.value])
     
