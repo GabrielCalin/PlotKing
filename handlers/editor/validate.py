@@ -377,7 +377,6 @@ def draft_accept_all(current_section, plan, current_log, create_epoch):
     
     new_chapter_name = None
     for section in sections_to_save:
-        print(f"Accepting section: {section}")
         content = drafts_mgr.get_content(section)
         if content is not None:
             if im.is_fill(section):
