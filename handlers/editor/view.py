@@ -6,7 +6,7 @@ from state.checkpoint_manager import get_section_content, save_section
 def discard_draft_handler(section, status_log):
     """Discard USER/FILL draft and revert view to Checkpoint content. For fills, also updates dropdown."""
     if not section:
-        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), status_log, gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update()
+        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), status_log, gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(), gr.update(visible=False)
         
     from state.infill_manager import InfillManager
     from state.overall_state import get_sections_list
@@ -30,6 +30,7 @@ def discard_draft_handler(section, status_log):
         dropdown_update = gr.update(choices=new_opts, value=new_val)
     
     original_text = get_section_content(section) or ""
+    add_fill_visible = should_show_add_fill_btn(section)
     
     return (
         gr.update(value=original_text), # Viewer MD
@@ -44,12 +45,13 @@ def discard_draft_handler(section, status_log):
         gr.update(visible=False), # btn_undo - hide
         gr.update(visible=False), # btn_redo - hide
         dropdown_update, # section_dropdown update
+        gr.update(visible=add_fill_visible), # add_fill_btn
     )
 
 def force_edit_draft_handler(section, status_log, create_sections_epoch):
     """Write draft content directly to Checkpoint and remove draft. For fills, inserts chapter and updates dropdown."""
     if not section:
-        return [gr.update()] * 6 + [status_log, gr.update(), create_sections_epoch, gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update()]
+        return [gr.update()] * 6 + [status_log, gr.update(), create_sections_epoch, gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(), gr.update(visible=False)]
         
     drafts_mgr = DraftsManager()
     content = drafts_mgr.get_content(section)
@@ -57,7 +59,7 @@ def force_edit_draft_handler(section, status_log, create_sections_epoch):
     if not content:
         msg = f"⚠️ No draft found for **{section}**."
         new_log, status_update = append_status(status_log, msg)
-        return [gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), new_log, status_update, create_sections_epoch, gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update()]
+        return [gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), new_log, status_update, create_sections_epoch, gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(), gr.update(visible=False)]
     
     from handlers.editor.utils import force_edit_common_handler
     
@@ -68,6 +70,7 @@ def force_edit_draft_handler(section, status_log, create_sections_epoch):
         new_log, status_update = append_status(status_log, f"⚡ Force Edited **{section}**. Draft saved to checkpoint.")
     
     new_epoch = (create_sections_epoch or 0) + 1
+    add_fill_visible = should_show_add_fill_btn(section)
     
     return (
         gr.update(value=new_content), # Viewer MD
@@ -83,6 +86,7 @@ def force_edit_draft_handler(section, status_log, create_sections_epoch):
         gr.update(visible=False), # btn_undo - hide
         gr.update(visible=False), # btn_redo - hide
         dropdown_update, # section_dropdown update
+        gr.update(visible=add_fill_visible), # add_fill_btn
     )
 
 def validate_draft_handler(section, current_log):

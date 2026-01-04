@@ -46,6 +46,7 @@ def chat_handler(section, message, history, current_log):
             gr.update(), # mode_radio (no change)
             gr.update(), # btn_undo - unchanged
             gr.update(), # btn_redo - unchanged
+            gr.update(visible=False), # add_fill_btn - hide when text is replaced
         )
 
     # Append user message to history
@@ -78,6 +79,7 @@ def chat_handler(section, message, history, current_log):
         gr.update(), # mode_radio (no change)
         gr.update(), # btn_undo - unchanged
         gr.update(), # btn_redo - unchanged
+        gr.update(visible=False), # add_fill_btn - hide during loading
     )
 
     # Call LLM
@@ -165,6 +167,7 @@ def chat_handler(section, message, history, current_log):
                 gr.update(), # mode_radio - unchanged
                 gr.update(), # btn_undo - unchanged
                 gr.update(), # btn_redo - unchanged
+                gr.update(visible=should_show_add_fill_btn(section)), # add_fill_btn - show if not Expanded Plot
             )
             
     except Exception as e:
@@ -195,6 +198,7 @@ def chat_handler(section, message, history, current_log):
             gr.update(), # mode_radio - unchanged
             gr.update(), # btn_undo - unchanged
             gr.update(), # btn_redo - unchanged
+            gr.update(visible=should_show_add_fill_btn(section)), # add_fill_btn - show if not Expanded Plot
         )
 
 

@@ -93,6 +93,7 @@ def create_chat_handlers(components, states):
             mode_radio,
             components[Components.BTN_UNDO],
             components[Components.BTN_REDO],
+            components[Components.ADD_FILL_BTN],
         ],
     )
     
@@ -213,6 +214,7 @@ def create_chat_handlers(components, states):
             mode_radio,
             components[Components.BTN_UNDO],
             components[Components.BTN_REDO],
+            components[Components.ADD_FILL_BTN],
         ]
     )
 

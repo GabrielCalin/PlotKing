@@ -261,7 +261,8 @@ def rewrite_validate(section, viewer_content, current_log):
         gr.update(interactive=False),  # section_dropdown (Dropdown)
         gr.update(value=final_log, visible=True),  # status_strip (Textbox)
         final_log,  # status_log (State)
-        gr.update(visible=False) # status_row (hidden)
+        gr.update(visible=False), # status_row (hidden)
+        gr.update(visible=False) # add_fill_btn - hide during validation
     )
 
 def confirm_edit(section, draft, current_log):
