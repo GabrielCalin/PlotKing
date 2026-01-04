@@ -1,7 +1,7 @@
 import gradio as gr
 from handlers.editor.validate_commons import editor_validate
 from utils.logger import merge_logs
-from handlers.editor.utils import append_status, remove_highlight, sort_drafts
+from handlers.editor.utils import append_status, remove_highlight, sort_drafts, should_show_add_fill_btn
 from handlers.editor.constants import Components, States
 from state.checkpoint_manager import save_section, get_checkpoint, get_section_content
 from state.drafts_manager import DraftsManager, DraftType
@@ -147,7 +147,7 @@ def apply_updates(section, plan, current_log, create_epoch, draft_content):
         drafts_mgr.add_original(section, draft_to_save)
         
         # Reuse draft_accept_selected to save and get common return values
-        draft_panel, status_strip_upd, status_log_val, epoch_val, status_row_upd, status_label_upd, btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, viewer_upd, mode_radio_upd, view_actions_row_upd, pending_plan_val, generated_drafts_choices_state_val, keep_drafts_choices_state_val, btn_undo_upd, btn_redo_upd, dropdown_upd = draft_accept_selected(
+        draft_panel, status_strip_upd, status_log_val, epoch_val, status_row_upd, status_label_upd, btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, viewer_upd, mode_radio_upd, view_actions_row_upd, pending_plan_val, generated_drafts_choices_state_val, keep_drafts_choices_state_val, btn_undo_upd, btn_redo_upd, dropdown_upd, add_fill_btn_upd = draft_accept_selected(
             current_section=section,
             original_selected=[section],
             generated_selected=[],
@@ -194,7 +194,8 @@ def apply_updates(section, plan, current_log, create_epoch, draft_content):
             generated_drafts_choices_state_val, # 32. generated_drafts_choices_state - from draft_accept_selected
             keep_drafts_choices_state_val, # 33. keep_drafts_choices_state - from draft_accept_selected
             btn_undo_upd, # 34. btn_undo - from draft_accept_selected
-            btn_redo_upd # 35. btn_redo - from draft_accept_selected
+            btn_redo_upd, # 35. btn_redo - from draft_accept_selected
+            add_fill_btn_upd # 36. add_fill_btn - from draft_accept_selected
         )
         return
 
@@ -400,6 +401,8 @@ def draft_accept_all(current_section, plan, current_log, create_epoch):
     
     content, view_state, mode_label, btns_visible = _get_revert_state(current_section)
     
+    add_fill_visible = should_show_add_fill_btn(current_section)
+    
     return (
         gr.update(visible=False), # 1. Hide draft panel
         status_update,            # 2. Status Strip
@@ -420,6 +423,7 @@ def draft_accept_all(current_section, plan, current_log, create_epoch):
         gr.update(visible=False, value="↩️"), # 17. btn_undo - no drafts after accept all
         gr.update(visible=False, value="↪️"), # 18. btn_redo - no drafts after accept all
         dropdown_update, # 19. section_dropdown update
+        gr.update(visible=add_fill_visible), # 20. add_fill_btn
     )
 
 def draft_revert_all(current_section, plan, current_log):
@@ -444,6 +448,8 @@ def draft_revert_all(current_section, plan, current_log):
         btns_visible and drafts_mgr.has(current_section)
     )
 
+    add_fill_visible = should_show_add_fill_btn(current_section)
+
     return (
         gr.update(visible=False), # 1. Hide draft panel
         status_update,            # 2. Status Strip
@@ -462,6 +468,7 @@ def draft_revert_all(current_section, plan, current_log):
         [],    # 16. keep_drafts_choices_state
         gr.update(visible=undo_visible, value=undo_icon), # 17. btn_undo - normal icon (no Generated after revert)
         gr.update(visible=redo_visible, value=redo_icon), # 18. btn_redo - normal icon (no Generated after revert)
+        gr.update(visible=add_fill_visible), # 19. add_fill_btn
     )
 
 
@@ -561,6 +568,8 @@ def draft_accept_selected(current_section, original_selected, generated_selected
         btns_visible and drafts_mgr.has(current_section)
     )
     
+    add_fill_visible = should_show_add_fill_btn(current_section)
+    
     # Return updates explicitly
     return (
         gr.update(visible=False), # 1. Hide panel
@@ -582,6 +591,7 @@ def draft_accept_selected(current_section, original_selected, generated_selected
         gr.update(visible=undo_visible, value=undo_icon), # 17. btn_undo
         gr.update(visible=redo_visible, value=redo_icon), # 18. btn_redo
         dropdown_update, # 19. section_dropdown update
+        gr.update(visible=add_fill_visible), # 20. add_fill_btn
     )
 
 def draft_regenerate_selected(generated_selected, plan, section, current_log, create_epoch, keep_drafts_choices_state=None):

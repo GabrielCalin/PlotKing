@@ -1,7 +1,7 @@
 # ui/tabs/editor/chat.py
 import gradio as gr
 from handlers.editor.validate_commons import editor_validate
-from handlers.editor.utils import append_status
+from handlers.editor.utils import append_status, should_show_add_fill_btn
 from state.drafts_manager import DraftsManager, DraftType
 from handlers.editor.constants import Components, States
 from llm.chat_editor.llm import call_llm_chat
@@ -136,6 +136,7 @@ def chat_handler(section, message, history, current_log):
                 gr.update(interactive=False), # mode_radio - DISABLED
                 gr.update(visible=undo_visible, value=undo_icon), # btn_undo - show only if undo stack exists
                 gr.update(visible=redo_visible, value=redo_icon), # btn_redo - show only if redo stack exists
+                gr.update(visible=False), # add_fill_btn - hide when text is replaced
             )
         else:
             # No edits, just chat
@@ -233,6 +234,7 @@ def validate_handler(section, current_log):
         gr.update(interactive=False), # mode_radio - DISABLED
         gr.update(visible=False), # btn_undo - hide during validation
         gr.update(visible=False), # btn_redo - hide during validation
+        gr.update(visible=False), # add_fill_btn - hide during validation
     )
     
     msg, plan = editor_validate(section, draft_to_validate)
@@ -254,6 +256,7 @@ def validate_handler(section, current_log):
         gr.update(interactive=False), # mode_radio - DISABLED
         gr.update(visible=False), # btn_undo - hide during validation
         gr.update(visible=False), # btn_redo - hide during validation
+        gr.update(visible=False), # add_fill_btn - hide during validation
     )
 
 def discard_handler(section, current_log):
@@ -304,6 +307,7 @@ def discard_handler(section, current_log):
         btns_visible = False
         undo_visible, redo_visible, undo_icon, redo_icon, _ = um.get_undo_redo_state(section, None, False)
     
+    add_fill_visible = should_show_add_fill_btn(section)
     return (
         gr.update(value=updated_text), # viewer_md
         gr.update(visible=False), # chat_actions_row_1
@@ -323,6 +327,7 @@ def discard_handler(section, current_log):
         gr.update(interactive=True), # mode_radio
         gr.update(visible=undo_visible, value=undo_icon), # btn_undo - hide if no draft
         gr.update(visible=redo_visible, value=redo_icon), # btn_redo - hide if no draft
+        gr.update(visible=add_fill_visible), # add_fill_btn - show again after discard
     )
 
 def force_edit_handler(section, current_log, create_epoch):
@@ -340,6 +345,7 @@ def force_edit_handler(section, current_log, create_epoch):
         new_log, status_update = append_status(current_log, f"⚡ ({section}) Synced (forced from Chat).")
     
     new_create_epoch = (create_epoch or 0) + 1
+    add_fill_visible = should_show_add_fill_btn(section)
     
     return (
         gr.update(value=updated_text), # viewer_md
@@ -362,6 +368,7 @@ def force_edit_handler(section, current_log, create_epoch):
         dropdown_update, # section_dropdown update
         gr.update(visible=False), # btn_undo - hide
         gr.update(visible=False), # btn_redo - hide
+        gr.update(visible=add_fill_visible), # add_fill_btn - show again after force edit
     )
 
 def continue_edit(section, current_log):
@@ -408,5 +415,6 @@ def continue_edit(section, current_log):
         None,  # 23. pending_plan - clear plan when going back
         gr.update(visible=undo_visible, value=undo_icon), # btn_undo - show if available
         gr.update(visible=redo_visible, value=redo_icon), # btn_redo - show if available
+        gr.update(visible=False),   # 26. add_fill_btn - hide when editing
     )
 

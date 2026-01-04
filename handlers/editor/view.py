@@ -1,4 +1,4 @@
-from handlers.editor.utils import append_status
+from handlers.editor.utils import append_status, should_show_add_fill_btn
 import gradio as gr
 from state.drafts_manager import DraftsManager, DraftType
 from state.checkpoint_manager import get_section_content, save_section
@@ -92,12 +92,12 @@ def validate_draft_handler(section, current_log):
     from state.drafts_manager import DraftType
     
     if not section:
-        return [gr.update()] * 13 # Fallback
+        return [gr.update()] * 18 # Fallback
         
     drafts_mgr = DraftsManager()
     if not drafts_mgr.has_type(section, DraftType.USER.value) and not drafts_mgr.has_type(section, DraftType.FILL.value):
         new_log, status_update = append_status(current_log, f"⚠️ No user draft found for validation in {section}.")
-        return [gr.update(), None, gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), status_update, new_log, gr.update()]
+        return [gr.update(), None, gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), status_update, new_log, gr.update(), gr.update(), gr.update(), gr.update(), gr.update(visible=False)] # add_fill_btn hidden
 
     draft_content = drafts_mgr.get_content(section) # Gets highest priority draft (Fill or User)
     
@@ -123,6 +123,7 @@ def validate_draft_handler(section, current_log):
         gr.update(visible=False), # view_actions_row (hide immediately)
         gr.update(visible=False), # btn_undo - hide during validation
         gr.update(visible=False), # btn_redo - hide during validation
+        gr.update(visible=False), # add_fill_btn - hide during validation
     )
 
     # Run validation
@@ -148,6 +149,7 @@ def validate_draft_handler(section, current_log):
         gr.update(visible=False), # view_actions_row (hide while looking at validation results)
         gr.update(visible=False), # btn_undo - hide during validation
         gr.update(visible=False), # btn_redo - hide during validation
+        gr.update(visible=False), # add_fill_btn - hide during validation
     )
     
 def continue_edit(section, current_log):
@@ -203,4 +205,5 @@ def continue_edit(section, current_log):
         None,  # 23. pending_plan - clear plan when going back
         gr.update(visible=undo_visible, value=undo_icon), # btn_undo - show if available
         gr.update(visible=redo_visible, value=redo_icon), # btn_redo - show if available
+        gr.update(visible=should_show_add_fill_btn(section)), # add_fill_btn - show again after going back
     )

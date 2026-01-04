@@ -51,6 +51,7 @@ def create_manual_handlers(components, states):
             components[Components.STATUS_STRIP],
             status_log,
             components[Components.STATUS_ROW],
+            components[Components.ADD_FILL_BTN],
         ],
     )
 
@@ -72,7 +73,8 @@ def create_manual_handlers(components, states):
             components[Components.STATUS_STRIP],
             status_log,
             components[Components.STATUS_ROW],
-            keep_draft_btn
+            keep_draft_btn,
+            components[Components.ADD_FILL_BTN],
         ],
         queue=True,
         show_progress=False,
@@ -94,6 +96,7 @@ def create_manual_handlers(components, states):
             keep_draft_btn,
             components[Components.BTN_UNDO],
             components[Components.BTN_REDO],
+            components[Components.ADD_FILL_BTN],
         ],
     )
 
@@ -116,6 +119,7 @@ def create_manual_handlers(components, states):
             states[States.CURRENT_VIEW_STATE],
             components[Components.BTN_UNDO],
             components[Components.BTN_REDO],
+            components[Components.ADD_FILL_BTN],
         ],
     )
     
@@ -144,6 +148,7 @@ def create_manual_handlers(components, states):
             components[Components.REWRITE_SECTION],
             # Chat Mode items to hide
             components[Components.CHAT_SECTION],
+            components[Components.ADD_FILL_BTN],
         ]
     )
 

@@ -373,7 +373,12 @@ def keep_draft_handler(section, content, status_log):
         
         # Hide Chat UI
         gr.update(visible=False), # 18. Chat Section
+        gr.update(visible=should_show_add_fill_btn(section)), # 19. add_fill_btn - show again after keep draft
     )
+
+def should_show_add_fill_btn(section):
+    """Determine if the Add Fill button should be visible for a given section."""
+    return section != "Expanded Plot" if section else False
 
 def sort_drafts(draft_list):
     """

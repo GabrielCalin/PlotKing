@@ -10,6 +10,7 @@ from state.checkpoint_manager import get_section_content
 from handlers.editor.utils import (
     diff_handler,
     append_status,
+    should_show_add_fill_btn,
 )
 from state.drafts_manager import DraftsManager
 import ui.tabs.editor.manual_ui as Manual
@@ -224,8 +225,8 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         from ui.tabs.editor.chat_ui import PLOT_KING_GREETING
         initial_greeting = [{"role": "assistant", "content": PLOT_KING_GREETING}]
         
-        # Hide add_fill_btn for "Expanded Plot" section
-        add_fill_visible = name != "Expanded Plot" if name else False
+        # Hide add_fill_btn for "Expanded Plot" section or when there's an active plan
+        add_fill_visible = should_show_add_fill_btn(name) and (pending_plan is None)
         
         return text, name, gr.update(value="View"), initial_greeting, \
                gr.update(visible=True), gr.update(value=label), btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, view_actions_upd, undo_upd, redo_upd, gr.update(visible=add_fill_visible)
@@ -523,6 +524,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         Components.UNSELECT_ALL_KEEP_BTN: unselect_all_keep_btn,
         Components.MOVE_TO_GEN_BTN: move_to_gen_btn,
         Components.MOVE_TO_KEEP_BTN: mark_keep_btn, # Alias mark_keep_btn to standard constant if needed, but ui uses MARK_KEEP_BTN key too
+        Components.ADD_FILL_BTN: add_fill_btn,
     }
     
     # States dictionary
@@ -551,7 +553,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         # Outputs: UI changes to show Validation Box etc. similar to Manual/Rewrite validate
         outputs=[
              validation_box, pending_plan, validation_title, validation_section, apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
-             viewer_md, editor_tb, mode_radio, section_dropdown, status_strip, status_log, view_actions_row, btn_undo, btn_redo
+             viewer_md, editor_tb, mode_radio, section_dropdown, status_strip, status_log, view_actions_row, btn_undo, btn_redo, add_fill_btn
         ],
         queue=True,
         show_progress=False,
