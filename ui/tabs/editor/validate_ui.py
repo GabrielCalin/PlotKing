@@ -232,6 +232,7 @@ def create_validate_handlers(components, states):
             keep_drafts_choices_state,
             components[Components.BTN_UNDO],
             components[Components.BTN_REDO],
+            components[Components.ADD_FILL_BTN],
         ],
     )
 

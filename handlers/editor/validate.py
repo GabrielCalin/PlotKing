@@ -241,7 +241,8 @@ def apply_updates(section, plan, current_log, create_epoch, draft_content):
         [],                        # 33. generated_drafts_choices_state
         [],                        # 34. keep_drafts_choices_state
         gr.update(visible=False), # 35. btn_undo - hide during pipeline
-        gr.update(visible=False)  # 36. btn_redo - hide during pipeline
+        gr.update(visible=False), # 36. btn_redo - hide during pipeline
+        gr.update(visible=False)  # 37. add_fill_btn - hide during pipeline
     )
 
     # Call editor_apply which yields pipeline results
@@ -298,7 +299,8 @@ def apply_updates(section, plan, current_log, create_epoch, draft_content):
             generated_drafts,          # 33. generated_drafts_choices_state
             [],                        # 34. keep_drafts_choices_state
             gr.update(),               # 35. btn_undo - NO CHANGE
-            gr.update()                # 36. btn_redo - NO CHANGE
+            gr.update(),               # 36. btn_redo - NO CHANGE
+            gr.update(visible=False)   # 37. add_fill_btn - hide during pipeline
         )
             
         # Check stop after processing and saving results
@@ -357,7 +359,8 @@ def apply_updates(section, plan, current_log, create_epoch, draft_content):
         generated_drafts,          # 33. generated_drafts_choices_state
         [],                        # 34. keep_drafts_choices_state
         gr.update(),               # 35. btn_undo - NO CHANGE
-        gr.update()                # 36. btn_redo - NO CHANGE
+        gr.update(),               # 36. btn_redo - NO CHANGE
+        gr.update(visible=False)   # 37. add_fill_btn - hide during review
     )
 
 def draft_accept_all(current_section, plan, current_log, create_epoch):
@@ -765,6 +768,7 @@ def discard_from_validate(section, current_log):
         [],                                           # keep_drafts_choices_state
         gr.update(visible=undo_visible, value=undo_icon), # btn_undo
         gr.update(visible=redo_visible, value=redo_icon), # btn_redo
+        gr.update(visible=should_show_add_fill_btn(section)), # add_fill_btn
     )
 
 def mark_drafts_to_keep_handler(generated_selected, current_generated_choices, current_keep_choices):
