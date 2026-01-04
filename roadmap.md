@@ -10,7 +10,6 @@ This document outlines the planned development milestones for the **AI Story Gen
    - Chat interface for generating fill chapters that considers chapters before and after.  
    - By default ensures continuity, but user can request breaking changes.  
 
-
 21. **Start with Empty Plot**  
    - Generate story sequentially with fill chapters starting from an empty plot structure.
 
