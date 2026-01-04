@@ -1,7 +1,7 @@
 import gradio as gr
 from handlers.editor.validate_commons import editor_validate
 from handlers.editor.rewrite_presets import REWRITE_PRESETS
-from handlers.editor.utils import append_status, replace_text_with_highlight, remove_highlight, format_selected_preview, update_instructions_from_preset
+from handlers.editor.utils import append_status, replace_text_with_highlight, remove_highlight, format_selected_preview, update_instructions_from_preset, should_show_add_fill_btn
 from handlers.editor.constants import Components, States
 from state.checkpoint_manager import get_section_content, save_section
 from llm.rewrite_editor.llm import call_llm_rewrite_editor
@@ -96,6 +96,7 @@ def rewrite_handler(section, selected_txt, selected_idx, instructions, current_l
         selected_txt,
         selected_idx,
         gr.update(interactive=False),  # mode_radio - non-interactiv când se face rewrite
+        gr.update(visible=False), # add_fill_btn - hide during rewrite
     )
     
     result = editor_rewrite(section, selected_txt, instructions)
@@ -118,6 +119,7 @@ def rewrite_handler(section, selected_txt, selected_idx, instructions, current_l
             selected_txt,
             selected_idx,
             gr.update(interactive=False),  # mode_radio - non-interactiv după rewrite
+            gr.update(visible=False), # add_fill_btn - hide when text is replaced
         )
     else:
         message = result.get("message", "Rewrite failed.")
@@ -137,6 +139,7 @@ def rewrite_handler(section, selected_txt, selected_idx, instructions, current_l
             selected_txt,
             selected_idx,
             gr.update(interactive=True),  # mode_radio - interactiv dacă rewrite eșuează
+            gr.update(visible=should_show_add_fill_btn(section)), # add_fill_btn - show again if rewrite fails
         )
 
 def rewrite_discard(section, current_log):
@@ -147,6 +150,7 @@ def rewrite_discard(section, current_log):
     clean_text = get_current_section_content(section) or "_Empty_"
         
     new_log, status_update = append_status(current_log, f"🗑️ ({section}) Rewrite discarded.")
+    add_fill_visible = should_show_add_fill_btn(section)
     return (
         gr.update(visible=True, value=clean_text, interactive=False),  # editor_tb
         gr.update(visible=False, value=clean_text),  # viewer_md - resetat la textul curat din checkpoint
@@ -161,21 +165,22 @@ def rewrite_discard(section, current_log):
         "",  # selected_text
         None,  # selected_indices
         gr.update(interactive=True),  # mode_radio - interactiv după discard
+        gr.update(visible=add_fill_visible), # add_fill_btn - show again after discard
     )
 
 def rewrite_force_edit(section, viewer_content, current_log, create_epoch):
-    """Force edit with rewritten text - remove highlight and update checkpoint."""
-    from state.drafts_manager import DraftsManager
-    draft_clean = remove_highlight(viewer_content)
-    save_section(section, draft_clean)
-    updated_text = draft_clean
-    new_log, status_update = append_status(current_log, f"⚡ ({section}) Synced (forced from rewrite).")
-    new_create_epoch = (create_epoch or 0) + 1
+    """Force edit with rewritten text - remove highlight and update checkpoint. For fills, inserts chapter and shifts."""
+    from handlers.editor.utils import force_edit_common_handler
     
-    # Remove all drafts after saving to checkpoint
-    drafts_manager = DraftsManager()
-    if drafts_manager.has(section):
-        drafts_manager.remove(section)
+    draft_clean = remove_highlight(viewer_content)
+    updated_text, msg, dropdown_update, new_log, status_update = force_edit_common_handler(section, draft_clean, current_log)
+    
+    if updated_text is None:
+        updated_text = draft_clean
+        new_log, status_update = append_status(current_log, f"⚡ ({section}) Synced (forced from rewrite).")
+    
+    new_create_epoch = (create_epoch or 0) + 1
+    add_fill_visible = should_show_add_fill_btn(section)
     
     return (
         gr.update(value=updated_text, visible=True),  # viewer_md
@@ -194,7 +199,7 @@ def rewrite_force_edit(section, viewer_content, current_log, create_epoch):
         gr.update(visible=False),  # start_edit_btn
         gr.update(visible=False),  # rewrite_section
         gr.update(value="View", interactive=True),  # mode_radio
-        gr.update(interactive=True),  # section_dropdown
+        dropdown_update,  # section_dropdown update
         new_log,  # status_log
         new_create_epoch,  # create_sections_epoch
         "",  # selected_text
@@ -207,6 +212,7 @@ def rewrite_force_edit(section, viewer_content, current_log, create_epoch):
         "Checkpoint", # current_view_state
         gr.update(visible=False), # btn_undo - hide
         gr.update(visible=False), # btn_redo - hide
+        gr.update(visible=add_fill_visible), # add_fill_btn - show again after force edit
     )
 
 def rewrite_validate(section, viewer_content, current_log):
@@ -231,7 +237,8 @@ def rewrite_validate(section, viewer_content, current_log):
         gr.update(interactive=False),  # section_dropdown (Dropdown)
         gr.update(value=new_log, visible=True),  # status_strip (Textbox)
         new_log,  # status_log (State)
-        gr.update(visible=False) # status_row (hidden)
+        gr.update(visible=False), # status_row (hidden)
+        gr.update(visible=False) # add_fill_btn - hide during validation
     )
     
     msg, plan = editor_validate(section, draft_clean)
@@ -254,7 +261,8 @@ def rewrite_validate(section, viewer_content, current_log):
         gr.update(interactive=False),  # section_dropdown (Dropdown)
         gr.update(value=final_log, visible=True),  # status_strip (Textbox)
         final_log,  # status_log (State)
-        gr.update(visible=False) # status_row (hidden)
+        gr.update(visible=False), # status_row (hidden)
+        gr.update(visible=False) # add_fill_btn - hide during validation
     )
 
 def confirm_edit(section, draft, current_log):
@@ -306,5 +314,6 @@ def continue_edit(section, current_log, viewer_content=None):
         None,  # 23. pending_plan - clear plan when going back
         gr.update(visible=False),   # 24. btn_undo - hide (not in view mode)
         gr.update(visible=False),   # 25. btn_redo - hide (not in view mode)
+        gr.update(visible=False),   # 26. add_fill_btn - hide when editing
     )
 

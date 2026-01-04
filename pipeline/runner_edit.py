@@ -44,6 +44,7 @@ def run_edit_pipeline_stream(
     diff_data: dict,
     impact_data: dict,
     impacted_sections: list,
+    fill_name: str = None,
 ):
     """
     Rulează pipeline-ul de editare pentru secțiunile impactate.
@@ -169,6 +170,7 @@ def run_edit_pipeline_stream(
                 impact_reason=impact_reason,
                 diff_summary=diff_summary,
                 edited_section=edited_section,
+                fill_name=fill_name,
             )
             drafts.add_generated("Chapters Overview", state.chapters_overview)
             log_ui(edit_log, "✅ Chapters Overview adapted.")
@@ -197,7 +199,7 @@ def run_edit_pipeline_stream(
         except (ValueError, IndexError):
             continue
         
-        if chapter_num < 1 or chapter_num > len(state.chapters_full):
+        if chapter_num < 1 or chapter_num > len(checkpoint.chapters_full or []):
             continue
         
         impact_reason = _get_section_impact(impact_data, chapter_name)
@@ -220,7 +222,8 @@ def run_edit_pipeline_stream(
         # Priority: USER Draft > Checkpoint content
         original_chapter = drafts.get_content(chapter_name, DraftType.USER.value)
         if original_chapter is None:
-            original_chapter = state.chapters_full[chapter_num - 1] or ""
+            original_chapter = checkpoint.chapters_full[chapter_num - 1] or ""
+        
         edited_chapter = run_chapter_editor(
             context=state,
             chapter_index=chapter_num,
@@ -228,6 +231,7 @@ def run_edit_pipeline_stream(
             impact_reason=impact_reason,
             diff_summary=diff_summary,
             edited_section=edited_section,
+            fill_name=fill_name,
         )
         
         state.chapters_full[chapter_num - 1] = edited_chapter

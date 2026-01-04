@@ -25,6 +25,33 @@ def save_checkpoint(context: PipelineContext) -> None:
         _checkpoint_data = context_copy
 
 
+def insert_chapter(index: int, content: str) -> bool:
+    """
+    Inserts a new chapter at the given 1-based index (e.g. 1 inserts at start).
+    Shifts existing chapters.
+    """
+    context = get_checkpoint()
+    if not context:
+        return False
+        
+    if not context.chapters_full:
+        context.chapters_full = []
+        
+    # Python insert is 0-indexed.
+    # index 1 -> list index 0.
+    list_idx = index - 1
+    
+    # Cap at end
+    if list_idx > len(context.chapters_full):
+        list_idx = len(context.chapters_full)
+    if list_idx < 0:
+        list_idx = 0
+        
+    context.chapters_full.insert(list_idx, content)
+    save_checkpoint(context)
+    return True
+
+
 def get_checkpoint() -> Optional[PipelineContext]:
     """Returnează o copie a checkpoint-ului pentru a preveni modificări accidentale."""
     with _lock:

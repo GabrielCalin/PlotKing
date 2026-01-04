@@ -67,6 +67,7 @@ class Components(str, Enum):
     UNSELECT_ALL_GEN_BTN = "unselect_all_gen_btn"
     SELECT_ALL_KEEP_BTN = "select_all_keep_btn"
     UNSELECT_ALL_KEEP_BTN = "unselect_all_keep_btn"
+    ADD_FILL_BTN = "add_fill_btn"
 
 class States(str, Enum):
     SELECTED_SECTION = "selected_section"

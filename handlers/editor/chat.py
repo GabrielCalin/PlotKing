@@ -1,7 +1,7 @@
 # ui/tabs/editor/chat.py
 import gradio as gr
 from handlers.editor.validate_commons import editor_validate
-from handlers.editor.utils import append_status
+from handlers.editor.utils import append_status, should_show_add_fill_btn
 from state.drafts_manager import DraftsManager, DraftType
 from handlers.editor.constants import Components, States
 from llm.chat_editor.llm import call_llm_chat
@@ -46,6 +46,7 @@ def chat_handler(section, message, history, current_log):
             gr.update(), # mode_radio (no change)
             gr.update(), # btn_undo - unchanged
             gr.update(), # btn_redo - unchanged
+            gr.update(visible=False), # add_fill_btn - hide when text is replaced
         )
 
     # Append user message to history
@@ -78,6 +79,7 @@ def chat_handler(section, message, history, current_log):
         gr.update(), # mode_radio (no change)
         gr.update(), # btn_undo - unchanged
         gr.update(), # btn_redo - unchanged
+        gr.update(visible=False), # add_fill_btn - hide during loading
     )
 
     # Call LLM
@@ -136,6 +138,7 @@ def chat_handler(section, message, history, current_log):
                 gr.update(interactive=False), # mode_radio - DISABLED
                 gr.update(visible=undo_visible, value=undo_icon), # btn_undo - show only if undo stack exists
                 gr.update(visible=redo_visible, value=redo_icon), # btn_redo - show only if redo stack exists
+                gr.update(visible=False), # add_fill_btn - hide when text is replaced
             )
         else:
             # No edits, just chat
@@ -164,6 +167,7 @@ def chat_handler(section, message, history, current_log):
                 gr.update(), # mode_radio - unchanged
                 gr.update(), # btn_undo - unchanged
                 gr.update(), # btn_redo - unchanged
+                gr.update(visible=should_show_add_fill_btn(section)), # add_fill_btn - show if not Expanded Plot
             )
             
     except Exception as e:
@@ -194,6 +198,7 @@ def chat_handler(section, message, history, current_log):
             gr.update(), # mode_radio - unchanged
             gr.update(), # btn_undo - unchanged
             gr.update(), # btn_redo - unchanged
+            gr.update(visible=should_show_add_fill_btn(section)), # add_fill_btn - show if not Expanded Plot
         )
 
 
@@ -233,6 +238,7 @@ def validate_handler(section, current_log):
         gr.update(interactive=False), # mode_radio - DISABLED
         gr.update(visible=False), # btn_undo - hide during validation
         gr.update(visible=False), # btn_redo - hide during validation
+        gr.update(visible=False), # add_fill_btn - hide during validation
     )
     
     msg, plan = editor_validate(section, draft_to_validate)
@@ -254,11 +260,12 @@ def validate_handler(section, current_log):
         gr.update(interactive=False), # mode_radio - DISABLED
         gr.update(visible=False), # btn_undo - hide during validation
         gr.update(visible=False), # btn_redo - hide during validation
+        gr.update(visible=False), # add_fill_btn - hide during validation
     )
 
 def discard_handler(section, current_log):
     """
-    Discards Chat draft. Falls back to USER draft if exists, otherwise Checkpoint.
+    Discards Chat draft. Falls back to USER draft if exists, then FILL draft, otherwise Checkpoint.
     """
     drafts_manager = DraftsManager()
     
@@ -271,22 +278,31 @@ def discard_handler(section, current_log):
         
     new_log, status_update = append_status(current_log, msg_text)
 
-    # 2. Determine fallback content
-    user_draft_content = drafts_manager.get_content(section, DraftType.USER.value)
-    
-    # Calculate undo/redo visibility based on what remains after discard
+    # 2. Determine fallback content - check USER draft first, then FILL draft, then Checkpoint
     from state.undo_manager import UndoManager
     um = UndoManager()
     
+    # Determine draft type (priority: USER > FILL)
+    draft_type = None
+    updated_text = None
+    
+    user_draft_content = drafts_manager.get_content(section, DraftType.USER.value)
     if user_draft_content:
-        # Fallback to User Draft
+        draft_type = DraftType.USER.value
         updated_text = user_draft_content
-        draft_display_name = DraftsManager.get_display_name(DraftType.USER.value)
+    else:
+        fill_draft_content = drafts_manager.get_content(section, DraftType.FILL.value)
+        if fill_draft_content:
+            draft_type = DraftType.FILL.value
+            updated_text = fill_draft_content
+    
+    if draft_type:
+        # Fallback to Draft (USER or FILL)
+        draft_display_name = DraftsManager.get_display_name(draft_type)
         mode_label = f"**Viewing:** <span style='color:red;'>{draft_display_name}</span>"
         view_state = "Draft"
         btns_visible = True
-        undo_visible, redo_visible, undo_icon, redo_icon, _ = um.get_undo_redo_state(section, DraftType.USER.value, True)
-        
+        undo_visible, redo_visible, undo_icon, redo_icon, _ = um.get_undo_redo_state(section, draft_type, True)
     else:
         # Fallback to Checkpoint - no undo/redo available
         updated_text = get_section_content(section) or ""
@@ -295,6 +311,7 @@ def discard_handler(section, current_log):
         btns_visible = False
         undo_visible, redo_visible, undo_icon, redo_icon, _ = um.get_undo_redo_state(section, None, False)
     
+    add_fill_visible = should_show_add_fill_btn(section)
     return (
         gr.update(value=updated_text), # viewer_md
         gr.update(visible=False), # chat_actions_row_1
@@ -314,24 +331,25 @@ def discard_handler(section, current_log):
         gr.update(interactive=True), # mode_radio
         gr.update(visible=undo_visible, value=undo_icon), # btn_undo - hide if no draft
         gr.update(visible=redo_visible, value=redo_icon), # btn_redo - hide if no draft
+        gr.update(visible=add_fill_visible), # add_fill_btn - show again after discard
     )
 
 def force_edit_handler(section, current_log, create_epoch):
     """
-    Force saves the chat edits to checkpoint.
+    Force saves the chat edits to checkpoint. For fills, inserts chapter and shifts.
     """
     from state.overall_state import get_current_section_content
+    from handlers.editor.utils import force_edit_common_handler
+    
     current_text = get_current_section_content(section)
-    save_section(section, current_text)
-    updated_text = current_text
-    new_log, status_update = append_status(current_log, f"⚡ ({section}) Synced (forced from Chat).")
-    new_create_epoch = (create_epoch or 0) + 1
+    updated_text, msg, dropdown_update, new_log, status_update = force_edit_common_handler(section, current_text, current_log)
+    
+    if updated_text is None:
+        updated_text = current_text
+        new_log, status_update = append_status(current_log, f"⚡ ({section}) Synced (forced from Chat).")
     
     new_create_epoch = (create_epoch or 0) + 1
-    
-    drafts_manager = DraftsManager()
-    if drafts_manager.has(section):
-        drafts_manager.remove(section)
+    add_fill_visible = should_show_add_fill_btn(section)
     
     return (
         gr.update(value=updated_text), # viewer_md
@@ -351,8 +369,10 @@ def force_edit_handler(section, current_log, create_epoch):
         gr.update(visible=False), # btn_diff - hide
         "Checkpoint", # current_view_state
         gr.update(interactive=True), # mode_radio - ENABLED
+        dropdown_update, # section_dropdown update
         gr.update(visible=False), # btn_undo - hide
         gr.update(visible=False), # btn_redo - hide
+        gr.update(visible=add_fill_visible), # add_fill_btn - show again after force edit
     )
 
 def continue_edit(section, current_log):
@@ -399,5 +419,6 @@ def continue_edit(section, current_log):
         None,  # 23. pending_plan - clear plan when going back
         gr.update(visible=undo_visible, value=undo_icon), # btn_undo - show if available
         gr.update(visible=redo_visible, value=redo_icon), # btn_redo - show if available
+        gr.update(visible=False),   # 26. add_fill_btn - hide when editing
     )
 

@@ -93,6 +93,7 @@ def create_chat_handlers(components, states):
             mode_radio,
             components[Components.BTN_UNDO],
             components[Components.BTN_REDO],
+            components[Components.ADD_FILL_BTN],
         ],
     )
     
@@ -124,6 +125,7 @@ def create_chat_handlers(components, states):
             mode_radio,
             components[Components.BTN_UNDO],
             components[Components.BTN_REDO],
+            components[Components.ADD_FILL_BTN],
         ],
     )
     
@@ -161,6 +163,7 @@ def create_chat_handlers(components, states):
             mode_radio,
             components[Components.BTN_UNDO],
             components[Components.BTN_REDO],
+            components[Components.ADD_FILL_BTN],
         ]
     )
     
@@ -185,8 +188,10 @@ def create_chat_handlers(components, states):
             components[Components.BTN_DIFF],
             states[States.CURRENT_VIEW_STATE],
             mode_radio,
+            components[Components.SECTION_DROPDOWN],
             components[Components.BTN_UNDO],
             components[Components.BTN_REDO],
+            components[Components.ADD_FILL_BTN],
         ]
     )
     
@@ -209,6 +214,7 @@ def create_chat_handlers(components, states):
             mode_radio,
             components[Components.BTN_UNDO],
             components[Components.BTN_REDO],
+            components[Components.ADD_FILL_BTN],
         ]
     )
 
@@ -242,6 +248,7 @@ def create_chat_handlers(components, states):
             components[Components.REWRITE_SECTION],
             # Chat Mode items to hide
             components[Components.CHAT_SECTION],
+            components[Components.ADD_FILL_BTN],
         ]
     )
 

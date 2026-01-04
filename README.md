@@ -55,6 +55,11 @@ When you make changes that impact subsequent sections, PlotKing automatically ge
 -   **Draft Review**: You can compare the **Checkpoint** (original) vs. **Draft** (new) using the **comparison view** ⚖️.
 -   **Selective Apply**: You choose which AI suggestions to keep and which to discard or regenerate.
 
+#### 📖 Infill/Outfill
+-   **Add Fill Chapters**: You can insert new chapters between existing ones.
+-   **Edit as Drafts**: Fill chapters are created as drafts that you can edit in any mode (Manual, Rewrite, or Chat).
+-   **Automatic Adaptation**: When validated and accepted, PlotKing automatically renumbers subsequent chapters and adapts the Expanded Plot, Chapters Overview, and affected chapters to maintain story continuity.
+
 ### 4. Export: Publish Ready
 ![Export](images/export.png)
 Turn your project into a finished product:

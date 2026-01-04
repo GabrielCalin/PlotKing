@@ -73,7 +73,7 @@ Task:
 
 Output Requirements:
 - Maintain the same Markdown format as the original (#### Chapter N: *Title* followed by **Description:**)
-- CRITICAL: You MUST preserve the EXACT same number of chapters as in the ORIGINAL CHAPTERS OVERVIEW. The exact number of chapters ({num_chapters}) must remain unchanged — do not change it. Do NOT add, remove, merge, or split any chapters. The output must have exactly the same number of chapters as the input.
+{chapter_count_rule}
 - Keep chapter titles unchanged unless the impact requires title updates
 - Preserve all chapter descriptions that are not affected by the changes
 - Update only the parts that need to change based on the impact
@@ -100,6 +100,7 @@ def call_llm_edit_overview(
     new_chapter_content: str = None,
     chapter_index: int = None,
     num_chapters: int = None,
+    is_infill: bool = False,
     *,
     api_url: str = None,
     model_name: str = None,
@@ -118,6 +119,18 @@ def call_llm_edit_overview(
 
 
     edited_section = edited_section or "Unknown section"
+    
+    if is_infill and chapter_index is not None:
+        total_existing = (num_chapters or 1) - 1
+        if chapter_index == 1:
+            chapter_count_rule = f"""- CRITICAL: IS INFILL is "yes" - a new chapter is being inserted. You MUST add a new chapter to reach exactly {num_chapters} total chapters. The output must have exactly {num_chapters} chapters (one more than the original). Insert the new chapter summary at position 1 (at the beginning, before the current Chapter 1, which will become Chapter 2). Renumber all subsequent chapters accordingly (current Chapter 1 becomes Chapter 2, Chapter 2 becomes Chapter 3, etc.)."""
+        elif chapter_index > total_existing:
+            chapter_count_rule = f"""- CRITICAL: IS INFILL is "yes" - a new chapter is being inserted. You MUST add a new chapter to reach exactly {num_chapters} total chapters. The output must have exactly {num_chapters} chapters (one more than the original). Insert the new chapter summary at position {chapter_index} (at the end, after Chapter {total_existing})."""
+        else:
+            prev_chapter = chapter_index - 1
+            chapter_count_rule = f"""- CRITICAL: IS INFILL is "yes" - a new chapter is being inserted. You MUST add a new chapter to reach exactly {num_chapters} total chapters. The output must have exactly {num_chapters} chapters (one more than the original). Insert the new chapter summary at position {chapter_index} (between Chapter {prev_chapter} and the current Chapter {chapter_index}, which will become Chapter {chapter_index + 1}). Renumber all subsequent chapters accordingly (current Chapter {chapter_index} becomes Chapter {chapter_index + 1}, and all following chapters shift forward by 1)."""
+    else:
+        chapter_count_rule = f"""- CRITICAL: You MUST preserve the EXACT same number of chapters as in the ORIGINAL CHAPTERS OVERVIEW. The exact number of chapters ({num_chapters}) must remain unchanged — do not change it. Do NOT add, remove, merge, or split any chapters. The output must have exactly the same number of chapters as the input."""
     
     if edited_section.startswith("Chapter ") and new_chapter_content and chapter_index:
         chapter_section = f"""NEW CHAPTER {chapter_index} CONTENT (the complete edited chapter):
@@ -146,6 +159,7 @@ The user edited Chapter {chapter_index}. You need to:
 
     prompt = _EDIT_OVERVIEW_PROMPT.format(
         edited_section=edited_section,
+        is_infill="yes" if is_infill else "no",
         original_overview=original_overview or "",
         expanded_plot=expanded_plot or "",
         diff_summary=diff_summary or "",
@@ -154,6 +168,7 @@ The user edited Chapter {chapter_index}. You need to:
         chapter_section=chapter_section,
         adaptation_instructions=adaptation_instructions,
         num_chapters=num_chapters or 0,
+        chapter_count_rule=chapter_count_rule,
     )
 
     messages = [

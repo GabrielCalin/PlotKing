@@ -3,11 +3,14 @@
 
 import gradio as gr
 from handlers.editor.rewrite_presets import REWRITE_PRESETS
-from state.checkpoint_manager import get_sections_list, get_section_content
+from state.overall_state import get_sections_list, get_current_section_content
+from state.checkpoint_manager import get_section_content
 
 # Import helpers and logic from new modules
 from handlers.editor.utils import (
     diff_handler,
+    append_status,
+    should_show_add_fill_btn,
 )
 from state.drafts_manager import DraftsManager
 import ui.tabs.editor.manual_ui as Manual
@@ -44,19 +47,26 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     with gr.Row(elem_id="editor-main", visible=False) as editor_main:
         # ---- (1a) Left Column: Compact Control Panel ----
         with gr.Column(scale=1, min_width=280, elem_classes=["tight-group"]):
-            section_dropdown = gr.Dropdown(
-                label="Section",
-                choices=[],
-                value=None,
-                interactive=True,
-            )
+            # Section and Editing Mode - wrapped in bordered container
+            with gr.Column(elem_classes=["plot-wrapper"]):
+                with gr.Row(elem_classes=["section-header-row"], equal_height=True):
+                    gr.Markdown("Section", elem_classes=["section-label-md"])
+                    add_fill_btn = gr.Button("➕", size="sm", elem_classes=["icon-only-btn"], min_width=30, scale=0)
+                
+                section_dropdown = gr.Dropdown(
+                    choices=[],
+                    value=None,
+                    interactive=True,
+                    show_label=False, # Hide default label, used markdown above
+                    container=False
+                )
 
-            mode_radio = gr.Radio(
-                label="Editing Mode",
-                choices=["View", "Manual", "Rewrite", "Chat"],
-                value="View",
-                interactive=True,
-            )
+                mode_radio = gr.Radio(
+                    label="Editing Mode",
+                    choices=["View", "Manual", "Rewrite", "Chat"],
+                    value="View",
+                    interactive=True,
+                )
 
             # Manual Mode UI
             manual_section, start_edit_btn, confirm_btn, discard_btn, force_edit_btn, keep_draft_btn = Manual.create_manual_ui()
@@ -149,7 +159,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             return "_Empty_", None, gr.update(value="View"), initial_greeting, \
                    gr.update(visible=True), gr.update(value="**Viewing:** <span style='color:red;'>Checkpoint</span>"), \
                    gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), "Checkpoint", gr.update(visible=False), \
-                   gr.update(visible=False), gr.update(visible=False)
+                   gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
         
         # Check if we have a draft for this section
         drafts_mgr = DraftsManager()
@@ -158,7 +168,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         is_user_draft = False
         draft_type = drafts_mgr.get_type(name)
         from state.drafts_manager import DraftType
-        if draft_type == DraftType.USER.value:
+        if draft_type == DraftType.USER.value or draft_type == DraftType.FILL.value:
             is_user_draft = True
             
         undo_upd = gr.update(visible=False)
@@ -188,6 +198,10 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
                 label = f"**Viewing:** <span style='color:red;'>Generated Draft {current}/{total}</span>"
 
             # Buttons: Checkpoint (visible, enabled), Draft (visible), Diff (visible)
+            # If it's a FILL draft, Checkpoint button shouldn't really exist (no checkpoint version).
+            # But standard logic says allow switching. If we switch to Checkpoint for a Fill, it will return "" (empty).
+            # That's acceptable.
+            
             btn_cp_upd = gr.update(visible=True, interactive=True)
             btn_dr_upd = gr.update(visible=True, interactive=True)
             btn_df_upd = gr.update(visible=True, interactive=True)
@@ -211,8 +225,12 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         from ui.tabs.editor.chat_ui import PLOT_KING_GREETING
         initial_greeting = [{"role": "assistant", "content": PLOT_KING_GREETING}]
         
+        # Hide add_fill_btn for "Expanded Plot" section or when there's an active plan
+        add_fill_visible = should_show_add_fill_btn(name) and (pending_plan is None)
+        
         return text, name, gr.update(value="View"), initial_greeting, \
-               gr.update(visible=True), gr.update(value=label), btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, view_actions_upd, undo_upd, redo_upd
+               gr.update(visible=True), gr.update(value=label), btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, view_actions_upd, undo_upd, redo_upd, gr.update(visible=add_fill_visible)
+
 
 
 
@@ -268,8 +286,10 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             # Recalculate View Actions (Validate, Discard, etc.) for View mode
             if mode == "View":
                 is_user_draft = drafts_mgr.has_type(section, DraftType.USER.value)
+                is_fill_draft = drafts_mgr.has_type(section, DraftType.FILL.value)
+                # Show view actions for both USER and FILL drafts
                 # Hide if in validation (pending_plan active)
-                view_actions_upd = gr.update(visible=is_user_draft and not pending_plan)
+                view_actions_upd = gr.update(visible=(is_user_draft or is_fill_draft) and not pending_plan)
         else:
             # Fallback if no section
             viewer_update = gr.update(visible=(mode != "Rewrite"))
@@ -277,12 +297,13 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
         editor_update = gr.update(visible=False)
         if mode == "Rewrite":
-            # For Rewrite mode, editor_tb should prioritize User draft if available, 
+            # For Rewrite mode, editor_tb should prioritize draft (USER/FILL) if available, 
             # consistent with Manual mode requirement "neaparat user trebuie".
-            if section and drafts_mgr.has_type(section, DraftType.USER.value):
-                content = drafts_mgr.get_content(section, DraftType.USER.value)
+            # Use get_current_section_content which prioritizes drafts over checkpoint
+            if section:
+                content = get_current_section_content(section) or ""
             else:
-                content = get_section_content(section) or ""
+                content = ""
             editor_update = gr.update(visible=True, interactive=False, value=content)
 
         return (
@@ -323,13 +344,13 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     view_discard_btn.click(
         fn=discard_draft_handler,
         inputs=[selected_section, status_log],
-        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_log, status_strip, view_actions_row, btn_undo, btn_redo]
+        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_log, status_strip, view_actions_row, btn_undo, btn_redo, section_dropdown, add_fill_btn]
     )
     
     view_force_edit_btn.click(
         fn=force_edit_draft_handler,
         inputs=[selected_section, status_log, create_sections_epoch],
-        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_log, status_strip, create_sections_epoch, view_actions_row, btn_undo, btn_redo]
+        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_log, status_strip, create_sections_epoch, view_actions_row, btn_undo, btn_redo, section_dropdown, add_fill_btn]
     )
 
     # ---- Sincronizare Create → Editor: refresh Editor tab când Create modifică checkpoint ----
@@ -347,7 +368,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     section_dropdown.change(
         fn=_load_section_content,
         inputs=[section_dropdown, pending_plan],
-        outputs=[viewer_md, selected_section, mode_radio, chat_history, status_row, status_label, btn_checkpoint, btn_draft, btn_diff, current_view_state, view_actions_row, btn_undo, btn_redo],
+        outputs=[viewer_md, selected_section, mode_radio, chat_history, status_row, status_label, btn_checkpoint, btn_draft, btn_diff, current_view_state, view_actions_row, btn_undo, btn_redo, add_fill_btn],
     )
 
     def _handle_view_switch(view_type, section, pending_plan=None):
@@ -503,6 +524,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         Components.UNSELECT_ALL_KEEP_BTN: unselect_all_keep_btn,
         Components.MOVE_TO_GEN_BTN: move_to_gen_btn,
         Components.MOVE_TO_KEEP_BTN: mark_keep_btn, # Alias mark_keep_btn to standard constant if needed, but ui uses MARK_KEEP_BTN key too
+        Components.ADD_FILL_BTN: add_fill_btn,
     }
     
     # States dictionary
@@ -531,18 +553,13 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         # Outputs: UI changes to show Validation Box etc. similar to Manual/Rewrite validate
         outputs=[
              validation_box, pending_plan, validation_title, validation_section, apply_updates_btn, regenerate_btn, continue_btn, discard2_btn,
-             viewer_md, editor_tb, mode_radio, section_dropdown, status_strip, status_log, view_actions_row, btn_undo, btn_redo
+             viewer_md, editor_tb, mode_radio, section_dropdown, status_strip, status_log, view_actions_row, btn_undo, btn_redo, add_fill_btn
         ],
         queue=True,
         show_progress=False,
     )
 
-    view_discard_btn.click(
-        fn=discard_draft_handler,
-        inputs=[selected_section, status_log],
-        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_strip, status_log, view_actions_row, btn_undo, btn_redo]
-    )
-    
+
 
     # Logic: Undo/Redo Handlers
     def _undo_handler(section, view_state):
@@ -583,4 +600,30 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         outputs=[viewer_md, status_label, current_view_state, btn_undo, btn_redo]
     )
 
+    # --- Add Fill Handler ---
+    def _add_fill_handler(current_section, status_log):
+        from state.infill_manager import InfillManager
+        from state.overall_state import get_sections_list
+        
+        # Create fill
+        new_fill_name = InfillManager().create_fill(current_section)
+        
+        # Refresh sections
+        new_choices = get_sections_list()
+        
+        # Log the action
+        new_log, status_update = append_status(status_log, f"➕ Added fill draft: **{new_fill_name}**")
+        status_update = gr.update(value=new_log, visible=True)
+        
+        return gr.update(choices=new_choices, value=new_fill_name), new_log, status_update
+
+    add_fill_btn.click(
+        fn=_add_fill_handler,
+        inputs=[selected_section, status_log],
+        outputs=[section_dropdown, status_log, status_strip],
+        queue=False
+    )
+    
+
     return section_dropdown
+

@@ -86,6 +86,7 @@ def create_rewrite_handlers(components, states):
             selected_text,
             selected_indices,
             components[Components.MODE_RADIO],
+            components[Components.ADD_FILL_BTN],
         ],
         queue=True,
         show_progress=False,
@@ -108,6 +109,7 @@ def create_rewrite_handlers(components, states):
             selected_text,
             selected_indices,
             components[Components.MODE_RADIO],
+            components[Components.ADD_FILL_BTN],
         ],
     )
 
@@ -144,6 +146,7 @@ def create_rewrite_handlers(components, states):
             states[States.CURRENT_VIEW_STATE],
             components[Components.BTN_UNDO],
             components[Components.BTN_REDO],
+            components[Components.ADD_FILL_BTN],
         ],
     )
 
@@ -168,6 +171,7 @@ def create_rewrite_handlers(components, states):
             components[Components.STATUS_STRIP],
             status_log,
             components[Components.STATUS_ROW], # Add output to match Manual validate
+            components[Components.ADD_FILL_BTN],
         ],
         queue=True,
         show_progress=False,
@@ -198,6 +202,7 @@ def create_rewrite_handlers(components, states):
             rewrite_section,
             # Chat Mode items to hide
             components[Components.CHAT_SECTION],
+            components[Components.ADD_FILL_BTN],
         ]
     )
 

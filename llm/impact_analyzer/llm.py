@@ -16,6 +16,7 @@ You are a continuity analyst that identifies which story sections need updates a
 
 Inputs you receive:
 - SECTION EDITED: {section_name}
+- IS INFILL: {is_infill}
 - EDITED SECTION CONTENT (after modification):
 \"\"\"{edited_section_content}\"\"\"
 - SUMMARY OF CHANGES:
@@ -29,11 +30,13 @@ Impact Expectations:
 **Expanded Plot changes**: Impact occurs if the change contradicts existing content or breaks continuity with other sections. All sections may be affected. **IMPORTANT**: When providing instructions for Expanded Plot adaptation, do NOT mention specific chapter numbers (e.g., "Chapter 4", "Chapter 5"). Instead, refer to events or developments in a chapter-agnostic way (e.g., "the event where Gary dies", "John's Everest adventure"). This keeps the Expanded Plot focused on the story arc rather than chapter structure.
 
 **Chapters Overview changes**: Impact occurs if the change contradicts existing content or breaks continuity. If continuity is broken, all following chapters need adaptation and should be marked as impacted. When marking Chapters Overview as impacted, you must clearly specify which chapters from Chapters Overview need adaptation in the reason.
+{infill_rule}
 
 **Chapter changes**: Impact occurs if the change:
 1. Contradicts something (even minor details not mentioned in Expanded Plot or Chapters Overview)
 2. Breaks continuity with following sections
 3. Introduces a major new event or plot development that affects the story's direction
+{infill_chapter_rule}
 
 For major new events: You must check continuity between the EDITED SECTION CONTENT and the following sections in POTENTIAL IMPACTED SECTIONS. If a major new event is introduced (e.g., character makes a significant decision, new plot development, location change), it requires updates in:
 - Expanded Plot (to include the new event)
@@ -60,6 +63,8 @@ Example 4: Chapter 4 (out of 5) is modified. Previously, Chapter 4 ended with Jo
 - Chapters Overview: IMPACTED (needs to reflect John's departure and adventure in Chapter 4 description, Chapter 5 needs adaptation. Update Chapter 4 description to mention John's decision to embark on the Everest adventure. Adapt Chapter 5 description to show John is on Everest rather than continuing from the home scene.)
 - Chapter 5: IMPACTED (must account for John being on Everest adventure, continuity broken with previous ending. Adapt the chapter to reflect that John is on his Everest adventure, not continuing from being at home. Update the opening and subsequent scenes to show John preparing for or beginning his journey to Everest, maintaining continuity with the modified Chapter 4.)
 
+{infill_example}
+
 Task:
 1. Review the edited section content, change summary, and potentially impacted sections.
 2. **IMPORTANT**: SECTION EDITED ({section_name}) is the one that was modified. POTENTIAL IMPACTED SECTIONS are other sections that may need updates due to changes made in {section_name}.
@@ -72,7 +77,7 @@ Task:
    - **Where in the section** the changes should be made (e.g., "in the Plot Summary section, during the Developments phase", "in Chapter X description", "in the Key Characters section")
    - **Context** about how the new change relates to existing content (e.g., "this event affects the story arc described in the Plot Summary")
 7. Write instructions directly and concisely, as if addressing the AI editor that will perform the adaptation (e.g., "Update the Developments phase...", "Adapt Chapter 4 description...", "Replace all instances of...").
-8. If none of the sections require an update, state that explicitly.
+8. Do NOT mention rule names (e.g., "CRITICAL INFILL RULE", "POTENTIAL IMPACTED SECTIONS") in your instructions. Focus ONLY on story continuity: what contradictions exist, what continuity breaks occurred, what specific story elements need to be changed or adapted in the content.
 
 Output format (strict JSON):
 - Respond with a single JSON object and nothing else.
@@ -119,6 +124,8 @@ def call_llm_impact_analysis(
     edited_section_content: str,
     diff_summary: str,
     candidate_sections: List[Tuple[str, str]],
+    is_infill: bool = False,
+    total_chapters: int = 0,
     api_url: str = None,
     model_name: str = None,
     timeout: int = 300,
@@ -137,14 +144,52 @@ def call_llm_impact_analysis(
     formatted_candidates = _format_candidate_sections(candidate_sections)
     candidate_names = ", ".join(name for name, _ in candidate_sections) or "(none)"
 
+    if is_infill:
+        new_total_chapters = total_chapters + 1
+        infill_rule = f"""
+**CRITICAL INFILL RULE**:
+Since IS INFILL is "yes" (indicating a new chapter insertion), Chapters Overview is ALWAYS impacted, even if there are no contradictions. A new chapter requires:
+- adding a new chapter summary
+- shifting numbering of subsequent chapters ONLY if they exist (there will be {new_total_chapters} total chapters after insertion)
+- adapting summaries that follow the insertion point ONLY if they exist
+
+**IMPORTANT**: To determine if renumbering is needed, check the SECTION EDITED name. If the chapter number in SECTION EDITED is greater than {total_chapters} (the current total number of chapters), then the new chapter is being inserted at the END and NO renumbering is needed (no subsequent chapters exist). If the chapter number is less than or equal to {total_chapters}, then subsequent chapters exist and must be renumbered."""
+        
+        infill_chapter_rule = f"""
+**CRITICAL INFILL RULE**: 
+- POTENTIAL IMPACTED SECTIONS contain chapters that exist BEFORE the insertion. The insertion happens AFTER validation, so you must consider how existing chapters will be affected
+- You must reference chapters by their CURRENT names (before insertion) when analyzing impact
+- **IMPORTANT**: When SECTION EDITED is "Chapter X (Candidate)" (a new fill chapter), the chapters listed in POTENTIAL IMPACTED SECTIONS are the EXISTING chapters that will be RENUMBERED after insertion. For example, if "Chapter 2 (Candidate)" is inserted, then "Chapter 2" in POTENTIAL IMPACTED SECTIONS refers to the EXISTING Chapter 2 that will become Chapter 3 after insertion - it is NOT the same as the new fill chapter. This existing Chapter 2 CAN be impacted and may need adaptation for continuity, even though it will be renumbered.
+- **CRITICAL**: When determining impact for chapters, focus ONLY on story continuity (contradictions, continuity breaks, major events). Do NOT mention renumbering, restructuring, or shifting of chapters in chapter impact instructions - renumbering can be mentioned in Chapters Overview instructions, but NOT in individual chapter impact instructions."""
+        
+        infill_example = """Example 5: New Chapter Insertion.
+Edited Section: "Chapter 2 (Candidate)" (A new chapter inserted between Chapter 1 and the existing Chapter 2. Content: John packs up and secretly leaves the country at night, fleeing from the authorities.)
+POTENTIAL IMPACTED SECTIONS include: Expanded Plot, Chapters Overview, Chapter 2, Chapter 3, Chapter 4, Chapter 5
+Changes: New Chapter Created
+- Chapters Overview: IMPACTED (New chapter inserted. Add summary for the new chapter (which becomes Chapter 2) explicitly stating that John makes a secret departure and leaves the country. Renumber all subsequent chapters (the new chapter becomes Chapter 2, and all following chapters shift forward by 1, so the old Chapter 2 becomes Chapter 3, etc.). Update chapter descriptions that reference the insertion point to maintain continuity.)
+- Chapter 2: IMPACTED (Continuity broken - Previously John was in the country at the start of this chapter, now he is already abroad (having left in the new Chapter 2 that is being inserted). Adapt Chapter 2 to reflect that John is already abroad, removing references to him being in the original location and updating the opening to show he's already established in the new location.)
+Note: In the example above, "Chapter 2" in POTENTIAL IMPACTED SECTIONS refers to the existing Chapter 2 that will be renumbered to Chapter 3 after insertion. When writing instructions for impacted chapters, write them directly for the chapter as it currently exists (e.g., "Adapt Chapter 2..."), focusing ONLY on story continuity issues (contradictions, continuity breaks, specific story elements that need changes). Do NOT mention renumbering, restructuring, or shifting - those are handled separately in Chapters Overview instructions. Do NOT reference rule names or section names in your instructions.
+
+Example 6: New Chapter Insertion at the End.
+Edited Section: "Chapter 6 (Candidate)" (A new chapter inserted at the end, after Chapter 5. Current total chapters: 5. Content: John packs up and secretly leaves the country at night, fleeing from the authorities.)
+Changes: New Chapter Created
+- Chapters Overview: IMPACTED (New chapter inserted at the end. Add summary for the new chapter (which becomes Chapter 6) explicitly stating that John makes a secret departure and leaves the country. NO renumbering is needed since this is the last chapter - the chapter number (6) is greater than the current total (5), meaning no subsequent chapters exist to renumber.)"""
+    else:
+        infill_rule = ""
+        infill_chapter_rule = ""
+        infill_example = ""
 
     prompt = _IMPACT_PROMPT.format(
         section_name=section_name,
+        is_infill="yes" if is_infill else "no",
         edited_section_content=edited_section_content or "(empty)",
         diff_summary=diff_summary or "(empty)",
         candidate_count=len(candidate_sections),
         candidate_sections=formatted_candidates,
         candidate_names=candidate_names,
+        infill_rule=infill_rule,
+        infill_chapter_rule=infill_chapter_rule,
+        infill_example=infill_example,
     )
 
     messages = [

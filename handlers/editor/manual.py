@@ -1,6 +1,6 @@
 import gradio as gr
 from handlers.editor.validate_commons import editor_validate
-from handlers.editor.utils import append_status, remove_highlight
+from handlers.editor.utils import append_status, remove_highlight, should_show_add_fill_btn
 from handlers.editor.constants import Components, States
 from state.checkpoint_manager import get_section_content, save_section
 
@@ -23,6 +23,7 @@ def start_edit(section, current_log):
         gr.update(interactive=False), # lock Section
         status_update,
         new_log,
+        gr.update(visible=False), # add_fill_btn - hide when editing
     )
 
 def confirm_edit(section, draft, current_log):
@@ -59,7 +60,8 @@ def confirm_edit(section, draft, current_log):
         gr.update(value=new_log, visible=True),  # show Process Log with "Validation started"
         new_log,  # status_log state
         gr.update(visible=False), # status_row (hidden)
-        gr.update(visible=False) # hide Keep Draft
+        gr.update(visible=False), # hide Keep Draft
+        gr.update(visible=False) # add_fill_btn - hide during validation
     )
     
     # Apelează validarea (blocant) - folosim draft_clean (fără highlight-uri)
@@ -90,21 +92,22 @@ def confirm_edit(section, draft, current_log):
         gr.update(value=final_log, visible=True),  # show Process Log with "Validation completed"
         final_log,  # status_log state
         gr.update(visible=False), # status_row (hidden)
-        gr.update(visible=False) # hide Keep Draft
+        gr.update(visible=False), # hide Keep Draft
+        gr.update(visible=False), # add_fill_btn - hide during validation
     )
 
 def force_edit(section, draft, current_log, create_epoch):
-    """Apply changes directly without validation — unlocks controls after."""
-    from state.drafts_manager import DraftsManager
-    save_section(section, draft)
-    updated_text = draft
-    new_log, status_update = append_status(current_log, f"⚡ ({section}) Synced (forced).")
-    new_create_epoch = (create_epoch or 0) + 1  # Bump create_sections_epoch to notify Create tab
+    """Apply changes directly without validation — unlocks controls after. For fills, inserts chapter and shifts."""
+    from handlers.editor.utils import force_edit_common_handler
     
-    # Remove all drafts after saving to checkpoint
-    drafts_manager = DraftsManager()
-    if drafts_manager.has(section):
-        drafts_manager.remove(section)
+    updated_text, msg, dropdown_update, new_log, status_update = force_edit_common_handler(section, draft, current_log)
+    
+    if updated_text is None:
+        updated_text = draft
+        new_log, status_update = append_status(current_log, f"⚡ ({section}) Synced (forced).")
+    
+    new_create_epoch = (create_epoch or 0) + 1
+    add_fill_visible = should_show_add_fill_btn(section)
     
     return (
         gr.update(value=updated_text, visible=True),  # update and show Viewer
@@ -116,7 +119,7 @@ def force_edit(section, draft, current_log, create_epoch):
         gr.update(visible=True),    # show Start Editing (will be hidden by _toggle_mode if not Manual mode)
         gr.update(visible=False),   # hide Rewrite Section (will be shown by _toggle_mode if Rewrite mode)
         gr.update(interactive=True),# unlock Mode
-        gr.update(interactive=True),# unlock Section
+        dropdown_update,  # section_dropdown update
         new_log,
         new_create_epoch,  # bump create_sections_epoch to notify Create tab
         gr.update(visible=True), # status_row (visible)
@@ -128,6 +131,7 @@ def force_edit(section, draft, current_log, create_epoch):
         "Checkpoint", # current_view_state
         gr.update(visible=False), # btn_undo - hide
         gr.update(visible=False), # btn_redo - hide
+        gr.update(visible=add_fill_visible), # add_fill_btn - show again after force edit
     )
 
 def discard_from_manual(section, current_log):
@@ -151,6 +155,7 @@ def discard_from_manual(section, current_log):
     undo_visible, redo_visible, undo_icon, redo_icon, _ = um.get_undo_redo_state(section, draft_type, has_draft)
         
     new_log, status_update = append_status(current_log, f"🗑️ ({section}) Changes discarded.")
+    add_fill_visible = should_show_add_fill_btn(section)
     return (
         gr.update(value=text, visible=True),  # update and show Viewer (prefer draft)
         gr.update(value="", visible=False),   # clear and hide Editor
@@ -175,6 +180,7 @@ def discard_from_manual(section, current_log):
         gr.update(visible=False),# hide Keep Draft
         gr.update(visible=undo_visible, value=undo_icon), # btn_undo
         gr.update(visible=redo_visible, value=redo_icon), # btn_redo
+        gr.update(visible=add_fill_visible), # add_fill_btn - show again after discard
     )
 
 def continue_edit(section, current_log):
@@ -209,5 +215,6 @@ def continue_edit(section, current_log):
         None,  # 23. pending_plan - clear plan when going back
         gr.update(visible=False),   # 24. btn_undo - hide (not in view mode)
         gr.update(visible=False),   # 25. btn_redo - hide (not in view mode)
+        gr.update(visible=False),   # 26. add_fill_btn - hide when editing
     )
 

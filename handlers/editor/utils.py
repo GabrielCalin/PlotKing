@@ -274,6 +274,52 @@ def format_validation_markdown(
 ```
 """
 
+def force_edit_common_handler(section, content, status_log):
+    """
+    Common handler for Force Edit that handles both regular sections and fills.
+    For fills, inserts chapter and shifts other fills/chapters.
+    Returns: (updated_text, msg, dropdown_update, new_log, status_update)
+    """
+    if not section:
+        return None, "", gr.update(interactive=True), status_log, gr.update()
+    
+    from state.drafts_manager import DraftsManager
+    from state.infill_manager import InfillManager
+    from state.checkpoint_manager import insert_chapter, get_section_content, save_section
+    from state.overall_state import get_sections_list
+    
+    drafts_mgr = DraftsManager()
+    im = InfillManager()
+    dropdown_update = gr.update(interactive=True)
+    
+    if im.is_fill(section):
+        idx = im.parse_fill_target(section)
+        if idx is not None:
+            success = insert_chapter(idx, content)
+            if success:
+                drafts_mgr.remove(section)
+                im.shift_fills_after_insert(idx, section)
+                new_chapter_name = f"Chapter {idx}"
+                new_opts = get_sections_list()
+                dropdown_update = gr.update(choices=new_opts, value=new_chapter_name, interactive=True)
+                updated_text = get_section_content(new_chapter_name) or content
+                msg = f"⚡ Force Edited Fill **{section}**. New {new_chapter_name} created."
+            else:
+                updated_text = content
+                msg = f"❌ Error creating Chapter {idx} from **{section}**."
+        else:
+            updated_text = content
+            msg = f"❌ Could not parse target index for Fill **{section}**."
+    else:
+        save_section(section, content)
+        updated_text = content
+        msg = f"⚡ Force Edited **{section}**. Draft saved to checkpoint."
+        if drafts_mgr.has(section):
+            drafts_mgr.remove(section)
+    
+    new_log, status_update = append_status(status_log, msg)
+    return updated_text, msg, dropdown_update, new_log, status_update
+
 def keep_draft_handler(section, content, status_log):
     """
     Save the current content as a USER draft and switch to View mode.
@@ -283,11 +329,18 @@ def keep_draft_handler(section, content, status_log):
         
     from state.drafts_manager import DraftsManager, DraftType
     from handlers.editor.constants import Components, States
+    from state.infill_manager import InfillManager
     
     drafts_mgr = DraftsManager()
+    im = InfillManager()
     clean_content = remove_highlight(content)
-    drafts_mgr.add_user_draft(section, clean_content) # Salveaza explicit ca USER draft
-    drafts_mgr.remove(section, DraftType.CHAT.value) # Sterge chat draft daca exista, acum ca e salvat ca USER draft
+    
+    if im.is_fill(section):
+        drafts_mgr.add_fill_draft(section, clean_content) # Save as FILL draft if it's a fill section
+    else:
+        drafts_mgr.add_user_draft(section, clean_content) # Explicitly save as USER draft
+        
+    drafts_mgr.remove(section, DraftType.CHAT.value) # Remove chat draft if exists, now saved
     
     msg = f"💾 Saved draft for **{section}**."
     new_log, status_update = append_status(status_log, msg)
@@ -320,7 +373,12 @@ def keep_draft_handler(section, content, status_log):
         
         # Hide Chat UI
         gr.update(visible=False), # 18. Chat Section
+        gr.update(visible=should_show_add_fill_btn(section)), # 19. add_fill_btn - show again after keep draft
     )
+
+def should_show_add_fill_btn(section):
+    """Determine if the Add Fill button should be visible for a given section."""
+    return section != "Expanded Plot" if section else False
 
 def sort_drafts(draft_list):
     """

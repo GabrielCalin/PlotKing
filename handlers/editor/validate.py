@@ -1,7 +1,7 @@
 import gradio as gr
 from handlers.editor.validate_commons import editor_validate
 from utils.logger import merge_logs
-from handlers.editor.utils import append_status, remove_highlight, sort_drafts
+from handlers.editor.utils import append_status, remove_highlight, sort_drafts, should_show_add_fill_btn
 from handlers.editor.constants import Components, States
 from state.checkpoint_manager import save_section, get_checkpoint, get_section_content
 from state.drafts_manager import DraftsManager, DraftType
@@ -39,16 +39,22 @@ def _get_generated_drafts_list(plan, exclude_section):
 def _get_revert_state(section):
     """Calculate basic state variables after a revert/accept."""
     drafts_mgr = DraftsManager()
-    # Priority: only USER draft remains after cleanup
-    content = drafts_mgr.get_content(section, DraftType.USER.value)
+    # Priority: USER draft > FILL draft > Checkpoint
+    user_content = drafts_mgr.get_content(section, DraftType.USER.value)
     
-    if content is not None:
+    if user_content is not None:
         draft_type = DraftType.USER.value
         draft_display_name = DraftsManager.get_display_name(draft_type)
-        return content, "Draft", f"**Viewing:** <span style='color:red;'>{draft_display_name}</span>", True
+        return user_content, "Draft", f"**Viewing:** <span style='color:red;'>{draft_display_name}</span>", True
     else:
-        content = get_section_content(section) or ""
-        return content, "Checkpoint", "**Viewing:** <span style='color:red;'>Checkpoint</span>", False
+        fill_content = drafts_mgr.get_content(section, DraftType.FILL.value)
+        if fill_content is not None:
+            draft_type = DraftType.FILL.value
+            draft_display_name = DraftsManager.get_display_name(draft_type)
+            return fill_content, "Draft", f"**Viewing:** <span style='color:red;'>{draft_display_name}</span>", True
+        else:
+            content = get_section_content(section) or ""
+            return content, "Checkpoint", "**Viewing:** <span style='color:red;'>Checkpoint</span>", False
 
 def get_draft_warning(exclude_section: str) -> str:
     """Check for existing USER drafts in other sections and return a warning markdown string."""
@@ -61,6 +67,19 @@ def get_draft_warning(exclude_section: str) -> str:
     if other_drafts:
         draft_names = ", ".join([f"`{d}`" for d in other_drafts])
         return f"⚠️ **Validation is based on other drafts.**\nSome related sections are still drafts: {draft_names}.\nEnsure these drafts are consistent before applying changes."
+    return ""
+
+def get_fill_draft_warning(exclude_section: str) -> str:
+    """Check for existing FILL drafts in other sections and return a warning markdown string."""
+    drafts_mgr = DraftsManager()
+    fill_drafts = drafts_mgr.get_fill_drafts()
+    
+    # Exclude current section since we are validating it actively
+    other_fills = [s for s in fill_drafts if s != exclude_section]
+    
+    if other_fills:
+        fill_names = ", ".join([f"`{d}`" for d in other_fills])
+        return f"⚠️ **Multiple fill drafts present.**\nOther fill drafts exist: {fill_names}.\nThe current fill will not be validated against other fill drafts."
     return ""
 
 
@@ -83,6 +102,7 @@ def editor_apply(section, draft, plan):
         diff_data = plan.get("diff_data", {})
         impact_data = plan.get("impact_data", {})
         impacted = plan.get("impacted_sections", [])
+        fill_name = plan.get("fill_name")
         
         if impacted:
             from pipeline.runner_edit import run_edit_pipeline_stream
@@ -92,6 +112,7 @@ def editor_apply(section, draft, plan):
                 diff_data=diff_data,
                 impact_data=impact_data,
                 impacted_sections=impacted,
+                fill_name=fill_name,
             ):
                 if isinstance(result, tuple) and len(result) >= 9:
                     pipeline_drafts = result[8]
@@ -126,7 +147,7 @@ def apply_updates(section, plan, current_log, create_epoch, draft_content):
         drafts_mgr.add_original(section, draft_to_save)
         
         # Reuse draft_accept_selected to save and get common return values
-        draft_panel, status_strip_upd, status_log_val, epoch_val, status_row_upd, status_label_upd, btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, viewer_upd, mode_radio_upd, view_actions_row_upd, pending_plan_val, generated_drafts_choices_state_val, keep_drafts_choices_state_val, btn_undo_upd, btn_redo_upd = draft_accept_selected(
+        draft_panel, status_strip_upd, status_log_val, epoch_val, status_row_upd, status_label_upd, btn_cp_upd, btn_dr_upd, btn_df_upd, view_state, viewer_upd, mode_radio_upd, view_actions_row_upd, pending_plan_val, generated_drafts_choices_state_val, keep_drafts_choices_state_val, btn_undo_upd, btn_redo_upd, dropdown_upd, add_fill_btn_upd = draft_accept_selected(
             current_section=section,
             original_selected=[section],
             generated_selected=[],
@@ -153,7 +174,7 @@ def apply_updates(section, plan, current_log, create_epoch, draft_content):
             gr.update(visible=False), # start_edit_btn
             gr.update(visible=False), # rewrite_section
             mode_radio_upd, # mode_radio - re-enabled
-            gr.update(interactive=True), # section_dropdown
+            dropdown_upd, # section_dropdown - from draft_accept_selected
             new_log, # status_log - updated message
             epoch_val, # create_sections_epoch - from draft_accept_selected
             gr.update(visible=False), # draft_review_panel - HIDDEN (no drafts to review)
@@ -173,7 +194,8 @@ def apply_updates(section, plan, current_log, create_epoch, draft_content):
             generated_drafts_choices_state_val, # 32. generated_drafts_choices_state - from draft_accept_selected
             keep_drafts_choices_state_val, # 33. keep_drafts_choices_state - from draft_accept_selected
             btn_undo_upd, # 34. btn_undo - from draft_accept_selected
-            btn_redo_upd # 35. btn_redo - from draft_accept_selected
+            btn_redo_upd, # 35. btn_redo - from draft_accept_selected
+            add_fill_btn_upd # 36. add_fill_btn - from draft_accept_selected
         )
         return
 
@@ -219,7 +241,8 @@ def apply_updates(section, plan, current_log, create_epoch, draft_content):
         [],                        # 33. generated_drafts_choices_state
         [],                        # 34. keep_drafts_choices_state
         gr.update(visible=False), # 35. btn_undo - hide during pipeline
-        gr.update(visible=False)  # 36. btn_redo - hide during pipeline
+        gr.update(visible=False), # 36. btn_redo - hide during pipeline
+        gr.update(visible=False)  # 37. add_fill_btn - hide during pipeline
     )
 
     # Call editor_apply which yields pipeline results
@@ -276,7 +299,8 @@ def apply_updates(section, plan, current_log, create_epoch, draft_content):
             generated_drafts,          # 33. generated_drafts_choices_state
             [],                        # 34. keep_drafts_choices_state
             gr.update(),               # 35. btn_undo - NO CHANGE
-            gr.update()                # 36. btn_redo - NO CHANGE
+            gr.update(),               # 36. btn_redo - NO CHANGE
+            gr.update(visible=False)   # 37. add_fill_btn - hide during pipeline
         )
             
         # Check stop after processing and saving results
@@ -335,7 +359,8 @@ def apply_updates(section, plan, current_log, create_epoch, draft_content):
         generated_drafts,          # 33. generated_drafts_choices_state
         [],                        # 34. keep_drafts_choices_state
         gr.update(),               # 35. btn_undo - NO CHANGE
-        gr.update()                # 36. btn_redo - NO CHANGE
+        gr.update(),               # 36. btn_redo - NO CHANGE
+        gr.update(visible=False)   # 37. add_fill_btn - hide during review
     )
 
 def draft_accept_all(current_section, plan, current_log, create_epoch):
@@ -344,20 +369,42 @@ def draft_accept_all(current_section, plan, current_log, create_epoch):
     
     # Identify involved sections: originally edited + impacted
     impacted = _get_generated_drafts_list(plan, None)
-    edited = plan.get("edited_section", current_section) if plan else current_section
-    sections_to_save = list(set(impacted + [edited, current_section]))
+    fill_name = plan.get("fill_name") if plan and isinstance(plan, dict) else None
+    # For fills, use fill_name (real section name) instead of edited_section (which is "Chapter X (Candidate)")
+    edited = fill_name if fill_name else (plan.get("edited_section", "") if plan else "")
+    sections_to_save = [s for s in list(set(impacted + [edited])) if s]
     
+    from state.infill_manager import InfillManager
+    from state.checkpoint_manager import insert_chapter
+    from state.overall_state import get_sections_list
+    im = InfillManager()
+    
+    new_chapter_name = None
     for section in sections_to_save:
         content = drafts_mgr.get_content(section)
         if content is not None:
-            save_section(section, content)
+            if im.is_fill(section):
+                idx = im.parse_fill_target(section)
+                insert_chapter(idx, content)
+                im.shift_fills_after_insert(idx, section)
+                new_chapter_name = f"Chapter {idx}"
+            else:
+                save_section(section, content)
             # Fully remove drafts for accepted sections (they are now in checkpoint)
             drafts_mgr.remove(section)
+    
+    # Update dropdown if fill was accepted
+    dropdown_update = gr.update(interactive=True)
+    if new_chapter_name:
+        new_opts = get_sections_list()
+        dropdown_update = gr.update(choices=new_opts, value=new_chapter_name, interactive=True)
             
     new_log, status_update = append_status(current_log, "✅ All drafts accepted and saved.")
     new_epoch = (create_epoch or 0) + 1
     
     content, view_state, mode_label, btns_visible = _get_revert_state(current_section)
+    
+    add_fill_visible = should_show_add_fill_btn(current_section)
     
     return (
         gr.update(visible=False), # 1. Hide draft panel
@@ -378,16 +425,20 @@ def draft_accept_all(current_section, plan, current_log, create_epoch):
         [],    # 16. keep_drafts_choices_state
         gr.update(visible=False, value="↩️"), # 17. btn_undo - no drafts after accept all
         gr.update(visible=False, value="↪️"), # 18. btn_redo - no drafts after accept all
+        dropdown_update, # 19. section_dropdown update
+        gr.update(visible=add_fill_visible), # 20. add_fill_btn
     )
 
 def draft_revert_all(current_section, plan, current_log):
     """Discard only session-related generated and original drafts, preserve user drafts."""
     drafts_mgr = DraftsManager()
     impacted = _get_generated_drafts_list(plan, None)
-    edited = plan.get("edited_section", current_section) if plan else current_section
-    sections = list(set(impacted + [edited, current_section]))
+    fill_name = plan.get("fill_name") if plan and isinstance(plan, dict) else None
+    # For fills, use fill_name (real section name) instead of edited_section (which is "Chapter X (Candidate)")
+    edited = fill_name if fill_name else (plan.get("edited_section", "") if plan else "")
+    sections = [s for s in list(set(impacted + [edited])) if s]
     
-    drafts_mgr.keep_only_user_drafts(sections)
+    drafts_mgr.keep_only_draft_types(sections, [DraftType.USER.value, DraftType.FILL.value])
     
     new_log, status_update = append_status(current_log, "❌ All drafts reverted.")
     content, view_state, mode_label, btns_visible = _get_revert_state(current_section)
@@ -399,6 +450,8 @@ def draft_revert_all(current_section, plan, current_log):
         drafts_mgr.get_type(current_section) if btns_visible and drafts_mgr.has(current_section) else None,
         btns_visible and drafts_mgr.has(current_section)
     )
+
+    add_fill_visible = should_show_add_fill_btn(current_section)
 
     return (
         gr.update(visible=False), # 1. Hide draft panel
@@ -418,6 +471,7 @@ def draft_revert_all(current_section, plan, current_log):
         [],    # 16. keep_drafts_choices_state
         gr.update(visible=undo_visible, value=undo_icon), # 17. btn_undo - normal icon (no Generated after revert)
         gr.update(visible=redo_visible, value=redo_icon), # 18. btn_redo - normal icon (no Generated after revert)
+        gr.update(visible=add_fill_visible), # 19. add_fill_btn
     )
 
 
@@ -445,6 +499,12 @@ def draft_accept_selected(current_section, original_selected, generated_selected
                 content = drafts_mgr.get_content(section, DraftType.ORIGINAL.value)
                 to_save_checkpoint[section] = content
 
+    # 3. Apply Saves to Checkpoint & Cleanup Accepted
+    from state.infill_manager import InfillManager
+    from state.checkpoint_manager import insert_chapter
+    from state.overall_state import get_sections_list
+    im = InfillManager()
+
     # 2. Identify sections to KEEP AS USER DRAFT
     drafts_kept_count = 0
     if drafts_to_keep:
@@ -461,24 +521,42 @@ def draft_accept_selected(current_section, original_selected, generated_selected
                 # Remove generated component since it's now User
                 drafts_mgr.remove(section, DraftType.GENERATED.value)
                 drafts_kept_count += 1
-            elif drafts_mgr.has_type(section, DraftType.ORIGINAL.value):
-                # Keeping original as user draft?
-                content = drafts_mgr.get_content(section, DraftType.ORIGINAL.value)
-                drafts_mgr.add_user_draft(section, content)
-                drafts_mgr.remove(section, DraftType.ORIGINAL.value)
-                drafts_kept_count += 1
 
-    # 3. Apply Saves to Checkpoint & Cleanup Accepted
+    
     saved_count = 0
+    new_chapter_name = None
     for section, content in to_save_checkpoint.items():
-        save_section(section, content)
+        if im.is_fill(section):
+            idx = im.parse_fill_target(section)
+            if idx is not None:
+                insert_chapter(idx, content)
+                im.shift_fills_after_insert(idx, section)
+                new_chapter_name = f"Chapter {idx}"
+        else:
+            save_section(section, content)
+            
         saved_count += 1
         # Accepted -> Clear ALL drafts for this section
-        drafts_mgr.remove(section) 
+        drafts_mgr.remove(section)
+    
+    # Update dropdown if fill was accepted
+    dropdown_update = gr.update(interactive=True)
+    if new_chapter_name:
+        new_opts = get_sections_list()
+        dropdown_update = gr.update(choices=new_opts, value=new_chapter_name, interactive=True) 
     
     # 4. Discard Unselected / Cleanup & Reset UI
-    remaining_sections = list(drafts_mgr.get_all_content().keys())
-    drafts_mgr.keep_only_user_drafts(remaining_sections)
+    # Calculate remaining_sections: sections with GENERATED drafts that are NOT accepted and NOT kept
+    all_generated_sections = drafts_mgr.get_generated_drafts()
+    accepted_sections = set(to_save_checkpoint.keys())
+    kept_sections = set(drafts_to_keep) if drafts_to_keep else set()
+    
+    remaining_sections = [
+        section for section in all_generated_sections
+        if section not in accepted_sections and section not in kept_sections
+    ]
+    
+    drafts_mgr.keep_only_draft_types(remaining_sections, [DraftType.USER.value])
 
     new_log, status_update = append_status(current_log, f"✅ Accepted {saved_count} drafts. {drafts_kept_count} drafts kept as User Drafts.")
     new_epoch = (create_epoch or 0) + 1
@@ -492,6 +570,8 @@ def draft_accept_selected(current_section, original_selected, generated_selected
         drafts_mgr.get_type(current_section) if btns_visible and drafts_mgr.has(current_section) else None,
         btns_visible and drafts_mgr.has(current_section)
     )
+    
+    add_fill_visible = should_show_add_fill_btn(current_section)
     
     # Return updates explicitly
     return (
@@ -513,6 +593,8 @@ def draft_accept_selected(current_section, original_selected, generated_selected
         [],    # 16. keep_drafts_choices_state
         gr.update(visible=undo_visible, value=undo_icon), # 17. btn_undo
         gr.update(visible=redo_visible, value=redo_icon), # 18. btn_redo
+        dropdown_update, # 19. section_dropdown update
+        gr.update(visible=add_fill_visible), # 20. add_fill_btn
     )
 
 def draft_regenerate_selected(generated_selected, plan, section, current_log, create_epoch, keep_drafts_choices_state=None):
@@ -551,6 +633,7 @@ def draft_regenerate_selected(generated_selected, plan, section, current_log, cr
     edited_section = plan.get("edited_section", section)
     diff_data = plan.get("diff_data", {})
     impact_data = plan.get("impact_data", {})
+    fill_name = plan.get("fill_name")
     
     # Prepare initial UI updates
     # Use edited_section as the source of truth for the original draft
@@ -577,6 +660,7 @@ def draft_regenerate_selected(generated_selected, plan, section, current_log, cr
         diff_data=diff_data,
         impact_data=impact_data,
         impacted_sections=filtered_impacted,
+        fill_name=fill_name,
     ):
         if isinstance(result, tuple) and len(result) >= 9:
             expanded_plot, chapters_overview, chapters_full, current_text, dropdown, counter, status_log_text, validation_text, pipeline_drafts = result
@@ -684,6 +768,7 @@ def discard_from_validate(section, current_log):
         [],                                           # keep_drafts_choices_state
         gr.update(visible=undo_visible, value=undo_icon), # btn_undo
         gr.update(visible=redo_visible, value=redo_icon), # btn_redo
+        gr.update(visible=should_show_add_fill_btn(section)), # add_fill_btn
     )
 
 def mark_drafts_to_keep_handler(generated_selected, current_generated_choices, current_keep_choices):
