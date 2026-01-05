@@ -12,7 +12,8 @@ from handlers.editor.utils import (
     append_status,
     should_show_add_fill_btn,
 )
-from state.drafts_manager import DraftsManager
+from state.drafts_manager import DraftsManager, DraftType
+from state.infill_manager import InfillManager
 import ui.tabs.editor.manual_ui as Manual
 import ui.tabs.editor.rewrite_ui as Rewrite
 import ui.tabs.editor.validate_ui as Validate
@@ -75,7 +76,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             rewrite_section, rewrite_selected_preview, preset_dropdown, rewrite_instructions_tb, rewrite_btn, rewrite_validate_btn, rewrite_discard_btn, rewrite_force_edit_btn, rewrite_keep_draft_btn = Rewrite.create_rewrite_ui()
             
             # Chat Mode UI
-            chat_section, chatbot, chat_input, chat_send_btn, chat_clear_btn, chat_actions_row_1, chat_discard_btn, chat_force_edit_btn, chat_actions_row_2, chat_validate_btn, chat_keep_draft_btn = Chat.create_chat_ui()
+            chat_section, chatbot, chat_input, chat_send_btn, chat_clear_btn, chat_actions_row_1, chat_discard_btn, chat_force_edit_btn, chat_actions_row_2, chat_validate_btn, chat_keep_draft_btn, chat_type_dropdown = Chat.create_chat_ui()
             
             # Validation & Draft Review UI
             validation_section, validation_title, validation_box, apply_updates_btn, stop_updates_btn, regenerate_btn, draft_review_panel, original_draft_checkbox, generated_drafts_list, drafts_to_keep_list, mark_keep_btn, btn_draft_accept_all, btn_draft_revert, btn_draft_accept_selected, btn_draft_regenerate, continue_btn, discard2_btn, select_all_gen_btn, unselect_all_gen_btn, select_all_keep_btn, unselect_all_keep_btn, move_to_gen_btn, generated_drafts_choices, keep_drafts_choices = Validate.create_validate_ui(generated_drafts_choices)
@@ -236,7 +237,6 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
 
 
     def _toggle_mode(mode, section, view_state, pending_plan):
-        from state.drafts_manager import DraftsManager, DraftType
         drafts_mgr = DraftsManager()
         
         # --- Mode-specific UI updates ---
@@ -262,6 +262,11 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         chat_actions_row_1_upd = gr.update(visible=False)
         chat_actions_row_2_upd = gr.update(visible=False)
         
+        # Chat Type Dropdown visibility logic
+        is_fill_section = InfillManager().is_fill(section) if section else False
+        # The dropdown should be visible ONLY if in Chat mode AND it's a Fill section
+        chat_type_dropdown_upd = gr.update(visible=(mode == "Chat" and is_fill_section))
+
         # Validation Section (shown when validation is active or when pending_plan exists)
         validation_section_upd = gr.update(visible=(pending_plan is not None))
         
@@ -312,7 +317,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             editor_update, viewer_update,
             rewrite_btn_upd, rewrite_action_upd, rewrite_action_upd, rewrite_action_upd, rewrite_keep_draft_upd,
             status_row_upd, view_actions_upd, status_label_upd,
-            chat_actions_row_1_upd, chat_actions_row_2_upd,
+            chat_actions_row_1_upd, chat_actions_row_2_upd, chat_type_dropdown_upd,
             undo_upd, redo_upd
         )
 
@@ -344,7 +349,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
     view_discard_btn.click(
         fn=discard_draft_handler,
         inputs=[selected_section, status_log],
-        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_log, status_strip, view_actions_row, btn_undo, btn_redo, section_dropdown, add_fill_btn]
+        outputs=[viewer_md, status_label, current_view_state, btn_checkpoint, btn_draft, btn_diff, status_log, status_strip, view_actions_row, btn_undo, btn_redo, section_dropdown, add_fill_btn, chat_type_dropdown]
     )
     
     view_force_edit_btn.click(
@@ -447,7 +452,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
             rewrite_section, chat_section, validation_section, editor_tb, viewer_md, 
             rewrite_btn, rewrite_validate_btn, rewrite_discard_btn, rewrite_force_edit_btn, rewrite_keep_draft_btn, 
             status_row, view_actions_row, status_label,
-            chat_actions_row_1, chat_actions_row_2,
+            chat_actions_row_1, chat_actions_row_2, chat_type_dropdown,
             btn_undo, btn_redo
         ]
     )
@@ -486,6 +491,7 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         Components.CHAT_ACTIONS_ROW_2: chat_actions_row_2,
         Components.CHAT_VALIDATE_BTN: chat_validate_btn,
         Components.CHAT_KEEP_DRAFT_BTN: chat_keep_draft_btn,
+        Components.CHAT_TYPE_DROPDOWN: chat_type_dropdown,
         Components.VALIDATION_SECTION: validation_section,
         Components.VALIDATION_TITLE: validation_title,
         Components.VALIDATION_BOX: validation_box,

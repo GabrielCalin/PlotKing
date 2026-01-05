@@ -110,6 +110,7 @@ def create_rewrite_handlers(components, states):
             selected_indices,
             components[Components.MODE_RADIO],
             components[Components.ADD_FILL_BTN],
+            components[Components.CHAT_TYPE_DROPDOWN],
         ],
     )
 

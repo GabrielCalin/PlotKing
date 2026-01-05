@@ -46,6 +46,7 @@ def discard_draft_handler(section, status_log):
         gr.update(visible=False), # btn_redo - hide
         dropdown_update, # section_dropdown update
         gr.update(visible=add_fill_visible), # add_fill_btn
+        gr.update(interactive=True), # chat_type_dropdown - re-enable
     )
 
 def force_edit_draft_handler(section, status_log, create_sections_epoch):
@@ -210,4 +211,5 @@ def continue_edit(section, current_log):
         gr.update(visible=undo_visible, value=undo_icon), # btn_undo - show if available
         gr.update(visible=redo_visible, value=redo_icon), # btn_redo - show if available
         gr.update(visible=should_show_add_fill_btn(section)), # add_fill_btn - show again after going back
+        gr.update(interactive=True), # chat_type_dropdown - re-enable
     )

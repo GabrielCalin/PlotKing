@@ -216,5 +216,6 @@ def continue_edit(section, current_log):
         gr.update(visible=False),   # 24. btn_undo - hide (not in view mode)
         gr.update(visible=False),   # 25. btn_redo - hide (not in view mode)
         gr.update(visible=False),   # 26. add_fill_btn - hide when editing
+        gr.update(interactive=True), # chat_type_dropdown - re-enable
     )
 

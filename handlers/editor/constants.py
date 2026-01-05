@@ -68,6 +68,7 @@ class Components(str, Enum):
     SELECT_ALL_KEEP_BTN = "select_all_keep_btn"
     UNSELECT_ALL_KEEP_BTN = "unselect_all_keep_btn"
     ADD_FILL_BTN = "add_fill_btn"
+    CHAT_TYPE_DROPDOWN = "chat_type_dropdown"
 
 class States(str, Enum):
     SELECTED_SECTION = "selected_section"
