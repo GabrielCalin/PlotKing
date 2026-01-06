@@ -48,7 +48,7 @@ def create_chat_ui():
 
 def create_chat_handlers(components, states):
     """Wire events for Chat mode components."""
-    from handlers.editor.chat import chat_handler, clear_chat, validate_handler, discard_handler, force_edit_handler
+    from handlers.editor.chat import chat_handler, clear_chat, validate_handler, discard_handler, force_edit_handler, handle_chat_type_change
     from handlers.editor.utils import keep_draft_handler
     
     chat_input = components[Components.CHAT_INPUT]
@@ -77,6 +77,10 @@ def create_chat_handlers(components, states):
     chat_type_dropdown = components[Components.CHAT_TYPE_DROPDOWN]
 
     chat_type_dropdown.change(
+        fn=handle_chat_type_change,
+        inputs=[selected_section, status_log, chat_type_dropdown],
+        outputs=[chat_history, status_log, components[Components.STATUS_STRIP], components[Components.CHATBOT]]
+    ).then(
         fn=clear_chat,
         inputs=[selected_section, status_log, chat_type_dropdown],
         outputs=[chat_history, status_log, components[Components.STATUS_STRIP], components[Components.CHATBOT]]

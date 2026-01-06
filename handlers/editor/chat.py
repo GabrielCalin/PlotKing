@@ -317,6 +317,17 @@ def clear_chat(section, current_log, chat_type="Chapter"):
     return initial_greeting, new_log, status_update, initial_greeting
 
 
+def handle_chat_type_change(section, current_log, chat_type):
+    """
+    Handler pentru schimbarea chat_type_dropdown.
+    Șterge istoricul pentru a pregăti generarea noului greeting.
+    """
+    empty_history = []
+    new_log, status_update = append_status(current_log, f"🔄 ({section}) Switching to {chat_type} chat...")
+    
+    return empty_history, new_log, status_update, empty_history
+
+
 
 def validate_handler(section, current_log):
     """
