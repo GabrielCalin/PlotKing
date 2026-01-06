@@ -6,6 +6,51 @@ from state.drafts_manager import DraftsManager, DraftType
 from handlers.editor.constants import Components, States
 from llm.chat_editor.llm import call_llm_chat
 from state.checkpoint_manager import get_section_content, save_section
+from state.infill_manager import InfillManager
+
+
+def _get_fill_chapters_context(fill_section: str):
+    """
+    Extrage capitolele înainte și după un fill bazat pe target chapter number.
+    Returnează (prev_chapters_text, next_chapters_text, old_next_chapter_num).
+    old_next_chapter_num este primul capitol din next_chapters (cel mai mic număr >= target_chapter_num), sau None dacă nu există.
+    """
+    from state.overall_state import get_sections_list
+    from state.checkpoint_manager import get_section_content
+    
+    infill_mgr = InfillManager()
+    target_chapter_num = infill_mgr.parse_fill_target(fill_section)
+    
+    if target_chapter_num is None:
+        return "", "", None
+    
+    all_sections = get_sections_list()
+    prev_texts = []
+    next_texts = []
+    next_chapter_nums = []
+    
+    for sect in all_sections:
+        if sect.startswith("Chapter "):
+            try:
+                chapter_num = int(sect.split(" ")[1])
+                content = get_section_content(sect)
+                if content:
+                    formatted = f"--- {sect} ---\n{content}\n"
+                    if chapter_num < target_chapter_num:
+                        prev_texts.append(formatted)
+                    else:
+                        next_texts.append(formatted)
+                        next_chapter_nums.append(chapter_num)
+            except (ValueError, IndexError):
+                continue
+    
+    prev_chapters_text = "\n".join(prev_texts)
+    next_chapters_text = "\n".join(next_texts)
+    
+    old_next_chapter_num = min(next_chapter_nums) if next_chapter_nums else None
+    
+    return prev_chapters_text, next_chapters_text, old_next_chapter_num
+
 
 def chat_handler(section, message, history, current_log, chat_type="Chapter"):
     """
@@ -13,9 +58,8 @@ def chat_handler(section, message, history, current_log, chat_type="Chapter"):
     Uses OpenAI-style messages format: [{'role': 'user', 'content': '...'}, ...]
     """
     from state.overall_state import get_current_section_content
-    from state.checkpoint_manager import get_section_content, get_checkpoint
+    from state.checkpoint_manager import get_section_content
     from state.drafts_manager import DraftsManager, DraftType
-    from llm.chat_filler.llm import call_llm_chat_filler
 
     # Get current and initial content
     # initial_text = checkpoint only (reference for LLM)
@@ -89,42 +133,14 @@ def chat_handler(section, message, history, current_log, chat_type="Chapter"):
     # Call LLM
     try:
         if chat_type == "Fill":
-            from state.overall_state import get_sections_list
-            all_sections = get_sections_list()
+            from state.checkpoint_manager import get_checkpoint
+            from llm.chat_filler.llm import call_llm_chat_filler
             
-            prev_chapters_text = ""
-            next_chapters_text = ""
+            infill_mgr = InfillManager()
+            target_chapter_num = infill_mgr.parse_fill_target(section)
             
-            try:
-                current_idx = -1
-                for idx, sect in enumerate(all_sections):
-                    if sect == section:
-                        current_idx = idx
-                        break
-                
-                if current_idx != -1:             
-                    prev_texts = []
-                    for i in range(current_idx):
-                        s = all_sections[i]
-                        if s.startswith("Chapter "):
-                            content = get_section_content(s)
-                            if content:
-                                prev_texts.append(f"--- {s} ---\n{content}\n")
-                    
-                    prev_chapters_text = "\n".join(prev_texts)
-                    
-                    next_texts = []
-                    for i in range(current_idx + 1, len(all_sections)):
-                        s = all_sections[i]
-                        if s.startswith("Chapter "):
-                            content = get_section_content(s)
-                            if content:
-                                next_texts.append(f"--- {s} ---\n{content}\n")
-                    
-                    next_chapters_text = "\n".join(next_texts)
-            except Exception as e:
-                print(f"Context retrieval error: {e}")
-                
+            prev_chapters_text, next_chapters_text, old_next_chapter_num = _get_fill_chapters_context(section)
+            
             checkpoint = get_checkpoint()
             anpc = checkpoint.anpc if checkpoint else None
 
@@ -135,7 +151,9 @@ def chat_handler(section, message, history, current_log, chat_type="Chapter"):
                 current_content=current_text,
                 chat_history=new_history,
                 user_message=message,
-                anpc=anpc
+                anpc=anpc,
+                target_chapter_num=target_chapter_num,
+                old_next_chapter_num=old_next_chapter_num
             )
         else:
             # --- CHAPTER LOGIC (Standard) ---
@@ -264,29 +282,15 @@ def clear_chat(section, current_log, chat_type="Chapter"):
     greeting_content = PLOT_KING_GREETING
     
     if chat_type == "Fill":
-        # Synchronous call for greeting
-        from state.overall_state import get_current_section_content, get_sections_list
+        from state.overall_state import get_current_section_content
         from state.checkpoint_manager import get_section_content, get_checkpoint
         from llm.chat_filler.llm import call_llm_chat_filler
         
-        # simplified context retrieval
-        # (Copy-paste logic or extract - sticking to copy for speed and isolation)
-        all_sections = get_sections_list()
-        current_idx = -1
-        for idx, sect in enumerate(all_sections):
-            if sect == section:
-                current_idx = idx
-                break
+        infill_mgr = InfillManager()
+        target_chapter_num = infill_mgr.parse_fill_target(section)
         
-        prev_txt = ""
-        next_txt = ""
-        if current_idx != -1:
-             # Fast retrieval - only nearest neighbors
-             if current_idx > 0:
-                 prev_txt = get_section_content(all_sections[current_idx-1]) or ""
-             if current_idx < len(all_sections) - 1:
-                 next_txt = get_section_content(all_sections[current_idx+1]) or ""
-                 
+        prev_chapters_text, next_chapters_text, old_next_chapter_num = _get_fill_chapters_context(section)
+        
         initial_text = get_section_content(section) or ""
         current_text = get_current_section_content(section)
         
@@ -294,14 +298,16 @@ def clear_chat(section, current_log, chat_type="Chapter"):
         anpc = checkpoint.anpc if checkpoint else None
 
         res = call_llm_chat_filler(
-            previous_chapters_text=prev_txt,
-            next_chapters_text=next_txt,
+            previous_chapters_text=prev_chapters_text,
+            next_chapters_text=next_chapters_text,
             original_fill_content=initial_text,
             current_content=current_text,
             chat_history=[],
             user_message="START_SESSION",
             anpc=anpc,
-            timeout=20 # fast timeout for greeting
+            target_chapter_num=target_chapter_num,
+            old_next_chapter_num=old_next_chapter_num,
+            timeout=20
         )
         greeting_content = res.get("response", "Ready to fill continuity gaps!")
 

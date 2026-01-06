@@ -81,6 +81,8 @@ def call_llm_chat_filler(
     user_message: str,
     *,
     anpc: Optional[int] = None,
+    target_chapter_num: Optional[int] = None,
+    old_next_chapter_num: Optional[int] = None,
     timeout: int = 60,
 ) -> Dict[str, Any]:
     """
@@ -125,7 +127,20 @@ def call_llm_chat_filler(
 
     # 4. Handle User Message
     if user_message == "START_SESSION":
-        instructions = "The user has just opened the chat for this Fill section. Introduce yourself, acknowledge the context (transitions between Ch X and Ch Y), and ask how you can help bridge the gap. Return only JSON."
+        if target_chapter_num is not None:
+            prev_chapter = target_chapter_num - 1 if target_chapter_num > 1 else None
+            is_last_chapter = old_next_chapter_num is None
+            
+            if prev_chapter and not is_last_chapter:
+                instructions = f"The user has just opened the chat for this Fill section. This Fill will become Chapter {target_chapter_num}. Introduce yourself, acknowledge that you are helping bridge the gap between Chapter {prev_chapter} and Chapter {old_next_chapter_num}, and ask how you can help. Return only JSON."
+            elif prev_chapter and is_last_chapter:
+                instructions = f"The user has just opened the chat for this Fill section. This Fill will become Chapter {target_chapter_num} (the final chapter so far). Introduce yourself, acknowledge that you are helping create the continuation after Chapter {prev_chapter}, and ask how you can help. Return only JSON."
+            elif not prev_chapter and not is_last_chapter:
+                instructions = f"The user has just opened the chat for this Fill section. This Fill will become Chapter {target_chapter_num} (the first chapter). Introduce yourself, acknowledge that you are helping create the opening chapter before old Chapter {old_next_chapter_num}, and ask how you can help. Return only JSON."
+            else:
+                instructions = f"The user has just opened the chat for this Fill section. This Fill will become Chapter {target_chapter_num} (the first and only chapter). Introduce yourself, acknowledge that you are helping create the opening chapter, and ask how you can help. Return only JSON."
+        else:
+            instructions = "The user has just opened the chat for this Fill section. Introduce yourself, acknowledge the context (transitions between Ch X and Ch Y), and ask how you can help bridge the gap. Return only JSON."
         messages.append({"role": "user", "content": f"[SYSTEM_INSTRUCTION]: {instructions}"})
     elif user_message:
         messages.append({"role": "user", "content": user_message})
