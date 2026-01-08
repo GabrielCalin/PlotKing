@@ -215,6 +215,9 @@ def create_chat_handlers(components, states):
             components[Components.BTN_UNDO],
             components[Components.BTN_REDO],
             components[Components.ADD_FILL_BTN],
+            chat_type_dropdown,
+            chat_history,
+            components[Components.CHATBOT],
         ]
     )
     
@@ -272,6 +275,7 @@ def create_chat_handlers(components, states):
             # Chat Mode items to hide
             components[Components.CHAT_SECTION],
             components[Components.ADD_FILL_BTN],
+            chat_type_dropdown,
         ]
     )
 

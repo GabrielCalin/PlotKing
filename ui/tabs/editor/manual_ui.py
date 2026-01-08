@@ -149,6 +149,7 @@ def create_manual_handlers(components, states):
             # Chat Mode items to hide
             components[Components.CHAT_SECTION],
             components[Components.ADD_FILL_BTN],
+            components[Components.CHAT_TYPE_DROPDOWN],
         ]
     )
 

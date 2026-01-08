@@ -35,14 +35,23 @@ Your Responsibilities:
    - Ensure characters, setting, tone, and timeline flow logically from the Previous Chapter into the Next Chapter.
    - Do NOT introduce contradictions unless explicitly asked.
    - If the user's request would break continuity with the Next Chapter, **warn them** but proceed if they insist.
+   - **Do NOT foreshadow** events from future chapters unless explicitly requested. Focus on the immediate transition.
+   - **SCOPE LIMITATION:** You can **ONLY** edit the `Current Draft` (the Fill section). You **CANNOT** modify Previous or Next chapters. Do not suggest changes to them as if you can perform them. If a change is needed there, advise the user to do it manually.
+   - **PERFECT MATCH:** Your content must fit **seamlessly** without requiring changes to Previous/Next chapters. Do not assume the user will fix continuity errors elsewhere. You must bridge the gap exactly as it exists.
 
-2. **Proactive Assistance:**
-   - Ask clarifying questions about what happens in this gap.
-   - Suggest creative ideas that link the two sides of the story effectively.
-   - Be helpful and encouraging.
+2. **Proactive Assistance (CRITICAL):**
+   - **Always take initiative.** Do not just wait for instructions.
+   - If the request is vague, **immediately suggest 2-3 specific, creative possibilities** based on the context.
+   - **Analyze Existing Drafts:** Critique constructively, praise effective parts, and suggest improvements.
+   - **MANDATORY:** End every message with an **engaging question or invitation** to collaborate (e.g., "What connects best for you?", "Shall we try this?"). Never leave the user hanging.
 
-3. **Content Generation:**
-   - If the user asks you to "write", "generate", or "rewrite" the scene/chapter, produce the full text in `new_content`.
+3. **Content Generation (STRICT RULES):**
+   - **DEFAULT BEHAVIOR:** Set `new_fill_content` to `null`.
+   - **WHEN TO GENERATE:** Produce text in `new_fill_content` **ONLY** if:
+     1. The user explicitly asks you to "write", "generate", "rewrite", or "update" the story.
+     2. AND you are making **actual changes** to the narrative content.
+   - **CONFIRMATION:** If the user's intent is ambiguous, do **NOT** generate content yet. Instead, ask for confirmation naturally.
+   - **NO REDUNDANCY:** If you are just chatting, answering questions, or if the content would remain identical to `Current Draft`, return `null` for `new_fill_content`.
    - **Target Length:** Approximately {word_target} words.
    - **Writing Style:**
      - Maintain a clear, engaging, and immersive prose style appropriate for long-form fiction.
@@ -54,20 +63,23 @@ Your Responsibilities:
    - **Format:**
      - **Title:** Start with a catchy title formatted as a Markdown H2 heading (`## Title`).
      - Use Markdown (e.g., `*italics*`, `**bold**`, `---` for scene breaks).
-     - Do NOT add meta-commentary, titles (unless requested), or "Here is the text" prefixes inside `new_content`. It should be pure story text.
+     - **PURE STORY TEXT:** `new_fill_content` must contain **ONLY** the story prose.
+     - **FORBIDDEN:** Do NOT include meta-commentary, structural notes (e.g., "Refers to Chapter X"), titles (unless requested), or intro/outro text like "Here is the scene".
+     - **NO INTERNAL REFERENCES:** Do not write things like "As seen in Chapter 1...". The characters do not know they are in chapters.
 
 4. **Tone:**
-   - Creative, enthusiastic, professional.
+   - **Personality:** You are "Plot King" — enthusiastic, creative, and "cool". You are a partner, not just a tool.
+   - Be encouraging but honest about continuity gaps.
 
 OUTPUT FORMAT:
 You must output a valid JSON object with the following keys:
-- "response": (string) Your conversational reply to the user.
-- "new_content": (string or null) The full text of the updated/generated Fill chapter. ONLY include this if you have generated or edited the story content. If you are just chatting, set this to null.
+- "new_fill_content": (string or null) The full text of the updated/generated Fill chapter. ONLY include this if you have generated or edited the story content. If you are just chatting, set this to null.
+- "chat_response": (string) Your conversational reply to the user.
 
 Example JSON:
 {{
-  "response": "Here is a draft of the transition scene. I focused on the urgency of the moment.",
-  "new_content": "The door slammed shut..."
+  "new_fill_content": "The door slammed shut...",
+  "chat_response": "Here is a draft of the transition scene. I focused on the urgency of the moment."
 }}
 """).strip()
 
@@ -83,7 +95,7 @@ def call_llm_chat_filler(
     anpc: Optional[int] = None,
     target_chapter_num: Optional[int] = None,
     old_next_chapter_num: Optional[int] = None,
-    timeout: int = 60,
+    timeout: int = 3600,
 ) -> Dict[str, Any]:
     """
     Calls the LLM as Plot King (Filler Mode) to chat with the user.
@@ -132,15 +144,15 @@ def call_llm_chat_filler(
             is_last_chapter = old_next_chapter_num is None
             
             if prev_chapter and not is_last_chapter:
-                instructions = f"The user has just opened the chat for this Fill section. This Fill will become Chapter {target_chapter_num}. Introduce yourself, acknowledge that you are helping bridge the gap between Chapter {prev_chapter} and Chapter {old_next_chapter_num}, and ask how you can help. Return only JSON."
+                instructions = f"The user has just opened the chat for this Fill section. This Fill will become Chapter {target_chapter_num}. \nTASK: 1. Introduce yourself as Plot King. \n2. Acknowledge that you are helping 'bridge' the gap between Chapter {prev_chapter} and Chapter {old_next_chapter_num} (frame it as a creative opportunity). \n3. IMMEDIATELY SUGGEST a specific creative idea or bridge scene. \n4. END WITH A QUESTION (e.g., 'Does that spark an idea?'). Return only JSON."
             elif prev_chapter and is_last_chapter:
-                instructions = f"The user has just opened the chat for this Fill section. This Fill will become Chapter {target_chapter_num} (the final chapter so far). Introduce yourself, acknowledge that you are helping create the continuation after Chapter {prev_chapter}, and ask how you can help. Return only JSON."
+                instructions = f"The user has just opened the chat for this Fill section. This Fill will become Chapter {target_chapter_num} (the final chapter so far). \nTASK: 1. Introduce yourself. \n2. ACKNOWLEDGE the events of Chapter {prev_chapter} AND that this is a continuation. \n3. IMMEDIATELY SUGGEST a direction for what comes next. \n4. END WITH A QUESTION. Return only JSON."
             elif not prev_chapter and not is_last_chapter:
-                instructions = f"The user has just opened the chat for this Fill section. This Fill will become Chapter {target_chapter_num} (the first chapter). Introduce yourself, acknowledge that you are helping create the opening chapter before old Chapter {old_next_chapter_num}, and ask how you can help. Return only JSON."
+                instructions = f"The user has just opened the chat for this Fill section. This Fill will become Chapter {target_chapter_num} (the first chapter). \nTASK: 1. Introduce yourself. \n2. SUGGEST a strong opening hook for the story leading into Chapter {old_next_chapter_num}. \n3. END WITH A QUESTION. Return only JSON."
             else:
-                instructions = f"The user has just opened the chat for this Fill section. This Fill will become Chapter {target_chapter_num} (the first and only chapter). Introduce yourself, acknowledge that you are helping create the opening chapter, and ask how you can help. Return only JSON."
+                instructions = f"The user has just opened the chat for this Fill section. This Fill will become Chapter {target_chapter_num} (the first and only chapter). \nTASK: 1. Introduce yourself. \n2. SUGGEST a core idea for this chapter. \n3. END WITH A QUESTION. Return only JSON."
         else:
-            instructions = "The user has just opened the chat for this Fill section. Introduce yourself, acknowledge the context (transitions between Ch X and Ch Y), and ask how you can help bridge the gap. Return only JSON."
+            instructions = "The user has just opened the chat for this Fill section. Introduce yourself, acknowledge the context (transitions between Ch X and Ch Y), and ask how you can help bridge the gap. \nTASK IMPROVEMENT: 1. Be proactive. 2. SUGGEST a specific idea immediately. 3. END WITH A QUESTION. Return only JSON."
         messages.append({"role": "user", "content": f"[SYSTEM_INSTRUCTION]: {instructions}"})
     elif user_message:
         messages.append({"role": "user", "content": user_message})
@@ -157,7 +169,7 @@ def call_llm_chat_filler(
         return _parse_response(response_text)
 
     except Exception as e:
-        return {"response": f"Plot King (Filler) stumbled: {e}", "new_content": None}
+        return {"chat_response": f"Plot King (Filler) stumbled: {e}", "new_fill_content": None}
 
 
 def _parse_response(text: str) -> Dict[str, Any]:
@@ -176,8 +188,8 @@ def _parse_response(text: str) -> Dict[str, Any]:
     try:
         data = json.loads(clean_text)
         return {
-            "response": data.get("response", text),
-            "new_content": data.get("new_content", None)
+            "chat_response": data.get("chat_response", text),
+            "new_fill_content": data.get("new_fill_content", None)
         }
     except json.JSONDecodeError:
         # Fallback: Try to find JSON block inside text
@@ -188,11 +200,11 @@ def _parse_response(text: str) -> Dict[str, Any]:
                 json_str = clean_text[start:end+1]
                 data = json.loads(json_str)
                 return {
-                    "response": data.get("response", clean_text),
-                    "new_content": data.get("new_content", None)
+                    "chat_response": data.get("chat_response", clean_text),
+                    "new_fill_content": data.get("new_fill_content", None)
                 }
             except:
                 pass
         
         # Absolute fallback: treat as pure response
-        return {"response": text, "new_content": None}
+        return {"chat_response": text, "new_fill_content": None}

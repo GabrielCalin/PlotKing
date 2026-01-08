@@ -165,8 +165,13 @@ def chat_handler(section, message, history, current_log, chat_type="Chapter"):
                 user_message=message # Still pass this if the LLM step treats it specially, but usually history is enough
             )
         
-        response_text = result.get("response", "I'm speechless!")
-        new_content = result.get("new_content")
+        if chat_type == "Fill":
+            response_text = result.get("chat_response", "I'm speechless!")
+            new_content = result.get("new_fill_content")
+        else:
+            # Standard Chat Editor still uses 'response' and 'new_content'
+            response_text = result.get("response", "I'm speechless!")
+            new_content = result.get("new_content")
         
         # Append bot response to history
         new_history.append({"role": "assistant", "content": response_text})
@@ -306,10 +311,9 @@ def clear_chat(section, current_log, chat_type="Chapter"):
             user_message="START_SESSION",
             anpc=anpc,
             target_chapter_num=target_chapter_num,
-            old_next_chapter_num=old_next_chapter_num,
-            timeout=20
+            old_next_chapter_num=old_next_chapter_num
         )
-        greeting_content = res.get("response", "Ready to fill continuity gaps!")
+        greeting_content = res.get("chat_response", "Ready to fill continuity gaps!")
 
     initial_greeting = [{"role": "assistant", "content": greeting_content}]
     new_log, status_update = append_status(current_log, f"🧹 ({section}) Chat cleared.")
@@ -404,15 +408,12 @@ def discard_handler(section, current_log):
     draft_type = None
     updated_text = None
     
-    user_draft_content = drafts_manager.get_content(section, DraftType.USER.value)
-    if user_draft_content:
+    if drafts_manager.has_type(section, DraftType.USER.value):
         draft_type = DraftType.USER.value
-        updated_text = user_draft_content
-    else:
-        fill_draft_content = drafts_manager.get_content(section, DraftType.FILL.value)
-        if fill_draft_content:
-            draft_type = DraftType.FILL.value
-            updated_text = fill_draft_content
+        updated_text = drafts_manager.get_content(section, DraftType.USER.value) or ""
+    elif drafts_manager.has_type(section, DraftType.FILL.value):
+        draft_type = DraftType.FILL.value
+        updated_text = drafts_manager.get_content(section, DraftType.FILL.value) or ""
     
     if draft_type:
         # Fallback to Draft (USER or FILL)
@@ -459,6 +460,11 @@ def force_edit_handler(section, current_log, create_epoch):
     """
     from state.overall_state import get_current_section_content
     from handlers.editor.utils import force_edit_common_handler
+    from state.infill_manager import InfillManager
+    from ui.tabs.editor.chat_ui import PLOT_KING_GREETING
+    
+    im = InfillManager()
+    was_fill = im.is_fill(section)
     
     current_text = get_current_section_content(section)
     updated_text, msg, dropdown_update, new_log, status_update = force_edit_common_handler(section, current_text, current_log)
@@ -469,6 +475,15 @@ def force_edit_handler(section, current_log, create_epoch):
     
     new_create_epoch = (create_epoch or 0) + 1
     add_fill_visible = should_show_add_fill_btn(section)
+    
+    if was_fill:
+        chat_type_update = gr.update(value="Chapter", interactive=True)
+        empty_chat_history = []
+        initial_greeting = [{"role": "assistant", "content": PLOT_KING_GREETING}]
+    else:
+        chat_type_update = gr.update(interactive=True)
+        empty_chat_history = gr.update()
+        initial_greeting = gr.update()
     
     return (
         gr.update(value=updated_text), # viewer_md
@@ -492,7 +507,9 @@ def force_edit_handler(section, current_log, create_epoch):
         gr.update(visible=False), # btn_undo - hide
         gr.update(visible=False), # btn_redo - hide
         gr.update(visible=add_fill_visible), # add_fill_btn - show again after force edit
-        gr.update(interactive=True), # chat_type_dropdown - re-enable
+        chat_type_update, # chat_type_dropdown - change to Chapter if was fill
+        empty_chat_history, # chat_history - clear if was fill
+        initial_greeting, # chatbot - reset greeting if was fill
     )
 
 def continue_edit(section, current_log):
