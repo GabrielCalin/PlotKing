@@ -7,6 +7,14 @@ PLOT_KING_GREETING = "Hello! I'm Plot King, your friendly creative sidekick. How
 def create_chat_ui():
     """Create UI components for Chat mode."""
     with gr.Column(visible=False) as chat_section:
+        chat_type_dropdown = gr.Dropdown(
+            label="Chat Type",
+            choices=["Chapter", "Fill"],
+            value="Chapter",
+            visible=False, # Initially hidden, shown only for Fills
+            interactive=True,
+            elem_id="chat-type-dropdown"
+        )
         chatbot = gr.Chatbot(
             label="Plot King",
             value=[{"role": "assistant", "content": PLOT_KING_GREETING}],
@@ -36,11 +44,11 @@ def create_chat_ui():
             chat_keep_draft_btn = gr.Button("💾 Keep Draft", scale=1, min_width=0)
             chat_validate_btn = gr.Button("✅ Validate", scale=1, min_width=0)
 
-    return chat_section, chatbot, chat_input, chat_send_btn, chat_clear_btn, chat_actions_row_1, chat_discard_btn, chat_force_edit_btn, chat_actions_row_2, chat_validate_btn, chat_keep_draft_btn
+    return chat_section, chatbot, chat_input, chat_send_btn, chat_clear_btn, chat_actions_row_1, chat_discard_btn, chat_force_edit_btn, chat_actions_row_2, chat_validate_btn, chat_keep_draft_btn, chat_type_dropdown
 
 def create_chat_handlers(components, states):
     """Wire events for Chat mode components."""
-    from handlers.editor.chat import chat_handler, clear_chat, validate_handler, discard_handler, force_edit_handler
+    from handlers.editor.chat import chat_handler, clear_chat, validate_handler, discard_handler, force_edit_handler, handle_chat_type_change
     from handlers.editor.utils import keep_draft_handler
     
     chat_input = components[Components.CHAT_INPUT]
@@ -66,9 +74,21 @@ def create_chat_handlers(components, states):
         outputs=[chat_send_btn]
     )
 
+    chat_type_dropdown = components[Components.CHAT_TYPE_DROPDOWN]
+
+    chat_type_dropdown.change(
+        fn=handle_chat_type_change,
+        inputs=[selected_section, status_log, chat_type_dropdown],
+        outputs=[chat_history, status_log, components[Components.STATUS_STRIP], components[Components.CHATBOT]]
+    ).then(
+        fn=clear_chat,
+        inputs=[selected_section, status_log, chat_type_dropdown],
+        outputs=[chat_history, status_log, components[Components.STATUS_STRIP], components[Components.CHATBOT]]
+    )
+
     chat_send_btn.click(
         fn=chat_handler,
-        inputs=[selected_section, chat_input, chat_history, status_log],
+        inputs=[selected_section, chat_input, chat_history, status_log, chat_type_dropdown],
         outputs=[
             chat_input,
             chat_history,
@@ -94,13 +114,14 @@ def create_chat_handlers(components, states):
             components[Components.BTN_UNDO],
             components[Components.BTN_REDO],
             components[Components.ADD_FILL_BTN],
+            chat_type_dropdown,
         ],
     )
     
     # Also trigger send on Enter in chat_input
     chat_input.submit(
         fn=chat_handler,
-        inputs=[selected_section, chat_input, chat_history, status_log],
+        inputs=[selected_section, chat_input, chat_history, status_log, chat_type_dropdown],
         outputs=[
             chat_input,
             chat_history,
@@ -126,18 +147,19 @@ def create_chat_handlers(components, states):
             components[Components.BTN_UNDO],
             components[Components.BTN_REDO],
             components[Components.ADD_FILL_BTN],
+            chat_type_dropdown,
         ],
     )
     
     chat_clear_btn.click(
         fn=clear_chat,
-        inputs=[selected_section, status_log],
+        inputs=[selected_section, status_log, chat_type_dropdown],
         outputs=[chat_history, status_log, components[Components.STATUS_STRIP], components[Components.CHATBOT]]
     )
 
     chatbot.clear(
         fn=clear_chat,
-        inputs=[selected_section, status_log],
+        inputs=[selected_section, status_log, chat_type_dropdown],
         outputs=[chat_history, status_log, components[Components.STATUS_STRIP], components[Components.CHATBOT]]
     )
     
@@ -164,6 +186,7 @@ def create_chat_handlers(components, states):
             components[Components.BTN_UNDO],
             components[Components.BTN_REDO],
             components[Components.ADD_FILL_BTN],
+            chat_type_dropdown,
         ]
     )
     
@@ -192,6 +215,9 @@ def create_chat_handlers(components, states):
             components[Components.BTN_UNDO],
             components[Components.BTN_REDO],
             components[Components.ADD_FILL_BTN],
+            chat_type_dropdown,
+            chat_history,
+            components[Components.CHATBOT],
         ]
     )
     
@@ -249,6 +275,7 @@ def create_chat_handlers(components, states):
             # Chat Mode items to hide
             components[Components.CHAT_SECTION],
             components[Components.ADD_FILL_BTN],
+            chat_type_dropdown,
         ]
     )
 

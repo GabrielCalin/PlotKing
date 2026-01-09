@@ -166,6 +166,7 @@ def rewrite_discard(section, current_log):
         None,  # selected_indices
         gr.update(interactive=True),  # mode_radio - interactiv după discard
         gr.update(visible=add_fill_visible), # add_fill_btn - show again after discard
+        gr.update(interactive=True), # chat_type_dropdown - re-enable
     )
 
 def rewrite_force_edit(section, viewer_content, current_log, create_epoch):
@@ -315,5 +316,6 @@ def continue_edit(section, current_log, viewer_content=None):
         gr.update(visible=False),   # 24. btn_undo - hide (not in view mode)
         gr.update(visible=False),   # 25. btn_redo - hide (not in view mode)
         gr.update(visible=False),   # 26. add_fill_btn - hide when editing
+        gr.update(interactive=True), # chat_type_dropdown - re-enable
     )
 

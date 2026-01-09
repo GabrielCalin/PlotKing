@@ -52,6 +52,8 @@ LLM_TASKS = [
     {"technical_name": "chapter_validator", "display_name": "Chapter Validator"},
     {"technical_name": "chapter_writer", "display_name": "Chapter Writer"},
     {"technical_name": "chat_editor", "display_name": "Chat Editor"},
+    {"technical_name": "chat_filler", "display_name": "Chat Filler"},
+    {"technical_name": "chat_refiner", "display_name": "Chat Refiner"},
     {"technical_name": "cover_prompter", "display_name": "Cover Prompter"},
     {"technical_name": "impact_analyzer", "display_name": "Impact Analyzer"},
     {"technical_name": "overview_editor", "display_name": "Overview Editor"},
@@ -59,12 +61,11 @@ LLM_TASKS = [
     {"technical_name": "overview_validator", "display_name": "Overview Validator"},
     {"technical_name": "plot_editor", "display_name": "Plot Editor"},
     {"technical_name": "plot_expander", "display_name": "Plot Expander"},
+    {"technical_name": "refine_chat", "display_name": "Refine Chat"},
     {"technical_name": "refine_plot", "display_name": "Refine Plot"},
     {"technical_name": "rewrite_editor", "display_name": "Rewrite Editor"},
     {"technical_name": "title_fetcher", "display_name": "Title Fetcher"},
-    {"technical_name": "version_diff", "display_name": "Version Diff"},
-    {"technical_name": "chat_refiner", "display_name": "Chat Refiner"},
-    {"technical_name": "refine_chat", "display_name": "Refine Chat"}
+    {"technical_name": "version_diff", "display_name": "Version Diff"}
 ]
 
 IMAGE_TASKS = [

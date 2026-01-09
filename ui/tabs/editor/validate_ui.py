@@ -199,6 +199,7 @@ def create_validate_handlers(components, states):
             components[Components.BTN_UNDO],
             components[Components.BTN_REDO],
             components[Components.ADD_FILL_BTN],
+            components[Components.CHAT_TYPE_DROPDOWN],
         ],
     )
 
