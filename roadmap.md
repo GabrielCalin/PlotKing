@@ -6,10 +6,6 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## ✍️ Phase 4 — Story Growth and Structure Control
 
-20. **Chat for Fill Chapter**  
-   - Chat interface for generating fill chapters that considers chapters before and after.  
-   - By default ensures continuity, but user can request breaking changes.  
-
 21. **Start with Empty Plot**  
    - Generate story sequentially with fill chapters starting from an empty plot structure.
 
@@ -37,7 +33,8 @@ This document outlines the planned development milestones for the **AI Story Gen
    - Method for chapters overview for many chapters to generate correctly (currently either if there are many it doesn't write them all, or they become shorter towards the end).  
    - Call replace tools at editor - chat instead of full regeneration with an intent analyzer that decides if there are small changes (so call replace tools) or large (regeneration).  
    - Run validator on demand per section as part of view mode, visible when viewing a checkpoint.  
-   - Parse chapter summary to list and insert summary programmatically at fill.
+   - Parse chapter summary to list and insert summary programmatically at fill.  
+   - Pipeline for modifications from fill chat - implement a structured pipeline that includes: planning phase (similar to ChatGPT reasoning) where the system considers which characters don't yet have permission to appear, what events will be included, how to start to fit perfectly with the previous chapter, and where to end to fit perfectly with the beginning of the next chapter; tool call for chapter generation; validation step; then respond to the user.
 
 25. **Dockerfile and Docker Hub PlotKing**  
    - Create Dockerfile for PlotKing.  
@@ -184,8 +181,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 | Feature | Status |
 |----------|--------|
-| **Chat for Fill Chapter** | ⏳ In Progress |
-| **Start with Empty Plot** | ⏳ Planned |
+| **Start with Empty Plot** | ⏳ In Progress |
 | **Fill Based on Chapters Overview Edit** | ⏳ Planned |
 | **Advanced Settings** | ⏳ Planned |
 | **Pipeline Improvements** | ⏳ Planned |

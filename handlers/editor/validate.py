@@ -718,12 +718,16 @@ def draft_regenerate_selected(generated_selected, plan, section, current_log, cr
     )
 
 def discard_from_validate(section, current_log):
-    """Revert changes from validation — return to View mode. Preserve USER drafts if exists."""
+    """Revert changes from validation — return to View mode. Preserve USER and FILL drafts, remove CHAT/GENERATED/ORIGINAL."""
     new_log, status_update = append_status(current_log, f"🗑️ ({section}) Changes discarded.")
+    
+    # Remove session-related drafts (CHAT, GENERATED, ORIGINAL), keep only USER and FILL
+    drafts_mgr = DraftsManager()
+    drafts_mgr.keep_only_draft_types([section], [DraftType.USER.value, DraftType.FILL.value])
+    
     content, view_state, mode_label, btns_visible = _get_revert_state(section)
     
     # Calculate undo/redo visibility based on remaining draft
-    drafts_mgr = DraftsManager()
     draft_type = drafts_mgr.get_type(section) if drafts_mgr.has(section) else None
     um = UndoManager()
     undo_visible, redo_visible, undo_icon, redo_icon, _ = um.get_undo_redo_state(
