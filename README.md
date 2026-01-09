@@ -56,7 +56,7 @@ When you make changes that impact subsequent sections, PlotKing automatically ge
 -   **Selective Apply**: You choose which AI suggestions to keep and which to discard or regenerate.
 
 #### 📖 Infill/Outfill
--   **Add Fill Chapters**: You can insert new chapters between existing ones.
+-   **Add Fill Chapters**: You can insert new chapters between existing ones. Supports in/outfill generation through chat.
 -   **Edit as Drafts**: Fill chapters are created as drafts that you can edit in any mode (Manual, Rewrite, or Chat).
 -   **Automatic Adaptation**: When validated and accepted, PlotKing automatically renumbers subsequent chapters and adapts the Expanded Plot, Chapters Overview, and affected chapters to maintain story continuity.
 
