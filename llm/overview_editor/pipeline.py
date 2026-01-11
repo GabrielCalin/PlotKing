@@ -58,6 +58,7 @@ def run_overview_editor(
         chapter_index=chapter_index,
         num_chapters=num_chapters,
         is_infill=is_infill,
+        existing_chapter_count=total_chapters,
     )
     return context
 

@@ -93,6 +93,7 @@ def call_llm_edit_plot(
     diff_summary: str,
     edited_section: str = "",
     genre: str = "",
+    existing_chapter_count: int = 0,
     *,
     api_url: str = None,
     model_name: str = None,
@@ -107,6 +108,7 @@ def call_llm_edit_plot(
         impact_reason: Motivul pentru care trebuie adaptat
         diff_summary: Rezumatul modificărilor detectate
         genre: Genul poveștii
+        existing_chapter_count: Number of chapters currently in the checkpoint.
     """
 
 
@@ -123,6 +125,44 @@ def call_llm_edit_plot(
         {"role": "system", "content": "You are a precise story continuity editor that adapts story blueprints while preserving as much original content as possible. You must output only valid JSON."},
         {"role": "user", "content": prompt},
     ]
+
+    # SPECIAL CASE: Start with Empty Plot
+    # We use existing_chapter_count == 0 to determine if this is the first chapter being added to an empty project.
+    # We also check if original_plot is empty, to be safe, but the count is the primary strict check requested.
+    is_effectively_empty = not original_plot or not original_plot.strip() or original_plot.strip() == "(Empty)"
+    if existing_chapter_count == 0 and is_effectively_empty:
+        messages = [
+            {"role": "system", "content": "You are an expert story architect triggered by the first chapter of a new book. You must output only valid JSON."},
+            {"role": "user", "content": textwrap.dedent(f"""
+                You are creating the EXPANDED PLOT for a new story based on its FIRST CHAPTER.
+
+                CONTEXT:
+                The user has started an empty project and written/generated the FIRST CHAPTER (or a fill acting as the first chapter).
+                Your task is to create the initial "Expanded Plot" blueprint that matches this first chapter and sets up the potential rest of the story.
+
+                FIRST CHAPTER CONTENT / EDITS:
+                \"\"\"{diff_summary}\"\"\"
+
+                GENRE: {genre}
+
+                Task:
+                Create a full Markdown Expanded Plot structure including:
+                1. Title (derive from chapter content)
+                2. Key Characters (extract from chapter)
+                3. World / Setting Overview (extract from chapter)
+                4. Plot Summary
+                   - The beginning should strictly match the events of this first chapter.
+                   - PROPOSE a continuation for the rest of the story based on the genre and the setup in this chapter. be creative but logical.
+
+                Output Requirements:
+                - Use standard Markdown headers.
+                - Output JSON format:
+                {{
+                  "is_breaking_change": true,
+                  "adapted_plot": "the complete Expanded Plot markdown"
+                }}
+            """).strip()}
+        ]
 
     try:
         content = provider_manager.get_llm_response(
