@@ -1,6 +1,4 @@
 import textwrap
-import json
-from utils.json_utils import extract_json_from_response
 from provider import provider_manager
 
 _GENERATE_PLOT_FROM_FILL_PROMPT = textwrap.dedent("""\
@@ -28,12 +26,8 @@ Create a full Markdown Expanded Plot structure including:
    - The summary should be a standalone narrative of the story so far.
 
 Output Requirements:
+- Output ONLY the Markdown content. Do not wrap in JSON.
 - Use standard Markdown headers.
-- Output JSON format:
-{{
-  "is_breaking_change": true,
-  "adapted_plot": "the complete Expanded Plot markdown"
-}}
 """).strip()
 
 def call_llm_generate_plot_from_fill(
@@ -50,7 +44,7 @@ def call_llm_generate_plot_from_fill(
     )
 
     messages = [
-        {"role": "system", "content": "You are an expert story architect. You must output only valid JSON."},
+        {"role": "system", "content": "You are an expert story architect. Output valid Markdown only."},
         {"role": "user", "content": prompt},
     ]
 
@@ -64,7 +58,6 @@ def call_llm_generate_plot_from_fill(
             max_tokens=4096
         )
         
-        result = extract_json_from_response(content)
-        return result.get("adapted_plot", content)
+        return content
     except Exception as e:
         return f"Error during plot generation from fill: {e}"

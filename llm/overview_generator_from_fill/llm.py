@@ -1,6 +1,4 @@
 import textwrap
-import json
-from utils.json_utils import extract_json_from_response
 from provider import provider_manager
 
 _GENERATE_OVERVIEW_FROM_FILL_PROMPT = textwrap.dedent("""\
@@ -25,14 +23,10 @@ Create the Chapters Overview.
 6. Do NOT mention "drafts" or "fills".
 
 Output Requirements:
+- Output ONLY the Markdown content. Do not wrap in JSON.
 - Markdown format:
   #### Chapter 1: [Chapter Title]
   **Description:** [Summary of events]
-- Output JSON:
-{{
-  "is_breaking_change": true,
-  "adapted_overview": "the complete Chapters Overview markdown"
-}}
 """).strip()
 
 def call_llm_generate_overview_from_fill(
@@ -49,7 +43,7 @@ def call_llm_generate_overview_from_fill(
     )
 
     messages = [
-        {"role": "system", "content": "You are a story architect. You must output only valid JSON."},
+        {"role": "system", "content": "You are a story architect. Output valid Markdown only."},
         {"role": "user", "content": prompt},
     ]
 
@@ -63,7 +57,6 @@ def call_llm_generate_overview_from_fill(
             max_tokens=4000
         )
         
-        result = extract_json_from_response(content)
-        return result.get("adapted_overview", content)
+        return content
     except Exception as e:
         return f"Error during overview generation from fill: {e}"
