@@ -49,12 +49,12 @@ def run_overview_editor(
     else:
         num_chapters = context.num_chapters
     
-    is_empty_overview = not context.chapters_overview or context.chapters_overview.strip() == "(Empty)"
     
-    # Check Special Case: First Chapter (Fill) on Empty Project
-    if is_infill and total_chapters == 0 and is_empty_overview and new_chapter_content:
+    # Check Special Case: First Chapter (Fill) on Empty Project (or Project with 0 chapters)
+    if is_infill and total_chapters == 0 and new_chapter_content:
         context.chapters_overview = call_llm_generate_overview_from_fill(
             chapter_content=new_chapter_content,
+            original_overview=original_overview or "",
             genre=context.genre or "",
         )
     else:

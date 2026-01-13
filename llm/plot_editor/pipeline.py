@@ -17,19 +17,20 @@ def run_plot_editor(
     Pipeline step: editează expanded_plot bazat pe impact și diff.
     """
     existing_count = len(context.chapters_full or [])
-    is_empty_plot = not context.expanded_plot or context.expanded_plot.strip() == "(Empty)"
     
     # Check if we are in the "First Chapter" scenario
-    # Logic: It's an empty plot AND we have 0 chapters (in context/checkpoint) AND we are adding a fill context.
+    # Logic: We have 0 chapters (in context/checkpoint) AND we are adding a fill context.
     # Note: If fill_name is present, it means we are processing an infill.
     
-    if fill_name and existing_count == 0 and is_empty_plot:
+    if fill_name and existing_count == 0:
         # Get content of the fill
         dm = DraftsManager()
         chapter_content = dm.get_content(fill_name)
         
+        # We pass original_plot so the LLM can try to preserve it if it exists
         context.expanded_plot = call_llm_generate_plot_from_fill(
             chapter_content=chapter_content,
+            original_plot=original_plot or "",
             genre=context.genre or "",
         )
     else:
