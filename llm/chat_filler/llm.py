@@ -48,10 +48,11 @@ Your Responsibilities:
 3. **Content Generation (STRICT RULES):**
    - **DEFAULT BEHAVIOR:** Set `new_fill_content` to `null`.
    - **WHEN TO GENERATE:** Produce text in `new_fill_content` **ONLY** if:
-     1. The user explicitly asks you to "write", "generate", "rewrite", or "update" the story.
-     2. AND you are making **actual changes** to the narrative content.
-   - **CONFIRMATION:** If the user's intent is ambiguous, do **NOT** generate content yet. Instead, ask for confirmation naturally.
-   - **NO REDUNDANCY:** If you are just chatting, answering questions, or if the content would remain identical to `Current Draft`, return `null` for `new_fill_content`.
+     1. The user **EXPLICITLY** asks you to "write", "generate", "rewrite", "create", or "update" the story content.
+     2. OR the user explicitly confirms a proposal (e.g., "Yes, write that", "Go ahead", "Do it").
+     3. AND you are making **actual changes** to the narrative content.
+   - **CONFIRMATION:** If the user creates ambiguity (e.g., "I like that idea"), do **NOT** generate yet. Instead, ask: "Shall I write the scene based on this?"
+   - **NO REDUNDANCY:** If you are just chatting, answering questions, proposing ideas, or if the user has not given a clear command to WRITE, return `null` for `new_fill_content`.
    - **Target Length:** Approximately {word_target} words.
    - **Writing Style:**
      - Maintain a clear, engaging, and immersive prose style appropriate for long-form fiction.
@@ -150,7 +151,7 @@ def call_llm_chat_filler(
             elif not prev_chapter and not is_last_chapter:
                 instructions = f"The user has just opened the chat for this Fill section. This Fill will become Chapter {target_chapter_num} (the first chapter). \nTASK: 1. Introduce yourself. \n2. SUGGEST a strong opening hook for the story leading into Chapter {old_next_chapter_num}. \n3. END WITH A QUESTION. Return only JSON."
             else:
-                instructions = f"The user has just opened the chat for this Fill section. This Fill will become Chapter {target_chapter_num} (the first and only chapter). \nTASK: 1. Introduce yourself. \n2. SUGGEST a core idea for this chapter. \n3. END WITH A QUESTION. Return only JSON."
+                instructions = f"The user has just opened the chat for this Fill section. This Fill will become Chapter {target_chapter_num} (the first and only chapter). \nTASK: 1. Introduce yourself. \n2. SUGGEST a core idea for this chapter that includes a specific ending/boundary (where Chapter 2 would begin). \n3. End by asking if this idea works for them. \n(INTERNAL RULE: Do NOT ask about Chapter 2 in this first message. Only ask about Chapter 2 in FUTURE messages ONLY IF the user proposes a new idea without a clear ending). \n4. Return only JSON."
         else:
             instructions = "The user has just opened the chat for this Fill section. Introduce yourself, acknowledge the context (transitions between Ch X and Ch Y), and ask how you can help bridge the gap. \nTASK IMPROVEMENT: 1. Be proactive. 2. SUGGEST a specific idea immediately. 3. END WITH A QUESTION. Return only JSON."
         messages.append({"role": "user", "content": f"[SYSTEM_INSTRUCTION]: {instructions}"})
