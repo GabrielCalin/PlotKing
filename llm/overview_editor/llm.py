@@ -101,7 +101,6 @@ def call_llm_edit_overview(
     chapter_index: int = None,
     num_chapters: int = None,
     is_infill: bool = False,
-    existing_chapter_count: int = 0,
     *,
     api_url: str = None,
     model_name: str = None,
@@ -116,7 +115,6 @@ def call_llm_edit_overview(
         new_chapter_content: Conținutul complet al capitolului nou (dacă a fost editat un capitol)
         chapter_index: Index-ul capitolului editat (1-based, dacă e cazul)
         num_chapters: Numărul total de capitole (folosit pentru validare)
-        existing_chapter_count: Number of chapters currently in the checkpoint.
     """
 
 
@@ -177,45 +175,6 @@ The user edited Chapter {chapter_index}. You need to:
         {"role": "system", "content": "You are a precise story structure editor that adapts chapter overviews while preserving as much original content as possible. You must output only valid JSON."},
         {"role": "user", "content": prompt},
     ]
-
-    # SPECIAL CASE: Start with Empty Plot - First Chapter
-    # Strict check: Must be an infill AND there must be 0 existing chapters in checkpoint.
-    is_effectively_empty = not original_overview or not original_overview.strip() or original_overview.strip() == "(Empty)"
-    if is_infill and existing_chapter_count == 0 and is_effectively_empty:
-        # Override prompt for First Chapter creation
-        messages = [
-            {"role": "system", "content": "You are a story architect organizing the chapters of a new book. You must output only valid JSON."},
-            {"role": "user", "content": textwrap.dedent(f"""
-                You are initializing the CHAPTERS OVERVIEW for a new story based on its FIRST chapter.
-
-                CONTEXT:
-                The user has just written/generated the FIRST CHAPTER (Infill).
-                
-                NEW CHAPTER CONTENT:
-                \"\"\"{new_chapter_content}\"\"\"
-
-                GENRE: {genre}
-
-                Task:
-                Create the Chapters Overview.
-                1. Make sure "Chapter 1" describes exactly the events in the content above.
-                2. Since this is the start, you can optionally propose placeholders for Chapter 2, 3, etc. if you want, OR just output Chapter 1.
-                   However, usually the user expects {num_chapters} total.
-                   So, generate a full {num_chapters}-chapter overview.
-                   - Chapter 1: Summarize the actual content provided.
-                   - Chapters 2-{num_chapters}: Propose a logical continuation (titles and short descriptions) based on the genre and Chapter 1 setup.
-
-                Output Requirements:
-                - Markdown format:
-                  #### Chapter X: *Title*
-                  **Description:** ...
-                - Output JSON:
-                {{
-                  "is_breaking_change": true,
-                  "adapted_overview": "the complete Chapters Overview markdown"
-                }}
-            """).strip()}
-        ]
 
     try:
         content = provider_manager.get_llm_response(
