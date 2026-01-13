@@ -123,6 +123,7 @@ def run_edit_pipeline_stream(
                 impact_reason=impact_reason,
                 diff_summary=diff_summary,
                 edited_section=edited_section,
+                fill_name=fill_name,
             )
             drafts.add_generated("Expanded Plot", state.expanded_plot)
             log_ui(edit_log, "✅ Expanded Plot adapted.")
