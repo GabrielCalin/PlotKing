@@ -49,6 +49,22 @@ def post_pipeline_controls():
     overview_visible = bool(checkpoint.chapters_overview)
     chapters_count = len(checkpoint.chapters_full or [])
 
+    if checkpoint.run_mode == "START_EMPTY":
+        chapters_visible = False
+        
+        # Hide refresh buttons if content is just the "(Empty)" placeholder
+        show_expanded_regen = expanded_visible and checkpoint.expanded_plot != "(Empty)"
+        show_overview_regen = overview_visible and checkpoint.chapters_overview != "(Empty)"
+        
+        return (
+             gr.update(interactive=True, visible=False), # stop
+             gr.update(visible=False), # resume - ALWAYS HIDDEN
+             gr.update(visible=True, interactive=False), # generate/start btn - DISABLED after run
+             gr.update(visible=show_expanded_regen), # regen expanded
+             gr.update(visible=show_overview_regen), # regen overview
+             gr.update(visible=chapters_visible), # regen chapter
+        )
+
     try:
         total_chapters = int(checkpoint.num_chapters or chapters_count)
     except Exception:
@@ -485,6 +501,63 @@ def bot_reply_chat_message(history, plot, genre, current_log):
         gr.update(interactive=True), # Enable Send
         gr.update(interactive=True, placeholder="Discuss with Plot King..."),   # Enable Input
     )
+
+def start_empty_mode_init(plot, genre, anpc, chapters_cnt):
+    """
+    Handler dedicated to 'Start Empty' mode.
+    Resets state, initializes empty checkpoint, and updates UI.
+    """
+    from state.overall_state import reset_all_states
+    from state.checkpoint_manager import save_section, save_checkpoint
+    from state.pipeline_context import PipelineContext
+    from utils.timestamp import ts_prefix
+    
+    # 1. Reset everything
+    reset_all_states()
+    
+    # 2. Create empty checkpoint structure
+    # We'll save them as "(Empty)" strings for better UI feedback.
+    save_section("Expanded Plot", "(Empty)")
+    save_section("Chapters Overview", "(Empty)")
+    
+    # Initialize basic context
+    ctx = PipelineContext(
+        expanded_plot="(Empty)",
+        chapters_overview="(Empty)",
+        chapters_full=[],
+        validation_text="",
+        status_log=[ts_prefix("✨ Started with Empty Plot initialized.")],
+        genre=genre,
+        run_mode="START_EMPTY",
+        num_chapters=chapters_cnt,
+        anpc=anpc,
+        plot=plot
+    )
+    save_checkpoint(ctx)
+
+    # 4. Updates for UI
+    # We yield specific values to match the generate_book_outline_stream output signature:
+    
+    yield (
+        "(Empty)", # expanded_output
+        "(Empty)", # chapters_output
+        [], # chapters_state
+        "", # current_chapter_output
+        gr.update(choices=[], value=None), # chapter_selector
+        "_No chapters yet_", # chapter_counter
+        ts_prefix("✨ Started with Empty Plot. Ready to add chapters via Fills."), # status_output
+        "", # validation_feedback
+    )
+
+def generate_dispatcher(current_run_mode, plot_val, chapters_in, genre_in, anpc_in, run_mode_in):
+    """
+    Dispatcher to decide between normal generation and start empty mode.
+    """
+    if current_run_mode == "Start Empty":
+         yield from start_empty_mode_init(plot_val, genre_in, anpc_in, chapters_in)
+    else:
+         from pipeline.runner_create import generate_book_outline_stream
+         yield from generate_book_outline_stream(plot_val, chapters_in, genre_in, anpc_in, run_mode_in)
 
 def reset_chat_handler(plot, genre, current_log):
     greeting = call_llm_chat(plot, genre, [], "START_SESSION")

@@ -18,6 +18,7 @@ from handlers.create.create_handlers import (
     show_refined,
     show_refined,
     refine_or_clear_dispatcher,
+    generate_dispatcher,
     sync_textbox,
 
     refresh_create_from_checkpoint,
@@ -203,8 +204,8 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
             regenerate_chapter_btn,
         ],
     ).then(
-        fn=generate_book_outline_stream,
-        inputs=[plot_state, chapters_input, genre_input, anpc_input, run_mode],
+        fn=generate_dispatcher,
+        inputs=[run_mode, plot_state, chapters_input, genre_input, anpc_input, run_mode],
         outputs=[
             expanded_output,
             chapters_output,
@@ -230,6 +231,22 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
         fn=_bump_editor_epoch,
         inputs=[editor_sections_epoch],
         outputs=[editor_sections_epoch],
+    )
+
+    # ---- Check Start Empty Button State ----
+    def _update_btn_label(mode_val):
+        # We need to check against the display value or key. Gradio returns the value.
+        # RUN_MODE_CHOICES values are: "Full Pipeline", "Up to Chapters Overview", "Start Empty"
+        if mode_val == "Start Empty":
+             return gr.update(value="✨ Start Empty", interactive=True)
+        return gr.update(value="🚀 Generate Book", interactive=True)
+
+    
+    # Run Mode Change -> Update Button Label
+    run_mode.change(
+        fn=_update_btn_label,
+        inputs=[run_mode],
+        outputs=[generate_btn]
     )
 
     # Stop

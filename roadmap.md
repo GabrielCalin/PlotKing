@@ -6,9 +6,6 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ## ✍️ Phase 4 — Story Growth and Structure Control
 
-21. **Start with Empty Plot**  
-   - Generate story sequentially with fill chapters starting from an empty plot structure.
-
 22. **Fill Based on Chapters Overview Edit**  
    - When user adds a chapter in overview, automatically create and generate a fill draft.  
    - Remove operation is not supported.
@@ -181,8 +178,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 | Feature | Status |
 |----------|--------|
-| **Start with Empty Plot** | ⏳ In Progress |
-| **Fill Based on Chapters Overview Edit** | ⏳ Planned |
+| **Fill Based on Chapters Overview Edit** | ⏳ In Progress |
 | **Advanced Settings** | ⏳ Planned |
 | **Pipeline Improvements** | ⏳ Planned |
 | **Dockerfile and Docker Hub PlotKing** | ⏳ Planned |

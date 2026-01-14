@@ -4,6 +4,7 @@ from state.pipeline_context import PipelineContext
 from state.drafts_manager import DraftsManager, DraftType
 from state.infill_manager import InfillManager
 from .llm import call_llm_edit_overview
+from llm.overview_generator_from_fill.llm import call_llm_generate_overview_from_fill
 
 def run_overview_editor(
     context: PipelineContext,
@@ -42,22 +43,32 @@ def run_overview_editor(
             pass
 
     total_chapters = len(context.chapters_full or [])
+
     if is_infill:
         num_chapters = total_chapters + 1
     else:
         num_chapters = context.num_chapters
     
-    context.chapters_overview = call_llm_edit_overview(
-        original_overview=original_overview,
-        impact_reason=impact_reason,
-        diff_summary=diff_summary,
-        expanded_plot=context.expanded_plot or "",
-        genre=context.genre or "",
-        edited_section=edited_section,
-        new_chapter_content=new_chapter_content,
-        chapter_index=chapter_index,
-        num_chapters=num_chapters,
-        is_infill=is_infill,
-    )
+    
+    # Check Special Case: First Chapter (Fill) on Empty Project (or Project with 0 chapters)
+    if is_infill and total_chapters == 0 and new_chapter_content:
+        context.chapters_overview = call_llm_generate_overview_from_fill(
+            chapter_content=new_chapter_content,
+            original_overview=original_overview or "",
+            genre=context.genre or "",
+        )
+    else:
+        context.chapters_overview = call_llm_edit_overview(
+            original_overview=original_overview,
+            impact_reason=impact_reason,
+            diff_summary=diff_summary,
+            expanded_plot=context.expanded_plot or "",
+            genre=context.genre or "",
+            edited_section=edited_section,
+            new_chapter_content=new_chapter_content,
+            chapter_index=chapter_index,
+            num_chapters=num_chapters,
+            is_infill=is_infill,
+        )
     return context
 
