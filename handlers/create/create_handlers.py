@@ -52,12 +52,16 @@ def post_pipeline_controls():
     if checkpoint.run_mode == "START_EMPTY":
         chapters_visible = False
         
+        # Hide refresh buttons if content is just the "(Empty)" placeholder
+        show_expanded_regen = expanded_visible and checkpoint.expanded_plot != "(Empty)"
+        show_overview_regen = overview_visible and checkpoint.chapters_overview != "(Empty)"
+        
         return (
              gr.update(interactive=True, visible=False), # stop
              gr.update(visible=False), # resume - ALWAYS HIDDEN
              gr.update(visible=True, interactive=False), # generate/start btn - DISABLED after run
-             gr.update(visible=expanded_visible), # regen expanded (show only if content exists)
-             gr.update(visible=overview_visible), # regen overview
+             gr.update(visible=show_expanded_regen), # regen expanded
+             gr.update(visible=show_overview_regen), # regen overview
              gr.update(visible=chapters_visible), # regen chapter
         )
 
