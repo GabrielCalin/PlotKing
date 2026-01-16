@@ -363,15 +363,16 @@ def validate_handler(section, current_log):
         gr.update(visible=False), # add_fill_btn - hide during validation
     )
     
-    msg, plan = run_validate_pipeline(section, draft_to_validate)
+    msg, plan, validation_error = run_validate_pipeline(section, draft_to_validate)
     final_log, final_status = append_status(new_log, f"✅ ({section}) Validation completed.")
     
+    apply_interactive = not validation_error
     yield (
         gr.update(visible=False), # chat_group
         gr.update(visible=True), # validation_title
         gr.update(value=msg, visible=True), # validation_box
         gr.update(visible=True), # validation_section
-        gr.update(visible=True), # apply_updates_btn
+        gr.update(visible=True, interactive=apply_interactive), # apply_updates_btn
         gr.update(visible=True), # regenerate_btn
         gr.update(visible=True), # continue_btn
         gr.update(visible=True), # discard2_btn

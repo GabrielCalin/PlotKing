@@ -141,7 +141,7 @@ def build_candidate_sections(section: str, checkpoint):
 def run_validate_pipeline(section, draft):
     checkpoint = get_checkpoint()
     if not checkpoint:
-        return "Error: No checkpoint found.", None
+        return "Error: No checkpoint found.", None, False
 
     im = InfillManager()
     is_fill = im.is_fill(section)
@@ -163,11 +163,11 @@ def run_validate_pipeline(section, draft):
 
     if result in {"ERROR", "UNKNOWN", "NO_CHANGES"}:
         msg = format_validation_markdown(result, diff_data)
-        return _append_warnings(section, msg), None
+        return _append_warnings(section, msg), None, False
 
     if result != "CHANGES_DETECTED":
         msg = format_validation_markdown(result, diff_data)
-        return _append_warnings(section, msg), None
+        return _append_warnings(section, msg), None, False
 
     if diff_data.get("changes"):
         diff_summary_text = "\n".join(f"- {item}" for item in diff_data.get("changes", []) if item)
@@ -191,11 +191,11 @@ def run_validate_pipeline(section, draft):
                 errors.append(f"Chapter deletion detected. Removing chapters is not supported. {reason}".strip())
             if errors:
                 msg = _format_overview_validation_errors(errors)
-                return msg, None
+                return msg, None, True
         elif validator_result == "ERROR":
             error_msg = validator_data.get("error", "Unknown error")
             msg = f"## ❌ Overview validation error\n\n{error_msg}"
-            return msg, None
+            return msg, None, True
 
     candidates = build_candidate_sections(section, checkpoint)
 
@@ -223,5 +223,5 @@ def run_validate_pipeline(section, draft):
         "fill_name": section if is_fill else None,
     } if impact_result == "IMPACT_DETECTED" and impacted else None
 
-    return _append_warnings(section, msg), plan
+    return _append_warnings(section, msg), plan, False
 
