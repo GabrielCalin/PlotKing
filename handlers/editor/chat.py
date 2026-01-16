@@ -1,6 +1,6 @@
 # ui/tabs/editor/chat.py
 import gradio as gr
-from handlers.editor.validate_commons import editor_validate
+from pipeline.runner_validate import run_validate_pipeline
 from handlers.editor.utils import append_status, should_show_add_fill_btn
 from state.drafts_manager import DraftsManager, DraftType
 from handlers.editor.constants import Components, States
@@ -363,7 +363,7 @@ def validate_handler(section, current_log):
         gr.update(visible=False), # add_fill_btn - hide during validation
     )
     
-    msg, plan = editor_validate(section, draft_to_validate)
+    msg, plan = run_validate_pipeline(section, draft_to_validate)
     final_log, final_status = append_status(new_log, f"✅ ({section}) Validation completed.")
     
     yield (

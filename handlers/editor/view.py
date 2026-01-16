@@ -92,7 +92,7 @@ def force_edit_draft_handler(section, status_log, create_sections_epoch):
 
 def validate_draft_handler(section, current_log):
     """Trigger validation using the USER draft content from View mode."""
-    from handlers.editor.validate_commons import editor_validate
+    from pipeline.runner_validate import run_validate_pipeline
     
     from state.drafts_manager import DraftType
     
@@ -132,7 +132,7 @@ def validate_draft_handler(section, current_log):
     )
 
     # Run validation
-    msg, plan = editor_validate(section, draft_content)
+    msg, plan = run_validate_pipeline(section, draft_content)
     final_log, final_status = append_status(new_log, f"✅ ({section}) Validation completed.")
     
     # Preparation for Validation Box

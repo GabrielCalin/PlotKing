@@ -1,0 +1,116 @@
+# -*- coding: utf-8 -*-
+import json
+import textwrap
+from typing import Tuple, Dict, Any
+from provider import provider_manager
+
+MAX_RETRIES = 3
+
+_VALIDATOR_PROMPT = textwrap.dedent("""\
+You are a chapters overview validator. Your task is to check for structural issues in an edited Chapters Overview.
+
+EDITED CHAPTERS OVERVIEW:
+\"\"\"{new_overview}\"\"\"
+
+SUMMARY OF CHANGES (from version diff):
+\"\"\"{diff_summary}\"\"\"
+
+Instructions:
+1. **Numbering check**: Examine the chapter numbers in the edited overview. Verify that:
+   - Chapters start at 1
+   - Each subsequent chapter increments by exactly 1 (no gaps, no duplicates)
+   - Example of valid: Chapter 1, Chapter 2, Chapter 3
+   - Example of invalid: Chapter 1, Chapter 3 (gap), or Chapter 1, Chapter 1 (duplicate), or Chapter 0, Chapter 1 (doesn't start at 1)
+
+2. **Deletion check**: Based on the SUMMARY OF CHANGES, determine if any chapters were removed/deleted from the overview. Look for mentions of removed chapters, decreased chapter count, or deleted content.
+
+Output format (strict JSON):
+Respond with a single JSON object and nothing else:
+
+{{
+  "numbering": {{
+    "valid": true or false,
+    "reason": "Brief explanation if invalid, or empty string if valid"
+  }},
+  "deleted": {{
+    "detected": true or false,
+    "reason": "Brief explanation if detected, or empty string if not"
+  }}
+}}
+
+- Do not add any extra text before or after the JSON.
+- If numbering is valid, set "valid": true and "reason": ""
+- If no deletion detected, set "detected": false and "reason": ""
+""").strip()
+
+
+def call_llm_overview_validator_after_edit(
+    new_overview: str,
+    diff_summary: str,
+    timeout: int = 120,
+) -> Tuple[str, Dict[str, Any]]:
+    """
+    Validate Chapters Overview after edit using LLM.
+    
+    Returns:
+        ("OK", {}) - no issues found
+        ("ISSUES", {"numbering": {...}, "deleted": {...}}) - issues found
+        ("ERROR", {"error": message}) - request failed
+        ("UNKNOWN", {"raw": content}) - invalid response format after retries
+    """
+    prompt = _VALIDATOR_PROMPT.format(
+        new_overview=new_overview or "(empty)",
+        diff_summary=diff_summary or "(no changes)",
+    )
+
+    messages = [
+        {"role": "system", "content": "You are a precise chapters overview validator. Output valid JSON only."},
+        {"role": "user", "content": prompt},
+    ]
+
+    last_error = None
+    last_raw = None
+
+    for attempt in range(MAX_RETRIES):
+        try:
+            content = provider_manager.get_llm_response(
+                task_name="overview_validator_after_edit",
+                messages=messages,
+                timeout=timeout,
+                temperature=0.1,
+                top_p=0.5,
+                max_tokens=1000
+            )
+        except Exception as e:
+            last_error = str(e)
+            continue
+
+        try:
+            parsed = json.loads(content)
+        except json.JSONDecodeError:
+            last_raw = content
+            continue
+
+        numbering = parsed.get("numbering", {})
+        deleted = parsed.get("deleted", {})
+
+        if not isinstance(numbering, dict) or not isinstance(deleted, dict):
+            last_raw = content
+            continue
+
+        numbering_valid = numbering.get("valid", True)
+        deleted_detected = deleted.get("detected", False)
+
+        if numbering_valid and not deleted_detected:
+            return ("OK", {})
+
+        return ("ISSUES", {
+            "numbering": numbering,
+            "deleted": deleted,
+        })
+
+    if last_error:
+        return ("ERROR", {"error": last_error})
+
+    return ("UNKNOWN", {"raw": last_raw or "(no response)"})
+
