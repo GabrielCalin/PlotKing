@@ -24,6 +24,8 @@ Instructions:
 
 2. **Deletion check**: Based on the SUMMARY OF CHANGES, determine if any chapters were removed/deleted from the overview. Look for mentions of removed chapters, decreased chapter count, or deleted content.
 
+3. **Addition check**: Based on the SUMMARY OF CHANGES, determine if any new chapters were added to the overview. Look for mentions of added chapters, increased chapter count, or new chapter content.
+
 Output format (strict JSON):
 Respond with a single JSON object and nothing else:
 
@@ -35,12 +37,18 @@ Respond with a single JSON object and nothing else:
   "deleted": {{
     "detected": true or false,
     "reason": "Brief explanation if detected, or empty string if not"
+  }},
+  "added": {{
+    "detected": true or false,
+    "reason": "Brief explanation if detected, or empty string if not"
   }}
 }}
 
 - Do not add any extra text before or after the JSON.
 - If numbering is valid, set "valid": true and "reason": ""
 - If no deletion detected, set "detected": false and "reason": ""
+- If no addition detected, set "detected": false and "reason": ""
+- When writing the "reason" fields, write them naturally as if you observed the issue directly from the overview. Do not mention that you deduced it from the SUMMARY OF CHANGES or reference the summary in your explanation.
 """).strip()
 
 
@@ -93,20 +101,23 @@ def call_llm_overview_validator_after_edit(
 
         numbering = parsed.get("numbering", {})
         deleted = parsed.get("deleted", {})
+        added = parsed.get("added", {})
 
-        if not isinstance(numbering, dict) or not isinstance(deleted, dict):
+        if not isinstance(numbering, dict) or not isinstance(deleted, dict) or not isinstance(added, dict):
             last_raw = content
             continue
 
         numbering_valid = numbering.get("valid", True)
         deleted_detected = deleted.get("detected", False)
+        added_detected = added.get("detected", False)
 
-        if numbering_valid and not deleted_detected:
+        if numbering_valid and not deleted_detected and not added_detected:
             return ("OK", {})
 
         return ("ISSUES", {
             "numbering": numbering,
             "deleted": deleted,
+            "added": added,
         })
 
     if last_error:

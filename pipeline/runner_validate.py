@@ -183,12 +183,16 @@ def run_validate_pipeline(section, draft):
             errors = []
             numbering = validator_data.get("numbering", {})
             deleted = validator_data.get("deleted", {})
+            added = validator_data.get("added", {})
             if not numbering.get("valid", True):
                 reason = numbering.get("reason", "")
                 errors.append(f"Chapter numbering is invalid. {reason}".strip())
             if deleted.get("detected", False):
                 reason = deleted.get("reason", "")
                 errors.append(f"Chapter deletion detected. Removing chapters is not supported. {reason}".strip())
+            if added.get("detected", False):
+                reason = added.get("reason", "")
+                errors.append(f"Chapter addition detected. Adding chapters is supported through Add Fill. {reason}".strip())
             if errors:
                 msg = _format_overview_validation_errors(errors)
                 return msg, None, True
