@@ -1,5 +1,5 @@
 import gradio as gr
-from handlers.editor.validate_commons import editor_validate
+from pipeline.runner_validate import run_validate_pipeline
 from handlers.editor.rewrite_presets import REWRITE_PRESETS
 from handlers.editor.utils import append_status, replace_text_with_highlight, remove_highlight, format_selected_preview, update_instructions_from_preset, should_show_add_fill_btn
 from handlers.editor.constants import Components, States
@@ -242,16 +242,17 @@ def rewrite_validate(section, viewer_content, current_log):
         gr.update(visible=False) # add_fill_btn - hide during validation
     )
     
-    msg, plan = editor_validate(section, draft_clean)
+    msg, plan, validation_error = run_validate_pipeline(section, draft_clean)
     final_log, _ = append_status(new_log, f"✅ ({section}) Validation completed.")
     
+    apply_interactive = not validation_error
     yield (
         msg,  # validation_box (Markdown)
         plan,  # pending_plan (State)
         gr.update(visible=True),  # validation_title (Markdown)
         gr.update(value=msg, visible=True),  # validation_box (Markdown)
         gr.update(visible=True),  # validation_section (Column)
-        gr.update(visible=True),  # apply_updates_btn (Button)
+        gr.update(visible=True, interactive=apply_interactive),  # apply_updates_btn (Button)
         gr.update(visible=True),  # regenerate_btn (Button)
         gr.update(visible=True),  # continue_btn (Button)
         gr.update(visible=True),  # discard2_btn (Button)

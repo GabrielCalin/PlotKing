@@ -60,6 +60,7 @@ LLM_TASKS = [
     {"technical_name": "overview_generator", "display_name": "Overview Generator"},
     {"technical_name": "overview_generator_from_fill", "display_name": "Overview Generator From Fill"},
     {"technical_name": "overview_validator", "display_name": "Overview Validator"},
+    {"technical_name": "overview_validator_after_edit", "display_name": "Overview Validator After Edit"},
     {"technical_name": "plot_editor", "display_name": "Plot Editor"},
     {"technical_name": "plot_expander", "display_name": "Plot Expander"},
     {"technical_name": "plot_generator_from_fill", "display_name": "Plot Generator From Fill"},

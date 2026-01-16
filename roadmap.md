@@ -4,14 +4,6 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 ---
 
-## ✍️ Phase 4 — Story Growth and Structure Control
-
-22. **Fill Based on Chapters Overview Edit**  
-   - When user adds a chapter in overview, automatically create and generate a fill draft.  
-   - Remove operation is not supported.
-
----
-
 ## ⚙️ Phase 5 — Configuration & Customization
 
 23. **Advanced Settings**  
@@ -178,8 +170,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 | Feature | Status |
 |----------|--------|
-| **Fill Based on Chapters Overview Edit** | ⏳ In Progress |
-| **Advanced Settings** | ⏳ Planned |
+| **Advanced Settings** | ⏳ In Progress |
 | **Pipeline Improvements** | ⏳ Planned |
 | **Dockerfile and Docker Hub PlotKing** | ⏳ Planned |
 | **Automatic Translation** | ⏳ Planned |

@@ -1,5 +1,5 @@
 import gradio as gr
-from handlers.editor.validate_commons import editor_validate
+from pipeline.runner_validate import run_validate_pipeline
 from handlers.editor.utils import append_status, remove_highlight, should_show_add_fill_btn
 from handlers.editor.constants import Components, States
 from state.checkpoint_manager import get_section_content, save_section
@@ -65,17 +65,18 @@ def confirm_edit(section, draft, current_log):
     )
     
     # Apelează validarea (blocant) - folosim draft_clean (fără highlight-uri)
-    msg, plan = editor_validate(section, draft_clean)
+    msg, plan, validation_error = run_validate_pipeline(section, draft_clean)
     final_log, _ = append_status(new_log, f"✅ ({section}) Validation completed.")
     
     # Yield cu rezultatul validării
+    apply_interactive = not validation_error
     yield (
         msg,  # validation_box value
         plan,  # pending_plan
         gr.update(visible=True),    # show Validation Title
         gr.update(value=msg, visible=True),   # show Validation Box with message
         gr.update(visible=True),    # show Validation Section
-        gr.update(visible=True),    # show Apply Updates
+        gr.update(visible=True, interactive=apply_interactive),    # show Apply Updates
         gr.update(visible=True),    # show Regenerate
         gr.update(visible=True),    # show Continue Editing
         gr.update(visible=True),    # show Discard2

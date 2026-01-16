@@ -1,5 +1,5 @@
 import gradio as gr
-from handlers.editor.validate_commons import editor_validate
+from pipeline.runner_validate import run_validate_pipeline
 from utils.logger import merge_logs
 from handlers.editor.utils import append_status, remove_highlight, sort_drafts, should_show_add_fill_btn
 from handlers.editor.constants import Components, States
@@ -55,33 +55,6 @@ def _get_revert_state(section):
         else:
             content = get_section_content(section) or ""
             return content, "Checkpoint", "**Viewing:** <span style='color:red;'>Checkpoint</span>", False
-
-def get_draft_warning(exclude_section: str) -> str:
-    """Check for existing USER drafts in other sections and return a warning markdown string."""
-    drafts_mgr = DraftsManager()
-    user_drafts = drafts_mgr.get_user_drafts()
-    
-    # Exclude current section since we are validating it actively
-    other_drafts = [s for s in user_drafts if s != exclude_section]
-    
-    if other_drafts:
-        draft_names = ", ".join([f"`{d}`" for d in other_drafts])
-        return f"⚠️ **Validation is based on other drafts.**\nSome related sections are still drafts: {draft_names}.\nEnsure these drafts are consistent before applying changes."
-    return ""
-
-def get_fill_draft_warning(exclude_section: str) -> str:
-    """Check for existing FILL drafts in other sections and return a warning markdown string."""
-    drafts_mgr = DraftsManager()
-    fill_drafts = drafts_mgr.get_fill_drafts()
-    
-    # Exclude current section since we are validating it actively
-    other_fills = [s for s in fill_drafts if s != exclude_section]
-    
-    if other_fills:
-        fill_names = ", ".join([f"`{d}`" for d in other_fills])
-        return f"⚠️ **Multiple fill drafts present.**\nOther fill drafts exist: {fill_names}.\nThe current fill will not be validated against other fill drafts."
-    return ""
-
 
 def editor_apply(section, draft, plan):
     """
@@ -879,16 +852,17 @@ def regenerate_dispatcher(section, text_to_validate, current_log):
     )
     
     # 2. Run Validation Logic
-    msg, plan = editor_validate(section, text_to_validate)
+    msg, plan, validation_error = run_validate_pipeline(section, text_to_validate)
     final_log, final_status = append_status(new_log, f"✅ ({section}) Validation completed.")
     
     # 3. Common "Done" State
+    apply_interactive = not validation_error
     yield (
         gr.update(value=msg), # validation_box
         plan, # pending_plan
         gr.update(visible=True), # validation_title
         gr.update(visible=True), # validation_section
-        gr.update(visible=True), # apply_updates_btn
+        gr.update(visible=True, interactive=apply_interactive), # apply_updates_btn
         gr.update(visible=True), # regenerate_btn
         gr.update(visible=True), # continue_btn
         gr.update(visible=True), # discard2_btn
