@@ -36,11 +36,14 @@ PROVIDER_CAPABILITIES = {
     "OpenAI": {"has_url": False, "has_api_key": True, "has_reasoning": True},
     "Gemini": {"has_url": False, "has_api_key": True, "has_reasoning": True},
     "xAI": {"has_url": False, "has_api_key": True, "has_reasoning": True},
+    "DeepSeek": {"has_url": False, "has_api_key": True, "has_reasoning": True},
+    "OpenRouter": {"has_url": False, "has_api_key": True, "has_reasoning": True},
+    "Moonshot": {"has_url": False, "has_api_key": True, "has_reasoning": True},
     "LM Studio": {"has_url": True, "has_api_key": False, "has_reasoning": False},
     "Automatic1111": {"has_url": True, "has_api_key": False, "has_reasoning": False}
 }
 
-LLM_PROVIDERS = ["LM Studio", "OpenAI", "Gemini", "xAI"]
+LLM_PROVIDERS = ["LM Studio", "OpenAI", "Gemini", "xAI", "DeepSeek", "OpenRouter", "Moonshot"]
 IMAGE_PROVIDERS = ["Automatic1111", "OpenAI"]
 
 

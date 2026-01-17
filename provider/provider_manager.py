@@ -6,6 +6,9 @@ import provider.automatic1111 as automatic1111
 import provider.openai as openai_provider
 import provider.gemini as gemini_provider
 import provider.xai as xai_provider
+import provider.deepseek as deepseek_provider
+import provider.openrouter as openrouter_provider
+import provider.moonshot as moonshot_provider
 
 def get_llm_response(task_name: str, messages: List[Dict[str, str]], **kwargs) -> str:
     """
@@ -31,6 +34,12 @@ def get_llm_response(task_name: str, messages: List[Dict[str, str]], **kwargs) -
         return gemini_provider.generate_text(model_settings, messages, **kwargs)
     elif provider == "xAI":
         return xai_provider.generate_text(model_settings, messages, **kwargs)
+    elif provider == "DeepSeek":
+        return deepseek_provider.generate_text(model_settings, messages, **kwargs)
+    elif provider == "OpenRouter":
+        return openrouter_provider.generate_text(model_settings, messages, **kwargs)
+    elif provider == "Moonshot":
+        return moonshot_provider.generate_text(model_settings, messages, **kwargs)
     else:
         raise Exception(f"Unknown or unsupported LLM provider: {provider}")
 

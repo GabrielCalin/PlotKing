@@ -8,3 +8,4 @@ langchain
 langchain-openai
 langchain-google-genai
 langchain-xai
+langchain-deepseek>=1.0.0
