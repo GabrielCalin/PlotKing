@@ -15,12 +15,10 @@ def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kw
             "api_key": api_key,
             "base_url": "https://api.moonshot.ai/v1",
             "model": model,
+            "temperature": kwargs.get("temperature", 0.7),
             "max_tokens": kwargs.get("max_tokens", 4000),
             "timeout": kwargs.get("timeout", 60)
         }
-        
-        if not reasoning:
-            llm_params["temperature"] = kwargs.get("temperature", 0.7)
         
         llm = ChatOpenAI(**llm_params)
         

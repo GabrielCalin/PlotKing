@@ -13,7 +13,6 @@ This document outlines the planned development milestones for the **AI Story Gen
      - Temperature, top-p, and verbosity controls.  
      - Reasoning parameters (reasoning effort, etc.).  
      - Prompt Customization.  
-     - Add support for additional LLM providers (DeepSeek, OpenRouter, Grok, Kimi K2, etc.).
 
 24. **Pipeline Improvements**  
    - At validate after edit, provide sequentially: expanded plot, chapter overview, and chapters.  
