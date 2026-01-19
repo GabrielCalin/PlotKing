@@ -60,5 +60,5 @@ DEFAULT_IMAGE_MODEL = Model(
     is_default=True
 )
 
-LLM_PROVIDERS: List[str] = ["LM Studio", "OpenAI", "Gemini", "xAI", "DeepSeek", "OpenRouter", "Moonshot"]
+LLM_PROVIDERS: List[str] = ["DeepSeek", "Gemini", "LM Studio", "Moonshot", "OpenAI", "OpenRouter", "xAI"]
 IMAGE_PROVIDERS: List[str] = ["Automatic1111", "OpenAI"]
