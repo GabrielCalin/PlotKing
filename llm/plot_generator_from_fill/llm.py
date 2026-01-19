@@ -59,11 +59,7 @@ def call_llm_generate_plot_from_fill(
     try:
         content = provider_manager.get_llm_response(
             task_name="plot_generator_from_fill",
-            messages=messages,
-            timeout=timeout,
-            temperature=0.7,
-            top_p=0.95,
-            max_tokens=4096
+            messages=messages
         )
         
         return content

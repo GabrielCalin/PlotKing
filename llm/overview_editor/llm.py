@@ -179,11 +179,7 @@ The user edited Chapter {chapter_index}. You need to:
     try:
         content = provider_manager.get_llm_response(
             task_name="overview_editor",
-            messages=messages,
-            timeout=timeout,
-            temperature=0.6,
-            top_p=0.95,
-            max_tokens=16000
+            messages=messages
         )
         
         # Parse JSON response (suportă atât JSON pur cât și wrappat în tag-uri)

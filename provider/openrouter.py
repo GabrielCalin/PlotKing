@@ -2,6 +2,7 @@ from typing import List, Dict, Any
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 
+
 def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kwargs) -> str:
     api_key = settings.get("api_key")
     if not api_key:
@@ -19,6 +20,11 @@ def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kw
             "max_tokens": kwargs.get("max_tokens", 4000),
             "timeout": kwargs.get("timeout", 60)
         }
+        
+        if reasoning:
+            reasoning_effort = kwargs.get("reasoning_effort")
+            if reasoning_effort:
+                llm_params["reasoning_effort"] = reasoning_effort
         
         llm = ChatOpenAI(**llm_params)
         
@@ -40,4 +46,3 @@ def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kw
         
     except Exception as e:
         raise Exception(f"OpenRouter Text Error (LangChain): {e}")
-

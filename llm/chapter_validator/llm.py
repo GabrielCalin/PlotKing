@@ -113,11 +113,7 @@ def call_llm_validate_chapter(
     try:
         content = provider_manager.get_llm_response(
             task_name="chapter_validator",
-            messages=messages,
-            timeout=timeout,
-            temperature=0.3,
-            top_p=0.9,
-            max_tokens=2000
+            messages=messages
         )
     except Exception as e:
         return ("ERROR", str(e))

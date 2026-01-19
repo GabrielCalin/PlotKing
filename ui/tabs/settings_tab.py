@@ -15,12 +15,12 @@ def render_settings_tab():
                     with gr.Tab("🤖 Models"):
                         refresh_models_fn, model_selector_comp, save_evt, del_evt, load_model_details_fn, model_input_components = render_models_tab(process_log)
                     with gr.Tab("📋 Tasks"):
-                        refresh_tasks_fn, task_dropdowns = render_tasks_tab(process_log)
+                        refresh_tasks_fn, task_outputs = render_tasks_tab(process_log)
             
             # Wire up auto-refresh for tasks when models change - using .then() on events returned from models.py
             # This ensures they run AFTER the save/delete logic completes
-            save_evt.then(fn=refresh_tasks_fn, inputs=[], outputs=task_dropdowns)
-            del_evt.then(fn=refresh_tasks_fn, inputs=[], outputs=task_dropdowns)
+            save_evt.then(fn=refresh_tasks_fn, inputs=[], outputs=task_outputs)
+            del_evt.then(fn=refresh_tasks_fn, inputs=[], outputs=task_outputs)
             
             with gr.Column(scale=1):
                 gr.Markdown("### Process Log")
@@ -28,4 +28,4 @@ def render_settings_tab():
                 process_log.render()
 
     # Return refresh utils so interface can bind global load events if needed
-    return refresh_tasks_fn, task_dropdowns, refresh_models_fn, model_selector_comp, load_model_details_fn, model_input_components
+    return refresh_tasks_fn, task_outputs, refresh_models_fn, model_selector_comp, load_model_details_fn, model_input_components

@@ -57,11 +57,7 @@ Return only the summary text, without any additional formatting, titles, or comm
     try:
         content = provider_manager.get_llm_response(
             task_name="chapter_summary",
-            messages=messages,
-            timeout=timeout,
-            temperature=0.3,
-            top_p=0.9,
-            max_tokens=2000
+            messages=messages
         )
         return content.strip()
     except Exception as e:

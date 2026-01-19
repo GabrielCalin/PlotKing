@@ -125,11 +125,7 @@ def call_llm_rewrite_editor(
     try:
         content = provider_manager.get_llm_response(
             task_name="rewrite_editor",
-            messages=messages,
-            timeout=timeout,
-            temperature=0.7,
-            top_p=0.95,
-            max_tokens=4000
+            messages=messages
         )
         
         try:

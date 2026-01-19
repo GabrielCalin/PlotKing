@@ -127,11 +127,7 @@ def call_llm_edit_plot(
     try:
         content = provider_manager.get_llm_response(
             task_name="plot_editor",
-            messages=messages,
-            timeout=timeout,
-            temperature=0.7,
-            top_p=0.95,
-            max_tokens=8192
+            messages=messages
         )
         
         # Parse JSON response (suportă atât JSON pur cât și wrappat în tag-uri)

@@ -42,7 +42,7 @@ Thumbs.db           # Windows thumbnail cache
 Projects/
 exports/
 tmp/
-settings/settings.json
+settings/
 
 
 # ------------------------------------------------------------------

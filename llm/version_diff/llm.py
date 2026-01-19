@@ -99,11 +99,7 @@ def call_llm_version_diff(
     try:
         content = provider_manager.get_llm_response(
             task_name="version_diff",
-            messages=messages,
-            timeout=timeout,
-            temperature=0.3,
-            top_p=0.9,
-            max_tokens=4000
+            messages=messages
         )
     except Exception as e:
         return ("ERROR", {"error": str(e)})

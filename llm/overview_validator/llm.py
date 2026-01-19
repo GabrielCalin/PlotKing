@@ -5,13 +5,6 @@ import textwrap
 from typing import Tuple
 from provider import provider_manager
 
-DEFAULT_PARAMS = {
-    "temperature": 0.6,
-    "top_p": 0.9,
-    "max_tokens": 4000,
-}
-
-
 PROMPT_TEMPLATE = textwrap.dedent("""
 You are a story structure analyst.
 Your task is to verify if a list of proposed chapters is coherent and consistent with the story described below.
@@ -71,10 +64,6 @@ def call_llm_validate_overview(
         ("ERROR", message) on request or parsing error
         ("UNKNOWN", raw_content) if the model's format is unexpected
     """
-
-    _params = {**DEFAULT_PARAMS, **(params or {})}
-
-
     messages = [
         {"role": "system", "content": "You are a logical story structure validator."},
         {
@@ -91,11 +80,7 @@ def call_llm_validate_overview(
     try:
         content = provider_manager.get_llm_response(
             task_name="overview_validator",
-            messages=messages,
-            timeout=timeout,
-            temperature=_params.get("temperature", 0.6),
-            top_p=_params.get("top_p", 0.9),
-            max_tokens=_params.get("max_tokens", 4000)
+            messages=messages
         )
     except Exception as e:
         return ("ERROR", f"Validation request failed: {e}")

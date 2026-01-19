@@ -42,10 +42,7 @@ def generate_prompt(story_context: str,
     try:
         content = provider_manager.get_llm_response(
             task_name="cover_prompter",
-            messages=messages,
-            timeout=timeout,
-            temperature=0.7,
-            max_tokens=1000
+            messages=messages
         )
         # Cleanup
         content = content.replace('"', '').replace("Prompt:", "").strip()

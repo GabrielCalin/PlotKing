@@ -161,10 +161,7 @@ def call_llm_chat_filler(
     try:
         response_text = provider_manager.get_llm_response(
             task_name="chat_filler",
-            messages=messages,
-            timeout=timeout,
-            temperature=0.7, 
-            max_tokens=16000
+            messages=messages
         )
         
         return _parse_response(response_text)

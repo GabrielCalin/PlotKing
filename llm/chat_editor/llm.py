@@ -176,11 +176,7 @@ def call_llm_chat(
     try:
         content = provider_manager.get_llm_response(
             task_name="chat_editor",
-            messages=messages,
-            timeout=timeout,
-            temperature=0.8,
-            top_p=0.95,
-            max_tokens=16000
+            messages=messages
         )
 
         # Try to extract JSON using your custom extractor

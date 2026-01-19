@@ -18,17 +18,28 @@ def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kw
         clean_url = f"{clean_url}/v1"
 
     model = settings.get("technical_name") or "local-model" 
+    reasoning = settings.get("reasoning", False)
     
     try:
-        llm = ChatOpenAI(
-            base_url=clean_url,
-            api_key="lm-studio", # Dummy key required
-            model=model,
-            temperature=kwargs.get("temperature", 0.7),
-            max_tokens=kwargs.get("max_tokens", -1),
-            request_timeout=kwargs.get("timeout", 1200),
-            top_p=kwargs.get("top_p", 0.9)
-        )
+        llm_params = {
+            "base_url": clean_url,
+            "api_key": "lm-studio", # Dummy key required
+            "model": model,
+            "temperature": kwargs.get("temperature", 0.7),
+            "max_tokens": kwargs.get("max_tokens", -1),
+            "request_timeout": kwargs.get("timeout", 1200),
+            "top_p": kwargs.get("top_p", 0.9)
+        }
+        
+        if reasoning:
+            reasoning_effort = kwargs.get("reasoning_effort")
+            if reasoning_effort:
+                llm_params["reasoning_effort"] = reasoning_effort
+            max_reasoning_tokens = kwargs.get("max_reasoning_tokens")
+            if max_reasoning_tokens:
+                llm_params["max_reasoning_tokens"] = max_reasoning_tokens
+        
+        llm = ChatOpenAI(**llm_params)
         
         lc_messages = []
         for m in messages:

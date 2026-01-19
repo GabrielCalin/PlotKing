@@ -1,5 +1,6 @@
 import gradio as gr
-from state.settings_manager import settings_manager, DEFAULT_LLM_MODEL, LLM_PROVIDERS, IMAGE_PROVIDERS
+from state.settings_manager import settings_manager
+from handlers.settings import DEFAULT_LLM_MODEL, LLM_PROVIDERS, IMAGE_PROVIDERS
 from utils.timestamp import ts_prefix
 from utils.logger import append_log_string
 
@@ -8,30 +9,28 @@ def render_models_tab(process_log):
         gr.Markdown("### Manage AI Models")
         
         models_list = settings_manager.get_models()
-        model_names = [m["name"] for m in models_list]
+        model_names = [m.name for m in models_list]
         
-        default_model_name = DEFAULT_LLM_MODEL["name"]
+        default_model_name = DEFAULT_LLM_MODEL.name
         default_val = default_model_name if default_model_name in model_names else (model_names[0] if model_names else None)
 
         def get_model_data(model_name):
             if not model_name:
-                # Return empty defaults
                 return "", "", "llm", LLM_PROVIDERS[0], "", "", True, False, False, False, LLM_PROVIDERS
                 
-            model = next((m for m in settings_manager.get_models() if m["name"] == model_name), None)
+            model = next((m for m in settings_manager.get_models() if m.name == model_name), None)
             if not model:
-                 # Fallback to default structure if not found (shouldn't happen for valid names)
-                 model = DEFAULT_LLM_MODEL.copy()
+                model = DEFAULT_LLM_MODEL
             
-            name = model.get("name", "")
-            tech_name = model.get("technical_name", "")
-            m_type = model.get("type", "llm")
-            provider = model.get("provider", LLM_PROVIDERS[0])
-            url = model.get("url", "")
-            key = model.get("api_key", "")
-            reasoning = model.get("reasoning", False)
+            name = model.name
+            tech_name = model.technical_name
+            m_type = model.type
+            provider = model.provider
+            url = model.url
+            key = model.api_key
+            reasoning = model.reasoning
             
-            is_default = model.get("is_default", False)
+            is_default = model.is_default
             delete_interactive = not is_default
             
             provider_choices = LLM_PROVIDERS if m_type == "llm" else IMAGE_PROVIDERS
@@ -43,7 +42,6 @@ def render_models_tab(process_log):
             
             return name, tech_name, m_type, provider, url, key, reasoning, url_vis, key_vis, reasoning_vis, delete_interactive, provider_choices
 
-        # Initialization using the helper
         (
             initial_name, initial_tech_name, initial_type, initial_provider, 
             initial_url, initial_key, initial_reasoning, initial_url_vis, initial_key_vis, initial_reasoning_vis,
@@ -58,7 +56,6 @@ def render_models_tab(process_log):
                 interactive=True
             )
 
-        # --- Edit / Add Area ---
         with gr.Group():
             with gr.Row():
                 name_input = gr.Textbox(label="Friendly Name", placeholder="My Custom Model", value=initial_name)
@@ -82,8 +79,6 @@ def render_models_tab(process_log):
             model_key_input = gr.Textbox(label="API Key", type="password", visible=initial_key_vis, value=initial_key)
             reasoning_checkbox = gr.Checkbox(label="Reasoning", value=initial_reasoning, visible=initial_reasoning_vis)
             
-            # Helper to update provider choices based on type
-            # Use .input() instead of .change() to avoid triggering when loading details programmatically
             def update_provider_choices(m_type):
                 if m_type == "llm":
                     return gr.update(choices=LLM_PROVIDERS, value=LLM_PROVIDERS[0])
@@ -92,7 +87,6 @@ def render_models_tab(process_log):
             
             type_selector.input(fn=update_provider_choices, inputs=[type_selector], outputs=[provider_selector])
 
-            # Helper for visibility based on provider
             def update_visibility(provider):
                 caps = settings_manager.get_provider_capabilities(provider)
                 return (
@@ -106,8 +100,6 @@ def render_models_tab(process_log):
             with gr.Row():
                 save_btn = gr.Button("💾 Save", variant="primary")
                 delete_btn = gr.Button("🗑️ Delete", variant="stop", interactive=initial_delete_interactive)
-
-        # --- Logic ---
 
         def load_model_details(model_name):
             (
@@ -137,7 +129,7 @@ def render_models_tab(process_log):
             
             try:
                 models = settings_manager.get_models()
-                model_exists = any(m["name"] == name for m in models)
+                model_exists = any(m.name == name for m in models)
                 
                 model_data = {
                     "name": name,
@@ -151,9 +143,9 @@ def render_models_tab(process_log):
                 }
                 
                 if model_exists:
-                    existing = next((m for m in models if m["name"] == name), None)
+                    existing = next((m for m in models if m.name == name), None)
                     if existing:
-                        is_default = existing.get("is_default", False)
+                        is_default = existing.is_default
                         model_data["is_default"] = is_default
                         settings_manager.update_model(name, model_data)
                         log_msg = append_log_string(current_log, ts_prefix(f"✅ Model '{name}' updated."))
@@ -163,7 +155,7 @@ def render_models_tab(process_log):
                     settings_manager.add_model(model_data)
                     log_msg = append_log_string(current_log, ts_prefix(f"✅ Model '{name}' added."))
                 
-                new_choices = [m["name"] for m in settings_manager.get_models()]
+                new_choices = [m.name for m in settings_manager.get_models()]
                 return log_msg, gr.update(choices=new_choices, value=name)
             except Exception as e:
                 return append_log_string(current_log, ts_prefix(f"❌ Error: {e}")), gr.update()
@@ -184,13 +176,11 @@ def render_models_tab(process_log):
             try:
                 settings_manager.delete_model(name)
                 
-                # Switch to default
-                fallback_name = DEFAULT_LLM_MODEL["name"]
-                new_choices = [m["name"] for m in settings_manager.get_models()]
+                fallback_name = DEFAULT_LLM_MODEL.name
+                new_choices = [m.name for m in settings_manager.get_models()]
                 
                 log_msg = append_log_string(current_log, ts_prefix(f"✅ Model '{name}' deleted."))
                 
-                # Get details for fallback model to repopulate the form
                 (
                     f_name, f_tech, f_type, f_provider, f_url, f_key, f_reasoning, f_url_vis, f_key_vis, f_reasoning_vis, f_del_int, f_choices
                 ) = get_model_data(fallback_name)
@@ -223,8 +213,7 @@ def render_models_tab(process_log):
 
         def refresh_models_list():
             models = settings_manager.get_models()
-            names = [m["name"] for m in models]
-            # Keep current value if valid, else default
+            names = [m.name for m in models]
             return gr.update(choices=names)
 
         return refresh_models_list, model_selector, save_evt, del_evt, load_model_details, [name_input, technical_name_input, type_selector, provider_selector, model_url_input, model_key_input, reasoning_checkbox, delete_btn]

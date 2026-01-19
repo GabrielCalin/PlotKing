@@ -2,6 +2,7 @@ from typing import List, Dict, Any
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 
+
 def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kwargs) -> str:
     api_key = settings.get("api_key")
     if not api_key:
@@ -20,7 +21,15 @@ def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kw
         }
         
         if reasoning:
-            llm_params["model_kwargs"] = {"reasoning_effort": "minimal"}
+            model_kwargs = {}
+            reasoning_effort = kwargs.get("reasoning_effort")
+            if reasoning_effort:
+                model_kwargs["reasoning_effort"] = reasoning_effort
+            max_reasoning_tokens = kwargs.get("max_reasoning_tokens")
+            if max_reasoning_tokens:
+                model_kwargs["thinking_budget"] = max_reasoning_tokens
+            if model_kwargs:
+                llm_params["model_kwargs"] = model_kwargs
         
         llm = ChatGoogleGenerativeAI(**llm_params)
         
@@ -55,4 +64,3 @@ def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kw
         
     except Exception as e:
         raise Exception(f"Gemini Text Error (LangChain): {e}")
-

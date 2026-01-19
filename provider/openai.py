@@ -1,10 +1,10 @@
-import requests
 import os
 import base64
 from typing import List, Dict, Any
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from openai import OpenAI
+
 
 def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kwargs) -> str:
     api_key = settings.get("api_key")
@@ -24,7 +24,9 @@ def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kw
         }
         
         if reasoning:
-            llm_params["reasoning_effort"] = "minimal"
+            reasoning_effort = kwargs.get("reasoning_effort", "medium")
+            if reasoning_effort:
+                llm_params["reasoning_effort"] = reasoning_effort
         
         llm = ChatOpenAI(**llm_params)
         
@@ -39,7 +41,6 @@ def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kw
             elif role == "assistant":
                 lc_messages.append(AIMessage(content=content))
             else:
-                # Fallback for generic or function roles if any
                 lc_messages.append(HumanMessage(content=content))
                 
         response = llm.invoke(lc_messages)
@@ -63,7 +64,6 @@ def generate_image(settings: Dict[str, Any], prompt: str, **kwargs) -> str:
     try:
         client = OpenAI(api_key=api_key)
 
-        # NO response_format — new API rejects it
         response = client.images.generate(
             model=model,
             prompt=prompt,
@@ -71,7 +71,6 @@ def generate_image(settings: Dict[str, Any], prompt: str, **kwargs) -> str:
             n=1
         )
 
-        # still returned as base64 by default
         img_b64 = response.data[0].b64_json
 
         os.makedirs("tmp", exist_ok=True)

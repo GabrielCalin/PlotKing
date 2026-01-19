@@ -200,10 +200,7 @@ Changes: New Chapter Created
     try:
         content = provider_manager.get_llm_response(
             task_name="impact_analyzer",
-            messages=messages,
-            timeout=timeout,
-            temperature=0.1,
-            top_p=0.3
+            messages=messages
         )
     except Exception as e:
         return ("ERROR", {"error": str(e)}, [])

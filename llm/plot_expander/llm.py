@@ -94,10 +94,7 @@ def call_llm_expand_plot(
     try:
         content = provider_manager.get_llm_response(
             task_name="plot_expander",
-            messages=messages,
-            timeout=300,
-            temperature=temperature,
-            max_tokens=max_tokens
+            messages=messages
         )
         return content
     except Exception as e:

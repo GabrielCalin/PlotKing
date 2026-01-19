@@ -49,7 +49,7 @@ def create_interface():
                 )
 
             with gr.Tab("⚙️ Settings"):
-                refresh_tasks_fn, task_dropdowns, refresh_models_fn, model_selector_comp, load_model_details_fn, model_input_components = render_settings_tab()
+                refresh_tasks_fn, task_outputs, refresh_models_fn, model_selector_comp, load_model_details_fn, model_input_components = render_settings_tab()
 
         # === Reset all states on refresh ===
         demo.load(
@@ -75,7 +75,7 @@ def create_interface():
         demo.load(
             fn=refresh_tasks_fn,
             inputs=None,
-            outputs=task_dropdowns
+            outputs=task_outputs
         )
         # === Refresh Settings Model Dropdown on startup ===
         demo.load(

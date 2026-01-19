@@ -83,11 +83,7 @@ def call_llm_overview_validator_after_edit(
         try:
             content = provider_manager.get_llm_response(
                 task_name="overview_validator_after_edit",
-                messages=messages,
-                timeout=timeout,
-                temperature=0.1,
-                top_p=0.5,
-                max_tokens=1000
+                messages=messages
             )
         except Exception as e:
             last_error = str(e)
