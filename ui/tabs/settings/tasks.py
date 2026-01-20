@@ -8,6 +8,7 @@ from handlers.settings import (
 from handlers.settings.tasks_handlers import (
     create_model_change_handler,
     create_save_handler,
+    create_reset_handler,
     create_image_task_handler
 )
 
@@ -106,7 +107,9 @@ def render_tasks_tab(process_log):
                                     minimum=0
                                 )
                         
-                        save_btn = gr.Button("💾 Save Parameters", variant="primary", size="sm")
+                        with gr.Row():
+                            save_btn = gr.Button("💾 Save Parameters", variant="primary", size="sm")
+                            reset_btn = gr.Button("🔄 Reset Defaults", variant="secondary", size="sm")
                 
                 llm_task_components.append({
                     "tech_name": tech_name,
@@ -120,7 +123,8 @@ def render_tasks_tab(process_log):
                     "reasoning_section": reasoning_section,
                     "reasoning_effort": reasoning_effort_dd,
                     "max_reasoning_tokens": max_reasoning_input,
-                    "save_btn": save_btn
+                    "save_btn": save_btn,
+                    "reset_btn": reset_btn
                 })
                 
                 handler = create_model_change_handler(tech_name, display_name)
@@ -141,6 +145,17 @@ def render_tasks_tab(process_log):
                         top_p_input, retries_input, reasoning_effort_dd, max_reasoning_input, process_log
                     ],
                     outputs=[process_log]
+                )
+                
+                reset_handler = create_reset_handler(tech_name, display_name)
+                reset_btn.click(
+                    fn=reset_handler,
+                    inputs=[process_log],
+                    outputs=[
+                        max_tokens_input, timeout_input, temperature_input,
+                        top_p_input, retries_input, reasoning_effort_dd,
+                        max_reasoning_input, reasoning_section, process_log
+                    ]
                 )
 
         gr.Markdown("#### Image Tasks")
