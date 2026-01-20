@@ -8,11 +8,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 
 23. **Advanced Settings**  
    - Add a settings section for advanced parameters:  
-     - Max tokens per chapter.  
-     - Timeout and retry policies.  
-     - Temperature, top-p, and verbosity controls.  
-     - Reasoning parameters (reasoning effort, etc.).  
-     - Prompt Customization.  
+     - Validator settings: enable/disable validators
 
 24. **Pipeline Improvements**  
    - At validate after edit, provide sequentially: expanded plot, chapter overview, and chapters.  
@@ -156,6 +152,8 @@ This document outlines the planned development milestones for the **AI Story Gen
 51. **Custom Blocks (ComfyUI-style)**  
    - Implement a visual node-based interface similar to ComfyUI for workflow customization.  
    - Allow users to create custom processing blocks and connect them visually.  
+   - Define llm tasks with custom prompts, agents, pipelines etc
+   - Prompt Customization for OOB tasks.
    - *Low priority / experimental feature.*
 
 52. **Book Reader**  
