@@ -1,6 +1,26 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from langchain_xai import ChatXAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+
+
+def convert_reasoning_effort(value: str) -> Optional[str]:
+    """Convert UI reasoning effort values to xAI-compatible values.
+    
+    xAI Grok accepts: 'low', 'medium', 'high'
+    """
+    if not value or value == "Not Set":
+        return None
+    
+    mapping = {
+        "Very High": "high",
+        "High": "high",
+        "Medium": "medium",
+        "Low": "low",
+        "Minimal": "low",
+        "None": None
+    }
+    result = mapping.get(value)
+    return result if result is not None else value.lower()
 
 
 def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kwargs) -> str:
@@ -21,12 +41,11 @@ def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kw
         }
         
         if reasoning:
-            reasoning_effort = kwargs.get("reasoning_effort")
-            if reasoning_effort:
-                llm_params["reasoning_effort"] = reasoning_effort
-            max_reasoning_tokens = kwargs.get("max_reasoning_tokens")
-            if max_reasoning_tokens:
-                llm_params["max_reasoning_tokens"] = max_reasoning_tokens
+            reasoning_effort_raw = kwargs.get("reasoning_effort")
+            if reasoning_effort_raw:
+                reasoning_effort = convert_reasoning_effort(reasoning_effort_raw)
+                if reasoning_effort:
+                    llm_params["reasoning_effort"] = reasoning_effort
         
         llm = ChatXAI(**llm_params)
         

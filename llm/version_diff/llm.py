@@ -10,6 +10,7 @@ import json
 import textwrap
 from typing import Tuple, Dict, Any
 from provider import provider_manager
+from state.settings_manager import settings_manager
 
 
 _DIFF_PROMPT = textwrap.dedent("""\
@@ -96,27 +97,47 @@ def call_llm_version_diff(
         {"role": "user", "content": prompt},
     ]
 
-    try:
-        content = provider_manager.get_llm_response(
-            task_name="version_diff",
-            messages=messages
-        )
-    except Exception as e:
-        return ("ERROR", {"error": str(e)})
+    task_params = settings_manager.get_task_params("version_diff")
+    retries = task_params.get("retries", 3)
+    if retries is None:
+        retries = 3
+    retries = max(0, int(retries))
 
-    try:
-        parsed = json.loads(content)
-    except json.JSONDecodeError:
-        return ("UNKNOWN", {"raw": content})
+    last_error = None
+    last_raw = None
 
-    result = parsed.get("result")
-    if result in {"NO_CHANGES", "CHANGES_DETECTED"}:
-        if result == "NO_CHANGES" and "message" not in parsed:
-            parsed["message"] = "no major changes detected"
-        if result == "CHANGES_DETECTED" and "changes" not in parsed:
-            parsed["changes"] = []
-        return (result, parsed)
+    for attempt in range(retries + 1):
+        try:
+            content = provider_manager.get_llm_response(
+                task_name="version_diff",
+                messages=messages
+            )
+        except Exception as e:
+            last_error = str(e)
+            if attempt < retries:
+                continue
+            return ("ERROR", {"error": str(last_error)})
 
-    return ("UNKNOWN", {"raw": content})
+        try:
+            parsed = json.loads(content)
+        except json.JSONDecodeError:
+            last_raw = content
+            if attempt < retries:
+                continue
+            return ("UNKNOWN", {"raw": last_raw or "(no response)"})
+
+        result = parsed.get("result")
+        if result in {"NO_CHANGES", "CHANGES_DETECTED"}:
+            if result == "NO_CHANGES" and "message" not in parsed:
+                parsed["message"] = "no major changes detected"
+            if result == "CHANGES_DETECTED" and "changes" not in parsed:
+                parsed["changes"] = []
+            return (result, parsed)
+
+        last_raw = content
+        if attempt < retries:
+            continue
+
+    return ("UNKNOWN", {"raw": last_raw or "(no response)"})
 
 

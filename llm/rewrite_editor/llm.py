@@ -7,6 +7,7 @@ import json
 from typing import Dict, Any, Optional
 from utils.json_utils import extract_json_from_response
 from provider import provider_manager
+from state.settings_manager import settings_manager
 
 
 _REWRITE_PROMPT = textwrap.dedent("""\
@@ -122,25 +123,47 @@ def call_llm_rewrite_editor(
         {"role": "user", "content": prompt},
     ]
 
-    try:
-        content = provider_manager.get_llm_response(
-            task_name="rewrite_editor",
-            messages=messages
-        )
-        
+    task_params = settings_manager.get_task_params("rewrite_editor")
+    retries = task_params.get("retries", 3)
+    if retries is None:
+        retries = 3
+    retries = max(0, int(retries))
+
+    last_error = None
+    last_content = None
+
+    for attempt in range(retries + 1):
+        try:
+            content = provider_manager.get_llm_response(
+                task_name="rewrite_editor",
+                messages=messages
+            )
+            last_content = content
+        except Exception as e:
+            last_error = str(e)
+            if attempt < retries:
+                continue
+            return {
+                "success": False,
+                "edited_text": "",
+                "message": f"Error calling LLM: {last_error}"
+            }
+
         try:
             result = extract_json_from_response(content)
             return result
         except (json.JSONDecodeError, ValueError):
+            if attempt < retries:
+                continue
             return {
                 "success": False,
                 "edited_text": "",
                 "message": "Failed to parse AI response."
             }
-    except Exception as e:
-        return {
-            "success": False,
-            "edited_text": "",
-            "message": f"Error calling LLM: {str(e)}"
-        }
+
+    return {
+        "success": False,
+        "edited_text": "",
+        "message": f"Error calling LLM: {last_error or 'Unknown error'}"
+    }
 

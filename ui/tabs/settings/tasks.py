@@ -29,7 +29,7 @@ def render_tasks_tab(process_log):
                 current_model = task_settings.get("model", "default_llm") if task_settings else "default_llm"
                 defaults = get_task_defaults(tech_name)
                 
-                with gr.Column():
+                with gr.Column(elem_classes=["task-group"]):
                     with gr.Row(elem_classes=["task-row"]):
                         t_label = gr.HTML(
                             f"<p style='display: flex; align-items: center; height: 100%; margin: 0;'>"
@@ -47,7 +47,7 @@ def render_tasks_tab(process_log):
                             show_label=False
                         )
                     
-                    with gr.Accordion("Parameters", open=False):
+                    with gr.Accordion("⚙️ Parameters", open=False):
                         with gr.Row():
                             max_tokens_input = gr.Number(
                                 label="Max Tokens",
@@ -55,14 +55,6 @@ def render_tasks_tab(process_log):
                                 precision=0,
                                 minimum=1
                             )
-                            timeout_input = gr.Number(
-                                label="Timeout (seconds)",
-                                value=task_settings.get("timeout", defaults.timeout if defaults else 300),
-                                precision=0,
-                                minimum=1
-                            )
-                        
-                        with gr.Row():
                             temperature_input = gr.Number(
                                 label="Temperature",
                                 value=task_settings.get("temperature", defaults.temperature if defaults else 0.7),
@@ -74,6 +66,21 @@ def render_tasks_tab(process_log):
                                 value=task_settings.get("top_p", defaults.top_p if defaults else 0.95),
                                 minimum=0.0,
                                 maximum=1.0
+                            )
+                        
+                        with gr.Row():
+                            retries_input = gr.Number(
+                                label="Retries",
+                                value=task_settings.get("retries", defaults.retries if defaults else 3),
+                                precision=0,
+                                minimum=0,
+                                maximum=10
+                            )
+                            timeout_input = gr.Number(
+                                label="Timeout (seconds)",
+                                value=task_settings.get("timeout", defaults.timeout if defaults else 300),
+                                precision=0,
+                                minimum=1
                             )
                         
                         model_config = settings_manager.get_model_for_task(tech_name)
@@ -109,6 +116,7 @@ def render_tasks_tab(process_log):
                     "timeout": timeout_input,
                     "temperature": temperature_input,
                     "top_p": top_p_input,
+                    "retries": retries_input,
                     "reasoning_section": reasoning_section,
                     "reasoning_effort": reasoning_effort_dd,
                     "max_reasoning_tokens": max_reasoning_input,
@@ -120,7 +128,7 @@ def render_tasks_tab(process_log):
                     fn=handler,
                     inputs=[
                         model_dd, max_tokens_input, timeout_input, temperature_input,
-                        top_p_input, reasoning_effort_dd, max_reasoning_input, process_log
+                        top_p_input, retries_input, reasoning_effort_dd, max_reasoning_input, process_log
                     ],
                     outputs=[reasoning_section, process_log]
                 )
@@ -130,7 +138,7 @@ def render_tasks_tab(process_log):
                     fn=save_handler,
                     inputs=[
                         model_dd, max_tokens_input, timeout_input, temperature_input,
-                        top_p_input, reasoning_effort_dd, max_reasoning_input, process_log
+                        top_p_input, retries_input, reasoning_effort_dd, max_reasoning_input, process_log
                     ],
                     outputs=[process_log]
                 )
@@ -140,28 +148,29 @@ def render_tasks_tab(process_log):
             for task in IMAGE_TASKS:
                 tech_name = task["technical_name"]
                 display_name = task["display_name"]
-                with gr.Row(elem_classes=["task-row"]):
-                    t_label = gr.HTML(
-                        f"<p style='display: flex; align-items: center; height: 100%; margin: 0;'>"
-                        f"<strong>{display_name}</strong></p>"
-                    )
-                    
-                    image_models = [m.name for m in settings_manager.get_models() if m.type == "image"]
-                    current_val = settings_manager.settings["tasks"].get(tech_name, "default_image")
-                    
-                    dd = gr.Dropdown(
-                        choices=image_models,
-                        value=current_val,
-                        label=f"Model for {display_name}",
-                        show_label=False
-                    )
-                    image_dropdowns.append((tech_name, dd))
-                    
-                    dd.change(
-                        fn=create_image_task_handler(tech_name, display_name),
-                        inputs=[dd, process_log],
-                        outputs=[process_log]
-                    )
+                with gr.Column(elem_classes=["task-group"]):
+                    with gr.Row(elem_classes=["task-row", "task-row-simple"]):
+                        t_label = gr.HTML(
+                            f"<p style='display: flex; align-items: center; height: 100%; margin: 0;'>"
+                            f"<strong>{display_name}</strong></p>"
+                        )
+                        
+                        image_models = [m.name for m in settings_manager.get_models() if m.type == "image"]
+                        current_val = settings_manager.settings["tasks"].get(tech_name, "default_image")
+                        
+                        dd = gr.Dropdown(
+                            choices=image_models,
+                            value=current_val,
+                            label=f"Model for {display_name}",
+                            show_label=False
+                        )
+                        image_dropdowns.append((tech_name, dd))
+                        
+                        dd.change(
+                            fn=create_image_task_handler(tech_name, display_name),
+                            inputs=[dd, process_log],
+                            outputs=[process_log]
+                        )
 
         def refresh_choices():
             new_llm_models = [m.name for m in settings_manager.get_models() if m.type == "llm"]

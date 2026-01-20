@@ -1,9 +1,29 @@
 import os
 import base64
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from openai import OpenAI
+
+
+def convert_reasoning_effort(value: str) -> Optional[str]:
+    """Convert UI reasoning effort values to OpenAI-compatible values.
+    
+    OpenAI accepts: 'none', 'minimal', 'low', 'medium', 'high'
+    For newer models (o1-series, o3-series, GPT-5-series), 'xhigh' is also supported.
+    """
+    if not value or value == "Not Set":
+        return None
+    
+    mapping = {
+        "Very High": "xhigh",
+        "High": "high",
+        "Medium": "medium",
+        "Low": "low",
+        "Minimal": "minimal",
+        "None": "none"
+    }
+    return mapping.get(value, value.lower())
 
 
 def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kwargs) -> str:
@@ -24,9 +44,16 @@ def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kw
         }
         
         if reasoning:
-            reasoning_effort = kwargs.get("reasoning_effort", "medium")
-            if reasoning_effort:
-                llm_params["reasoning_effort"] = reasoning_effort
+            reasoning_config = {}
+            
+            reasoning_effort_raw = kwargs.get("reasoning_effort")
+            if reasoning_effort_raw:
+                reasoning_effort = convert_reasoning_effort(reasoning_effort_raw)
+                if reasoning_effort:
+                    reasoning_config["effort"] = reasoning_effort
+            
+            if reasoning_config:
+                llm_params["reasoning"] = reasoning_config
         
         llm = ChatOpenAI(**llm_params)
         
@@ -44,7 +71,23 @@ def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kw
                 lc_messages.append(HumanMessage(content=content))
                 
         response = llm.invoke(lc_messages)
-        return response.content
+        content = response.content
+        
+        if isinstance(content, str):
+            return content
+        elif hasattr(content, '__iter__') and not isinstance(content, (str, bytes)):
+            parts = []
+            for part in content:
+                if isinstance(part, str):
+                    parts.append(part)
+                elif isinstance(part, dict):
+                    if 'text' in part:
+                        parts.append(str(part['text']))
+                    elif 'type' in part and part.get('type') == 'text':
+                        parts.append(str(part.get('text', '')))
+            return ''.join(parts) if parts else str(content)
+        else:
+            return str(content)
         
     except Exception as e:
         raise Exception(f"OpenAI Text Error (LangChain): {e}")

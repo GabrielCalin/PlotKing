@@ -89,6 +89,8 @@ def call_llm_chat(
             task_name="chat_refiner",
             messages=messages
         )
+        if not isinstance(content, str):
+            content = str(content)
         return content
 
     except Exception as e:

@@ -1,17 +1,91 @@
+.task-group {
+    border: 1px solid var(--border-color-primary, #e0e0e0);
+    border-radius: 8px;
+    margin-bottom: 14px !important;
+    overflow: hidden;
+    background: var(--background-fill-primary, #ffffff);
+}
+
+.task-group > .column:first-child {
+    gap: 0 !important;
+}
+
+.task-row {
+    background: linear-gradient(90deg, #fef6f0 0%, #fefefe 100%) !important;
+    border-bottom: 1px solid var(--border-color-primary, #e0e0e0);
+    padding: 0 !important;
+    border-left: 3px solid var(--color-accent, #ff7c00);
+}
+
+.task-row > * {
+    background: transparent !important;
+}
+
 .task-row .html-container {
     display: flex;
     position: relative;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--checkbox-label-gap);
-    padding: var(--checkbox-label-padding);
+    padding: 12px 14px;
     height: 100%;
+    background: transparent !important;
+}
+
+.task-row .html-container p {
+    font-size: 0.92rem;
+    color: var(--body-text-color, #374151);
 }
 
 .task-row .block {
-    border-style: solid !important;
-    border-color: white !important;
-    border-width: thin !important;
-    padding: var(--block-padding);
+    background-color: transparent !important;
+    border: none !important;
+    padding: 8px 14px 8px 0 !important;
 }
 
+.task-row .block.block {
+    background: transparent !important;
+}
+
+.task-row .wrap {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.task-row .wrap-inner {
+    background-color: #ffffff !important;
+    border: 1px solid #ccc !important;
+    border-radius: 6px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.task-group .accordion {
+    border: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    background: var(--background-fill-primary, #ffffff) !important;
+}
+
+.task-group .accordion > .label-wrap {
+    padding: 10px 14px !important;
+    background: var(--background-fill-primary, #ffffff) !important;
+    border-bottom: none !important;
+    font-size: 0.88rem;
+}
+
+.task-group .accordion > .label-wrap:hover {
+    background: var(--background-fill-secondary, #f7f7f8) !important;
+}
+
+.task-group .accordion[open] > .label-wrap {
+    border-bottom: 1px solid var(--border-color-primary, #e0e0e0) !important;
+    background: var(--background-fill-secondary, #f7f7f8) !important;
+}
+
+.task-group .accordion .prose {
+    padding: 14px !important;
+}
+
+.task-row-simple {
+    border-bottom: none;
+}

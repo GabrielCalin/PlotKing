@@ -10,6 +10,7 @@ import json
 from typing import List, Optional, Dict, Any
 from utils.json_utils import extract_json_from_response
 from provider import provider_manager
+from state.settings_manager import settings_manager
 
 
 
@@ -173,17 +174,35 @@ def call_llm_chat(
     # Add user message
     messages.append({"role": "user", "content": user_message})
 
-    try:
-        content = provider_manager.get_llm_response(
-            task_name="chat_editor",
-            messages=messages
-        )
+    task_params = settings_manager.get_task_params("chat_editor")
+    retries = task_params.get("retries", 3)
+    if retries is None:
+        retries = 3
+    retries = max(0, int(retries))
+
+    last_error = None
+    last_content = None
+
+    for attempt in range(retries + 1):
+        try:
+            content = provider_manager.get_llm_response(
+                task_name="chat_editor",
+                messages=messages
+            )
+            last_content = content
+        except Exception as e:
+            last_error = str(e)
+            if attempt < retries:
+                continue
+            return {
+                "new_content": None,
+                "response": f"Plot King tripped over a narrative cable! Error: {last_error}"
+            }
 
         # Try to extract JSON using your custom extractor
         try:
             result = extract_json_from_response(content)
             return result
-
         except Exception:
             # Fallback: attempt last-JSON-block extraction
             try:
@@ -191,14 +210,15 @@ def call_llm_chat(
                 result = json.loads(last_json)
                 return result
             except Exception:
+                if attempt < retries:
+                    continue
                 return {
                     "new_content": None,
                     "response": content
                 }
 
-    except Exception as e:
-        return {
-            "new_content": None,
-            "response": f"Plot King tripped over a narrative cable! Error: {e}"
-        }
+    return {
+        "new_content": None,
+        "response": last_content or f"Plot King tripped over a narrative cable! Error: {last_error or 'Unknown error'}"
+    }
 

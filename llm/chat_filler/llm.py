@@ -6,6 +6,7 @@ import json
 import random
 from typing import List, Optional, Dict, Any
 from provider import provider_manager
+from state.settings_manager import settings_manager
 
 
 def _compute_word_target(anpc: Optional[int]) -> int:
@@ -158,16 +159,42 @@ def call_llm_chat_filler(
     elif user_message:
         messages.append({"role": "user", "content": user_message})
 
-    try:
-        response_text = provider_manager.get_llm_response(
-            task_name="chat_filler",
-            messages=messages
-        )
-        
-        return _parse_response(response_text)
+    task_params = settings_manager.get_task_params("chat_filler")
+    retries = task_params.get("retries", 3)
+    if retries is None:
+        retries = 3
+    retries = max(0, int(retries))
 
-    except Exception as e:
-        return {"chat_response": f"Plot King (Filler) stumbled: {e}", "new_fill_content": None}
+    last_error = None
+    last_response = None
+
+    for attempt in range(retries + 1):
+        try:
+            response_text = provider_manager.get_llm_response(
+                task_name="chat_filler",
+                messages=messages
+            )
+            last_response = response_text
+        except Exception as e:
+            last_error = str(e)
+            if attempt < retries:
+                continue
+            return {"chat_response": f"Plot King (Filler) stumbled: {last_error}", "new_fill_content": None}
+
+        try:
+            result = _parse_response(response_text)
+            if result.get("chat_response") or result.get("new_fill_content"):
+                return result
+        except Exception:
+            pass
+
+        if attempt < retries:
+            continue
+
+    if last_response:
+        return _parse_response(last_response)
+    
+    return {"chat_response": f"Plot King (Filler) stumbled: {last_error or 'Unknown error'}", "new_fill_content": None}
 
 
 def _parse_response(text: str) -> Dict[str, Any]:

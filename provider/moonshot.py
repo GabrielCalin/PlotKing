@@ -9,7 +9,6 @@ def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kw
         raise ValueError("Moonshot/Kimi API Key is missing.")
         
     model = settings.get("technical_name") or "kimi-k2-0711-preview"
-    reasoning = settings.get("reasoning", False)
     
     try:
         llm_params = {
@@ -20,14 +19,6 @@ def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kw
             "max_tokens": kwargs.get("max_tokens", 4000),
             "timeout": kwargs.get("timeout", 60)
         }
-        
-        if reasoning:
-            reasoning_effort = kwargs.get("reasoning_effort")
-            if reasoning_effort:
-                llm_params["reasoning_effort"] = reasoning_effort
-            max_reasoning_tokens = kwargs.get("max_reasoning_tokens")
-            if max_reasoning_tokens:
-                llm_params["max_reasoning_tokens"] = max_reasoning_tokens
         
         llm = ChatOpenAI(**llm_params)
         

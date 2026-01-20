@@ -56,6 +56,7 @@ class SettingsManager:
                 "timeout": defaults.timeout,
                 "temperature": defaults.temperature,
                 "top_p": defaults.top_p,
+                "retries": defaults.retries,
                 "reasoning_effort": None,
                 "max_reasoning_tokens": None
             }
@@ -65,6 +66,7 @@ class SettingsManager:
             "timeout": 300,
             "temperature": 0.7,
             "top_p": 0.95,
+            "retries": 3,
             "reasoning_effort": None,
             "max_reasoning_tokens": None
         }
@@ -136,6 +138,11 @@ class SettingsManager:
                         task_value["temperature"] = defaults.temperature
                     if "top_p" not in task_value:
                         task_value["top_p"] = defaults.top_p
+                    if "retries" not in task_value:
+                        task_value["retries"] = defaults.retries
+                else:
+                    if "retries" not in task_value:
+                        task_value["retries"] = 3
                 if "reasoning_effort" not in task_value:
                     task_value["reasoning_effort"] = None
                 if "max_reasoning_tokens" not in task_value:
@@ -199,7 +206,7 @@ class SettingsManager:
         return None
     
     def get_task_params(self, task_name: str) -> Dict[str, Any]:
-        """Get task parameters (max_tokens, timeout, temperature, top_p, reasoning params)."""
+        """Get task parameters (max_tokens, timeout, temperature, top_p, retries, reasoning params)."""
         task_data = self.settings["tasks"].get(task_name)
         defaults = get_task_defaults(task_name)
         
@@ -210,6 +217,7 @@ class SettingsManager:
                     "timeout": defaults.timeout,
                     "temperature": defaults.temperature,
                     "top_p": defaults.top_p,
+                    "retries": defaults.retries,
                     "reasoning_effort": None,
                     "max_reasoning_tokens": None
                 }
@@ -218,6 +226,7 @@ class SettingsManager:
                 "timeout": 300,
                 "temperature": 0.7,
                 "top_p": 0.95,
+                "retries": 3,
                 "reasoning_effort": None,
                 "max_reasoning_tokens": None
             }
@@ -227,6 +236,7 @@ class SettingsManager:
             "timeout": task_data.get("timeout"),
             "temperature": task_data.get("temperature"),
             "top_p": task_data.get("top_p"),
+            "retries": task_data.get("retries"),
             "reasoning_effort": task_data.get("reasoning_effort"),
             "max_reasoning_tokens": task_data.get("max_reasoning_tokens")
         }
@@ -240,6 +250,8 @@ class SettingsManager:
                 result["temperature"] = defaults.temperature
             if result["top_p"] is None:
                 result["top_p"] = defaults.top_p
+            if result["retries"] is None:
+                result["retries"] = defaults.retries
         
         return result
     
@@ -251,8 +263,7 @@ class SettingsManager:
             current = self._create_task_settings("default_llm", task_name)
         
         for key, value in settings_update.items():
-            if key in current:
-                current[key] = value
+            current[key] = value
         
         self.settings["tasks"][task_name] = current
         self.save_settings()

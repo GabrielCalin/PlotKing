@@ -9,6 +9,7 @@ import json
 import textwrap
 from typing import List, Tuple, Dict, Any
 from provider import provider_manager
+from state.settings_manager import settings_manager
 
 
 _IMPACT_PROMPT = textwrap.dedent("""\
@@ -197,39 +198,59 @@ Changes: New Chapter Created
         {"role": "user", "content": prompt},
     ]
 
-    try:
-        content = provider_manager.get_llm_response(
-            task_name="impact_analyzer",
-            messages=messages
-        )
-    except Exception as e:
-        return ("ERROR", {"error": str(e)}, [])
+    task_params = settings_manager.get_task_params("impact_analyzer")
+    retries = task_params.get("retries", 3)
+    if retries is None:
+        retries = 3
+    retries = max(0, int(retries))
 
-    try:
-        parsed = json.loads(content)
-    except json.JSONDecodeError:
-        return ("UNKNOWN", {"raw": content}, [])
+    last_error = None
+    last_raw = None
 
-    result = parsed.get("result")
-    if result in {"NO_IMPACT", "IMPACT_DETECTED"}:
-        impacted_sections = []
-        if result == "NO_IMPACT":
-            parsed.setdefault("message", "No other sections require updates.")
-            parsed.setdefault("impacted_sections", [])
-        else:
-            sections_data = parsed.get("impacted_sections") or []
-            cleaned_sections = []
-            for entry in sections_data:
-                if isinstance(entry, dict):
-                    name = entry.get("name")
-                    reason = entry.get("reason")
-                    if name:
-                        impacted_sections.append(name)
-                        cleaned_sections.append({"name": name, "reason": reason or ""})
-            parsed["impacted_sections"] = cleaned_sections
-        if result == "NO_IMPACT" and not impacted_sections:
+    for attempt in range(retries + 1):
+        try:
+            content = provider_manager.get_llm_response(
+                task_name="impact_analyzer",
+                messages=messages
+            )
+        except Exception as e:
+            last_error = str(e)
+            if attempt < retries:
+                continue
+            return ("ERROR", {"error": str(last_error)}, [])
+
+        try:
+            parsed = json.loads(content)
+        except json.JSONDecodeError:
+            last_raw = content
+            if attempt < retries:
+                continue
+            return ("UNKNOWN", {"raw": last_raw or "(no response)"}, [])
+
+        result = parsed.get("result")
+        if result in {"NO_IMPACT", "IMPACT_DETECTED"}:
             impacted_sections = []
-        return (result, parsed, impacted_sections)
+            if result == "NO_IMPACT":
+                parsed.setdefault("message", "No other sections require updates.")
+                parsed.setdefault("impacted_sections", [])
+            else:
+                sections_data = parsed.get("impacted_sections") or []
+                cleaned_sections = []
+                for entry in sections_data:
+                    if isinstance(entry, dict):
+                        name = entry.get("name")
+                        reason = entry.get("reason")
+                        if name:
+                            impacted_sections.append(name)
+                            cleaned_sections.append({"name": name, "reason": reason or ""})
+                parsed["impacted_sections"] = cleaned_sections
+            if result == "NO_IMPACT" and not impacted_sections:
+                impacted_sections = []
+            return (result, parsed, impacted_sections)
 
-    return ("UNKNOWN", {"raw": content}, [])
+        last_raw = content
+        if attempt < retries:
+            continue
+
+    return ("UNKNOWN", {"raw": last_raw or "(no response)"}, [])
 

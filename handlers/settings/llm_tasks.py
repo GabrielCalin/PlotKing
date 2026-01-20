@@ -35,16 +35,16 @@ class TaskDefaults:
     timeout: int
     temperature: float
     top_p: float
+    retries: int = 3
 
 
 REASONING_EFFORT_OPTIONS = [
-    "Not Set",
     "Very High",
     "High",
     "Medium",
     "Low",
     "Minimal",
-    "None"
+    "Not Set"
 ]
 
 
