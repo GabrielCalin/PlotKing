@@ -82,7 +82,7 @@ class SettingsManager:
             settings["tasks"][tech_name] = self._create_task_settings("default_llm", tech_name)
             
         for task in IMAGE_TASKS:
-            settings["tasks"][task["technical_name"]] = "default_image"
+            settings["tasks"][task["technical_name"]] = {"model": "default_image"}
             
         return settings
 
@@ -152,10 +152,15 @@ class SettingsManager:
             tech_name = task["technical_name"]
             task_value = settings["tasks"].get(tech_name)
             if task_value is None:
-                settings["tasks"][tech_name] = "default_image"
+                settings["tasks"][tech_name] = {"model": "default_image"}
             elif isinstance(task_value, dict):
+                # Validate the model name
                 model_name = task_value.get("model", "default_image")
-                settings["tasks"][tech_name] = model_name if model_name in current_models else "default_image"
+                if model_name not in current_models:
+                    task_value["model"] = "default_image"
+            else:
+                # Invalid format - convert to dict structure
+                settings["tasks"][tech_name] = {"model": "default_image"}
                 
         return settings
 

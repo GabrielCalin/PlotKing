@@ -171,7 +171,11 @@ def render_tasks_tab(process_log):
                         )
                         
                         image_models = [m.name for m in settings_manager.get_models() if m.type == "image"]
-                        current_val = settings_manager.settings["tasks"].get(tech_name, "default_image")
+                        task_data = settings_manager.settings["tasks"].get(tech_name)
+                        if isinstance(task_data, dict):
+                            current_val = task_data.get("model", "default_image")
+                        else:
+                            current_val = "default_image"
                         
                         dd = gr.Dropdown(
                             choices=image_models,
@@ -205,7 +209,11 @@ def render_tasks_tab(process_log):
                 
             for task_name, _ in image_dropdowns:
                 curr = current_tasks.get(task_name)
-                updates.append(gr.update(choices=new_img_models, value=curr))
+                if isinstance(curr, dict):
+                    curr_model = curr.get("model", "default_image")
+                else:
+                    curr_model = curr if curr else "default_image"
+                updates.append(gr.update(choices=new_img_models, value=curr_model))
             
             return updates
 
