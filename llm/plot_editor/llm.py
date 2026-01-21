@@ -9,6 +9,7 @@ import textwrap
 import json
 from utils.json_utils import extract_json_from_response
 from provider import provider_manager
+from state.settings_manager import settings_manager
 
 
 _EDIT_PLOT_PROMPT = textwrap.dedent("""\
@@ -124,24 +125,37 @@ def call_llm_edit_plot(
         {"role": "user", "content": prompt},
     ]
 
-    try:
-        content = provider_manager.get_llm_response(
-            task_name="plot_editor",
-            messages=messages,
-            timeout=timeout,
-            temperature=0.7,
-            top_p=0.95,
-            max_tokens=8192
-        )
-        
+    task_params = settings_manager.get_task_params("plot_editor")
+    retries = task_params.get("retries", 3)
+    if retries is None:
+        retries = 3
+    retries = max(0, int(retries))
+
+    last_error = None
+    last_content = None
+
+    for attempt in range(retries + 1):
+        try:
+            content = provider_manager.get_llm_response(
+                task_name="plot_editor",
+                messages=messages
+            )
+            last_content = content
+        except Exception as e:
+            last_error = str(e)
+            if attempt < retries:
+                continue
+            return f"Error during plot editing: {last_error}"
+
         # Parse JSON response (suportă atât JSON pur cât și wrappat în tag-uri)
         try:
             result = extract_json_from_response(content)
             return result.get("adapted_plot", content)
         except (json.JSONDecodeError, ValueError):
-            # Fallback dacă nu e JSON valid
+            if attempt < retries:
+                continue
             return content
-    except Exception as e:
-        return f"Error during plot editing: {e}"
+
+    return last_content or f"Error during plot editing: {last_error or 'Unknown error'}"
 
 

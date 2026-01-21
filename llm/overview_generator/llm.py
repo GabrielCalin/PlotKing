@@ -133,10 +133,7 @@ def call_llm_generate_overview(
     try:
         content = provider_manager.get_llm_response(
             task_name="overview_generator",
-            messages=messages,
-            timeout=300,
-            temperature=temperature,
-            max_tokens=max_tokens
+            messages=messages
         )
         return content
     except Exception as e:

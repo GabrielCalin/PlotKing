@@ -65,11 +65,7 @@ def refine_plot(user_plot: str, genre: str,
     try:
         content = provider_manager.get_llm_response(
             task_name="refine_plot",
-            messages=messages,
-            timeout=300,
-            temperature=0.8,
-            top_p=0.9,
-            max_tokens=8000
+            messages=messages
         )
         return content
     except Exception as e:

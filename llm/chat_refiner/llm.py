@@ -87,11 +87,10 @@ def call_llm_chat(
     try:
         content = provider_manager.get_llm_response(
             task_name="chat_refiner",
-            messages=messages,
-            timeout=timeout,
-            temperature=0.8,
-            max_tokens=4000
+            messages=messages
         )
+        if not isinstance(content, str):
+            content = str(content)
         return content
 
     except Exception as e:

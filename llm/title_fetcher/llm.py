@@ -36,10 +36,7 @@ def fetch_title_llm(expanded_plot: str,
     try:
         content = provider_manager.get_llm_response(
             task_name="title_fetcher",
-            messages=messages,
-            timeout=timeout,
-            max_tokens=50,
-            temperature=0.7
+            messages=messages
         )
         # Cleanup if the model returns quotes or "Title: " prefix despite instructions
         content = content.replace('"', '').replace("Title:", "").strip()

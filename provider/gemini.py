@@ -1,6 +1,28 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+
+
+def convert_reasoning_effort(value: str) -> Optional[str]:
+    """Convert UI reasoning effort values to Gemini thinking_level values.
+    
+    Gemini 3+ accepts only: 'low' or 'high'
+    See: https://ai.google.dev/gemini/docs/reasoning
+    """
+    if not value or value == "Not Set":
+        return None
+    
+    mapping = {
+        "Very High": "high",
+        "High": "high",
+        "Medium": "high",
+        "Low": "low",
+        "Minimal": "low",
+        "None": None
+    }
+    result = mapping.get(value)
+    return result if result is not None else value.lower()
+
 
 def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kwargs) -> str:
     api_key = settings.get("api_key")
@@ -20,7 +42,15 @@ def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kw
         }
         
         if reasoning:
-            llm_params["model_kwargs"] = {"reasoning_effort": "minimal"}
+            reasoning_effort_raw = kwargs.get("reasoning_effort")
+            if reasoning_effort_raw:
+                thinking_level = convert_reasoning_effort(reasoning_effort_raw)
+                if thinking_level:
+                    llm_params["thinking_level"] = thinking_level
+            
+            max_reasoning_tokens = kwargs.get("max_reasoning_tokens")
+            if max_reasoning_tokens:
+                llm_params["thinking_budget"] = max_reasoning_tokens
         
         llm = ChatGoogleGenerativeAI(**llm_params)
         
@@ -55,4 +85,3 @@ def generate_text(settings: Dict[str, Any], messages: List[Dict[str, str]], **kw
         
     except Exception as e:
         raise Exception(f"Gemini Text Error (LangChain): {e}")
-

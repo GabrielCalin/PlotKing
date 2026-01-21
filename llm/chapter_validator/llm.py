@@ -9,6 +9,7 @@ apelează modelul, și întoarce (result, details).
 import textwrap
 from typing import List, Tuple
 from provider import provider_manager
+from state.settings_manager import settings_manager
 
 
 
@@ -110,22 +111,36 @@ def call_llm_validate_chapter(
         {"role": "user", "content": prompt},
     ]
 
-    try:
-        content = provider_manager.get_llm_response(
-            task_name="chapter_validator",
-            messages=messages,
-            timeout=timeout,
-            temperature=0.3,
-            top_p=0.9,
-            max_tokens=2000
-        )
-    except Exception as e:
-        return ("ERROR", str(e))
+    task_params = settings_manager.get_task_params("chapter_validator")
+    retries = task_params.get("retries", 3)
+    if retries is None:
+        retries = 3
+    retries = max(0, int(retries))
 
-    up = content.upper()
-    if "RESULT: OK" in up:
-        return ("OK", content)
-    if "RESULT: NOT OK" in up:
-        return ("NOT OK", content)
-    return ("UNKNOWN", content)
+    last_error = None
+    last_content = None
+
+    for attempt in range(retries + 1):
+        try:
+            content = provider_manager.get_llm_response(
+                task_name="chapter_validator",
+                messages=messages
+            )
+            last_content = content
+        except Exception as e:
+            last_error = str(e)
+            if attempt < retries:
+                continue
+            return ("ERROR", str(last_error))
+
+        up = content.upper()
+        if "RESULT: OK" in up:
+            return ("OK", content)
+        if "RESULT: NOT OK" in up:
+            return ("NOT OK", content)
+
+        if attempt < retries:
+            continue
+
+    return ("UNKNOWN", last_content or "(no response)")
 

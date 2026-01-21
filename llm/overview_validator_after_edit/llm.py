@@ -3,8 +3,7 @@ import json
 import textwrap
 from typing import Tuple, Dict, Any
 from provider import provider_manager
-
-MAX_RETRIES = 3
+from state.settings_manager import settings_manager
 
 _VALIDATOR_PROMPT = textwrap.dedent("""\
 You are a chapters overview validator. Your task is to check for structural issues in an edited Chapters Overview.
@@ -76,28 +75,34 @@ def call_llm_overview_validator_after_edit(
         {"role": "user", "content": prompt},
     ]
 
+    task_params = settings_manager.get_task_params("overview_validator_after_edit")
+    retries = task_params.get("retries", 3)
+    if retries is None:
+        retries = 3
+    retries = max(0, int(retries))
+
     last_error = None
     last_raw = None
 
-    for attempt in range(MAX_RETRIES):
+    for attempt in range(retries + 1):
         try:
             content = provider_manager.get_llm_response(
                 task_name="overview_validator_after_edit",
-                messages=messages,
-                timeout=timeout,
-                temperature=0.1,
-                top_p=0.5,
-                max_tokens=1000
+                messages=messages
             )
         except Exception as e:
             last_error = str(e)
-            continue
+            if attempt < retries:
+                continue
+            return ("ERROR", {"error": str(last_error)})
 
         try:
             parsed = json.loads(content)
         except json.JSONDecodeError:
             last_raw = content
-            continue
+            if attempt < retries:
+                continue
+            return ("UNKNOWN", {"raw": last_raw or "(no response)"})
 
         numbering = parsed.get("numbering", {})
         deleted = parsed.get("deleted", {})

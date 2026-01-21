@@ -57,11 +57,7 @@ def call_llm_generate_overview_from_fill(
     try:
         content = provider_manager.get_llm_response(
             task_name="overview_generator_from_fill",
-            messages=messages,
-            timeout=timeout,
-            temperature=0.6,
-            top_p=0.95,
-            max_tokens=4000
+            messages=messages
         )
         
         return content

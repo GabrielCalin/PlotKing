@@ -65,10 +65,7 @@ def refine_chat(
     try:
         content = provider_manager.get_llm_response(
             task_name="refine_chat",
-            messages=messages,
-            timeout=timeout,
-            temperature=0.7,
-            max_tokens=16000
+            messages=messages
         )
         return content
 

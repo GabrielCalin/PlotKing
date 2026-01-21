@@ -179,11 +179,7 @@ def call_llm_generate_chapter(
     try:
         content = provider_manager.get_llm_response(
             task_name="chapter_writer",
-            messages=messages,
-            timeout=timeout,
-            temperature=temperature if temperature is not None else 0.8,
-            top_p=top_p if top_p is not None else 0.95,
-            max_tokens=max_tokens if max_tokens is not None else 16000
+            messages=messages
         )
         if not content:
             return "Error: model returned empty content"
@@ -235,11 +231,7 @@ def call_llm_revise_chapter(
     try:
         content = provider_manager.get_llm_response(
             task_name="chapter_writer",
-            messages=messages,
-            timeout=timeout,
-            temperature=temperature if temperature is not None else 0.8,
-            top_p=top_p if top_p is not None else 0.95,
-            max_tokens=max_tokens if max_tokens is not None else 16000
+            messages=messages
         )
         if not content:
             return "Error: model returned empty content"
