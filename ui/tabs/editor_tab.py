@@ -264,8 +264,16 @@ def render_editor_tab(editor_sections_epoch, create_sections_epoch):
         
         # Chat Type Dropdown visibility logic
         is_fill_section = InfillManager().is_fill(section) if section else False
-        # The dropdown should be visible ONLY if in Chat mode AND it's a Fill section
-        chat_type_dropdown_upd = gr.update(visible=(mode == "Chat" and is_fill_section))
+        # When entering Chat mode:
+        # - If Fill section: make visible (keep current value)
+        # - If not Fill section: make visible and reset to "Chapter"
+        if mode == "Chat":
+            if is_fill_section:
+                chat_type_dropdown_upd = gr.update(visible=True)
+            else:
+                chat_type_dropdown_upd = gr.update(visible=True, value="Chapter")
+        else:
+            chat_type_dropdown_upd = gr.update(visible=False)
 
         # Validation Section (shown when validation is active or when pending_plan exists)
         validation_section_upd = gr.update(visible=(pending_plan is not None))
