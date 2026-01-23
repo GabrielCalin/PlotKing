@@ -7,7 +7,7 @@ This document outlines the planned development milestones for the **AI Story Gen
 ## ⚙️ Phase 5 — Configuration & Customization
 
 24. **Pipeline Improvements**  
-   - Extract chapter descriptions as a list with AI before generating a chapter, providing only the description of the chapter to be generated + full previous chapters, not descriptions of all chapters; also, insert summary programmatically at fill. 
+   - Extract chapter descriptions as a list with AI before generating a chapter, providing only the description of the chapter to be generated + full previous chapters, not descriptions of all chapters
    - Option for Summarize instead of Full Chapters in the context provided to the LLM when writing a new chapter, with Summarize also defining things like open points, things to remember for the next sections.  
    - Method for chapters overview for many chapters to generate correctly (currently either if there are many it doesn't write them all, or they become shorter towards the end).
    - Run validator on demand per section as part of view mode, visible when viewing a checkpoint.       

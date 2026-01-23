@@ -21,8 +21,7 @@ Write **only** Chapter {chapter_number} of the story, using the following materi
 Inputs:
 - **Global Story Summary (authoritative plot):**
 \"\"\"{expanded_plot}\"\"\"
-- **Chapters Overview (titles + short descriptions of all chapters):**
-\"\"\"{chapters_overview}\"\"\"
+{chapter_context_block}
 - **Previously Written Chapters (if any, may be empty):**
 \"\"\"{previous_chapters_summary}\"\"\"
 - **GENRE** (to guide tone, pacing, and atmosphere):
@@ -31,17 +30,15 @@ Inputs:
 ---
 
 ### Your job
-1. Before writing, mentally review the Global Story Summary and Chapters Overview to fully understand the story’s logic and timeline.
-2. Locate in the Chapters Overview the exact description that corresponds to **Chapter {chapter_number}**.  
-   - Use its **title exactly as written** at the start of the chapter, formatted as a **Markdown H2 heading** (`##`).  
-   - Do **not** invent or alter the title in any way.
+1. Before writing, mentally review the Global Story Summary to fully understand the story's logic and timeline.
+{chapter_identification_instruction}
 3. Write the **complete narrative text** for that chapter, following its description precisely in tone, purpose, and key events.  
    - Maintain smooth internal flow between moments without subdividing the text into numbered or titled scenes.
 4. Ensure **logical continuity**.  
    - Maintain consistency with **previous chapters** (characters, setting, timeline, motivations, tone).  
    - Anticipate what will happen in the **next chapter**, ensuring seamless transition.  
    - Do **not** include or foreshadow events that explicitly belong to future chapters.  
-   - Do not include flashbacks, summaries of previous events, or visions of future ones unless explicitly stated in this chapter’s overview.
+   - Do not include flashbacks, summaries of previous events, or visions of future ones unless explicitly stated in this chapter's description.
 5. Preserve internal continuity of all details (locations, time of day, physical states, objects, tone) introduced so far.  
    - Balance action, dialogue, and narration so that external events drive the story forward.
 6. Maintain a clear, engaging, and immersive prose style appropriate for long-form fiction.  
@@ -50,11 +47,11 @@ Inputs:
 7. Adapt writing style, pacing, and atmosphere to match the **GENRE** conventions (e.g., suspense rhythm for thrillers, sensory prose for romance, measured clarity for sci-fi).
 8. End the chapter appropriately for its position in the book.  
    - If it is **not the final chapter**, close with a natural sense of transition or anticipation — a pause that leads smoothly into the next chapter.  
-   - If it **is the final chapter**, conclude the story in a way that aligns with the **Chapters Overview** and **Global Story Summary**, providing resolution without adding new material beyond the planned ending.  
-   - Do **not** comment on the chapter itself or describe that it “ends”; simply write the story up to its natural stopping point.
+   - If it **is the final chapter**, conclude the story in a way that aligns with the chapter description and **Global Story Summary**, providing resolution without adding new material beyond the planned ending.  
+   - Do **not** comment on the chapter itself or describe that it "ends"; simply write the story up to its natural stopping point.
 9. Target length: around **{word_target} words**.  
-   - To reach this length, expand creatively within the scope of this chapter’s description. Add realistic detail, dialogue, atmosphere, and depth that make sense for the story and characters.  
-   - **Do not include or borrow content from later chapters** to increase word count. All expansion must remain consistent with this chapter’s overview and the global plot.
+   - To reach this length, expand creatively within the scope of this chapter's description. Add realistic detail, dialogue, atmosphere, and depth that make sense for the story and characters.  
+   - **Do not include or borrow content from later chapters** to increase word count. All expansion must remain consistent with this chapter's description and the global plot.
 10. Output **only** the final story text — no explanations, meta commentary, or outline notes.
 
 Begin writing **Chapter {chapter_number}** now.
@@ -65,7 +62,7 @@ You are an expert **fiction editor and ghostwriter** specializing in long-form n
 
 Task:
 You previously wrote **Chapter {chapter_number}** of the story.  
-You must now **revise and improve** it according to reviewer feedback — maintaining the chapter’s title and role in the story,
+You must now **revise and improve** it according to reviewer feedback — maintaining the chapter's title and role in the story,
 but you may adjust its internal flow, tone, and events as needed to satisfy the feedback.
 
 ---
@@ -74,10 +71,7 @@ but you may adjust its internal flow, tone, and events as needed to satisfy the 
 
 - **Global Story Summary (authoritative plot):**
 \"\"\"{expanded_plot}\"\"\"
-
-- **Chapters Overview (titles + short descriptions of all chapters):**
-\"\"\"{chapters_overview}\"\"\"
-
+{chapter_context_block}
 - **Previously Written Chapters (before this one):**
 \"\"\"{previous_chapters_summary}\"\"\"
 
@@ -94,12 +88,10 @@ but you may adjust its internal flow, tone, and events as needed to satisfy the 
 
 ### Revision Instructions
 
-1. **Locate** in the Chapters Overview the description corresponding to **Chapter {chapter_number}**, and study it carefully.  
-   - You must preserve the **chapter title exactly as written** (Markdown H2 format, `## <Title>`).  
-   - The events and tone of this chapter must remain consistent with its overview description and position in the overall story arc.
+{revision_identification_instruction}
 
 2. **Revise the existing draft**, focusing on the feedback provided.  
-   - You may **modify or expand events, dialogue, or pacing** as long as they align with the chapter’s purpose in the overview.  
+   - You may **modify or expand events, dialogue, or pacing** as long as they align with the chapter's purpose.  
    - Ensure all story logic, character motivations, and world details remain consistent with previous chapters.  
    - Do **not** move, merge, or remove this chapter; its place in the story and title must remain fixed.
 
@@ -121,6 +113,43 @@ but you may adjust its internal flow, tone, and events as needed to satisfy the 
 
 Begin revising **Chapter {chapter_number}** now.
 """).strip()
+
+
+def _build_chapter_context_block(
+    chapter_description: Optional[str],
+    chapters_overview: str,
+    chapter_number: int
+) -> tuple:
+    """
+    Build the context block and identification instruction for the prompts.
+    
+    Returns:
+        Tuple of (chapter_context_block, chapter_identification_instruction, revision_identification_instruction)
+    """
+    if chapter_description:
+        context_block = f"""- **Chapter {chapter_number} Description (what this chapter should contain):**
+\"\"\"{chapter_description}\"\"\""""
+        
+        chapter_id_instruction = f"""2. Use the **Chapter {chapter_number} Description** provided above as your guide.  
+   - Use its **title exactly as written** at the start of the chapter, formatted as a **Markdown H2 heading** (`##`).  
+   - Do **not** invent or alter the title in any way."""
+        
+        revision_id_instruction = f"""1. Study the **Chapter {chapter_number} Description** provided above carefully.  
+   - You must preserve the **chapter title exactly as written** (Markdown H2 format, `## <Title>`).  
+   - The events and tone of this chapter must remain consistent with its description and position in the overall story arc."""
+    else:
+        context_block = f"""- **Chapters Overview (titles + short descriptions of all chapters):**
+\"\"\"{chapters_overview}\"\"\""""
+        
+        chapter_id_instruction = f"""2. Locate in the Chapters Overview the exact description that corresponds to **Chapter {chapter_number}**.  
+   - Use its **title exactly as written** at the start of the chapter, formatted as a **Markdown H2 heading** (`##`).  
+   - Do **not** invent or alter the title in any way."""
+        
+        revision_id_instruction = f"""1. **Locate** in the Chapters Overview the description corresponding to **Chapter {chapter_number}**, and study it carefully.  
+   - You must preserve the **chapter title exactly as written** (Markdown H2 format, `## <Title>`).  
+   - The events and tone of this chapter must remain consistent with its overview description and position in the overall story arc."""
+    
+    return context_block, chapter_id_instruction, revision_id_instruction
 
 
 def _join_previous_chapters(previous_texts: Optional[List[str]]) -> str:
@@ -146,6 +175,7 @@ def call_llm_generate_chapter(
     chapter_index: int,
     previous_chapters: Optional[List[str]] = None,
     *,
+    chapter_description: Optional[str] = None,
     genre: Optional[str] = None,
     anpc: Optional[int] = None,
     api_url: Optional[str] = None,
@@ -158,16 +188,25 @@ def call_llm_generate_chapter(
     """
     Generează textul pentru un singur capitol (fără feedback).
     Returnează conținutul Markdown sau mesaj de eroare.
+    
+    Args:
+        chapter_description: If provided, uses this specific chapter description instead of
+                           requiring the LLM to locate it in chapters_overview.
     """
     word_target = _compute_word_target(anpc)
     prev_joined = _join_previous_chapters(previous_chapters or [])
+    
+    context_block, chapter_id_instruction, _ = _build_chapter_context_block(
+        chapter_description, chapters_overview or "", chapter_index
+    )
 
     prompt = _CHAPTER_PROMPT.format(
         expanded_plot=expanded_plot or "",
-        chapters_overview=chapters_overview or "",
+        chapter_context_block=context_block,
         previous_chapters_summary=prev_joined,
         genre=genre or "unspecified",
         chapter_number=chapter_index,
+        chapter_identification_instruction=chapter_id_instruction,
         word_target=word_target,
     )
 
@@ -196,6 +235,7 @@ def call_llm_revise_chapter(
     previous_output: str,
     feedback: str,
     *,
+    chapter_description: Optional[str] = None,
     genre: Optional[str] = None,
     anpc: Optional[int] = None,
     api_url: Optional[str] = None,
@@ -208,18 +248,27 @@ def call_llm_revise_chapter(
     """
     Revizuiește un capitol existent pe baza feedback-ului.
     Returnează conținutul Markdown sau mesaj de eroare.
+    
+    Args:
+        chapter_description: If provided, uses this specific chapter description instead of
+                           requiring the LLM to locate it in chapters_overview.
     """
     word_target = _compute_word_target(anpc)
     prev_joined = _join_previous_chapters(previous_chapters or [])
+    
+    context_block, _, revision_id_instruction = _build_chapter_context_block(
+        chapter_description, chapters_overview or "", chapter_index
+    )
 
     prompt = _REVISION_PROMPT.format(
         expanded_plot=expanded_plot or "",
-        chapters_overview=chapters_overview or "",
+        chapter_context_block=context_block,
         previous_chapters_summary=prev_joined,
         previous_output=previous_output or "",
         feedback=feedback or "",
         genre=genre or "unspecified",
         chapter_number=chapter_index,
+        revision_identification_instruction=revision_id_instruction,
         word_target=word_target,
     )
 
@@ -238,4 +287,3 @@ def call_llm_revise_chapter(
         return content.strip()
     except Exception as e:
         return f"Error during chapter revision: {e}"
-

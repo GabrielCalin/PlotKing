@@ -13,11 +13,13 @@ from state.checkpoint_manager import save_checkpoint
 from llm.plot_expander import run_plot_expander
 from llm.overview_generator import run_overview_generator
 from llm.overview_validator import run_overview_validator
+from llm.overview_tokenizer import run_overview_tokenizer
 from llm.chapter_writer import run_chapter_writer
 from llm.chapter_validator import run_chapter_validator
 
 # Utils: logging cu timestamp
 from utils.logger import log_ui
+from typing import List
 
 MAX_VALIDATION_ATTEMPTS = 3
 
@@ -69,6 +71,28 @@ def apply_refresh_point(state: PipelineContext, refresh_from):
         state.pending_validation_index = None
 
     return state
+
+
+def _tokenize_chapters(state: PipelineContext) -> List[str]:
+    """
+    Run tokenization on chapters_overview and log the result.
+    Returns list of chapter descriptions, or empty list if tokenization failed.
+    """
+    log_ui(state.status_log, "📑 Tokenizing chapters overview...")
+    
+    tokenized_chapters, method = run_overview_tokenizer(
+        state.chapters_overview or "",
+        state.num_chapters
+    )
+    
+    if method == "programmatic":
+        log_ui(state.status_log, "✅ Chapters tokenized successfully (programmatic split).")
+    elif method == "llm":
+        log_ui(state.status_log, "✅ Chapters tokenized successfully (LLM-based split).")
+    else:
+        log_ui(state.status_log, "⚠️ Chapter tokenization failed — using full overview.")
+    
+    return tokenized_chapters
 
 
 # ------- Public API: exact semnături folosite de UI -------
@@ -164,6 +188,9 @@ def _generate_book_outline_stream_impl(state: PipelineContext):
 
     # Step 4: Generate & validate chapters (modularizat)
     log_ui(state.status_log, "🚀 Step 4: Writing chapters...")
+    
+    tokenized_chapters = _tokenize_chapters(state)
+    
     preloop_choices = [f"Chapter {j+1}" for j in range(len(state.chapters_full))]
     yield (
         state.expanded_plot,
@@ -187,6 +214,7 @@ def _generate_book_outline_stream_impl(state: PipelineContext):
     first_display_done = len(state.chapters_full) > 0
 
     for i in range(start_index - 1, state.num_chapters):
+        chapter_desc = tokenized_chapters[i] if tokenized_chapters and i < len(tokenized_chapters) else None
         current_index = i + 1
         state.choices = [f"Chapter {j+1}" for j in range(len(state.chapters_full))]
         is_pending_validation = (state.pending_validation_index == current_index)
@@ -206,7 +234,7 @@ def _generate_book_outline_stream_impl(state: PipelineContext):
             )
 
             # folosim writer-ul modularizat (returnează text; runner decide inserția)
-            chapter_text = run_chapter_writer(state, current_index)
+            chapter_text = run_chapter_writer(state, current_index, chapter_description=chapter_desc)
             state.chapters_full.append(chapter_text)
             log_ui(state.status_log, f"✅ Chapter {current_index} generated.")
 
@@ -296,6 +324,7 @@ def _generate_book_outline_stream_impl(state: PipelineContext):
                 revised = run_chapter_writer(
                     state,
                     current_index,
+                    chapter_description=chapter_desc,
                     feedback=details,
                     previous_output=state.chapters_full[-1],
                 )

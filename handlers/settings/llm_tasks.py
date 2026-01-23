@@ -15,6 +15,7 @@ class LLMTaskName(Enum):
     OVERVIEW_EDITOR = "overview_editor"
     OVERVIEW_GENERATOR = "overview_generator"
     OVERVIEW_GENERATOR_FROM_FILL = "overview_generator_from_fill"
+    OVERVIEW_TOKENIZER = "overview_tokenizer"
     OVERVIEW_VALIDATOR = "overview_validator"
     OVERVIEW_VALIDATOR_AFTER_EDIT = "overview_validator_after_edit"
     PLOT_EDITOR = "plot_editor"
@@ -84,6 +85,9 @@ LLM_TASK_DEFAULTS: Dict[LLMTaskName, TaskDefaults] = {
     ),
     LLMTaskName.OVERVIEW_GENERATOR_FROM_FILL: TaskDefaults(
         "overview_generator_from_fill", "Overview Generator From Fill", 4000, 300, 0.6, 0.95
+    ),
+    LLMTaskName.OVERVIEW_TOKENIZER: TaskDefaults(
+        "overview_tokenizer", "Overview Tokenizer", 2000, 120, 0.1, 0.5
     ),
     LLMTaskName.OVERVIEW_VALIDATOR: TaskDefaults(
         "overview_validator", "Overview Validator", 4000, 300, 0.6, 0.9
