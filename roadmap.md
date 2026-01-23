@@ -7,13 +7,14 @@ This document outlines the planned development milestones for the **AI Story Gen
 ## ⚙️ Phase 5 — Configuration & Customization
 
 24. **Pipeline Improvements**  
-   - Extract chapter descriptions as a list with AI before generating a chapter, providing only the description of the chapter to be generated + full previous chapters, not descriptions of all chapters; also, insert summary programmatically at fill. 
-   - Option for Summarize instead of Full Chapters in the context provided to the LLM when writing a new chapter, with Summarize also defining things like open points, things to remember for the next sections.  
+   - Calculate with a new LLM where the boundary is between chapters, so that chapter_writer knows exactly where the current chapter should end.
    - Method for chapters overview for many chapters to generate correctly (currently either if there are many it doesn't write them all, or they become shorter towards the end).
+   - Option for Summarize instead of Full Chapters in the context provided to the LLM when writing a new chapter, with Summarize also defining things like open points, things to remember for the next sections.  
    - Run validator on demand per section as part of view mode, visible when viewing a checkpoint.       
    - Call replace tools at editor - chat instead of full regeneration with an intent analyzer that decides if there are small changes (so call replace tools) or large (regeneration).  
-   - Pipeline for modifications from fill chat - implement a structured pipeline that includes: planning phase (similar to ChatGPT reasoning) where the system considers which characters don't yet have permission to appear, what events will be included, how to start to fit perfectly with the previous chapter, and where to end to fit perfectly with the beginning of the next chapter; tool call for chapter generation; validation step; then respond to the user.
-   - At validate after edit, provide sequentially: expanded plot, chapter overview, and chapters.     
+   - Method to prevent skipping parts when editing generated drafts, using either a validator or replace tool similar to chat with intent analyzer.
+   - Pipeline for modifications from fill chat - implement a structured pipeline that includes: planning phase (similar to ChatGPT reasoning) where the system considers which characters don't yet have permission to appear, what events will be included, how to start to fit perfectly with the previous chapter, and where to end to fit perfectly with the beginning of the next chapter; tool call for chapter generation; validation step; then respond to the user.  
+   - At validate after edit, provide sequentially: expanded plot, chapter overview, and chapters.
 
 25. **Dockerfile and Docker Hub PlotKing**  
    - Create Dockerfile for PlotKing.  
