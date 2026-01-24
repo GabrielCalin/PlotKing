@@ -14,6 +14,7 @@ from llm.plot_expander import run_plot_expander
 from llm.overview_generator import run_overview_generator
 from llm.overview_validator import run_overview_validator
 from llm.overview_tokenizer import run_overview_tokenizer
+from llm.transition_generator import run_transition_generator, get_transition_for_chapter
 from llm.chapter_writer import run_chapter_writer
 from llm.chapter_validator import run_chapter_validator
 
@@ -191,6 +192,14 @@ def _generate_book_outline_stream_impl(state: PipelineContext):
     
     tokenized_chapters = _tokenize_chapters(state)
     
+    # Generate transition contracts (not cached in state - generated on-the-fly)
+    log_ui(state.status_log, "🔗 Generating chapter transitions...")
+    transitions, transitions_ok = run_transition_generator(state)
+    if transitions_ok:
+        log_ui(state.status_log, "✅ Transition contracts generated successfully.")
+    else:
+        log_ui(state.status_log, "⚠️ Transition generation failed — continuing without transitions.")
+    
     preloop_choices = [f"Chapter {j+1}" for j in range(len(state.chapters_full))]
     yield (
         state.expanded_plot,
@@ -215,6 +224,7 @@ def _generate_book_outline_stream_impl(state: PipelineContext):
 
     for i in range(start_index - 1, state.num_chapters):
         chapter_desc = tokenized_chapters[i] if tokenized_chapters and i < len(tokenized_chapters) else None
+        chapter_transition = get_transition_for_chapter(transitions, i + 1)
         current_index = i + 1
         state.choices = [f"Chapter {j+1}" for j in range(len(state.chapters_full))]
         is_pending_validation = (state.pending_validation_index == current_index)
@@ -234,7 +244,7 @@ def _generate_book_outline_stream_impl(state: PipelineContext):
             )
 
             # folosim writer-ul modularizat (returnează text; runner decide inserția)
-            chapter_text = run_chapter_writer(state, current_index, chapter_description=chapter_desc)
+            chapter_text = run_chapter_writer(state, current_index, chapter_description=chapter_desc, transition=chapter_transition)
             state.chapters_full.append(chapter_text)
             log_ui(state.status_log, f"✅ Chapter {current_index} generated.")
 
@@ -325,6 +335,7 @@ def _generate_book_outline_stream_impl(state: PipelineContext):
                     state,
                     current_index,
                     chapter_description=chapter_desc,
+                    transition=chapter_transition,
                     feedback=details,
                     previous_output=state.chapters_full[-1],
                 )

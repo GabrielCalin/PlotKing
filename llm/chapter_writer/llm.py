@@ -8,8 +8,84 @@ Nu au dependențe de runner sau context; primesc totul ca argumente.
 
 import textwrap
 import random
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from provider import provider_manager
+
+
+def _format_transition_block(transition: Optional[Dict[str, Any]], chapter_number: int) -> str:
+    """
+    Format transition contract for inclusion in prompt.
+    Returns empty string if no transition provided.
+    """
+    if not transition:
+        return ""
+    
+    t_type = transition.get("transition_type", "direct")
+    entry = transition.get("entry_constraints", {})
+    exit_p = transition.get("exit_payload", {})
+    anchor = transition.get("anchor", {})
+    
+    lines = [f"\n- **Transition Contract for Chapter {chapter_number}:**"]
+    lines.append(f"  - Type: `{t_type}`")
+    
+    if t_type == "return":
+        resume_from = anchor.get("resume_from_chapter")
+        if resume_from:
+            lines.append(f"  - Continues from: Chapter {resume_from} (NOT from chapter {chapter_number - 1})")
+    elif t_type == "flashback":
+        trigger = anchor.get("trigger")
+        if trigger:
+            lines.append(f"  - Triggered by: {trigger}")
+    elif t_type in ("parallel", "pov_switch"):
+        lines.append(f"  - This is a {t_type.replace('_', ' ')} — may have different POV/location than previous chapter")
+    
+    if entry.get("temporal_context"):
+        lines.append(f"  - When: {entry['temporal_context']}")
+    if entry.get("pov"):
+        lines.append(f"  - POV: {entry['pov']}")
+    if entry.get("pickup_state"):
+        lines.append(f"  - Start with: {entry['pickup_state']}")
+    
+    do_not_explain = entry.get("do_not_explain", [])
+    if do_not_explain:
+        lines.append(f"  - DO NOT re-explain: {', '.join(do_not_explain)}")
+    
+    if exit_p.get("last_beat"):
+        lines.append(f"  - End with: {exit_p['last_beat']}")
+    
+    return "\n".join(lines)
+
+
+def _format_transition_rules(transition: Optional[Dict[str, Any]]) -> str:
+    """
+    Generate additional rules for following the transition contract.
+    Returns empty string if no transition provided.
+    """
+    if not transition:
+        return ""
+    
+    t_type = transition.get("transition_type", "direct")
+    entry = transition.get("entry_constraints", {})
+    exit_p = transition.get("exit_payload", {})
+    
+    rules = ["\n11. **Follow the Transition Contract strictly:**"]
+    
+    if entry.get("pickup_state"):
+        rules.append(f"    - Your opening scene must connect to: \"{entry['pickup_state']}\"")
+    
+    do_not_explain = entry.get("do_not_explain", [])
+    if do_not_explain:
+        rules.append(f"    - Do NOT re-explain or restate: {', '.join(do_not_explain)}")
+    
+    if exit_p.get("last_beat"):
+        rules.append(f"    - Your closing scene must deliver: \"{exit_p['last_beat']}\"")
+    
+    if t_type == "return":
+        rules.append("    - This chapter returns from a flashback/parallel thread — resume the main story naturally")
+    elif t_type == "flashback":
+        rules.append("    - This is a flashback — establish the time shift clearly at the start")
+    
+    return "\n".join(rules) + "\n"
 
 
 _CHAPTER_PROMPT = textwrap.dedent("""\
@@ -25,7 +101,7 @@ Inputs:
 - **Previously Written Chapters (if any, may be empty):**
 \"\"\"{previous_chapters_summary}\"\"\"
 - **GENRE** (to guide tone, pacing, and atmosphere):
-\"\"\"{genre}\"\"\"
+\"\"\"{genre}\"\"\"{transition_block}
 
 ---
 
@@ -53,7 +129,7 @@ Inputs:
    - To reach this length, expand creatively within the scope of this chapter's description. Add realistic detail, dialogue, atmosphere, and depth that make sense for the story and characters.  
    - **Do not include or borrow content from later chapters** to increase word count. All expansion must remain consistent with this chapter's description and the global plot.
 10. Output **only** the final story text — no explanations, meta commentary, or outline notes.
-
+{transition_rules}
 Begin writing **Chapter {chapter_number}** now.
 """).strip()
 
@@ -82,7 +158,7 @@ but you may adjust its internal flow, tone, and events as needed to satisfy the 
 \"\"\"{feedback}\"\"\"
 
 - **GENRE (to guide tone, pacing, and atmosphere):**
-\"\"\"{genre}\"\"\"
+\"\"\"{genre}\"\"\"{transition_block}
 
 ---
 
@@ -108,7 +184,7 @@ but you may adjust its internal flow, tone, and events as needed to satisfy the 
    - The revised chapter should be approximately the same length as before (±10% of {word_target} words).  
    - Do **not** produce a summary or outline — write the full narrative text.  
    - Output only the story content in Markdown format (no notes or explanations).
-
+{transition_rules}
 ---
 
 Begin revising **Chapter {chapter_number}** now.
@@ -176,6 +252,7 @@ def call_llm_generate_chapter(
     previous_chapters: Optional[List[str]] = None,
     *,
     chapter_description: Optional[str] = None,
+    transition: Optional[Dict[str, Any]] = None,
     genre: Optional[str] = None,
     anpc: Optional[int] = None,
     api_url: Optional[str] = None,
@@ -192,6 +269,7 @@ def call_llm_generate_chapter(
     Args:
         chapter_description: If provided, uses this specific chapter description instead of
                            requiring the LLM to locate it in chapters_overview.
+        transition: If provided, includes transition contract for continuity guidance.
     """
     word_target = _compute_word_target(anpc)
     prev_joined = _join_previous_chapters(previous_chapters or [])
@@ -199,6 +277,9 @@ def call_llm_generate_chapter(
     context_block, chapter_id_instruction, _ = _build_chapter_context_block(
         chapter_description, chapters_overview or "", chapter_index
     )
+    
+    transition_block = _format_transition_block(transition, chapter_index)
+    transition_rules = _format_transition_rules(transition)
 
     prompt = _CHAPTER_PROMPT.format(
         expanded_plot=expanded_plot or "",
@@ -208,6 +289,8 @@ def call_llm_generate_chapter(
         chapter_number=chapter_index,
         chapter_identification_instruction=chapter_id_instruction,
         word_target=word_target,
+        transition_block=transition_block,
+        transition_rules=transition_rules,
     )
 
     messages = [
@@ -236,6 +319,7 @@ def call_llm_revise_chapter(
     feedback: str,
     *,
     chapter_description: Optional[str] = None,
+    transition: Optional[Dict[str, Any]] = None,
     genre: Optional[str] = None,
     anpc: Optional[int] = None,
     api_url: Optional[str] = None,
@@ -252,6 +336,7 @@ def call_llm_revise_chapter(
     Args:
         chapter_description: If provided, uses this specific chapter description instead of
                            requiring the LLM to locate it in chapters_overview.
+        transition: If provided, includes transition contract for continuity guidance.
     """
     word_target = _compute_word_target(anpc)
     prev_joined = _join_previous_chapters(previous_chapters or [])
@@ -259,6 +344,9 @@ def call_llm_revise_chapter(
     context_block, _, revision_id_instruction = _build_chapter_context_block(
         chapter_description, chapters_overview or "", chapter_index
     )
+    
+    transition_block = _format_transition_block(transition, chapter_index)
+    transition_rules = _format_transition_rules(transition)
 
     prompt = _REVISION_PROMPT.format(
         expanded_plot=expanded_plot or "",
@@ -270,6 +358,8 @@ def call_llm_revise_chapter(
         chapter_number=chapter_index,
         revision_identification_instruction=revision_id_instruction,
         word_target=word_target,
+        transition_block=transition_block,
+        transition_rules=transition_rules,
     )
 
     messages = [
