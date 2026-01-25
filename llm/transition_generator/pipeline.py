@@ -41,26 +41,3 @@ def run_transition_generator(
     return [], False
 
 
-def get_transition_for_chapter(
-    transitions: List[Dict[str, Any]],
-    chapter_index: int,
-) -> Dict[str, Any]:
-    """
-    Get the transition contract for a specific chapter.
-    
-    Args:
-        transitions: List of all transition dicts
-        chapter_index: 1-based chapter index
-    
-    Returns:
-        The transition dict for the chapter, or empty dict if not found
-    """
-    if not transitions:
-        return {}
-    
-    idx = chapter_index - 1
-    if idx < 0 or idx >= len(transitions):
-        return {}
-    
-    return transitions[idx]
-

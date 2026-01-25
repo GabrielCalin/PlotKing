@@ -8,14 +8,14 @@ from state.pipeline_context import PipelineContext
 from pipeline.constants import RUN_MODE_CHOICES
 from state.pipeline_state import is_stop_requested, clear_stop
 from state.checkpoint_manager import save_checkpoint
-from state.transitions_cache import save_transitions, clear_transitions
+from state.transitions_manager import save_transitions, clear_transitions, get_transition_for_chapter
 
 # Pașii modularizați
 from llm.plot_expander import run_plot_expander
 from llm.overview_generator import run_overview_generator
 from llm.overview_validator import run_overview_validator
 from llm.overview_tokenizer import run_overview_tokenizer
-from llm.transition_generator import run_transition_generator, get_transition_for_chapter
+from llm.transition_generator import run_transition_generator
 from llm.chapter_writer import run_chapter_writer
 from llm.chapter_validator import run_chapter_validator
 
@@ -227,7 +227,7 @@ def _generate_book_outline_stream_impl(state: PipelineContext):
 
     for i in range(start_index - 1, state.num_chapters):
         chapter_desc = tokenized_chapters[i] if tokenized_chapters and i < len(tokenized_chapters) else None
-        chapter_transition = get_transition_for_chapter(transitions, i + 1)
+        chapter_transition = get_transition_for_chapter(i + 1)
         current_index = i + 1
         state.choices = [f"Chapter {j+1}" for j in range(len(state.chapters_full))]
         is_pending_validation = (state.pending_validation_index == current_index)

@@ -2,8 +2,8 @@
 
 import gradio as gr
 from ui import load_css
-from handlers.create.utils import display_selected_chapter, format_all_transitions
-from state.transitions_cache import has_transitions, get_transitions
+from handlers.create.utils import display_selected_chapter
+from state.transitions_manager import has_transitions, get_transitions, format_all_transitions
 from handlers.create.create_handlers import (
     choose_plot_for_pipeline,
     pre_run_reset_and_controls,

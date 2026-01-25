@@ -5,11 +5,10 @@ from pipeline.constants import RUN_MODE_CHOICES
 from state.pipeline_state import request_stop, clear_stop
 from state.checkpoint_manager import get_checkpoint, clear_checkpoint
 from state.checkpoint_manager import get_checkpoint, clear_checkpoint
-from state.transitions_cache import has_transitions, get_transitions
+from state.transitions_manager import has_transitions, get_transitions, format_all_transitions
 from utils.timestamp import ts_prefix
 from llm.chat_refiner.llm import call_llm_chat
 from llm.refine_chat.llm import refine_chat
-from handlers.create.utils import format_all_transitions
 from handlers.create.project_manager import (
     list_projects,
     save_project,
