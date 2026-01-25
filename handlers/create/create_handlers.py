@@ -5,7 +5,7 @@ from pipeline.constants import RUN_MODE_CHOICES
 from state.pipeline_state import request_stop, clear_stop
 from state.checkpoint_manager import get_checkpoint, clear_checkpoint
 from state.checkpoint_manager import get_checkpoint, clear_checkpoint
-from state.transitions_manager import has_transitions, get_transitions, format_all_transitions
+from state.transitions_manager import has_transitions, get_transitions, format_all_transitions, clear_transitions
 from utils.timestamp import ts_prefix
 from llm.chat_refiner.llm import call_llm_chat
 from llm.refine_chat.llm import refine_chat
@@ -132,7 +132,7 @@ def show_controls_on_resume_run():
 def resume_pipeline(pipeline_fn):
     checkpoint = get_checkpoint()
     if not checkpoint:
-        yield "", "", [], "", gr.update(choices=[]), "_No checkpoint_", "⚠️ No checkpoint found to resume from.", ""
+        yield "", "", [], "", gr.update(choices=[]), "_No checkpoint_", "⚠️ No checkpoint found to resume from.", "", gr.update(visible=False)
         return
 
     expanded = checkpoint.expanded_plot
@@ -147,6 +147,7 @@ def resume_pipeline(pipeline_fn):
             "_No expanded plot_",
             "⚠️ Cannot resume: plot not expanded yet.",
             "",
+            gr.update(visible=False),
         )
         return
 
@@ -169,12 +170,13 @@ def resume_pipeline(pipeline_fn):
         "\n".join(checkpoint.status_log or [])
         + "\n" + ts_prefix("ℹ️ Nothing left to resume."),
         checkpoint.validation_text or "",
+        gr.update(visible=has_transitions()),
     )
 
 def refresh_expanded(pipeline_fn):
     checkpoint = get_checkpoint()
     if not checkpoint:
-        yield "", "", [], "", gr.update(), "_No checkpoint_", "⚠️ Cannot refresh without checkpoint.", ""
+        yield "", "", [], "", gr.update(), "_No checkpoint_", "⚠️ Cannot refresh without checkpoint.", "", gr.update(visible=False)
         return
     clear_stop()
     yield from pipeline_fn(checkpoint=checkpoint, refresh_from="expanded")
@@ -182,7 +184,7 @@ def refresh_expanded(pipeline_fn):
 def refresh_overview(pipeline_fn):
     checkpoint = get_checkpoint()
     if not checkpoint:
-        yield "", "", [], "", gr.update(), "_No checkpoint_", "⚠️ Cannot refresh without checkpoint.", ""
+        yield "", "", [], "", gr.update(), "_No checkpoint_", "⚠️ Cannot refresh without checkpoint.", "", gr.update(visible=False)
         return
     clear_stop()
     yield from pipeline_fn(checkpoint=checkpoint, refresh_from="overview")
@@ -190,10 +192,10 @@ def refresh_overview(pipeline_fn):
 def refresh_chapter(pipeline_fn, selected_name):
     checkpoint = get_checkpoint()
     if not checkpoint:
-        yield "", "", [], "", gr.update(), "_No checkpoint_", "⚠️ Cannot refresh without checkpoint.", ""
+        yield "", "", [], "", gr.update(), "_No checkpoint_", "⚠️ Cannot refresh without checkpoint.", "", gr.update(visible=False)
         return
     if not selected_name:
-        yield "", "", [], "", gr.update(), "_No chapter selected_", "⚠️ Please select a chapter.", ""
+        yield "", "", [], "", gr.update(), "_No chapter selected_", "⚠️ Please select a chapter.", "", gr.update(visible=False)
         return
     try:
         idx = int(selected_name.split(" ")[1])
@@ -216,6 +218,7 @@ def refresh_chapter(pipeline_fn, selected_name):
         f"Refreshing from chapter {idx}...",
         ts_prefix(f"🔁 Refresh from chapter {idx} initiated."),
         checkpoint.validation_text or "",
+        gr.update(visible=False),
     )
     yield from pipeline_fn(checkpoint=checkpoint, refresh_from=idx)
 
@@ -548,6 +551,7 @@ def start_empty_mode_init(plot, genre, anpc, chapters_cnt):
         "_No chapters yet_", # chapter_counter
         ts_prefix("✨ Started with Empty Plot. Ready to add chapters via Fills."), # status_output
         "", # validation_feedback
+        gr.update(visible=False), # toggle_transitions_btn
     )
 
 def generate_dispatcher(current_run_mode, plot_val, chapters_in, genre_in, anpc_in, run_mode_in):
@@ -620,4 +624,13 @@ def get_toggle_transitions_visibility():
     
     return gr.update(visible=(overview_exists and transitions_exist))
 
-
+def pre_refresh_clear_transitions():
+    """
+    Called before refresh expanded/overview.
+    Clears transitions cache and returns updates to hide button and reset view mode.
+    """
+    clear_transitions()
+    return (
+        gr.update(visible=False),
+        "overview",
+    )

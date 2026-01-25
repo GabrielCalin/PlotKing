@@ -52,6 +52,11 @@
   justify-content: right !important;
 }
 
+/* Override Svelte flex for compact button groups (Expanded/Overview/Chapter headers) */
+.plot-buttons-compact button {
+  flex: 0 0 auto !important;
+}
+
 .plot-buttons button:hover {
   opacity: 1;
 }

@@ -34,6 +34,7 @@ from handlers.create.create_handlers import (
     
     toggle_transitions_view,
     get_toggle_transitions_visibility,
+    pre_refresh_clear_transitions,
 )
 from handlers.create.project_manager import (
     save_project,
@@ -149,14 +150,14 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
         with gr.Column(elem_classes=["plot-wrapper"]):
             with gr.Row(elem_classes=["plot-header"]):
                 gr.Markdown("📝 Expanded Plot")
-                with gr.Row(elem_classes=["plot-buttons"]):
+                with gr.Row(elem_classes=["plot-buttons", "plot-buttons-compact"]):
                     regenerate_expanded_btn = gr.Button("🔄", size="sm", visible=False)
             expanded_output = gr.Markdown(elem_id="expanded-output", height=360)
 
         with gr.Column(elem_classes=["plot-wrapper"]):
             with gr.Row(elem_classes=["plot-header"]):
                 gr.Markdown("📘 Chapters Overview")
-                with gr.Row(elem_classes=["plot-buttons"]):
+                with gr.Row(elem_classes=["plot-buttons", "plot-buttons-compact"]):
                     toggle_transitions_btn = gr.Button("🔗", size="sm", visible=False, elem_id="toggle-transitions-btn")
                     regenerate_overview_btn = gr.Button("🔄", size="sm", visible=False)
             chapters_output = gr.Markdown(elem_id="chapters-output", height=360)
@@ -169,7 +170,7 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
         with gr.Column(scale=3, elem_classes=["plot-wrapper"]):
             with gr.Row(elem_classes=["plot-header"]):
                 gr.Markdown("📚 Current Chapter")
-                with gr.Row(elem_classes=["plot-buttons"]):
+                with gr.Row(elem_classes=["plot-buttons", "plot-buttons-compact"]):
                     regenerate_chapter_btn = gr.Button("🔄", size="sm", visible=False)
             current_chapter_output = gr.Markdown(elem_id="current-chapter-output", height=360)
 
@@ -222,6 +223,7 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
             chapter_counter,
             status_output,
             validation_feedback,
+            toggle_transitions_btn,
         ],
     ).then(
         fn=post_pipeline_controls,
@@ -234,10 +236,6 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
             regenerate_overview_btn,
             regenerate_chapter_btn,
         ],
-    ).then(
-        fn=get_toggle_transitions_visibility,
-        inputs=[],
-        outputs=[toggle_transitions_btn],
     ).then(
         fn=_bump_editor_epoch,
         inputs=[editor_sections_epoch],
@@ -291,6 +289,7 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
             chapter_counter,
             status_output,
             validation_feedback,
+            toggle_transitions_btn,
         ],
         queue=True,
     ).then(
@@ -304,10 +303,6 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
             regenerate_overview_btn,
             regenerate_chapter_btn,
         ],
-    ).then(
-        fn=get_toggle_transitions_visibility,
-        inputs=[],
-        outputs=[toggle_transitions_btn],
     ).then(
         fn=_bump_editor_epoch,
         inputs=[editor_sections_epoch],
@@ -334,6 +329,10 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
             regenerate_chapter_btn,
         ],
     ).then(
+        fn=pre_refresh_clear_transitions,
+        inputs=[],
+        outputs=[toggle_transitions_btn, overview_view_mode],
+    ).then(
         fn=_refresh_expanded,
         inputs=[],
         outputs=[
@@ -345,6 +344,7 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
             chapter_counter,
             status_output,
             validation_feedback,
+            toggle_transitions_btn,
         ],
     ).then(
         fn=post_pipeline_controls,
@@ -357,10 +357,6 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
             regenerate_overview_btn,
             regenerate_chapter_btn,
         ],
-    ).then(
-        fn=get_toggle_transitions_visibility,
-        inputs=[],
-        outputs=[toggle_transitions_btn],
     ).then(
         fn=_bump_editor_epoch,
         inputs=[editor_sections_epoch],
@@ -380,6 +376,10 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
             regenerate_chapter_btn,
         ],
     ).then(
+        fn=pre_refresh_clear_transitions,
+        inputs=[],
+        outputs=[toggle_transitions_btn, overview_view_mode],
+    ).then(
         fn=_refresh_overview,
         inputs=[],
         outputs=[
@@ -391,6 +391,7 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
             chapter_counter,
             status_output,
             validation_feedback,
+            toggle_transitions_btn,
         ],
     ).then(
         fn=post_pipeline_controls,
@@ -403,10 +404,6 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
             regenerate_overview_btn,
             regenerate_chapter_btn,
         ],
-    ).then(
-        fn=get_toggle_transitions_visibility,
-        inputs=[],
-        outputs=[toggle_transitions_btn],
     ).then(
         fn=_bump_editor_epoch,
         inputs=[editor_sections_epoch],
@@ -437,6 +434,7 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
             chapter_counter,
             status_output,
             validation_feedback,
+            toggle_transitions_btn,
         ],
     ).then(
         fn=post_pipeline_controls,
@@ -449,10 +447,6 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
             regenerate_overview_btn,
             regenerate_chapter_btn,
         ],
-    ).then(
-        fn=get_toggle_transitions_visibility,
-        inputs=[],
-        outputs=[toggle_transitions_btn],
     ).then(
         fn=_bump_editor_epoch,
         inputs=[editor_sections_epoch],
