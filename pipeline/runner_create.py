@@ -8,6 +8,7 @@ from state.pipeline_context import PipelineContext
 from pipeline.constants import RUN_MODE_CHOICES
 from state.pipeline_state import is_stop_requested, clear_stop
 from state.checkpoint_manager import save_checkpoint
+from state.transitions_cache import save_transitions, clear_transitions
 
 # Pașii modularizați
 from llm.plot_expander import run_plot_expander
@@ -196,8 +197,10 @@ def _generate_book_outline_stream_impl(state: PipelineContext):
     log_ui(state.status_log, "🔗 Generating chapter transitions...")
     transitions, transitions_ok = run_transition_generator(state)
     if transitions_ok:
+        save_transitions(transitions)
         log_ui(state.status_log, "✅ Transition contracts generated successfully.")
     else:
+        clear_transitions()
         log_ui(state.status_log, "⚠️ Transition generation failed — continuing without transitions.")
     
     preloop_choices = [f"Chapter {j+1}" for j in range(len(state.chapters_full))]

@@ -5,9 +5,11 @@ from pipeline.constants import RUN_MODE_CHOICES
 from state.pipeline_state import request_stop, clear_stop
 from state.checkpoint_manager import get_checkpoint, clear_checkpoint
 from state.checkpoint_manager import get_checkpoint, clear_checkpoint
+from state.transitions_cache import has_transitions, get_transitions
 from utils.timestamp import ts_prefix
 from llm.chat_refiner.llm import call_llm_chat
 from llm.refine_chat.llm import refine_chat
+from handlers.create.utils import format_all_transitions
 from handlers.create.project_manager import (
     list_projects,
     save_project,
@@ -565,5 +567,58 @@ def reset_chat_handler(plot, genre, current_log):
     log_msg = ts_prefix("🔄 Chat reset.")
     new_log = (current_log + "\n" + log_msg) if current_log else log_msg
     return new_hist, new_hist, new_log
+
+
+# ---- Transitions Toggle ----
+
+def toggle_transitions_view(current_mode, chapters_overview_original, current_chapters_output):
+    """
+    Toggle between Chapters Overview and Transitions view.
+    
+    Args:
+        current_mode: "overview" or "transitions"
+        chapters_overview_original: stored original overview (when in transitions mode)
+        current_chapters_output: current content in the textbox
+    
+    Returns:
+        (new_chapters_output, new_mode, new_original, new_button_label)
+    """
+    if current_mode == "overview":
+        if not has_transitions():
+            return (
+                gr.update(),
+                "overview",
+                chapters_overview_original,
+                gr.update(value="🔗")
+            )
+        
+        transitions = get_transitions()
+        formatted = format_all_transitions(transitions)
+        
+        return (
+            gr.update(value=formatted),
+            "transitions",
+            current_chapters_output,
+            gr.update(value="📘")
+        )
+    else:
+        return (
+            gr.update(value=chapters_overview_original),
+            "overview",
+            "",
+            gr.update(value="🔗")
+        )
+
+
+def get_toggle_transitions_visibility():
+    """
+    Check if toggle button should be visible.
+    Returns gr.update for the button visibility.
+    """
+    checkpoint = get_checkpoint()
+    overview_exists = checkpoint and checkpoint.chapters_overview
+    transitions_exist = has_transitions()
+    
+    return gr.update(visible=(overview_exists and transitions_exist))
 
 

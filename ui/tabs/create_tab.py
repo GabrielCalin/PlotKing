@@ -2,7 +2,8 @@
 
 import gradio as gr
 from ui import load_css
-from handlers.create.utils import display_selected_chapter
+from handlers.create.utils import display_selected_chapter, format_all_transitions
+from state.transitions_cache import has_transitions, get_transitions
 from handlers.create.create_handlers import (
     choose_plot_for_pipeline,
     pre_run_reset_and_controls,
@@ -30,6 +31,9 @@ from handlers.create.create_handlers import (
     bot_reply_chat_message,
     bot_reply_chat_message,
     reset_chat_handler,
+    
+    toggle_transitions_view,
+    get_toggle_transitions_visibility,
 )
 from handlers.create.project_manager import (
     save_project,
@@ -52,6 +56,8 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
     current_mode = gr.State("original")
     chapters_state = gr.State([])
     chat_history = gr.State([])
+    overview_view_mode = gr.State("overview")  # "overview" or "transitions"
+    chapters_overview_original = gr.State("")  # Store original overview when viewing transitions
 
     # ---- helper: bump epoch (pt. sincronizare Create → Editor) ----
     def _bump_editor_epoch(epoch):
@@ -151,6 +157,7 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
             with gr.Row(elem_classes=["plot-header"]):
                 gr.Markdown("📘 Chapters Overview")
                 with gr.Row(elem_classes=["plot-buttons"]):
+                    toggle_transitions_btn = gr.Button("🔗", size="sm", visible=False, elem_id="toggle-transitions-btn")
                     regenerate_overview_btn = gr.Button("🔄", size="sm", visible=False)
             chapters_output = gr.Markdown(elem_id="chapters-output", height=360)
 
@@ -228,6 +235,10 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
             regenerate_chapter_btn,
         ],
     ).then(
+        fn=get_toggle_transitions_visibility,
+        inputs=[],
+        outputs=[toggle_transitions_btn],
+    ).then(
         fn=_bump_editor_epoch,
         inputs=[editor_sections_epoch],
         outputs=[editor_sections_epoch],
@@ -294,6 +305,10 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
             regenerate_chapter_btn,
         ],
     ).then(
+        fn=get_toggle_transitions_visibility,
+        inputs=[],
+        outputs=[toggle_transitions_btn],
+    ).then(
         fn=_bump_editor_epoch,
         inputs=[editor_sections_epoch],
         outputs=[editor_sections_epoch],
@@ -343,6 +358,10 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
             regenerate_chapter_btn,
         ],
     ).then(
+        fn=get_toggle_transitions_visibility,
+        inputs=[],
+        outputs=[toggle_transitions_btn],
+    ).then(
         fn=_bump_editor_epoch,
         inputs=[editor_sections_epoch],
         outputs=[editor_sections_epoch],
@@ -384,6 +403,10 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
             regenerate_overview_btn,
             regenerate_chapter_btn,
         ],
+    ).then(
+        fn=get_toggle_transitions_visibility,
+        inputs=[],
+        outputs=[toggle_transitions_btn],
     ).then(
         fn=_bump_editor_epoch,
         inputs=[editor_sections_epoch],
@@ -427,9 +450,20 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
             regenerate_chapter_btn,
         ],
     ).then(
+        fn=get_toggle_transitions_visibility,
+        inputs=[],
+        outputs=[toggle_transitions_btn],
+    ).then(
         fn=_bump_editor_epoch,
         inputs=[editor_sections_epoch],
         outputs=[editor_sections_epoch],
+    )
+
+    # Toggle Transitions View
+    toggle_transitions_btn.click(
+        fn=toggle_transitions_view,
+        inputs=[overview_view_mode, chapters_overview_original, chapters_output],
+        outputs=[chapters_output, overview_view_mode, chapters_overview_original, toggle_transitions_btn],
     )
 
     # Plot toggles
