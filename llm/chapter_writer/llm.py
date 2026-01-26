@@ -12,9 +12,9 @@ from typing import List, Optional, Dict, Any
 from provider import provider_manager
 
 
-def _format_transition_block(transition: Optional[Dict[str, Any]], chapter_number: int) -> str:
+def _format_transition_rules(transition: Optional[Dict[str, Any]], chapter_number: int) -> str:
     """
-    Format transition contract for inclusion in prompt.
+    Generate rules for following the transition contract.
     Returns empty string if no transition provided.
     """
     if not transition:
@@ -25,67 +25,57 @@ def _format_transition_block(transition: Optional[Dict[str, Any]], chapter_numbe
     exit_p = transition.get("exit_payload", {})
     anchor = transition.get("anchor", {})
     
-    lines = [f"\n- **Transition Contract for Chapter {chapter_number}:**"]
-    lines.append(f"  - Type: `{t_type}`")
+    lines = ["\n11. **Follow the Transition Contract strictly:**"]
     
-    if t_type == "return":
+    # Type line with explanation
+    if chapter_number == 1:
+        type_line = "    Type: `first_chapter` · Opening chapter of the story"
+    elif t_type == "direct":
+        type_line = "    Type: `direct` · Direct continuation of previous chapter"
+    elif t_type == "return":
         resume_from = anchor.get("resume_from_chapter")
         if resume_from:
-            lines.append(f"  - Continues from: Chapter {resume_from} (NOT from chapter {chapter_number - 1})")
+            type_line = f"    Type: `{t_type}` · Continues from Chapter {resume_from} (NOT previous chapter)"
+        else:
+            type_line = f"    Type: `{t_type}` · Returns from flashback/parallel thread"
     elif t_type == "flashback":
         trigger = anchor.get("trigger")
         if trigger:
-            lines.append(f"  - Triggered by: {trigger}")
+            type_line = f"    Type: `{t_type}` · Triggered by: {trigger}"
+        else:
+            type_line = f"    Type: `{t_type}` · Establish time shift clearly at start"
     elif t_type in ("parallel", "pov_switch"):
-        lines.append(f"  - This is a {t_type.replace('_', ' ')} — may have different POV/location than previous chapter")
+        type_line = f"    Type: `{t_type}` · Different POV/location than previous chapter"
+    else:
+        type_line = f"    Type: `{t_type}`"
+    lines.append(type_line)
     
+    # Entry section
+    lines.append("")
+    lines.append("    **Entry (how to START this chapter):**")
     if entry.get("temporal_context"):
-        lines.append(f"  - When: {entry['temporal_context']}")
+        lines.append(f"    - When: {entry['temporal_context']}")
     if entry.get("pov"):
-        lines.append(f"  - POV: {entry['pov']}")
+        lines.append(f"    - POV: {entry['pov']}")
     if entry.get("pickup_state"):
-        lines.append(f"  - Start with: {entry['pickup_state']}")
-    
+        lines.append(f"    - Start with: {entry['pickup_state']}")
     do_not_explain = entry.get("do_not_explain", [])
     if do_not_explain:
-        lines.append(f"  - DO NOT re-explain: {', '.join(do_not_explain)}")
+        lines.append(f"    - Do NOT re-explain: {', '.join(do_not_explain)}")
     
+    # Exit section
+    lines.append("")
+    lines.append("    **Exit (how to END this chapter):**")
     if exit_p.get("last_beat"):
-        lines.append(f"  - End with: {exit_p['last_beat']}")
+        lines.append(f"    - End with: {exit_p['last_beat']}")
+    carryover = exit_p.get("carryover_facts", [])
+    if carryover:
+        lines.append(f"    - Must establish these facts: {', '.join(carryover)}")
+    open_threads = exit_p.get("open_threads", [])
+    if open_threads:
+        lines.append(f"    - Leave open for next chapter: {', '.join(open_threads)}")
     
-    return "\n".join(lines)
-
-
-def _format_transition_rules(transition: Optional[Dict[str, Any]]) -> str:
-    """
-    Generate additional rules for following the transition contract.
-    Returns empty string if no transition provided.
-    """
-    if not transition:
-        return ""
-    
-    t_type = transition.get("transition_type", "direct")
-    entry = transition.get("entry_constraints", {})
-    exit_p = transition.get("exit_payload", {})
-    
-    rules = ["\n11. **Follow the Transition Contract strictly:**"]
-    
-    if entry.get("pickup_state"):
-        rules.append(f"    - Your opening scene must connect to: \"{entry['pickup_state']}\"")
-    
-    do_not_explain = entry.get("do_not_explain", [])
-    if do_not_explain:
-        rules.append(f"    - Do NOT re-explain or restate: {', '.join(do_not_explain)}")
-    
-    if exit_p.get("last_beat"):
-        rules.append(f"    - Your closing scene must deliver: \"{exit_p['last_beat']}\"")
-    
-    if t_type == "return":
-        rules.append("    - This chapter returns from a flashback/parallel thread — resume the main story naturally")
-    elif t_type == "flashback":
-        rules.append("    - This is a flashback — establish the time shift clearly at the start")
-    
-    return "\n".join(rules) + "\n"
+    return "\n".join(lines) + "\n"
 
 
 _CHAPTER_PROMPT = textwrap.dedent("""\
@@ -101,7 +91,7 @@ Inputs:
 - **Previously Written Chapters (if any, may be empty):**
 \"\"\"{previous_chapters_summary}\"\"\"
 - **GENRE** (to guide tone, pacing, and atmosphere):
-\"\"\"{genre}\"\"\"{transition_block}
+\"\"\"{genre}\"\"\"
 
 ---
 
@@ -157,7 +147,7 @@ but you may adjust its internal flow, tone, and events as needed to satisfy the 
 \"\"\"{feedback}\"\"\"
 
 - **GENRE (to guide tone, pacing, and atmosphere):**
-\"\"\"{genre}\"\"\"{transition_block}
+\"\"\"{genre}\"\"\"
 
 ---
 
@@ -277,8 +267,7 @@ def call_llm_generate_chapter(
         chapter_description, chapters_overview or "", chapter_index
     )
     
-    transition_block = _format_transition_block(transition, chapter_index)
-    transition_rules = _format_transition_rules(transition)
+    transition_rules = _format_transition_rules(transition, chapter_index)
 
     prompt = _CHAPTER_PROMPT.format(
         expanded_plot=expanded_plot or "",
@@ -288,7 +277,6 @@ def call_llm_generate_chapter(
         chapter_number=chapter_index,
         chapter_identification_instruction=chapter_id_instruction,
         word_target=word_target,
-        transition_block=transition_block,
         transition_rules=transition_rules,
     )
 
@@ -344,8 +332,7 @@ def call_llm_revise_chapter(
         chapter_description, chapters_overview or "", chapter_index
     )
     
-    transition_block = _format_transition_block(transition, chapter_index)
-    transition_rules = _format_transition_rules(transition)
+    transition_rules = _format_transition_rules(transition, chapter_index)
 
     prompt = _REVISION_PROMPT.format(
         expanded_plot=expanded_plot or "",
@@ -357,7 +344,6 @@ def call_llm_revise_chapter(
         chapter_number=chapter_index,
         revision_identification_instruction=revision_id_instruction,
         word_target=word_target,
-        transition_block=transition_block,
         transition_rules=transition_rules,
     )
 
