@@ -111,8 +111,7 @@ Inputs:
 3. Write the **complete narrative text** for that chapter, following its description precisely in tone, purpose, and key events.  
    - Maintain smooth internal flow between moments without subdividing the text into numbered or titled scenes.
 4. Ensure **logical continuity**.  
-   - Maintain consistency with **previous chapters** (characters, setting, timeline, motivations, tone).  
-   - Anticipate what will happen in the **next chapter**, ensuring seamless transition.  
+   - Maintain consistency with **previous chapters** (characters, setting, timeline, motivations, tone).   
    - Do **not** include or foreshadow events that explicitly belong to future chapters.  
    - Do not include flashbacks, summaries of previous events, or visions of future ones unless explicitly stated in this chapter's description.
 5. Preserve internal continuity of all details (locations, time of day, physical states, objects, tone) introduced so far.  
