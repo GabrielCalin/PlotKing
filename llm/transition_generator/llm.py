@@ -6,6 +6,7 @@ import re
 import textwrap
 from typing import List, Dict, Any, Optional
 from provider import provider_manager
+from state.settings_manager import settings_manager
 
 
 TRANSITION_PROMPT = textwrap.dedent("""
@@ -163,7 +164,7 @@ def call_llm_generate_transitions(
     
     Returns:
         List of transition dicts, one per chapter.
-        Returns empty list if generation fails.
+        Returns empty list if generation fails after all retries.
     """
     prompt = TRANSITION_PROMPT.format(
         expanded_plot=expanded_plot or "",
@@ -176,23 +177,43 @@ def call_llm_generate_transitions(
         {"role": "user", "content": prompt},
     ]
     
-    try:
-        content = provider_manager.get_llm_response(
-            task_name="transition_generator",
-            messages=messages
-        )
-        
-        transitions = _parse_json_response(content)
-        
-        if len(transitions) != num_chapters:
-            return []
-        
-        for i, transition in enumerate(transitions):
-            if not _validate_transition(transition, i + 1):
+    task_params = settings_manager.get_task_params("transition_generator")
+    retries = task_params.get("retries", 3)
+    if retries is None:
+        retries = 3
+    retries = max(0, int(retries))
+    
+    for attempt in range(retries + 1):
+        try:
+            content = provider_manager.get_llm_response(
+                task_name="transition_generator",
+                messages=messages
+            )
+            
+            transitions = _parse_json_response(content)
+            
+            if len(transitions) != num_chapters:
+                if attempt < retries:
+                    continue
                 return []
-        
-        return transitions
-        
-    except Exception:
-        return []
+            
+            all_valid = True
+            for i, transition in enumerate(transitions):
+                if not _validate_transition(transition, i + 1):
+                    all_valid = False
+                    break
+            
+            if all_valid:
+                return transitions
+            
+            if attempt < retries:
+                continue
+            return []
+            
+        except Exception:
+            if attempt < retries:
+                continue
+            return []
+    
+    return []
 
