@@ -34,14 +34,16 @@ def vtext_add(section: str, validation_text: str) -> str:
     validation_text = validation_text.rstrip("\n")
     return validation_text + "\n\n" + section
 
-def maybe_pause_pipeline(step_label: str, state: PipelineContext, transitions_visible: bool = False):
+def maybe_pause_pipeline(step_label: str, state: PipelineContext, transitions_visible: bool = False, preserve_expanded: bool = False, preserve_overview: bool = False):
     if not is_stop_requested():
         return False
     save_checkpoint(state)
     log_ui(state.status_log, f"🛑 Stop requested — pipeline paused after {step_label}.")
+    expanded_update = gr.update() if preserve_expanded else state.expanded_plot
+    overview_update = gr.update() if preserve_overview else state.chapters_overview
     yield (
-        state.expanded_plot,
-        state.chapters_overview,
+        expanded_update,
+        overview_update,
         state.chapters_full,
         gr.update(),
         gr.update(choices=state.choices) if state.choices is not None else gr.update(),
@@ -207,8 +209,8 @@ def _generate_book_outline_stream_impl(state: PipelineContext):
     
     preloop_choices = [f"Chapter {j+1}" for j in range(len(state.chapters_full))]
     yield (
-        state.expanded_plot,
-        state.chapters_overview,
+        gr.update(),
+        gr.update(),
         state.chapters_full,
         gr.update(),
         gr.update(choices=preloop_choices),
@@ -239,8 +241,8 @@ def _generate_book_outline_stream_impl(state: PipelineContext):
         if not is_pending_validation:
             log_ui(state.status_log, f"✍️ Generating Chapter {current_index}/{state.num_chapters}...")
             yield (
-                state.expanded_plot,
-                state.chapters_overview,
+                gr.update(),
+                gr.update(),
                 state.chapters_full,
                 gr.update(),
                 gr.update(choices=state.choices),
@@ -268,8 +270,8 @@ def _generate_book_outline_stream_impl(state: PipelineContext):
 
             counter_value = f"📘 {len(state.chapters_full)} chapter(s) generated so far"
             yield (
-                state.expanded_plot,
-                state.chapters_overview,
+                gr.update(),
+                gr.update(),
                 state.chapters_full,
                 current_text_update,
                 dropdown_update,
@@ -281,14 +283,14 @@ def _generate_book_outline_stream_impl(state: PipelineContext):
 
             state.next_chapter_index = current_index
             state.pending_validation_index = current_index
-            if (yield from maybe_pause_pipeline(f"chapter {current_index} generation", state, transitions_visible=transitions_ok)):
+            if (yield from maybe_pause_pipeline(f"chapter {current_index} generation", state, transitions_visible=transitions_ok, preserve_expanded=True, preserve_overview=True)):
                 return
 
         else:
             log_ui(state.status_log, f"▶️ Resuming with validation for Chapter {current_index}...")
             yield (
-                state.expanded_plot,
-                state.chapters_overview,
+                gr.update(),
+                gr.update(),
                 state.chapters_full,
                 gr.update(),
                 gr.update(choices=state.choices),
@@ -304,8 +306,8 @@ def _generate_book_outline_stream_impl(state: PipelineContext):
         while validation_attempts < MAX_VALIDATION_ATTEMPTS:
             log_ui(state.status_log, f"🧩 Step 5: Validating Chapter {current_index}...")
             yield (
-                state.expanded_plot,
-                state.chapters_overview,
+                gr.update(),
+                gr.update(),
                 state.chapters_full,
                 gr.update(),
                 gr.update(choices=state.choices),
@@ -331,8 +333,8 @@ def _generate_book_outline_stream_impl(state: PipelineContext):
                 log_ui(state.status_log, f"⚠️ Chapter {current_index} failed validation — regenerating.")
 
                 yield (
-                    state.expanded_plot,
-                    state.chapters_overview,
+                    gr.update(),
+                    gr.update(),
                     state.chapters_full,
                     gr.update(),
                     gr.update(choices=state.choices),
@@ -367,7 +369,7 @@ def _generate_book_outline_stream_impl(state: PipelineContext):
 
         state.next_chapter_index = current_index + 1
         state.pending_validation_index = None
-        if (yield from maybe_pause_pipeline(f"chapter {current_index} complete", state, transitions_visible=transitions_ok)):
+        if (yield from maybe_pause_pipeline(f"chapter {current_index} complete", state, transitions_visible=transitions_ok, preserve_expanded=True, preserve_overview=True)):
             return
 
         state.choices = [f"Chapter {j+1}" for j in range(len(state.chapters_full))]
@@ -381,8 +383,8 @@ def _generate_book_outline_stream_impl(state: PipelineContext):
 
         counter_value = f"📘 {len(state.chapters_full)} chapter(s) generated so far"
         yield (
-            state.expanded_plot,
-            state.chapters_overview,
+            gr.update(),
+            gr.update(),
             state.chapters_full,
             current_text_update,
             dropdown_update,
@@ -404,8 +406,8 @@ def _generate_book_outline_stream_impl(state: PipelineContext):
     save_checkpoint(state)
 
     yield (
-        state.expanded_plot,
-        state.chapters_overview,
+        gr.update(),
+        gr.update(),
         state.chapters_full,
         gr.update(),
         dropdown_final,

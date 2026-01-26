@@ -25,6 +25,7 @@ class LLMTaskName(Enum):
     REFINE_PLOT = "refine_plot"
     REWRITE_EDITOR = "rewrite_editor"
     TITLE_FETCHER = "title_fetcher"
+    TRANSITION_GENERATOR = "transition_generator"
     VERSION_DIFF = "version_diff"
 
 
@@ -115,6 +116,9 @@ LLM_TASK_DEFAULTS: Dict[LLMTaskName, TaskDefaults] = {
     ),
     LLMTaskName.TITLE_FETCHER: TaskDefaults(
         "title_fetcher", "Title Fetcher", 500, 120, 0.7, 0.95
+    ),
+    LLMTaskName.TRANSITION_GENERATOR: TaskDefaults(
+        "transition_generator", "Transition Generator", 8000, 300, 0.4, 0.9
     ),
     LLMTaskName.VERSION_DIFF: TaskDefaults(
         "version_diff", "Version Diff", 4000, 300, 0.3, 0.9
