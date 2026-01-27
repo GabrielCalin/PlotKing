@@ -25,11 +25,11 @@ def _format_transition_rules(transition: Optional[Dict[str, Any]], chapter_numbe
     exit_p = transition.get("exit_payload", {})
     anchor = transition.get("anchor", {})
     
-    lines = ["\n11. **Follow the Transition Contract strictly:**"]
+    lines = ["\n12. **Follow the Transition Contract strictly:**"]
     
     # Type line with explanation
     if chapter_number == 1:
-        type_line = "    Type: `first_chapter` · Opening chapter of the story"
+        type_line = "    Type: `first_chapter` · Opening chapter — establish the world, characters, and tone naturally before diving into action"
     elif t_type == "direct":
         type_line = "    Type: `direct` · Direct continuation of previous chapter"
     elif t_type == "return":
@@ -58,7 +58,8 @@ def _format_transition_rules(transition: Optional[Dict[str, Any]], chapter_numbe
     if entry.get("pov"):
         lines.append(f"    - POV: {entry['pov']}")
     if entry.get("pickup_state"):
-        lines.append(f"    - Start with: {entry['pickup_state']}")
+        lines.append(f"    - Core starting situation: {entry['pickup_state']}")
+        lines.append(f"      (This is the conceptual anchor — you may write a brief atmospheric intro or transitional passage before reaching this point)")
     do_not_explain = entry.get("do_not_explain", [])
     if do_not_explain:
         lines.append(f"    - Do NOT re-explain: {', '.join(do_not_explain)}")
@@ -67,13 +68,24 @@ def _format_transition_rules(transition: Optional[Dict[str, Any]], chapter_numbe
     lines.append("")
     lines.append("    **Exit (how to END this chapter):**")
     if exit_p.get("last_beat"):
-        lines.append(f"    - End with: {exit_p['last_beat']}")
+        lines.append(f"    - Core ending situation: {exit_p['last_beat']}")
+        lines.append(f"      (This is the chapter's final story beat — no new events or plot developments after this. You may add a brief atmospheric sentence or two for closure, but nothing with story significance. Do NOT copy this phrase literally.)")
     carryover = exit_p.get("carryover_facts", [])
     if carryover:
         lines.append(f"    - Must establish these facts: {', '.join(carryover)}")
     open_threads = exit_p.get("open_threads", [])
     if open_threads:
-        lines.append(f"    - Leave open for next chapter: {', '.join(open_threads)}")
+        lines.append(f"    - Unresolved threads (for internal guidance only — DO NOT mention these explicitly in the text): {', '.join(open_threads)}")
+    
+    # Characters section
+    characters = transition.get("characters", {})
+    new_chars = characters.get("new", [])
+    if new_chars:
+        lines.append("")
+        lines.append("    **Character introductions:**")
+        lines.append(f"    - NEW characters (must be introduced naturally on first appearance): {', '.join(new_chars)}")
+        lines.append(f"      * Do NOT introduce them abruptly — provide brief, natural introduction (1-2 sentences)")
+        lines.append(f"      * Do NOT assume reader familiarity — anchor them physically or emotionally")
     
     return "\n".join(lines) + "\n"
 
@@ -114,10 +126,15 @@ Inputs:
    - If it is **not the final chapter**, close with a natural sense of transition or anticipation — a pause that leads smoothly into the next chapter.  
    - If it **is the final chapter**, conclude the story in a way that aligns with the chapter description and **Global Story Summary**, providing resolution without adding new material beyond the planned ending.  
    - Do **not** comment on the chapter itself or describe that it "ends"; simply write the story up to its natural stopping point.
-9. Target length: around **{word_target} words**.  
+9. **CRITICAL: NO META-LANGUAGE.** You are writing a novel, not describing one.
+   - NEVER write phrases like "The chapter ends with...", "This chapter explores...", "The next chapter would ask..."
+   - NEVER explicitly state open questions or themes — let them emerge naturally through the narrative.
+   - NEVER refer to "the reader", "the story", "the chapter", or narrative structure.
+   - Simply write the story as it happens, in immersive prose.
+10. Target length: around **{word_target} words**.  
    - To reach this length, expand creatively within the scope of this chapter's description. Add realistic detail, dialogue, atmosphere, and depth that make sense for the story and characters.  
    - **Do not include or borrow content from later chapters** to increase word count. All expansion must remain consistent with this chapter's description and the global plot.
-10. Output **only** the final story text — no explanations, meta commentary, or outline notes.
+11. Output **only** the final story text — no explanations, meta commentary, or outline notes.
 {transition_rules}
 Begin writing **Chapter {chapter_number}** now.
 """).strip()
@@ -169,7 +186,13 @@ but you may adjust its internal flow, tone, and events as needed to satisfy the 
    - Smooth transitions, expressive narration, realistic dialogue, and sensory details are encouraged.  
    - You may restructure paragraphs or add short connective sentences if it helps the flow.
 
-5. **Length & format**:
+5. **CRITICAL: NO META-LANGUAGE.** You are writing a novel, not describing one.
+   - NEVER write phrases like "The chapter ends with...", "This chapter explores...", "The next chapter would ask..."
+   - NEVER explicitly state open questions or themes — let them emerge naturally through the narrative.
+   - NEVER refer to "the reader", "the story", "the chapter", or narrative structure.
+   - Simply write the story as it happens, in immersive prose.
+
+6. **Length & format**:
    - The revised chapter should be approximately the same length as before (±10% of {word_target} words).  
    - Do **not** produce a summary or outline — write the full narrative text.  
    - Output only the story content in Markdown format (no notes or explanations).

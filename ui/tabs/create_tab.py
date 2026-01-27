@@ -210,6 +210,8 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
             regenerate_expanded_btn,
             regenerate_overview_btn,
             regenerate_chapter_btn,
+            overview_view_mode,
+            chapters_overview_original,
         ],
     ).then(
         fn=generate_dispatcher,
@@ -575,6 +577,8 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
             regenerate_chapter_btn,
             current_project_label,
             header_save_btn,
+            overview_view_mode,
+            chapters_overview_original,
         ],
     ).then(
         fn=_bump_editor_epoch,
@@ -621,6 +625,8 @@ def render_create_tab(current_project_label, header_save_btn, editor_sections_ep
             generate_btn,
             current_project_label,
             header_save_btn,
+            overview_view_mode,
+            chapters_overview_original,
         ],
     ).then(
         fn=_bump_editor_epoch,

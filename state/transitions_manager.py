@@ -96,6 +96,13 @@ def format_transition_block(transition: Optional[Dict[str, Any]], chapter_number
     if do_not_explain:
         lines.append(f"- 🚫 Don't re-explain: {', '.join(do_not_explain)}")
     
+    characters = transition.get("characters", {})
+    new_chars = characters.get("new", [])
+    if new_chars:
+        lines.append("")
+        lines.append("**Characters:**")
+        lines.append(f"- 🆕 New: {', '.join(new_chars)}")
+    
     lines.append("")
     lines.append("**Exit:**")
     if exit_p.get("last_beat"):

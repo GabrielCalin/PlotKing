@@ -25,6 +25,8 @@ def choose_plot_for_pipeline(plot, refined):
 def pre_run_reset_and_controls():
     clear_stop()
     clear_checkpoint()
+    from state.transitions_manager import clear_transitions
+    clear_transitions()
     return (
         gr.update(visible=True, interactive=True, value="🛑 Stop"),
         gr.update(visible=False),  # resume
@@ -32,6 +34,8 @@ def pre_run_reset_and_controls():
         gr.update(visible=False),  # regen expanded
         gr.update(visible=False),  # regen overview
         gr.update(visible=False),  # regen chapter
+        "overview",  # overview_view_mode
+        "",  # chapters_overview_original
     )
 
 def post_pipeline_controls():

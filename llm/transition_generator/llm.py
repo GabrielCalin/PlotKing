@@ -73,6 +73,10 @@ For each chapter, output JSON with this structure:
     "thematic_echo": "<optional thematic link or null>"
   }},
   
+  "characters": {{
+    "new": ["<character_id_1>", "<character_id_2>"]
+  }},
+  
   "return_point": {{
     "thread": "<thread_id>",
     "resume_from_chapter": <number>
@@ -93,7 +97,11 @@ Note: `return_point` should be `null` for `direct` type chapters.
 5. **Chapter 1 has `anchor.from_chapter: null`** - it's the starting point
 6. **Every non-direct transition needs proper `anchor`** - specify where it comes from or resumes
 7. **`narrative_thread` should be consistent** - same ID for same storyline across chapters (e.g., "main", "backstory_maria", "parallel_detective")
-8. **Exit of chapter N aligns with entry of chapter N+1** for direct continuations
+8. **`characters.new`** - list ALL character IDs that appear in this chapter that are NEW TO THE READER:
+   - **For Chapter 1:** ALL characters that appear are "new" — include ALL of them in the list.
+   - **For later chapters:** Only characters appearing for the FIRST TIME in the story (not seen in previous chapters).
+   - These characters must be introduced naturally, not just named.
+9. **Exit of chapter N aligns with entry of chapter N+1** for direct continuations
 
 ---
 

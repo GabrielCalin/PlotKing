@@ -23,7 +23,7 @@ from llm.chapter_validator import run_chapter_validator
 from utils.logger import log_ui
 from typing import List
 
-MAX_VALIDATION_ATTEMPTS = 3
+MAX_VALIDATION_ATTEMPTS = 10
 
 
 # ------- Small helpers (rămân locale runner-ului) -------
@@ -98,6 +98,22 @@ def _tokenize_chapters(state: PipelineContext) -> List[str]:
         log_ui(state.status_log, "⚠️ Chapter tokenization failed — using full overview.")
     
     return tokenized_chapters
+
+
+def _generate_transitions(state: PipelineContext) -> tuple[list, bool]:
+    """
+    Generate transition contracts for all chapters and save them.
+    Returns (transitions, success_flag).
+    """
+    log_ui(state.status_log, "🔗 Generating chapter transitions...")
+    transitions, transitions_ok = run_transition_generator(state)
+    if transitions_ok:
+        save_transitions(transitions)
+        log_ui(state.status_log, "✅ Transition contracts generated successfully.")
+    else:
+        clear_transitions()
+        log_ui(state.status_log, "⚠️ Transition generation failed — continuing without transitions.")
+    return transitions, transitions_ok
 
 
 # ------- Public API: exact semnături folosite de UI -------
@@ -194,18 +210,43 @@ def _generate_book_outline_stream_impl(state: PipelineContext):
 
     # Step 4: Generate & validate chapters (modularizat)
     log_ui(state.status_log, "🚀 Step 4: Writing chapters...")
+    yield (
+        gr.update(),
+        gr.update(),
+        state.chapters_full,
+        gr.update(),
+        gr.update(choices=[f"Chapter {j+1}" for j in range(len(state.chapters_full))]),
+        "_Preparing chapter generation..._",
+        "\n".join(state.status_log),
+        state.validation_text,
+        gr.update(visible=False),
+    )
     
     tokenized_chapters = _tokenize_chapters(state)
+    yield (
+        gr.update(),
+        gr.update(),
+        state.chapters_full,
+        gr.update(),
+        gr.update(choices=[f"Chapter {j+1}" for j in range(len(state.chapters_full))]),
+        "_Tokenizing chapters..._",
+        "\n".join(state.status_log),
+        state.validation_text,
+        gr.update(visible=False),
+    )
     
-    # Generate transition contracts (not cached in state - generated on-the-fly)
-    log_ui(state.status_log, "🔗 Generating chapter transitions...")
-    transitions, transitions_ok = run_transition_generator(state)
-    if transitions_ok:
-        save_transitions(transitions)
-        log_ui(state.status_log, "✅ Transition contracts generated successfully.")
-    else:
-        clear_transitions()
-        log_ui(state.status_log, "⚠️ Transition generation failed — continuing without transitions.")
+    transitions, transitions_ok = _generate_transitions(state)
+    yield (
+        gr.update(),
+        gr.update(),
+        state.chapters_full,
+        gr.update(),
+        gr.update(choices=[f"Chapter {j+1}" for j in range(len(state.chapters_full))]),
+        "_Generating transitions..._",
+        "\n".join(state.status_log),
+        state.validation_text,
+        gr.update(visible=transitions_ok),
+    )
     
     preloop_choices = [f"Chapter {j+1}" for j in range(len(state.chapters_full))]
     yield (

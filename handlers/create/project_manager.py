@@ -131,13 +131,15 @@ def load_project(selected_name, current_status):
                 gr.update(), gr.update(), gr.update(),
                 gr.update(), gr.update(), gr.update(), gr.update(),
                 gr.update(), gr.update(), gr.update(),
-                current_status + "\n" + msg, gr.update(value=header_html), gr.update(visible=False))
+                current_status + "\n" + msg, gr.update(value=header_html), gr.update(visible=False),
+                "overview", "")  # overview_view_mode, chapters_overview_original
 
     path = _project_path(selected_name)
     if not os.path.exists(path):
-        msg = ts_prefix(f"❌ Project “{selected_name}” not found.")
+        msg = ts_prefix(f"❌ Project \"{selected_name}\" not found.")
         header_html = _format_header_html(None)
-        return (gr.update(),)*14 + (current_status + "\n" + msg, gr.update(value=header_html), gr.update(visible=False))
+        return (gr.update(),)*14 + (current_status + "\n" + msg, gr.update(value=header_html), gr.update(visible=False),
+                "overview", "")  # overview_view_mode, chapters_overview_original
 
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -145,7 +147,8 @@ def load_project(selected_name, current_status):
     except Exception as e:
         msg = ts_prefix(f"❌ Failed to read project: {e}")
         header_html = _format_header_html(None)
-        return (gr.update(),)*14 + (current_status + "\n" + msg, gr.update(value=header_html), gr.update(visible=False))
+        return (gr.update(),)*14 + (current_status + "\n" + msg, gr.update(value=header_html), gr.update(visible=False),
+                "overview", "")  # overview_view_mode, chapters_overview_original
 
     plot_original = data.get("plot_original", "")
     plot_refined = data.get("plot_refined", "")
@@ -178,6 +181,10 @@ def load_project(selected_name, current_status):
     
     # Clear drafts on load
     DraftsManager().clear()
+    
+    # Clear transitions on load (transitions are generated on-the-fly, not saved in project)
+    from state.transitions_manager import clear_transitions
+    clear_transitions()
     
     # Set current project
     set_current_project(selected_name)
@@ -251,6 +258,8 @@ def load_project(selected_name, current_status):
         gr.update(visible=chapters_visible),   # regenerate_chapter_btn
         gr.update(value=header_html),          # header update
         gr.update(visible=True),               # header save button
+        "overview",                            # overview_view_mode
+        "",                                    # chapters_overview_original
     )
 
 def delete_project(selected_name, current_status):
@@ -290,6 +299,10 @@ def new_project(current_status):
     clear_stop()
     clear_checkpoint()
     
+    # Clear transitions on new project
+    from state.transitions_manager import clear_transitions
+    clear_transitions()
+    
     # Clear drafts on new project
     DraftsManager().clear()
     
@@ -325,4 +338,6 @@ def new_project(current_status):
         gr.update(visible=True, interactive=True, value="🚀 Generate Book"), # generate_btn
         gr.update(value=header_html),  # header update
         gr.update(visible=False),      # header save button
+        "overview",                    # overview_view_mode
+        "",                            # chapters_overview_original
     )
