@@ -1,6 +1,7 @@
 from state.checkpoint_manager import clear_checkpoint, get_section_content, get_sections_list as get_checkpoint_sections, get_checkpoint
 from state.drafts_manager import DraftsManager
 from state.pipeline_state import clear_stop, clear_paused
+from state.transitions_manager import clear_transitions
 from handlers.create.project_manager import set_current_project
 from typing import List
 
@@ -13,6 +14,7 @@ def reset_all_states():
     DraftsManager().clear()
     clear_stop()
     clear_paused()
+    clear_transitions()
 
 def get_current_section_content(section: str) -> str:
     """Get current content for section: draft if exists, else checkpoint.
