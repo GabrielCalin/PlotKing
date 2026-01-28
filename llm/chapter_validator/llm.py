@@ -58,6 +58,8 @@ def _format_transition_validation(transition: Optional[Dict[str, Any]], chapter_
         lines.append(f"      * Temporal context matches: {entry['temporal_context']}")
     if entry.get("pov"):
         lines.append(f"      * POV character is: {entry['pov']}")
+    if entry.get("narrative_person"):
+        lines.append(f"      * Narrative person is: {entry['narrative_person']} person — verify chapter is written in this person")
     if entry.get("pickup_state"):
         lines.append(f"      * Chapter reaches the core starting situation: {entry['pickup_state']}")
         lines.append(f"        (May have brief intro before, but should reach this point)")

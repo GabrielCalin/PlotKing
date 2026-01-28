@@ -57,6 +57,8 @@ def _format_transition_rules(transition: Optional[Dict[str, Any]], chapter_numbe
         lines.append(f"    - When: {entry['temporal_context']}")
     if entry.get("pov"):
         lines.append(f"    - POV: {entry['pov']}")
+    if entry.get("narrative_person"):
+        lines.append(f"    - Narrative person: {entry['narrative_person']}")
     if entry.get("pickup_state"):
         lines.append(f"    - Core starting situation: {entry['pickup_state']}")
         lines.append(f"      (This is the conceptual anchor — you may write a brief atmospheric intro or transitional passage before reaching this point)")

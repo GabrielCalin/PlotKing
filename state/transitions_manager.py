@@ -89,6 +89,8 @@ def format_transition_block(transition: Optional[Dict[str, Any]], chapter_number
         lines.append(f"- 🕐 When: {entry['temporal_context']}")
     if entry.get("pov"):
         lines.append(f"- 👤 POV: {entry['pov']}")
+    if entry.get("narrative_person"):
+        lines.append(f"- 📝 Narrative person: {entry['narrative_person']}")
     if entry.get("pickup_state"):
         lines.append(f"- ▶️ Start: {entry['pickup_state']}")
     
